@@ -24,7 +24,19 @@ export function createMockWorkflowExecuteContext(
     data: overrides.data ?? ({} as DangerouslyAllowAny),
     state: overrides.state ?? ({} as DangerouslyAllowAny),
     getStepData: overrides.getStepData ?? (() => undefined),
+    getStepResult: overrides.getStepResult ?? (() => null),
+    getInitData: overrides.getInitData ?? (() => ({}) as DangerouslyAllowAny),
     suspend: overrides.suspend ?? vi.fn(),
+    bail:
+      overrides.bail ??
+      (() => {
+        throw new Error("WORKFLOW_BAIL_NOT_CONFIGURED");
+      }),
+    abort:
+      overrides.abort ??
+      (() => {
+        throw new Error("WORKFLOW_ABORT_NOT_CONFIGURED");
+      }),
     workflowState: overrides.workflowState ?? {},
     setWorkflowState: (() => undefined) as MockWorkflowExecuteContext["setWorkflowState"],
     logger: overrides.logger ?? {

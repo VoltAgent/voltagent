@@ -32,7 +32,11 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
   data: DATA;
   state: WorkflowStepState<INPUT>;
   getStepData: (stepId: string) => WorkflowStepData | undefined;
+  getStepResult: <T = unknown>(stepId: string) => T | null;
+  getInitData: <T = InternalExtractWorkflowInputData<INPUT>>() => T;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
+  bail: (result?: unknown) => never;
+  abort: () => never;
   resumeData?: RESUME_DATA;
   retryCount?: number;
   workflowState: WorkflowStateStore;

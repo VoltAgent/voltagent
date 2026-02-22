@@ -59,6 +59,34 @@ import type {
 
 export const VOLTAGENT_RESTART_CHECKPOINT_KEY = "__voltagent_restart_checkpoint";
 const workflowReplayLogger = new LoggerProxy({ component: "workflow-core-replay" });
+const WORKFLOW_BAIL_SIGNAL = "WORKFLOW_BAIL_SIGNAL";
+const WORKFLOW_ABORT_REASON_DEFAULT = "Workflow aborted by step";
+
+class WorkflowBailSignal extends Error {
+  readonly result: unknown;
+
+  constructor(result?: unknown) {
+    super(WORKFLOW_BAIL_SIGNAL);
+    this.name = "WorkflowBailSignal";
+    this.result = result;
+  }
+}
+
+class WorkflowAbortSignal extends Error {
+  readonly reason?: string;
+
+  constructor(reason?: string) {
+    super("WORKFLOW_CANCELLED");
+    this.name = "WorkflowAbortSignal";
+    this.reason = reason;
+  }
+}
+
+const isWorkflowBailSignal = (error: unknown): error is WorkflowBailSignal =>
+  error instanceof WorkflowBailSignal;
+
+const isWorkflowAbortSignal = (error: unknown): error is WorkflowAbortSignal =>
+  error instanceof WorkflowAbortSignal;
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -1549,6 +1577,99 @@ export function createWorkflow<
         }
       };
 
+      const completeSuccessfulExecution = async (
+        result: z.infer<RESULT_SCHEMA>,
+        bailInfo?: {
+          stepId: string;
+          stepName: string;
+          stepIndex: number;
+        },
+      ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+        stateManager.update({
+          data: result,
+          result,
+        });
+
+        const finalState = stateManager.finish();
+
+        traceContext.setOutput(finalState.result);
+        traceContext.setUsage(stateManager.state.usage);
+        if (bailInfo) {
+          rootSpan.setAttribute("workflow.bailed", true);
+          rootSpan.setAttribute("workflow.bailed.step.id", bailInfo.stepId);
+          rootSpan.setAttribute("workflow.bailed.step.name", bailInfo.stepName);
+          rootSpan.setAttribute("workflow.bailed.step.index", bailInfo.stepIndex);
+        }
+        traceContext.end("completed");
+
+        await safeFlushOnFinish(observability);
+
+        try {
+          await executionMemory.updateWorkflowState(executionContext.executionId, {
+            status: "completed",
+            workflowState: stateManager.state.workflowState,
+            events: collectedEvents,
+            output: finalState.result,
+            updatedAt: new Date(),
+          });
+        } catch (memoryError) {
+          runLogger.warn("Failed to update workflow state to completed in Memory V2:", {
+            error: memoryError,
+          });
+        }
+
+        await runTerminalHooks("completed");
+
+        const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
+        runLogger.debug(
+          `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
+          {
+            duration,
+            output: finalState.result !== undefined ? finalState.result : null,
+            ...(bailInfo
+              ? {
+                  bailed: true,
+                  bailStepId: bailInfo.stepId,
+                  bailStepIndex: bailInfo.stepIndex,
+                }
+              : {}),
+          },
+        );
+
+        emitAndCollectEvent({
+          type: "workflow-complete",
+          executionId,
+          from: name,
+          output: finalState.result,
+          status: "success",
+          context: contextMap,
+          timestamp: new Date().toISOString(),
+          metadata: bailInfo
+            ? {
+                bailed: true,
+                bailStepId: bailInfo.stepId,
+                bailStepName: bailInfo.stepName,
+                bailStepIndex: bailInfo.stepIndex,
+              }
+            : undefined,
+        });
+
+        streamController?.close();
+        return createWorkflowExecutionResult(
+          id,
+          executionId,
+          finalState.startAt,
+          finalState.endAt,
+          "completed",
+          finalState.result as z.infer<RESULT_SCHEMA>,
+          stateManager.state.usage,
+          undefined,
+          stateManager.state.cancellation,
+          undefined,
+          effectiveResumeSchema,
+        );
+      };
+
       try {
         if (workflowGuardrailRuntime && guardrailSets.input.length > 0) {
           if (!isWorkflowGuardrailInput(input)) {
@@ -1688,11 +1809,70 @@ export function createWorkflow<
             );
           };
 
+          const completeBail = async (
+            span: ReturnType<typeof traceContext.createStepSpan>,
+            bailSignal: WorkflowBailSignal,
+          ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+            const finalResult =
+              bailSignal.result !== undefined
+                ? (bailSignal.result as z.infer<RESULT_SCHEMA>)
+                : (stateManager.state.data as z.infer<RESULT_SCHEMA>);
+
+            traceContext.endStepSpan(span, "completed", {
+              output: finalResult,
+              attributes: {
+                "workflow.step.bailed": true,
+              },
+            });
+
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.output = finalResult;
+              stepData.status = "success";
+              stepData.error = null;
+            }
+
+            emitAndCollectEvent({
+              type: "step-complete",
+              executionId,
+              from: stepName,
+              input: stateManager.state.data,
+              output: finalResult,
+              status: "success",
+              context: contextMap,
+              timestamp: new Date().toISOString(),
+              stepIndex: index,
+              stepType: step.type,
+              metadata: {
+                bailed: true,
+              },
+            });
+
+            await hooks?.onStepEnd?.(stateManager.state);
+
+            runLogger.debug(`Workflow bailed at step ${index + 1}: ${stepName}`, {
+              stepIndex: index,
+              stepName,
+              output: finalResult,
+            });
+
+            return completeSuccessfulExecution(finalResult, {
+              stepId: step.id,
+              stepName,
+              stepIndex: index,
+            });
+          };
+
           const resolveCancellationReason = (abortValue?: unknown): string => {
             const reasonFromSignal =
               typeof abortValue === "string" && abortValue !== "cancelled" ? abortValue : undefined;
+            const reasonFromAbortError =
+              isWorkflowAbortSignal(abortValue) && abortValue.reason
+                ? abortValue.reason
+                : undefined;
 
             return (
+              reasonFromAbortError ??
               options?.suspendController?.getCancelReason?.() ??
               activeController?.getCancelReason?.() ??
               reasonFromSignal ??
@@ -2048,6 +2228,12 @@ export function createWorkflow<
                 reason?: string,
                 suspendData?: z.infer<typeof stepSuspendSchema>,
               ) => suspendFn(reason, suspendData);
+              const bailFn = (result?: unknown): never => {
+                throw new WorkflowBailSignal(result);
+              };
+              const abortFn = (): never => {
+                throw new WorkflowAbortSignal(`${WORKFLOW_ABORT_REASON_DEFAULT}: ${stepName}`);
+              };
 
               // Only pass resumeData if we're on the step that was suspended and we have resume input
               const isResumingThisStep =
@@ -2085,6 +2271,8 @@ export function createWorkflow<
                 ),
                 stepExecutionContext,
                 typedSuspendFn,
+                bailFn,
+                abortFn,
                 isResumingThisStep ? resumeInputData : undefined,
                 retryCount,
               );
@@ -2182,8 +2370,12 @@ export function createWorkflow<
               }
               break;
             } catch (stepError) {
+              if (isWorkflowBailSignal(stepError)) {
+                return completeBail(attemptSpan, stepError);
+              }
+
               if (stepError instanceof Error && stepError.message === "WORKFLOW_CANCELLED") {
-                const cancellationReason = resolveCancellationReason();
+                const cancellationReason = resolveCancellationReason(stepError);
                 return completeCancellation(attemptSpan, cancellationReason);
               }
 
@@ -2288,72 +2480,37 @@ export function createWorkflow<
           });
         }
 
-        const finalState = stateManager.finish();
-
-        // Record workflow completion in trace
-        traceContext.setOutput(finalState.result);
-        traceContext.setUsage(stateManager.state.usage);
-        traceContext.end("completed");
-
-        // Ensure spans are flushed (critical for serverless environments)
-        await safeFlushOnFinish(observability);
-
-        // Update Memory V2 state to completed with events and output
-        try {
-          await executionMemory.updateWorkflowState(executionContext.executionId, {
-            status: "completed",
-            workflowState: stateManager.state.workflowState,
-            events: collectedEvents,
-            output: finalState.result,
-            updatedAt: new Date(),
-          });
-        } catch (memoryError) {
-          runLogger.warn("Failed to update workflow state to completed in Memory V2:", {
-            error: memoryError,
-          });
-        }
-
-        await runTerminalHooks("completed");
-
-        // Log workflow completion with context
-        const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
-        runLogger.debug(
-          `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
-          {
-            duration,
-            output: finalState.result !== undefined ? finalState.result : null,
-          },
-        );
-
-        // Emit workflow complete event
-        emitAndCollectEvent({
-          type: "workflow-complete",
-          executionId,
-          from: name,
-          output: finalState.result,
-          status: "success",
-          context: contextMap,
-          timestamp: new Date().toISOString(),
-        });
-
-        streamController?.close();
-        return createWorkflowExecutionResult(
-          id,
-          executionId,
-          finalState.startAt,
-          finalState.endAt,
-          "completed",
-          finalState.result as z.infer<RESULT_SCHEMA>,
-          stateManager.state.usage,
-          undefined,
-          stateManager.state.cancellation,
-          undefined,
-          effectiveResumeSchema,
-        );
+        const finalResult = (stateManager.state.result ??
+          stateManager.state.data) as z.infer<RESULT_SCHEMA>;
+        return completeSuccessfulExecution(finalResult);
       } catch (error) {
         // Check if this is a cancellation or suspension, not an error
+        if (isWorkflowBailSignal(error)) {
+          const bailStepIndex = executionContext.currentStepIndex;
+          const bailStep = (steps as BaseStep[])[bailStepIndex];
+          const bailStepName = bailStep?.name || bailStep?.id || `Step ${bailStepIndex + 1}`;
+          const finalResult =
+            error.result !== undefined
+              ? (error.result as z.infer<RESULT_SCHEMA>)
+              : (stateManager.state.data as z.infer<RESULT_SCHEMA>);
+
+          return completeSuccessfulExecution(
+            finalResult,
+            bailStep
+              ? {
+                  stepId: bailStep.id,
+                  stepName: bailStepName,
+                  stepIndex: bailStepIndex,
+                }
+              : undefined,
+          );
+        }
+
         if (error instanceof Error && error.message === "WORKFLOW_CANCELLED") {
+          const reasonFromAbortError =
+            isWorkflowAbortSignal(error) && error.reason ? error.reason : undefined;
           const cancellationReason =
+            reasonFromAbortError ??
             options?.suspendController?.getCancelReason?.() ??
             workflowRegistry.activeExecutions.get(executionId)?.getCancelReason?.() ??
             options?.suspendController?.getReason?.() ??
