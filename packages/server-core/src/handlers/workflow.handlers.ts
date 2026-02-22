@@ -903,11 +903,18 @@ export async function handleReplayWorkflow(
 
     const message = error instanceof Error ? error.message : "Failed to replay workflow";
     const normalizedMessage = message.toLowerCase();
+    const isReplayPreparationError =
+      normalizedMessage.includes("missing historical snapshots") ||
+      normalizedMessage.includes("missing snapshot") ||
+      normalizedMessage.includes("missing input") ||
+      normalizedMessage.includes("no historical") ||
+      normalizedMessage.includes("missing history");
     const httpStatus = normalizedMessage.includes("not found")
       ? 404
       : normalizedMessage.includes("cannot time travel") ||
           normalizedMessage.includes("still running") ||
-          normalizedMessage.includes("belongs to workflow")
+          normalizedMessage.includes("belongs to workflow") ||
+          isReplayPreparationError
         ? 400
         : 500;
 

@@ -3000,6 +3000,7 @@ export function createWorkflow<
       const executionId = randomUUID();
       const startAt = new Date();
       const suspendController = createDefaultSuspendController();
+      const replayExecutionMemory = timeTravelOptions.memory ?? defaultMemory;
 
       let replayOriginalInput: WorkflowInput<INPUT_SCHEMA> | undefined;
 
@@ -3076,6 +3077,7 @@ export function createWorkflow<
             resumeStepIndex,
             resumeData: resumeInput,
           },
+          memory: replayExecutionMemory,
           suspendController: resumedSuspendController,
         };
 
@@ -3171,6 +3173,7 @@ export function createWorkflow<
         executionId,
         suspendController,
       };
+      const streamExecutionMemory = executionOptions.memory ?? defaultMemory;
 
       // Save the original input for resume
       const originalInput = input;
@@ -3252,6 +3255,7 @@ export function createWorkflow<
             resumeStepIndex,
             resumeData: resumeInput,
           },
+          memory: streamExecutionMemory,
           suspendController: resumedSuspendController,
         };
 
