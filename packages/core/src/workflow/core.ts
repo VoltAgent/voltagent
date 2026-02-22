@@ -2629,7 +2629,10 @@ export function createWorkflow<
     replayExecutionId: string = randomUUID(),
     replayStartAt: Date = new Date(),
   ): Promise<PreparedTimeTravelExecution> => {
-    const sourceState = await defaultMemory.getWorkflowState(timeTravelOptions.executionId);
+    const executionMemory = timeTravelOptions.memory ?? defaultMemory;
+    const workflowSteps = steps as BaseStep[];
+
+    const sourceState = await executionMemory.getWorkflowState(timeTravelOptions.executionId);
     if (!sourceState) {
       throw new Error(`Workflow state not found: ${timeTravelOptions.executionId}`);
     }
@@ -2646,9 +2649,7 @@ export function createWorkflow<
       );
     }
 
-    const targetStepIndex = (steps as BaseStep[]).findIndex(
-      (step) => step.id === timeTravelOptions.stepId,
-    );
+    const targetStepIndex = workflowSteps.findIndex((step) => step.id === timeTravelOptions.stepId);
     if (targetStepIndex === -1) {
       throw new Error(`Step '${timeTravelOptions.stepId}' not found in workflow '${id}'`);
     }
@@ -2669,9 +2670,19 @@ export function createWorkflow<
 
     const sourceStepCompleteEvents =
       sourceState.events?.filter((event) => event.type === "step-complete") ?? [];
+    const stepNameCounts = new Map<string, number>();
+    for (const step of workflowSteps) {
+      if (typeof step.name !== "string" || step.name.length === 0) {
+        continue;
+      }
+      stepNameCounts.set(step.name, (stepNameCounts.get(step.name) ?? 0) + 1);
+    }
 
     for (let index = 0; index < targetStepIndex; index += 1) {
-      const step = (steps as BaseStep[])[index];
+      const step = workflowSteps[index];
+      const stepName = step.name;
+      const isStepNameUnique =
+        typeof stepName === "string" && stepName.length > 0 && stepNameCounts.get(stepName) === 1;
       const checkpointSnapshot = sourceStepData[step.id];
       if (checkpointSnapshot) {
         replayStepData[step.id] = {
@@ -2697,7 +2708,7 @@ export function createWorkflow<
         return (
           event.from === step.id ||
           event.name === step.id ||
-          (step.name !== undefined && (event.from === step.name || event.name === step.name))
+          (isStepNameUnique && (event.from === stepName || event.name === stepName))
         );
       });
 
@@ -2757,7 +2768,7 @@ export function createWorkflow<
       replayedAt: replayStartAt.toISOString(),
     };
 
-    await defaultMemory.setWorkflowState(replayExecutionId, {
+    await executionMemory.setWorkflowState(replayExecutionId, {
       id: replayExecutionId,
       workflowId: id,
       workflowName: name,
@@ -2774,15 +2785,13 @@ export function createWorkflow<
       updatedAt: replayStartAt,
     });
 
-    const completedStepsData = (steps as BaseStep[])
-      .slice(0, targetStepIndex)
-      .map((step, stepIndex) => ({
-        stepId: step.id,
-        stepName: step.name ?? step.id,
-        stepIndex,
-        output: replayStepData[step.id]?.output,
-        status: replayStepData[step.id]?.status,
-      }));
+    const completedStepsData = workflowSteps.slice(0, targetStepIndex).map((step, stepIndex) => ({
+      stepId: step.id,
+      stepName: step.name ?? step.id,
+      stepIndex,
+      output: replayStepData[step.id]?.output,
+      status: replayStepData[step.id]?.status,
+    }));
 
     const executionOptions: WorkflowRunOptions = {
       executionId: replayExecutionId,
@@ -2790,6 +2799,7 @@ export function createWorkflow<
       conversationId: sourceState.conversationId,
       context: sourceContext,
       workflowState: effectiveWorkflowState,
+      memory: executionMemory,
       metadata: lineageMetadata,
       skipStateInit: true,
       replayFrom: {

@@ -245,6 +245,11 @@ export interface WorkflowTimeTravelOptions {
    * Optional override for shared workflow state during replay
    */
   workflowStateOverride?: WorkflowStateStore;
+  /**
+   * Optional memory adapter to read source execution and persist replay execution state.
+   * Falls back to workflow default memory when omitted.
+   */
+  memory?: Memory;
 }
 
 export interface WorkflowRetryConfig {

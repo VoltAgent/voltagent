@@ -6,6 +6,8 @@ import type {
 } from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
+import type { z } from "zod";
+import type { WorkflowReplayRequestSchema } from "../schemas/agent.schemas";
 import type { ApiResponse, ErrorResponse } from "../types";
 import { processWorkflowOptions } from "../utils/options";
 import { formatSSE } from "../utils/sse";
@@ -58,6 +60,7 @@ type ResumableStreamingWorkflowExecution = StreamingWorkflowExecution & {
   ) => Promise<ResumableStreamingWorkflowExecution>;
 };
 
+type WorkflowReplayRequestBody = z.infer<typeof WorkflowReplayRequestSchema>;
 type WorkflowTimeTravelRequest = Parameters<
   NonNullable<Workflow<any, any, any, any>["timeTravel"]>
 >[0];
@@ -840,7 +843,7 @@ export async function handleResumeWorkflow(
 export async function handleReplayWorkflow(
   workflowId: string,
   executionId: string,
-  body: any,
+  body: WorkflowReplayRequestBody | undefined,
   deps: ServerProviderDeps,
   logger: Logger,
 ): Promise<ApiResponse> {
