@@ -433,6 +433,60 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 // used by the agent's memory to provide context-aware responses.
 ```
 
+### Execution Primitives in Step Context
+
+Each workflow step now has control/introspection helpers for early exits and history lookups:
+
+- `bail(result?)`: Complete the workflow immediately with a final result
+- `abort()`: Cancel the workflow immediately
+- `getStepResult(stepId)`: Read a previous step's output (or `null`)
+- `getInitData()`: Read the original workflow input, even after resume
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const workflow = createWorkflowChain({
+  id: "execution-primitives-demo",
+  name: "Execution Primitives Demo",
+  input: z.object({ userId: z.string(), amount: z.number() }),
+  result: z.object({
+    status: z.enum(["approved", "rejected", "cancelled"]),
+    userId: z.string(),
+  }),
+})
+  .andThen({
+    id: "risk-check",
+    execute: async ({ data }) => ({
+      score: data.amount > 1000 ? 95 : 20,
+      userId: data.userId,
+    }),
+  })
+  .andThen({
+    id: "decision",
+    execute: async ({ getStepResult, getInitData, bail, abort }) => {
+      const risk = getStepResult<{ score: number; userId: string }>("risk-check");
+      const init = getInitData();
+
+      if (!risk) {
+        abort(); // terminal status: cancelled
+      }
+
+      if (risk.score >= 90) {
+        bail({
+          status: "rejected",
+          userId: init.userId,
+        }); // terminal status: completed
+      }
+
+      return {
+        status: "approved",
+        userId: init.userId,
+      };
+    },
+  });
+```
+
 ### Workflow Retry Policies
 
 Set a workflow-wide default retry policy with `retryConfig`. Steps inherit it unless they define `retries` (use `retries: 0` to opt out). `delayMs` waits between retry attempts.

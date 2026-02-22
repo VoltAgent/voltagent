@@ -287,6 +287,35 @@ await exec2.resume(
 - `suspend` - Function to pause the workflow
 - `resumeData` - Data provided when resuming (undefined on first run)
 - `suspendData` - Data that was saved during suspension
+- `getInitData` - The original workflow input (stable across resume)
+
+### Access Original Input with `getInitData`
+
+Use `getInitData()` when you need the first input payload after multiple transforms or resume cycles.
+
+```typescript
+.andThen({
+  id: "approval-step",
+  resumeSchema: z.object({ approved: z.boolean() }),
+  execute: async ({ data, suspend, resumeData }) => {
+    if (resumeData) {
+      return { ...data, approved: resumeData.approved };
+    }
+
+    await suspend("Approval required");
+  },
+})
+.andThen({
+  id: "finalize",
+  execute: async ({ data, getInitData }) => {
+    const init = getInitData();
+    return {
+      requestId: init.requestId,
+      approved: data.approved === true,
+    };
+  },
+});
+```
 
 ## Common Patterns
 

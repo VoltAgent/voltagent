@@ -104,7 +104,11 @@ describe("non-chaining API type inference", () => {
         (update: WorkflowStateUpdater) => void
       >();
       expectTypeOf<Context["suspend"]>().toBeFunction();
+      expectTypeOf<Context["bail"]>().toBeFunction();
+      expectTypeOf<Context["abort"]>().toBeFunction();
       expectTypeOf<Context["getStepData"]>().toBeFunction();
+      expectTypeOf<Context["getStepResult"]>().toBeFunction();
+      expectTypeOf<Context["getInitData"]>().toBeFunction();
       expectTypeOf<Context["logger"]>().not.toBeNever();
       expectTypeOf<Context["writer"]>().not.toBeNever();
     });
