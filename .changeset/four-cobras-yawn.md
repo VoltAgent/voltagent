@@ -21,3 +21,5 @@ Replay lineage metadata is now persisted on workflow state records:
 New public type exports from `@voltagent/core` include `WorkflowTimeTravelOptions`.
 
 Also adds workflow documentation and usage examples for deterministic replay in overview, suspend/resume, and streaming docs.
+
+Adds REST API documentation for replay endpoint `POST /workflows/:id/executions/:executionId/replay`, including request/response details and both cURL and JavaScript (`fetch`) code examples for default replay and replay with overrides (`inputData`, `resumeData`, `workflowStateOverride`).
