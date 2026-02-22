@@ -824,6 +824,101 @@ export async function handleResumeWorkflow(
   }
 }
 
+/**
+ * Handler for replaying a workflow execution from a historical step
+ * Returns replay result
+ */
+export async function handleReplayWorkflow(
+  workflowId: string,
+  executionId: string,
+  body: any,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    const { stepId, inputData, resumeData, workflowStateOverride } = body || {};
+
+    if (typeof stepId !== "string" || stepId.trim().length === 0) {
+      return {
+        success: false,
+        error: "stepId is required",
+        httpStatus: 400,
+      };
+    }
+
+    const registeredWorkflow = deps.workflowRegistry.getWorkflow(workflowId);
+    if (!registeredWorkflow) {
+      return {
+        success: false,
+        error: "Workflow not found",
+        httpStatus: 404,
+      };
+    }
+
+    const workflowWithReplay = registeredWorkflow.workflow as typeof registeredWorkflow.workflow & {
+      timeTravel?: (options: {
+        executionId: string;
+        stepId: string;
+        inputData?: unknown;
+        resumeData?: unknown;
+        workflowStateOverride?: Record<string, unknown>;
+      }) => Promise<{
+        executionId: string;
+        startAt: Date | string;
+        endAt: Date | string;
+        status: string;
+        result: unknown;
+      }>;
+    };
+
+    if (typeof workflowWithReplay.timeTravel !== "function") {
+      return {
+        success: false,
+        error: "Workflow does not support replay",
+        httpStatus: 400,
+      };
+    }
+
+    const result = await workflowWithReplay.timeTravel({
+      executionId,
+      stepId: stepId.trim(),
+      inputData,
+      resumeData,
+      workflowStateOverride,
+    });
+
+    return {
+      success: true,
+      data: {
+        executionId: result.executionId,
+        startAt: result.startAt instanceof Date ? result.startAt.toISOString() : result.startAt,
+        endAt: result.endAt instanceof Date ? result.endAt.toISOString() : result.endAt,
+        status: result.status,
+        result: result.result,
+      },
+    };
+  } catch (error) {
+    logger.error("Failed to replay workflow", { error, workflowId, executionId });
+
+    const message = error instanceof Error ? error.message : "Failed to replay workflow";
+    const normalizedMessage = message.toLowerCase();
+    const httpStatus = normalizedMessage.includes("not found")
+      ? 404
+      : normalizedMessage.includes("cannot time travel") ||
+          normalizedMessage.includes("still running") ||
+          normalizedMessage.includes("belongs to workflow") ||
+          normalizedMessage.includes("step")
+        ? 400
+        : 500;
+
+    return {
+      success: false,
+      error: message,
+      httpStatus,
+    };
+  }
+}
+
 function formatWorkflowState(workflowState: WorkflowStateEntry) {
   return {
     ...workflowState,

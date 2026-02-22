@@ -990,6 +990,9 @@ export class WorkflowChain<
 
   /**
    * Replay a historical execution from the selected step
+   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * Use persistent/shared memory (or register the workflow) so source execution state is discoverable.
+   * For ephemeral setup patterns, prefer `chain.toWorkflow().timeTravel(...)` and reuse that instance.
    */
   async timeTravel(
     options: WorkflowTimeTravelOptions,
@@ -1007,6 +1010,9 @@ export class WorkflowChain<
 
   /**
    * Stream a historical replay from the selected step
+   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * Use persistent/shared memory (or register the workflow) so source execution state is discoverable.
+   * For ephemeral setup patterns, prefer `chain.toWorkflow().timeTravelStream(...)` and reuse that instance.
    */
   timeTravelStream(
     options: WorkflowTimeTravelOptions,

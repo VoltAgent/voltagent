@@ -119,6 +119,7 @@ export const PROTECTED_ROUTES = [
   // ========================================
   "POST /workflows/:id/executions/:executionId/suspend", // Suspend execution
   "POST /workflows/:id/executions/:executionId/resume", // Resume execution
+  "POST /workflows/:id/executions/:executionId/replay", // Replay execution from historical step
   "POST /workflows/:id/executions/:executionId/cancel", // Cancel execution
 
   // ========================================

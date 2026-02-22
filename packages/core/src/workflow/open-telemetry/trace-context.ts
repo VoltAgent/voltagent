@@ -54,6 +54,12 @@ export interface WorkflowTraceContextOptions {
     traceId: string;
     spanId: string;
   };
+  replayedFrom?: {
+    traceId: string;
+    spanId: string;
+    executionId: string;
+    stepId: string;
+  };
 }
 
 export class WorkflowTraceContext {
@@ -138,6 +144,24 @@ export class WorkflowTraceContext {
             },
           ]
         : []),
+      ...(options.replayedFrom
+        ? [
+            {
+              context: {
+                traceId: options.replayedFrom.traceId,
+                spanId: options.replayedFrom.spanId,
+                traceFlags: 1, // Sampled
+                traceState: undefined,
+              },
+              attributes: {
+                "link.type": "replay",
+                "workflow.replayed": true,
+                "workflow.replay.source_execution_id": options.replayedFrom.executionId,
+                "workflow.replay.source_step_id": options.replayedFrom.stepId,
+              },
+            },
+          ]
+        : []),
     ];
 
     this.rootSpan = this.tracer.startSpan(
@@ -152,11 +176,27 @@ export class WorkflowTraceContext {
             "workflow.previous_trace_id": options.resumedFrom.traceId,
             "workflow.previous_span_id": options.resumedFrom.spanId,
           }),
+          ...(options.replayedFrom && {
+            "workflow.replayed": true,
+            "workflow.replay.source_trace_id": options.replayedFrom.traceId,
+            "workflow.replay.source_span_id": options.replayedFrom.spanId,
+            "workflow.replay.source_execution_id": options.replayedFrom.executionId,
+            "workflow.replay.source_step_id": options.replayedFrom.stepId,
+          }),
         },
         links: links.length > 0 ? links : undefined,
       },
       parentContext,
     );
+
+    if (options.replayedFrom) {
+      this.rootSpan.addEvent("workflow.replayed", {
+        "replay.source_trace_id": options.replayedFrom.traceId,
+        "replay.source_span_id": options.replayedFrom.spanId,
+        "replay.source_execution_id": options.replayedFrom.executionId,
+        "replay.source_step_id": options.replayedFrom.stepId,
+      });
+    }
 
     // Set active context with root span
     this.activeContext = trace.setSpan(context.active(), this.rootSpan);
@@ -584,8 +624,15 @@ export function addWorkflowAttributesToSpan(
     }
   }
 
+  // Replay lineage
+  if (options?.replayFrom) {
+    span.setAttribute("workflow.replayed", true);
+    span.setAttribute("workflow.replay.source_execution_id", options.replayFrom.executionId);
+    span.setAttribute("workflow.replay.source_step_id", options.replayFrom.stepId);
+  }
+
   // Resume information
-  if (options?.resumeFrom) {
+  if (options?.resumeFrom && !options?.replayFrom) {
     span.setAttribute("workflow.resumed", true);
     span.setAttribute("workflow.resume.execution_id", options.resumeFrom.executionId);
     span.setAttribute("workflow.resume.step_index", options.resumeFrom.resumeStepIndex);

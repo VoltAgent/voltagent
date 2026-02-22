@@ -311,6 +311,11 @@ export interface WorkflowRunOptions {
    */
   resumeFrom?: WorkflowResumeOptions;
   /**
+   * Internal replay lineage context for deterministic time-travel executions
+   * @internal
+   */
+  replayFrom?: WorkflowReplayOptions;
+  /**
    * Suspension mode:
    * - 'graceful': Wait for current step to complete before suspending (default)
    * - 'immediate': Suspend immediately, even during step execution
@@ -382,6 +387,17 @@ export interface WorkflowResumeOptions {
    * Data to pass to the resumed step (validated against resumeSchema)
    */
   resumeData?: DangerouslyAllowAny;
+}
+
+export interface WorkflowReplayOptions {
+  /**
+   * Source execution ID used for replay lineage
+   */
+  executionId: string;
+  /**
+   * Source step ID where replay starts
+   */
+  stepId: string;
 }
 
 export interface WorkflowRestartCheckpoint {

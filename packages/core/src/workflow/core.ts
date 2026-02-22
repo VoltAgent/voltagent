@@ -58,6 +58,7 @@ import type {
 } from "./types";
 
 export const VOLTAGENT_RESTART_CHECKPOINT_KEY = "__voltagent_restart_checkpoint";
+const workflowReplayLogger = new LoggerProxy({ component: "workflow-core-replay" });
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -119,10 +120,22 @@ const isWorkflowStepStatus = (value: unknown): value is WorkflowStepData["status
   value === "cancelled" ||
   value === "skipped";
 
-const toWorkflowStepStatus = (value: unknown): WorkflowStepData["status"] => {
+const toWorkflowStepStatus = (
+  value: unknown,
+  logger?: Pick<Logger, "warn">,
+): WorkflowStepData["status"] => {
   if (isWorkflowStepStatus(value)) {
     return value;
   }
+
+  const targetLogger = logger ?? workflowReplayLogger;
+  targetLogger.warn(
+    "Unexpected workflow step status in replay checkpoint; defaulting to 'success'",
+    {
+      rawStatusValue: value,
+    },
+  );
+
   return "success";
 };
 
@@ -1022,9 +1035,37 @@ export function createWorkflow<
         : undefined;
     const workflowStateStore = options?.workflowState ?? {};
 
-    // Get previous trace IDs if resuming
+    // Resolve trace lineage for resume/replay links
     let resumedFrom: { traceId: string; spanId: string } | undefined;
-    if (options?.resumeFrom?.executionId) {
+    let replayedFrom:
+      | {
+          traceId: string;
+          spanId: string;
+          executionId: string;
+          stepId: string;
+        }
+      | undefined;
+
+    if (options?.replayFrom?.executionId) {
+      try {
+        const workflowState = await executionMemory.getWorkflowState(
+          options.replayFrom.executionId,
+        );
+        if (workflowState?.metadata?.traceId && workflowState?.metadata?.spanId) {
+          replayedFrom = {
+            traceId: workflowState.metadata.traceId as string,
+            spanId: workflowState.metadata.spanId as string,
+            executionId: options.replayFrom.executionId,
+            stepId: options.replayFrom.stepId,
+          };
+          logger.debug("Found source trace IDs for replay:", replayedFrom);
+        } else {
+          logger.warn("No source trace IDs found in replay workflow state metadata");
+        }
+      } catch (error) {
+        logger.warn("Failed to get source trace IDs for replay:", { error });
+      }
+    } else if (options?.resumeFrom?.executionId) {
       try {
         const workflowState = await executionMemory.getWorkflowState(executionId);
         // Look for trace IDs from the original execution
@@ -1052,6 +1093,7 @@ export function createWorkflow<
       input: input,
       context: contextMap,
       resumedFrom,
+      replayedFrom,
     });
 
     // Wrap entire execution in root span
@@ -1087,7 +1129,7 @@ export function createWorkflow<
       });
 
       // Check if resuming an existing execution
-      if (options?.resumeFrom?.executionId) {
+      if (options?.resumeFrom?.executionId && !options?.replayFrom) {
         runLogger.debug(`Resuming execution ${executionId} for workflow ${id}`);
 
         // Record resume in trace
@@ -2578,7 +2620,7 @@ export function createWorkflow<
         replayStepData[step.id] = {
           input: checkpointSnapshot.input,
           output: checkpointSnapshot.output,
-          status: toWorkflowStepStatus(checkpointSnapshot.status),
+          status: toWorkflowStepStatus(checkpointSnapshot.status, logger),
           error: serializeStepError(checkpointSnapshot.error),
         };
         continue;
@@ -2596,7 +2638,7 @@ export function createWorkflow<
         replayStepData[step.id] = {
           input: fallbackEvent.input,
           output: fallbackEvent.output,
-          status: toWorkflowStepStatus(fallbackEvent.status),
+          status: toWorkflowStepStatus(fallbackEvent.status, logger),
           error: null,
         };
       }
@@ -2682,6 +2724,11 @@ export function createWorkflow<
       context: sourceContext,
       workflowState: effectiveWorkflowState,
       metadata: lineageMetadata,
+      skipStateInit: true,
+      replayFrom: {
+        executionId: timeTravelOptions.executionId,
+        stepId: timeTravelOptions.stepId,
+      },
       resumeFrom: {
         executionId: replayExecutionId,
         resumeStepIndex: targetStepIndex,

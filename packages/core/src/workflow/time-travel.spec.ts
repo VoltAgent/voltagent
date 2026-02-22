@@ -151,6 +151,74 @@ describe.sequential("workflow.timeTravel", () => {
     ).rejects.toThrow("Step 'missing-step' not found");
   });
 
+  it("should reject time travel when source execution is still running", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const runningExecutionId = "exec-running-time-travel";
+
+    const workflow = createWorkflow(
+      {
+        id: "time-travel-running-source",
+        name: "Time Travel Running Source",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const now = new Date();
+    await memory.setWorkflowState(runningExecutionId, {
+      id: runningExecutionId,
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      input: { value: 1 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await expect(
+      workflow.timeTravel({
+        executionId: runningExecutionId,
+        stepId: "step-1",
+      }),
+    ).rejects.toThrow("running");
+  });
+
+  it("should fail with actionable error when execution does not exist", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "time-travel-missing-execution",
+        name: "Time Travel Missing Execution",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    await expect(
+      workflow.timeTravel({
+        executionId: "exec-missing-time-travel",
+        stepId: "step-1",
+      }),
+    ).rejects.toThrow("Workflow state not found");
+  });
+
   it("should keep original execution history unchanged after replay", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
