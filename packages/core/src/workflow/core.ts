@@ -139,6 +139,49 @@ const toWorkflowStepStatus = (
   return "success";
 };
 
+const getEventStepIndex = (event: { stepIndex?: unknown; metadata?: unknown }):
+  | number
+  | undefined => {
+  if (typeof event.stepIndex === "number" && Number.isInteger(event.stepIndex)) {
+    return event.stepIndex;
+  }
+
+  if (!isObjectRecord(event.metadata)) {
+    return undefined;
+  }
+
+  const metadataStepIndex = event.metadata.stepIndex;
+  if (typeof metadataStepIndex === "number" && Number.isInteger(metadataStepIndex)) {
+    return metadataStepIndex;
+  }
+
+  if (typeof metadataStepIndex === "string") {
+    const parsed = Number(metadataStepIndex);
+    if (Number.isInteger(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
+const getEventStepId = (event: { stepId?: unknown; metadata?: unknown }): string | undefined => {
+  if (typeof event.stepId === "string" && event.stepId.length > 0) {
+    return event.stepId;
+  }
+
+  if (!isObjectRecord(event.metadata)) {
+    return undefined;
+  }
+
+  const metadataStepId = event.metadata.stepId;
+  if (typeof metadataStepId === "string" && metadataStepId.length > 0) {
+    return metadataStepId;
+  }
+
+  return undefined;
+};
+
 const deserializeCheckpointStepData = (value: unknown): WorkflowStepData | undefined => {
   if (!isObjectRecord(value) || !isWorkflowStepStatus(value.status)) {
     return undefined;
@@ -1060,10 +1103,17 @@ export function createWorkflow<
           };
           logger.debug("Found source trace IDs for replay:", replayedFrom);
         } else {
-          logger.warn("No source trace IDs found in replay workflow state metadata");
+          logger.warn("No source trace IDs found in replay workflow state metadata", {
+            replayExecutionId: options.replayFrom.executionId,
+            executionId,
+          });
         }
       } catch (error) {
-        logger.warn("Failed to get source trace IDs for replay:", { error });
+        logger.warn("Failed to get source trace IDs for replay:", {
+          error,
+          replayExecutionId: options.replayFrom.executionId,
+          executionId,
+        });
       }
     } else if (options?.resumeFrom?.executionId) {
       try {
@@ -1076,10 +1126,17 @@ export function createWorkflow<
           };
           logger.debug("Found previous trace IDs for resume:", resumedFrom);
         } else {
-          logger.warn("No suspended trace IDs found in workflow state metadata");
+          logger.warn("No suspended trace IDs found in workflow state metadata", {
+            resumeExecutionId: options.resumeFrom.executionId,
+            executionId,
+          });
         }
       } catch (error) {
-        logger.warn("Failed to get previous trace IDs for resume:", { error });
+        logger.warn("Failed to get previous trace IDs for resume:", {
+          error,
+          resumeExecutionId: options.resumeFrom.executionId,
+          executionId,
+        });
       }
     }
 
@@ -2626,13 +2683,23 @@ export function createWorkflow<
         continue;
       }
 
-      const fallbackEvent = sourceStepCompleteEvents.find(
-        (event) =>
+      const fallbackEvent = sourceStepCompleteEvents.find((event) => {
+        const eventStepIndex = getEventStepIndex(event);
+        if (eventStepIndex !== undefined) {
+          return eventStepIndex === index;
+        }
+
+        const eventStepId = getEventStepId(event);
+        if (eventStepId !== undefined) {
+          return eventStepId === step.id;
+        }
+
+        return (
           event.from === step.id ||
           event.name === step.id ||
-          event.from === step.name ||
-          event.name === step.name,
-      );
+          (step.name !== undefined && (event.from === step.name || event.name === step.name))
+        );
+      });
 
       if (fallbackEvent) {
         replayStepData[step.id] = {
@@ -2944,20 +3011,105 @@ export function createWorkflow<
         );
       })();
 
-      replayPromise
-        .then(
+      replayPromise.then(
+        (result) => {
+          if (result.status !== "suspended") {
+            streamController.close();
+          }
+        },
+        () => {
+          streamController.close();
+        },
+      );
+
+      const resumeSuspendedReplayStream = async (
+        suspendedResult: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
+        resumeInput: z.infer<RESUME_SCHEMA>,
+        opts?: { stepId?: string },
+      ): Promise<WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+        if (suspendedResult.status !== "suspended") {
+          throw new Error(`Cannot resume workflow in ${suspendedResult.status} state`);
+        }
+
+        if (!suspendedResult.suspension) {
+          throw new Error("No suspension metadata found");
+        }
+
+        if (!replayOriginalInput) {
+          throw new Error("Missing replay input for resume");
+        }
+
+        let resumeStepIndex = suspendedResult.suspension.suspendedStepIndex;
+        if (opts?.stepId) {
+          const overrideIndex = (steps as BaseStep[]).findIndex((step) => step.id === opts.stepId);
+          if (overrideIndex === -1) {
+            throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
+          }
+          resumeStepIndex = overrideIndex;
+        }
+
+        let resumedResolve: (value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>) => void;
+        let resumedReject: (error: any) => void;
+        const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+          (resolve, reject) => {
+            resumedResolve = resolve;
+            resumedReject = reject;
+          },
+        );
+
+        const resumedSuspendController = createDefaultSuspendController();
+        const resumeOptions: WorkflowRunOptions = {
+          executionId: suspendedResult.executionId,
+          resumeFrom: {
+            executionId: suspendedResult.executionId,
+            checkpoint: suspendedResult.suspension.checkpoint,
+            resumeStepIndex,
+            resumeData: resumeInput,
+          },
+          suspendController: resumedSuspendController,
+        };
+
+        executeInternal(replayOriginalInput, resumeOptions, streamController).then(
           (result) => {
             if (result.status !== "suspended") {
               streamController.close();
             }
+            resumedResolve(result);
           },
-          () => {
+          (error) => {
             streamController.close();
+            resumedReject(error);
           },
-        )
-        .catch(() => {
-          // Error is surfaced through promise-backed fields on stream result.
-        });
+        );
+
+        const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+          executionId: suspendedResult.executionId,
+          workflowId: suspendedResult.workflowId,
+          startAt: suspendedResult.startAt,
+          endAt: resumedPromise.then((r) => r.endAt),
+          status: resumedPromise.then((r) => r.status),
+          result: resumedPromise.then((r) => r.result),
+          suspension: resumedPromise.then((r) => r.suspension),
+          cancellation: resumedPromise.then((r) => r.cancellation),
+          error: resumedPromise.then((r) => r.error),
+          usage: resumedPromise.then((r) => r.usage),
+          resume: async (nextInput: z.infer<RESUME_SCHEMA>, nextOpts?: { stepId?: string }) => {
+            const nextResult = await resumedPromise;
+            return resumeSuspendedReplayStream(nextResult, nextInput, nextOpts);
+          },
+          suspend: (reason?: string) => {
+            resumedSuspendController.suspend(reason);
+          },
+          cancel: (reason?: string) => {
+            resumedSuspendController.cancel(reason);
+          },
+          abort: () => streamController.abort(),
+          toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
+          [Symbol.asyncIterator]: () => streamController.getStream(),
+        };
+
+        return resumedStreamResult;
+      };
 
       const streamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
         executionId,
@@ -2973,97 +3125,7 @@ export function createWorkflow<
         toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
         resume: async (input: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
           const replayResult = await replayPromise;
-          if (replayResult.status !== "suspended") {
-            throw new Error(`Cannot resume workflow in ${replayResult.status} state`);
-          }
-
-          if (!replayResult.suspension) {
-            throw new Error("No suspension metadata found");
-          }
-
-          if (!replayOriginalInput) {
-            throw new Error("Missing replay input for resume");
-          }
-
-          let resumeStepIndex = replayResult.suspension.suspendedStepIndex;
-          if (opts?.stepId) {
-            const overrideIndex = (steps as BaseStep[]).findIndex(
-              (step) => step.id === opts.stepId,
-            );
-            if (overrideIndex === -1) {
-              throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
-            }
-            resumeStepIndex = overrideIndex;
-          }
-
-          let resumedResolve: (
-            value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
-          ) => void;
-          let resumedReject: (error: any) => void;
-          const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
-            (resolve, reject) => {
-              resumedResolve = resolve;
-              resumedReject = reject;
-            },
-          );
-
-          const resumedSuspendController = createDefaultSuspendController();
-          const resumeOptions: WorkflowRunOptions = {
-            executionId: replayResult.executionId,
-            resumeFrom: {
-              executionId: replayResult.executionId,
-              checkpoint: replayResult.suspension.checkpoint,
-              resumeStepIndex,
-              resumeData: input,
-            },
-            suspendController: resumedSuspendController,
-          };
-
-          executeInternal(replayOriginalInput, resumeOptions, streamController)
-            .then(
-              (result) => {
-                if (result.status !== "suspended") {
-                  streamController.close();
-                }
-                resumedResolve(result);
-              },
-              (error) => {
-                streamController.close();
-                resumedReject(error);
-              },
-            )
-            .catch(() => {});
-
-          const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
-            executionId: replayResult.executionId,
-            workflowId: replayResult.workflowId,
-            startAt: replayResult.startAt,
-            endAt: resumedPromise.then((r) => r.endAt),
-            status: resumedPromise.then((r) => r.status),
-            result: resumedPromise.then((r) => r.result),
-            suspension: resumedPromise.then((r) => r.suspension),
-            cancellation: resumedPromise.then((r) => r.cancellation),
-            error: resumedPromise.then((r) => r.error),
-            usage: resumedPromise.then((r) => r.usage),
-            resume: async (input2: z.infer<RESUME_SCHEMA>, opts2?: { stepId?: string }) => {
-              const nextResult = await resumedPromise;
-              if (nextResult.status !== "suspended") {
-                throw new Error(`Cannot resume workflow in ${nextResult.status} state`);
-              }
-              return streamResult.resume(input2, opts2);
-            },
-            suspend: (reason?: string) => {
-              resumedSuspendController.suspend(reason);
-            },
-            cancel: (reason?: string) => {
-              resumedSuspendController.cancel(reason);
-            },
-            abort: () => streamController.abort(),
-            toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
-            [Symbol.asyncIterator]: () => streamController.getStream(),
-          };
-
-          return resumedStreamResult;
+          return resumeSuspendedReplayStream(replayResult, input, opts);
         },
         suspend: (reason?: string) => {
           suspendController.suspend(reason);
@@ -3140,6 +3202,91 @@ export function createWorkflow<
         });
 
       // Return stream result immediately
+      const resumeSuspendedStream = async (
+        suspendedResult: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
+        resumeInput: z.infer<RESUME_SCHEMA>,
+        opts?: { stepId?: string },
+      ): Promise<WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+        if (suspendedResult.status !== "suspended") {
+          throw new Error(`Cannot resume workflow in ${suspendedResult.status} state`);
+        }
+
+        if (!suspendedResult.suspension) {
+          throw new Error("No suspension metadata found");
+        }
+
+        let resumeStepIndex = suspendedResult.suspension.suspendedStepIndex;
+        if (opts?.stepId) {
+          const overrideIndex = (steps as BaseStep[]).findIndex((step) => step.id === opts.stepId);
+          if (overrideIndex === -1) {
+            throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
+          }
+          resumeStepIndex = overrideIndex;
+        }
+
+        let resumedResolve: (value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>) => void;
+        let resumedReject: (error: any) => void;
+        const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+          (resolve, reject) => {
+            resumedResolve = resolve;
+            resumedReject = reject;
+          },
+        );
+
+        const resumedSuspendController = createDefaultSuspendController();
+        const resumeOptions: WorkflowRunOptions = {
+          executionId: suspendedResult.executionId,
+          resumeFrom: {
+            executionId: suspendedResult.executionId,
+            checkpoint: suspendedResult.suspension.checkpoint,
+            resumeStepIndex,
+            resumeData: resumeInput,
+          },
+          suspendController: resumedSuspendController,
+        };
+
+        executeInternal(originalInput, resumeOptions, streamController).then(
+          (result) => {
+            if (result.status !== "suspended") {
+              streamController?.close();
+            }
+            resumedResolve(result);
+          },
+          (error) => {
+            streamController?.close();
+            resumedReject(error);
+          },
+        );
+
+        const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+          executionId: suspendedResult.executionId,
+          workflowId: suspendedResult.workflowId,
+          startAt: suspendedResult.startAt,
+          endAt: resumedPromise.then((r) => r.endAt),
+          status: resumedPromise.then((r) => r.status),
+          result: resumedPromise.then((r) => r.result),
+          suspension: resumedPromise.then((r) => r.suspension),
+          cancellation: resumedPromise.then((r) => r.cancellation),
+          error: resumedPromise.then((r) => r.error),
+          usage: resumedPromise.then((r) => r.usage),
+          resume: async (nextInput: z.infer<RESUME_SCHEMA>, nextOpts?: { stepId?: string }) => {
+            const nextResult = await resumedPromise;
+            return resumeSuspendedStream(nextResult, nextInput, nextOpts);
+          },
+          suspend: (reason?: string) => {
+            resumedSuspendController.suspend(reason);
+          },
+          cancel: (reason?: string) => {
+            resumedSuspendController.cancel(reason);
+          },
+          abort: () => streamController.abort(),
+          toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
+          [Symbol.asyncIterator]: () => streamController.getStream(),
+        };
+
+        return resumedStreamResult;
+      };
+
       const streamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
         executionId,
         workflowId: id,
@@ -3155,117 +3302,7 @@ export function createWorkflow<
 
         resume: async (input: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
           const execResult = await resultPromise;
-          if (execResult.status !== "suspended") {
-            throw new Error(`Cannot resume workflow in ${execResult.status} state`);
-          }
-
-          // Continue with the same stream controller - don't create a new one
-          // Create new promise for the resumed execution
-          let resumedResolve: (
-            value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
-          ) => void;
-          let resumedReject: (error: any) => void;
-          const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
-            (resolve, reject) => {
-              resumedResolve = resolve;
-              resumedReject = reject;
-            },
-          );
-
-          // Use a fresh controller for this resumed run.
-          const resumedSuspendController = createDefaultSuspendController();
-
-          // Execute the resume by calling stream again with resume options
-          const executeResume = async () => {
-            // Get the suspension metadata
-            if (!execResult.suspension) {
-              throw new Error("No suspension metadata found");
-            }
-
-            let resumeStepIndex = execResult.suspension.suspendedStepIndex;
-            if (opts?.stepId) {
-              const overrideIndex = (steps as BaseStep[]).findIndex(
-                (step) => step.id === opts.stepId,
-              );
-              if (overrideIndex === -1) {
-                throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
-              }
-              resumeStepIndex = overrideIndex;
-            }
-
-            // Create resume options to continue from where we left off
-            const resumeOptions: WorkflowRunOptions = {
-              executionId: execResult.executionId,
-              resumeFrom: {
-                executionId: execResult.executionId,
-                checkpoint: execResult.suspension.checkpoint,
-                resumeStepIndex,
-                resumeData: input,
-              },
-              suspendController: resumedSuspendController,
-            };
-
-            // Re-execute with streaming from the suspension point
-            // This will emit events to the same stream controller
-            const resumed = await executeInternal(
-              originalInput, // Use the original input saved in closure
-              resumeOptions,
-              streamController,
-            );
-            return resumed;
-          };
-
-          // Start resume execution and emit events to the same stream
-          executeResume()
-            .then(
-              (result) => {
-                // Only close stream if workflow completed or errored (not suspended again)
-                if (result.status !== "suspended") {
-                  streamController?.close();
-                }
-                resumedResolve(result);
-              },
-              (error) => {
-                streamController?.close();
-                resumedReject(error);
-              },
-            )
-            .catch(() => {});
-
-          // Return a stream result that continues using the same stream
-          const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
-            executionId: execResult.executionId, // Keep same execution ID
-            workflowId: execResult.workflowId,
-            startAt: execResult.startAt,
-            endAt: resumedPromise.then((r) => r.endAt),
-            status: resumedPromise.then((r) => r.status),
-            result: resumedPromise.then((r) => r.result),
-            suspension: resumedPromise.then((r) => r.suspension),
-            cancellation: resumedPromise.then((r) => r.cancellation),
-            error: resumedPromise.then((r) => r.error),
-            usage: resumedPromise.then((r) => r.usage),
-            resume: async (input2: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
-              // Resume again using the same stream
-              const nextResult = await resumedPromise;
-              if (nextResult.status !== "suspended") {
-                throw new Error(`Cannot resume workflow in ${nextResult.status} state`);
-              }
-              // Recursively call resume on the stream result (which will use the same stream controller)
-              return streamResult.resume(input2, opts);
-            },
-            suspend: (reason?: string) => {
-              resumedSuspendController.suspend(reason);
-            },
-            cancel: (reason?: string) => {
-              resumedSuspendController.cancel(reason);
-            },
-            abort: () => streamController.abort(),
-            toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
-            // Continue using the same stream iterator
-            [Symbol.asyncIterator]: () => streamController.getStream(),
-          };
-
-          return resumedStreamResult;
+          return resumeSuspendedStream(execResult, input, opts);
         },
         suspend: (reason?: string) => {
           suspendController.suspend(reason);

@@ -1,4 +1,9 @@
-import type { ServerProviderDeps, WorkflowRunQuery, WorkflowStateEntry } from "@voltagent/core";
+import type {
+  ServerProviderDeps,
+  Workflow,
+  WorkflowRunQuery,
+  WorkflowStateEntry,
+} from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
@@ -52,6 +57,10 @@ type ResumableStreamingWorkflowExecution = StreamingWorkflowExecution & {
     },
   ) => Promise<ResumableStreamingWorkflowExecution>;
 };
+
+type WorkflowTimeTravelRequest = Parameters<
+  NonNullable<Workflow<any, any, any, any>["timeTravel"]>
+>[0];
 
 function parseReplaySequence(value: StreamQueryValue): number | undefined {
   if (value === undefined || value === null || value === "") {
@@ -855,21 +864,9 @@ export async function handleReplayWorkflow(
       };
     }
 
-    const workflowWithReplay = registeredWorkflow.workflow as typeof registeredWorkflow.workflow & {
-      timeTravel?: (options: {
-        executionId: string;
-        stepId: string;
-        inputData?: unknown;
-        resumeData?: unknown;
-        workflowStateOverride?: Record<string, unknown>;
-      }) => Promise<{
-        executionId: string;
-        startAt: Date | string;
-        endAt: Date | string;
-        status: string;
-        result: unknown;
-      }>;
-    };
+    const workflowWithReplay = registeredWorkflow.workflow as Partial<
+      Pick<Workflow<any, any, any, any>, "timeTravel">
+    >;
 
     if (typeof workflowWithReplay.timeTravel !== "function") {
       return {
@@ -879,13 +876,14 @@ export async function handleReplayWorkflow(
       };
     }
 
-    const result = await workflowWithReplay.timeTravel({
+    const replayOptions: WorkflowTimeTravelRequest = {
       executionId,
       stepId: stepId.trim(),
       inputData,
       resumeData,
       workflowStateOverride,
-    });
+    };
+    const result = await workflowWithReplay.timeTravel(replayOptions);
 
     return {
       success: true,
@@ -906,8 +904,7 @@ export async function handleReplayWorkflow(
       ? 404
       : normalizedMessage.includes("cannot time travel") ||
           normalizedMessage.includes("still running") ||
-          normalizedMessage.includes("belongs to workflow") ||
-          normalizedMessage.includes("step")
+          normalizedMessage.includes("belongs to workflow")
         ? 400
         : 500;
 

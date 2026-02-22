@@ -457,7 +457,7 @@ export const WorkflowResumeResponseSchema = z.object({
 });
 
 export const WorkflowReplayRequestSchema = z.object({
-  stepId: z.string().describe("Step ID to replay from"),
+  stepId: z.string().min(1).describe("Step ID to replay from"),
   inputData: z.any().optional().describe("Optional input override for the selected step"),
   resumeData: z.any().optional().describe("Optional resume payload override"),
   workflowStateOverride: z

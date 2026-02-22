@@ -561,9 +561,29 @@ Create a deterministic replay execution from a historical run and selected step.
 }
 ```
 
+**Response (Suspended):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_replay_123",
+    "startAt": "2024-01-15T11:00:00.000Z",
+    "endAt": null,
+    "status": "suspended",
+    "result": null,
+    "suspension": {
+      "suspendedAt": "2024-01-15T11:00:01.250Z",
+      "reason": "Awaiting manual approval",
+      "suspendedStepIndex": 2
+    }
+  }
+}
+```
+
 **Error Cases:**
 
-- `400` - Invalid replay parameters (for example invalid `stepId` or source execution still running)
+- `400` - Invalid replay parameters (for example, invalid `stepId` or source execution still running)
 - `404` - Workflow or source execution not found
 - `500` - Replay failed due to server error
 
@@ -627,6 +647,8 @@ Retrieve the current state of a workflow execution.
     "executionId": "exec_1234567890_abc123",
     "workflowId": "order-approval",
     "status": "suspended",
+    "replayedFromExecutionId": "exec_0987654321_replay",
+    "replayFromStepId": "step-approval-1",
     "startAt": "2024-01-15T10:00:00.000Z",
     "suspension": {
       "suspendedAt": "2024-01-15T10:00:02.500Z",

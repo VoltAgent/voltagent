@@ -10,6 +10,7 @@ describe.sequential("workflow.timeTravel", () => {
   beforeEach(() => {
     const registry = WorkflowRegistry.getInstance();
     (registry as any).workflows.clear();
+    (registry as any).activeExecutions.clear();
   });
 
   it("should replay from middle step with a new execution id", async () => {
