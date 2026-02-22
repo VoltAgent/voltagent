@@ -58,6 +58,7 @@ import type {
   WorkflowStepState,
   WorkflowStreamResult,
   WorkflowStreamWriter,
+  WorkflowTimeTravelOptions,
 } from "./types";
 
 export type { AgentConfig } from "./steps/and-agent";
@@ -985,6 +986,40 @@ export class WorkflowChain<
       ...this.steps,
     );
     return workflow.startAsync(input, options);
+  }
+
+  /**
+   * Replay a historical execution from the selected step
+   */
+  async timeTravel(
+    options: WorkflowTimeTravelOptions,
+  ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return (await workflow.timeTravel(options)) as unknown as WorkflowExecutionResult<
+      RESULT_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Stream a historical replay from the selected step
+   */
+  timeTravelStream(
+    options: WorkflowTimeTravelOptions,
+  ): WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return workflow.timeTravelStream(options) as unknown as WorkflowStreamResult<
+      RESULT_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**

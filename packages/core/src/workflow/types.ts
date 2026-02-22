@@ -224,6 +224,29 @@ export interface WorkflowStartAsyncResult {
   startAt: Date;
 }
 
+export interface WorkflowTimeTravelOptions {
+  /**
+   * Source execution ID to replay from
+   */
+  executionId: string;
+  /**
+   * Step ID to restart execution from
+   */
+  stepId: string;
+  /**
+   * Optional override for the selected step input/state data
+   */
+  inputData?: DangerouslyAllowAny;
+  /**
+   * Optional resume payload passed as `resumeData` to the selected step
+   */
+  resumeData?: DangerouslyAllowAny;
+  /**
+   * Optional override for shared workflow state during replay
+   */
+  workflowStateOverride?: WorkflowStateStore;
+}
+
 export interface WorkflowRetryConfig {
   /**
    * Number of retry attempts for a step when it throws an error
@@ -733,6 +756,20 @@ export type Workflow<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ) => Promise<WorkflowStartAsyncResult>;
+  /**
+   * Replay an existing execution from a selected historical step.
+   * A new execution ID is created and linked to the source run for audit safety.
+   */
+  timeTravel: (
+    options: WorkflowTimeTravelOptions,
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Stream replay execution from a selected historical step.
+   * A new execution ID is created and linked to the source run for audit safety.
+   */
+  timeTravelStream: (
+    options: WorkflowTimeTravelOptions,
+  ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
   /**
    * Restart an interrupted execution from persisted checkpoint state
    * @param executionId - Execution ID to restart

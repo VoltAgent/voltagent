@@ -54,6 +54,7 @@ import type {
   WorkflowStepData,
   WorkflowStreamResult,
   WorkflowSuspensionMetadata,
+  WorkflowTimeTravelOptions,
 } from "./types";
 
 export const VOLTAGENT_RESTART_CHECKPOINT_KEY = "__voltagent_restart_checkpoint";
@@ -118,6 +119,13 @@ const isWorkflowStepStatus = (value: unknown): value is WorkflowStepData["status
   value === "cancelled" ||
   value === "skipped";
 
+const toWorkflowStepStatus = (value: unknown): WorkflowStepData["status"] => {
+  if (isWorkflowStepStatus(value)) {
+    return value;
+  }
+  return "success";
+};
+
 const deserializeCheckpointStepData = (value: unknown): WorkflowStepData | undefined => {
   if (!isObjectRecord(value) || !isWorkflowStepStatus(value.status)) {
     return undefined;
@@ -175,6 +183,23 @@ const toValidContextMap = (context: unknown): Map<string | symbol, unknown> | un
   }
 
   return new Map(entries);
+};
+
+const toContextEntries = (
+  context: Map<string | symbol, unknown> | undefined,
+): Array<[string | symbol, unknown]> | undefined =>
+  context ? Array.from(context.entries()) : undefined;
+
+const withoutRestartCheckpointMetadata = (
+  metadata?: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const nextMetadata = { ...metadata };
+  delete nextMetadata[VOLTAGENT_RESTART_CHECKPOINT_KEY];
+  return nextMetadata;
 };
 
 const getRestartCheckpointFromMetadata = (
@@ -2493,6 +2518,193 @@ export function createWorkflow<
     };
   };
 
+  type PreparedTimeTravelExecution = {
+    executionId: string;
+    startAt: Date;
+    workflowInput: WorkflowInput<INPUT_SCHEMA>;
+    executionOptions: WorkflowRunOptions;
+  };
+
+  const prepareTimeTravelExecution = async (
+    timeTravelOptions: WorkflowTimeTravelOptions,
+    replayExecutionId: string = randomUUID(),
+    replayStartAt: Date = new Date(),
+  ): Promise<PreparedTimeTravelExecution> => {
+    const sourceState = await defaultMemory.getWorkflowState(timeTravelOptions.executionId);
+    if (!sourceState) {
+      throw new Error(`Workflow state not found: ${timeTravelOptions.executionId}`);
+    }
+
+    if (sourceState.workflowId !== id) {
+      throw new Error(
+        `Execution ${timeTravelOptions.executionId} belongs to workflow '${sourceState.workflowId}', expected '${id}'`,
+      );
+    }
+
+    if (sourceState.status === "running") {
+      throw new Error(
+        `Execution ${timeTravelOptions.executionId} is still running. Use restart() for crash recovery or wait for completion before time travel.`,
+      );
+    }
+
+    const targetStepIndex = (steps as BaseStep[]).findIndex(
+      (step) => step.id === timeTravelOptions.stepId,
+    );
+    if (targetStepIndex === -1) {
+      throw new Error(`Step '${timeTravelOptions.stepId}' not found in workflow '${id}'`);
+    }
+
+    const workflowStartEventInput = sourceState.events?.find(
+      (event) => event.type === "workflow-start",
+    )?.input;
+    const sourceWorkflowInput = sourceState.input ?? workflowStartEventInput;
+    if (sourceWorkflowInput === undefined) {
+      throw new Error(
+        `Cannot time travel execution ${timeTravelOptions.executionId}: missing persisted workflow input`,
+      );
+    }
+
+    const sourceCheckpoint = getRestartCheckpointFromMetadata(sourceState.metadata);
+    const sourceStepData = sourceCheckpoint?.stepData ?? {};
+    const replayStepData: Record<string, WorkflowCheckpointStepData> = {};
+
+    const sourceStepCompleteEvents =
+      sourceState.events?.filter((event) => event.type === "step-complete") ?? [];
+
+    for (let index = 0; index < targetStepIndex; index += 1) {
+      const step = (steps as BaseStep[])[index];
+      const checkpointSnapshot = sourceStepData[step.id];
+      if (checkpointSnapshot) {
+        replayStepData[step.id] = {
+          input: checkpointSnapshot.input,
+          output: checkpointSnapshot.output,
+          status: toWorkflowStepStatus(checkpointSnapshot.status),
+          error: serializeStepError(checkpointSnapshot.error),
+        };
+        continue;
+      }
+
+      const fallbackEvent = sourceStepCompleteEvents.find(
+        (event) =>
+          event.from === step.id ||
+          event.name === step.id ||
+          event.from === step.name ||
+          event.name === step.name,
+      );
+
+      if (fallbackEvent) {
+        replayStepData[step.id] = {
+          input: fallbackEvent.input,
+          output: fallbackEvent.output,
+          status: toWorkflowStepStatus(fallbackEvent.status),
+          error: null,
+        };
+      }
+    }
+
+    const missingHistoricalSteps = (steps as BaseStep[])
+      .slice(0, targetStepIndex)
+      .map((step) => step.id)
+      .filter((stepId) => replayStepData[stepId] === undefined);
+    if (missingHistoricalSteps.length > 0) {
+      throw new Error(
+        `Cannot time travel from step '${timeTravelOptions.stepId}': missing historical snapshots for steps ${missingHistoricalSteps.join(", ")}`,
+      );
+    }
+
+    const previousStepOutput =
+      targetStepIndex > 0
+        ? replayStepData[(steps as BaseStep[])[targetStepIndex - 1]?.id]?.output
+        : undefined;
+    const sourceTargetStepInput = sourceStepData[timeTravelOptions.stepId]?.input;
+    const checkpointInputFallback =
+      sourceCheckpoint?.resumeStepIndex === targetStepIndex
+        ? sourceCheckpoint.stepExecutionState
+        : undefined;
+
+    const replayStepInput =
+      timeTravelOptions.inputData ??
+      sourceTargetStepInput ??
+      previousStepOutput ??
+      (targetStepIndex === 0 ? sourceWorkflowInput : checkpointInputFallback);
+
+    if (replayStepInput === undefined) {
+      throw new Error(
+        `Cannot time travel from step '${timeTravelOptions.stepId}': missing historical input data (provide inputData override).`,
+      );
+    }
+
+    const effectiveWorkflowState =
+      timeTravelOptions.workflowStateOverride ??
+      sourceCheckpoint?.workflowState ??
+      sourceState.workflowState ??
+      {};
+
+    const sourceContext = toValidContextMap(sourceState.context);
+    const lineageMetadata = {
+      ...(withoutRestartCheckpointMetadata(sourceState.metadata) ?? {}),
+      replayedFromExecutionId: timeTravelOptions.executionId,
+      replayFromStepId: timeTravelOptions.stepId,
+      replayedAt: replayStartAt.toISOString(),
+    };
+
+    await defaultMemory.setWorkflowState(replayExecutionId, {
+      id: replayExecutionId,
+      workflowId: id,
+      workflowName: name,
+      status: "running",
+      input: sourceWorkflowInput,
+      context: toContextEntries(sourceContext),
+      workflowState: effectiveWorkflowState,
+      userId: sourceState.userId,
+      conversationId: sourceState.conversationId,
+      replayedFromExecutionId: timeTravelOptions.executionId,
+      replayFromStepId: timeTravelOptions.stepId,
+      metadata: lineageMetadata,
+      createdAt: replayStartAt,
+      updatedAt: replayStartAt,
+    });
+
+    const completedStepsData = (steps as BaseStep[])
+      .slice(0, targetStepIndex)
+      .map((step, stepIndex) => ({
+        stepId: step.id,
+        stepName: step.name ?? step.id,
+        stepIndex,
+        output: replayStepData[step.id]?.output,
+        status: replayStepData[step.id]?.status,
+      }));
+
+    const executionOptions: WorkflowRunOptions = {
+      executionId: replayExecutionId,
+      userId: sourceState.userId,
+      conversationId: sourceState.conversationId,
+      context: sourceContext,
+      workflowState: effectiveWorkflowState,
+      metadata: lineageMetadata,
+      resumeFrom: {
+        executionId: replayExecutionId,
+        resumeStepIndex: targetStepIndex,
+        lastEventSequence: sourceCheckpoint?.eventSequence,
+        resumeData: timeTravelOptions.resumeData,
+        checkpoint: {
+          stepExecutionState: replayStepInput,
+          completedStepsData,
+          workflowState: effectiveWorkflowState,
+          stepData: replayStepData,
+          usage: sourceCheckpoint?.usage,
+        },
+      },
+    };
+
+    return {
+      executionId: replayExecutionId,
+      startAt: replayStartAt,
+      workflowInput: sourceWorkflowInput as WorkflowInput<INPUT_SCHEMA>,
+      executionOptions,
+    };
+  };
+
   const workflow: Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA> & {
     __setDefaultMemory?: (memory: MemoryV2) => void;
   } = {
@@ -2652,6 +2864,173 @@ export function createWorkflow<
         workflowId: id,
         startAt,
       };
+    },
+    timeTravel: async (
+      timeTravelOptions: WorkflowTimeTravelOptions,
+    ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+      const preparedReplay = await prepareTimeTravelExecution(timeTravelOptions);
+      return executeInternal(preparedReplay.workflowInput, preparedReplay.executionOptions);
+    },
+    timeTravelStream: (timeTravelOptions: WorkflowTimeTravelOptions) => {
+      const streamController = new WorkflowStreamController();
+      const executionId = randomUUID();
+      const startAt = new Date();
+      const suspendController = createDefaultSuspendController();
+
+      let replayOriginalInput: WorkflowInput<INPUT_SCHEMA> | undefined;
+
+      const replayPromise = (async () => {
+        const preparedReplay = await prepareTimeTravelExecution(
+          timeTravelOptions,
+          executionId,
+          startAt,
+        );
+        replayOriginalInput = preparedReplay.workflowInput;
+        const replayExecutionOptions: WorkflowRunOptions = {
+          ...preparedReplay.executionOptions,
+          suspendController,
+        };
+        return executeInternal(
+          preparedReplay.workflowInput,
+          replayExecutionOptions,
+          streamController,
+        );
+      })();
+
+      replayPromise
+        .then(
+          (result) => {
+            if (result.status !== "suspended") {
+              streamController.close();
+            }
+          },
+          () => {
+            streamController.close();
+          },
+        )
+        .catch(() => {
+          // Error is surfaced through promise-backed fields on stream result.
+        });
+
+      const streamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+        executionId,
+        workflowId: id,
+        startAt,
+        endAt: replayPromise.then((r) => r.endAt),
+        status: replayPromise.then((r) => r.status),
+        result: replayPromise.then((r) => r.result),
+        suspension: replayPromise.then((r) => r.suspension),
+        cancellation: replayPromise.then((r) => r.cancellation),
+        error: replayPromise.then((r) => r.error),
+        usage: replayPromise.then((r) => r.usage),
+        toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
+        resume: async (input: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
+          const replayResult = await replayPromise;
+          if (replayResult.status !== "suspended") {
+            throw new Error(`Cannot resume workflow in ${replayResult.status} state`);
+          }
+
+          if (!replayResult.suspension) {
+            throw new Error("No suspension metadata found");
+          }
+
+          if (!replayOriginalInput) {
+            throw new Error("Missing replay input for resume");
+          }
+
+          let resumeStepIndex = replayResult.suspension.suspendedStepIndex;
+          if (opts?.stepId) {
+            const overrideIndex = (steps as BaseStep[]).findIndex(
+              (step) => step.id === opts.stepId,
+            );
+            if (overrideIndex === -1) {
+              throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
+            }
+            resumeStepIndex = overrideIndex;
+          }
+
+          let resumedResolve: (
+            value: WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>,
+          ) => void;
+          let resumedReject: (error: any) => void;
+          const resumedPromise = new Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>(
+            (resolve, reject) => {
+              resumedResolve = resolve;
+              resumedReject = reject;
+            },
+          );
+
+          const resumedSuspendController = createDefaultSuspendController();
+          const resumeOptions: WorkflowRunOptions = {
+            executionId: replayResult.executionId,
+            resumeFrom: {
+              executionId: replayResult.executionId,
+              checkpoint: replayResult.suspension.checkpoint,
+              resumeStepIndex,
+              resumeData: input,
+            },
+            suspendController: resumedSuspendController,
+          };
+
+          executeInternal(replayOriginalInput, resumeOptions, streamController)
+            .then(
+              (result) => {
+                if (result.status !== "suspended") {
+                  streamController.close();
+                }
+                resumedResolve(result);
+              },
+              (error) => {
+                streamController.close();
+                resumedReject(error);
+              },
+            )
+            .catch(() => {});
+
+          const resumedStreamResult: WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> = {
+            executionId: replayResult.executionId,
+            workflowId: replayResult.workflowId,
+            startAt: replayResult.startAt,
+            endAt: resumedPromise.then((r) => r.endAt),
+            status: resumedPromise.then((r) => r.status),
+            result: resumedPromise.then((r) => r.result),
+            suspension: resumedPromise.then((r) => r.suspension),
+            cancellation: resumedPromise.then((r) => r.cancellation),
+            error: resumedPromise.then((r) => r.error),
+            usage: resumedPromise.then((r) => r.usage),
+            resume: async (input2: z.infer<RESUME_SCHEMA>, opts2?: { stepId?: string }) => {
+              const nextResult = await resumedPromise;
+              if (nextResult.status !== "suspended") {
+                throw new Error(`Cannot resume workflow in ${nextResult.status} state`);
+              }
+              return streamResult.resume(input2, opts2);
+            },
+            suspend: (reason?: string) => {
+              resumedSuspendController.suspend(reason);
+            },
+            cancel: (reason?: string) => {
+              resumedSuspendController.cancel(reason);
+            },
+            abort: () => streamController.abort(),
+            toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
+            [Symbol.asyncIterator]: () => streamController.getStream(),
+          };
+
+          return resumedStreamResult;
+        },
+        suspend: (reason?: string) => {
+          suspendController.suspend(reason);
+        },
+        cancel: (reason?: string) => {
+          suspendController.cancel(reason);
+        },
+        abort: () => {
+          streamController.abort();
+        },
+        [Symbol.asyncIterator]: () => streamController.getStream(),
+      };
+
+      return streamResult;
     },
     restart: (executionId: string, options?: WorkflowRunOptions) => {
       return restartExecution(executionId, options);

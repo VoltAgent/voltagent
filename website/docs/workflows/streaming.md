@@ -42,11 +42,12 @@ Workflows emit these event types during execution:
 
 ### Consuming the Stream
 
-VoltAgent provides three methods for workflow execution:
+VoltAgent provides four methods for workflow execution:
 
 - `.stream()` - Real-time execution with event streaming
 - `.run()` - Standard execution without streaming
 - `.startAsync()` - Fire-and-forget execution (returns immediately)
+- `.timeTravelStream()` - Real-time streaming replay from a historical execution step
 
 ```typescript
 // Method 1: Stream execution for real-time events
@@ -84,6 +85,21 @@ console.log("Started execution:", started.executionId);
 // Later, inspect status/output from workflow memory
 const state = await workflow.memory.getWorkflowState(started.executionId);
 console.log("Current status:", state?.status);
+
+// Method 4: Stream a deterministic replay from a historical run
+const sourceExecution = await workflow.run(input);
+
+const replayStream = workflow.timeTravelStream({
+  executionId: sourceExecution.executionId,
+  stepId: "step-2", // Replay starts from this step
+});
+
+for await (const event of replayStream) {
+  console.log("Replay event:", event.type, event.from);
+}
+
+const replayResult = await replayStream.result;
+console.log("Replay result:", replayResult);
 ```
 
 ## Writer API
@@ -786,6 +802,22 @@ interface WorkflowStartAsyncResult {
   startAt: Date;
 }
 ```
+
+### WorkflowTimeTravelOptions
+
+Used by `.timeTravel()` and `.timeTravelStream()` to replay a historical execution:
+
+```typescript
+interface WorkflowTimeTravelOptions {
+  executionId: string; // Source execution ID
+  stepId: string; // Step to replay from
+  inputData?: unknown; // Optional selected-step input override
+  resumeData?: unknown; // Optional resume payload override
+  workflowStateOverride?: Record<string, unknown>; // Optional shared workflow state override
+}
+```
+
+`.timeTravelStream()` returns `WorkflowStreamResult`, just like `.stream()`, but uses historical state as its starting point.
 
 ### Key Differences
 
