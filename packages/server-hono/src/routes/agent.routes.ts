@@ -14,6 +14,8 @@ import {
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
+  WorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
   WorkflowStreamEventSchema,
@@ -59,6 +61,8 @@ export {
   WorkflowSuspendResponseSchema,
   WorkflowCancelRequestSchema,
   WorkflowCancelResponseSchema,
+  WorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
 } from "@voltagent/server-core";
@@ -1090,4 +1094,67 @@ export const resumeWorkflowRoute = createRoute({
   tags: [...WORKFLOW_ROUTES.resumeWorkflow.tags],
   summary: WORKFLOW_ROUTES.resumeWorkflow.summary,
   description: WORKFLOW_ROUTES.resumeWorkflow.description,
+});
+
+// Replay workflow route
+export const replayWorkflowRoute = createRoute({
+  method: WORKFLOW_ROUTES.replayWorkflow.method,
+  path: WORKFLOW_ROUTES.replayWorkflow.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: WorkflowReplayRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: WorkflowReplayResponseSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[200]?.description ||
+        "Successful workflow replay",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[400]?.description || "Invalid replay request",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[404]?.description ||
+        "Workflow or execution not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: WORKFLOW_ROUTES.replayWorkflow.responses?.[500]?.description || "Server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.replayWorkflow.tags],
+  summary: WORKFLOW_ROUTES.replayWorkflow.summary,
+  description: WORKFLOW_ROUTES.replayWorkflow.description,
 });

@@ -68,6 +68,7 @@ import {
   handleListTools,
   handleListWorkflowRuns,
   handleReadAgentWorkspaceFile,
+  handleReplayWorkflow,
   handleResumeChatStream,
   handleResumeWorkflow,
   handleSaveMemoryMessages,
@@ -563,6 +564,17 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     }
     const response = await handleResumeWorkflow(workflowId, executionId, body, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.post(WORKFLOW_ROUTES.replayWorkflow.path, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleReplayWorkflow(workflowId, executionId, body, deps, logger);
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.get(WORKFLOW_ROUTES.listWorkflowRuns.path, async (c) => {

@@ -1,6 +1,13 @@
-import type { ServerProviderDeps, WorkflowRunQuery, WorkflowStateEntry } from "@voltagent/core";
+import type {
+  ServerProviderDeps,
+  Workflow,
+  WorkflowRunQuery,
+  WorkflowStateEntry,
+} from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
+import type { z } from "zod";
+import type { WorkflowReplayRequestSchema } from "../schemas/agent.schemas";
 import type { ApiResponse, ErrorResponse } from "../types";
 import { processWorkflowOptions } from "../utils/options";
 import { formatSSE } from "../utils/sse";
@@ -52,6 +59,11 @@ type ResumableStreamingWorkflowExecution = StreamingWorkflowExecution & {
     },
   ) => Promise<ResumableStreamingWorkflowExecution>;
 };
+
+type WorkflowReplayRequestBody = z.infer<typeof WorkflowReplayRequestSchema>;
+type WorkflowTimeTravelRequest = Parameters<
+  NonNullable<Workflow<any, any, any, any>["timeTravel"]>
+>[0];
 
 function parseReplaySequence(value: StreamQueryValue): number | undefined {
   if (value === undefined || value === null || value === "") {
@@ -820,6 +832,96 @@ export async function handleResumeWorkflow(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to resume workflow",
+    };
+  }
+}
+
+/**
+ * Handler for replaying a workflow execution from a historical step
+ * Returns replay result
+ */
+export async function handleReplayWorkflow(
+  workflowId: string,
+  executionId: string,
+  body: WorkflowReplayRequestBody | undefined,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    const { stepId, inputData, resumeData, workflowStateOverride } = body || {};
+
+    if (typeof stepId !== "string" || stepId.trim().length === 0) {
+      return {
+        success: false,
+        error: "stepId is required",
+        httpStatus: 400,
+      };
+    }
+
+    const registeredWorkflow = deps.workflowRegistry.getWorkflow(workflowId);
+    if (!registeredWorkflow) {
+      return {
+        success: false,
+        error: "Workflow not found",
+        httpStatus: 404,
+      };
+    }
+
+    const workflowWithReplay = registeredWorkflow.workflow as Partial<
+      Pick<Workflow<any, any, any, any>, "timeTravel">
+    >;
+
+    if (typeof workflowWithReplay.timeTravel !== "function") {
+      return {
+        success: false,
+        error: "Workflow does not support replay",
+        httpStatus: 400,
+      };
+    }
+
+    const replayOptions: WorkflowTimeTravelRequest = {
+      executionId,
+      stepId: stepId.trim(),
+      inputData,
+      resumeData,
+      workflowStateOverride,
+    };
+    const result = await workflowWithReplay.timeTravel(replayOptions);
+
+    return {
+      success: true,
+      data: {
+        executionId: result.executionId,
+        startAt: result.startAt instanceof Date ? result.startAt.toISOString() : result.startAt,
+        endAt: result.endAt instanceof Date ? result.endAt.toISOString() : result.endAt,
+        status: result.status,
+        result: result.result,
+      },
+    };
+  } catch (error) {
+    logger.error("Failed to replay workflow", { error, workflowId, executionId });
+
+    const message = error instanceof Error ? error.message : "Failed to replay workflow";
+    const normalizedMessage = message.toLowerCase();
+    const isReplayPreparationError =
+      normalizedMessage.includes("missing historical snapshots") ||
+      normalizedMessage.includes("missing snapshot") ||
+      normalizedMessage.includes("missing input") ||
+      normalizedMessage.includes("no historical") ||
+      normalizedMessage.includes("missing history");
+    const httpStatus = normalizedMessage.includes("not found")
+      ? 404
+      : normalizedMessage.includes("cannot time travel") ||
+          normalizedMessage.includes("still running") ||
+          normalizedMessage.includes("belongs to workflow") ||
+          isReplayPreparationError
+        ? 400
+        : 500;
+
+    return {
+      success: false,
+      error: message,
+      httpStatus,
     };
   }
 }
