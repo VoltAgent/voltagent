@@ -1,5 +1,14 @@
 # @voltagent/server-core
 
+## 2.1.8
+
+### Patch Changes
+
+- [#1089](https://github.com/VoltAgent/voltagent/pull/1089) [`c007b3e`](https://github.com/VoltAgent/voltagent/commit/c007b3e8364113e6ad7261ea40dc6c77590d46f6) Thanks [@chrisisagile](https://github.com/chrisisagile)! - Fix workflow execution request schema to use explicit record key types for Zod v4 compatibility.
+
+- Updated dependencies [[`e15bb6e`](https://github.com/VoltAgent/voltagent/commit/e15bb6e6584e179b1a69925b597557402d957325), [`160e60b`](https://github.com/VoltAgent/voltagent/commit/160e60b29603146211b51a7962ad770202feacb5), [`b610ec6`](https://github.com/VoltAgent/voltagent/commit/b610ec6ae335980e73f8a144e3e8a509e9da8265)]:
+  - @voltagent/core@2.5.0
+
 ## 2.1.7
 
 ### Patch Changes
