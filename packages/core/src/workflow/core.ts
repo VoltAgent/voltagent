@@ -60,30 +60,34 @@ import type {
 export const VOLTAGENT_RESTART_CHECKPOINT_KEY = "__voltagent_restart_checkpoint";
 const workflowReplayLogger = new LoggerProxy({ component: "workflow-core-replay" });
 const WORKFLOW_BAIL_SIGNAL = "WORKFLOW_BAIL_SIGNAL";
+const WORKFLOW_CANCELLED = "WORKFLOW_CANCELLED";
 const WORKFLOW_ABORT_REASON_DEFAULT = "Workflow aborted by step";
 
-class WorkflowBailSignal extends Error {
-  readonly result: unknown;
+class WorkflowBailSignal<RESULT = unknown> extends Error {
+  readonly result: RESULT | undefined;
 
-  constructor(result?: unknown) {
+  constructor(result?: RESULT) {
     super(WORKFLOW_BAIL_SIGNAL);
     this.name = "WorkflowBailSignal";
     this.result = result;
   }
 }
 
+// Cancellation detection in execution paths depends on `error.message === WORKFLOW_CANCELLED`.
+// Keep this signal message aligned with those checks.
 class WorkflowAbortSignal extends Error {
   readonly reason?: string;
 
   constructor(reason?: string) {
-    super("WORKFLOW_CANCELLED");
+    super(WORKFLOW_CANCELLED);
     this.name = "WorkflowAbortSignal";
     this.reason = reason;
   }
 }
 
-const isWorkflowBailSignal = (error: unknown): error is WorkflowBailSignal =>
-  error instanceof WorkflowBailSignal;
+const isWorkflowBailSignal = <RESULT = unknown>(
+  error: unknown,
+): error is WorkflowBailSignal<RESULT> => error instanceof WorkflowBailSignal;
 
 const isWorkflowAbortSignal = (error: unknown): error is WorkflowAbortSignal =>
   error instanceof WorkflowAbortSignal;
@@ -1676,6 +1680,73 @@ export function createWorkflow<
         );
       };
 
+      const completeBail = async ({
+        bailSignal,
+        step,
+        stepName,
+        stepIndex,
+        span,
+      }: {
+        bailSignal: WorkflowBailSignal<z.infer<RESULT_SCHEMA>>;
+        step: BaseStep;
+        stepName: string;
+        stepIndex: number;
+        span?: ReturnType<typeof traceContext.createStepSpan>;
+      }): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+        const finalResult = bailSignal.result !== undefined ? bailSignal.result : null;
+        const spanToEnd = span ?? executionContext.currentStepSpan;
+
+        if (spanToEnd) {
+          traceContext.endStepSpan(spanToEnd, "completed", {
+            output: finalResult,
+            attributes: {
+              "workflow.step.bailed": true,
+            },
+          });
+
+          if (executionContext.currentStepSpan === spanToEnd) {
+            executionContext.currentStepSpan = undefined;
+          }
+        }
+
+        const stepData = executionContext.stepData.get(step.id);
+        if (stepData) {
+          stepData.output = finalResult;
+          stepData.status = "success";
+          stepData.error = null;
+        }
+
+        emitAndCollectEvent({
+          type: "step-complete",
+          executionId,
+          from: stepName,
+          input: stateManager.state.data,
+          output: finalResult,
+          status: "success",
+          context: contextMap,
+          timestamp: new Date().toISOString(),
+          stepIndex,
+          stepType: step.type,
+          metadata: {
+            bailed: true,
+          },
+        });
+
+        await hooks?.onStepEnd?.(stateManager.state);
+
+        runLogger.debug(`Workflow bailed at step ${stepIndex + 1}: ${stepName}`, {
+          stepIndex,
+          stepName,
+          output: finalResult,
+        });
+
+        return completeSuccessfulExecution(finalResult, {
+          stepId: step.id,
+          stepName,
+          stepIndex,
+        });
+      };
+
       try {
         if (workflowGuardrailRuntime && guardrailSets.input.length > 0) {
           if (!isWorkflowGuardrailInput(input)) {
@@ -1813,60 +1884,6 @@ export function createWorkflow<
               undefined,
               effectiveResumeSchema,
             );
-          };
-
-          const completeBail = async (
-            span: ReturnType<typeof traceContext.createStepSpan>,
-            bailSignal: WorkflowBailSignal,
-          ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
-            const finalResult =
-              bailSignal.result !== undefined
-                ? (bailSignal.result as z.infer<RESULT_SCHEMA>)
-                : null;
-
-            traceContext.endStepSpan(span, "completed", {
-              output: finalResult,
-              attributes: {
-                "workflow.step.bailed": true,
-              },
-            });
-
-            const stepData = executionContext.stepData.get(step.id);
-            if (stepData) {
-              stepData.output = finalResult;
-              stepData.status = "success";
-              stepData.error = null;
-            }
-
-            emitAndCollectEvent({
-              type: "step-complete",
-              executionId,
-              from: stepName,
-              input: stateManager.state.data,
-              output: finalResult,
-              status: "success",
-              context: contextMap,
-              timestamp: new Date().toISOString(),
-              stepIndex: index,
-              stepType: step.type,
-              metadata: {
-                bailed: true,
-              },
-            });
-
-            await hooks?.onStepEnd?.(stateManager.state);
-
-            runLogger.debug(`Workflow bailed at step ${index + 1}: ${stepName}`, {
-              stepIndex: index,
-              stepName,
-              output: finalResult,
-            });
-
-            return completeSuccessfulExecution(finalResult, {
-              stepId: step.id,
-              stepName,
-              stepIndex: index,
-            });
           };
 
           const resolveCancellationReason = (abortValue?: unknown): string => {
@@ -2235,8 +2252,8 @@ export function createWorkflow<
                 reason?: string,
                 suspendData?: z.infer<typeof stepSuspendSchema>,
               ) => suspendFn(reason, suspendData);
-              const bailFn = (result?: unknown): never => {
-                throw new WorkflowBailSignal(result);
+              const bailFn = (result?: z.infer<RESULT_SCHEMA>): never => {
+                throw new WorkflowBailSignal<z.infer<RESULT_SCHEMA>>(result);
               };
               const abortFn = (): never => {
                 throw new WorkflowAbortSignal(`${WORKFLOW_ABORT_REASON_DEFAULT}: ${stepName}`);
@@ -2261,6 +2278,7 @@ export function createWorkflow<
               const stepContext = createStepExecutionContext<
                 WorkflowInput<INPUT_SCHEMA>,
                 typeof stateManager.state.data,
+                RESULT_SCHEMA,
                 z.infer<typeof stepSuspendSchema>,
                 z.infer<typeof stepResumeSchema>
               >(
@@ -2371,11 +2389,17 @@ export function createWorkflow<
               }
               break;
             } catch (stepError) {
-              if (isWorkflowBailSignal(stepError)) {
-                return completeBail(attemptSpan, stepError);
+              if (isWorkflowBailSignal<z.infer<RESULT_SCHEMA>>(stepError)) {
+                return completeBail({
+                  bailSignal: stepError,
+                  step,
+                  stepName,
+                  stepIndex: index,
+                  span: attemptSpan,
+                });
               }
 
-              if (stepError instanceof Error && stepError.message === "WORKFLOW_CANCELLED") {
+              if (stepError instanceof Error && stepError.message === WORKFLOW_CANCELLED) {
                 const cancellationReason = resolveCancellationReason(stepError);
                 return completeCancellation(attemptSpan, cancellationReason);
               }
@@ -2430,10 +2454,7 @@ export function createWorkflow<
                         },
                       },
                     );
-                    if (
-                      delayError instanceof Error &&
-                      delayError.message === "WORKFLOW_CANCELLED"
-                    ) {
+                    if (delayError instanceof Error && delayError.message === WORKFLOW_CANCELLED) {
                       const cancellationReason = resolveCancellationReason();
                       return completeCancellation(interruptionSpan, cancellationReason);
                     }
@@ -2490,35 +2511,25 @@ export function createWorkflow<
         return completeSuccessfulExecution(finalResult);
       } catch (error) {
         // Check if this is a cancellation or suspension, not an error
-        if (isWorkflowBailSignal(error)) {
+        if (isWorkflowBailSignal<z.infer<RESULT_SCHEMA>>(error)) {
           const bailStepIndex = executionContext.currentStepIndex;
           const bailStep = (steps as BaseStep[])[bailStepIndex];
           const bailStepName = bailStep?.name || bailStep?.id || `Step ${bailStepIndex + 1}`;
-          const finalResult =
-            error.result !== undefined ? (error.result as z.infer<RESULT_SCHEMA>) : null;
-          if (executionContext.currentStepSpan) {
-            traceContext.endStepSpan(executionContext.currentStepSpan, "completed", {
-              output: finalResult,
-              attributes: {
-                "workflow.step.bailed": true,
-              },
-            });
-            executionContext.currentStepSpan = undefined;
+          if (!bailStep) {
+            const finalResult = error.result !== undefined ? error.result : null;
+            return completeSuccessfulExecution(finalResult);
           }
 
-          return completeSuccessfulExecution(
-            finalResult,
-            bailStep
-              ? {
-                  stepId: bailStep.id,
-                  stepName: bailStepName,
-                  stepIndex: bailStepIndex,
-                }
-              : undefined,
-          );
+          return completeBail({
+            bailSignal: error,
+            step: bailStep,
+            stepName: bailStepName,
+            stepIndex: bailStepIndex,
+            span: executionContext.currentStepSpan,
+          });
         }
 
-        if (error instanceof Error && error.message === "WORKFLOW_CANCELLED") {
+        if (error instanceof Error && error.message === WORKFLOW_CANCELLED) {
           const reasonFromAbortError =
             isWorkflowAbortSignal(error) && error.reason ? error.reason : undefined;
           const cancellationReason =
@@ -3649,11 +3660,11 @@ async function executeWithSignalCheck<T>(
       if (reason && typeof reason === "object" && reason !== null && "type" in reason) {
         const typedReason = reason as { type?: string };
         if (typedReason.type === "cancelled") {
-          return new Error("WORKFLOW_CANCELLED");
+          return new Error(WORKFLOW_CANCELLED);
         }
       }
       if (reason === "cancelled") {
-        return new Error("WORKFLOW_CANCELLED");
+        return new Error(WORKFLOW_CANCELLED);
       }
       return new Error("WORKFLOW_SUSPENDED");
     };
