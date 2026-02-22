@@ -42,11 +42,12 @@ Workflows emit these event types during execution:
 
 ### Consuming the Stream
 
-VoltAgent provides four methods for workflow execution:
+VoltAgent provides five methods for workflow execution:
 
 - `.stream()` - Real-time execution with event streaming
 - `.run()` - Standard execution without streaming
 - `.startAsync()` - Fire-and-forget execution (returns immediately)
+- `.timeTravel()` - Deterministic replay from a historical execution step
 - `.timeTravelStream()` - Real-time streaming replay from a historical execution step
 
 ```typescript
