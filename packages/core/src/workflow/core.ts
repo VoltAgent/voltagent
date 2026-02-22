@@ -1578,17 +1578,23 @@ export function createWorkflow<
       };
 
       const completeSuccessfulExecution = async (
-        result: z.infer<RESULT_SCHEMA>,
+        result: z.infer<RESULT_SCHEMA> | null,
         bailInfo?: {
           stepId: string;
           stepName: string;
           stepIndex: number;
         },
       ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
-        stateManager.update({
-          data: result,
-          result,
-        });
+        if (result === null) {
+          stateManager.update({
+            result: null,
+          });
+        } else {
+          stateManager.update({
+            data: result,
+            result,
+          });
+        }
 
         const finalState = stateManager.finish();
 
@@ -1661,7 +1667,7 @@ export function createWorkflow<
           finalState.startAt,
           finalState.endAt,
           "completed",
-          finalState.result as z.infer<RESULT_SCHEMA>,
+          finalState.result as z.infer<RESULT_SCHEMA> | null,
           stateManager.state.usage,
           undefined,
           stateManager.state.cancellation,
@@ -1816,7 +1822,7 @@ export function createWorkflow<
             const finalResult =
               bailSignal.result !== undefined
                 ? (bailSignal.result as z.infer<RESULT_SCHEMA>)
-                : (stateManager.state.data as z.infer<RESULT_SCHEMA>);
+                : null;
 
             traceContext.endStepSpan(span, "completed", {
               output: finalResult,
@@ -2222,6 +2228,7 @@ export function createWorkflow<
                 ...(stepRetryLimit > 0 && { "workflow.step.retry.count": retryCount }),
               },
             });
+            executionContext.currentStepSpan = attemptSpan;
             try {
               // Create execution context for the step with typed suspend function
               const typedSuspendFn = (
@@ -2251,12 +2258,6 @@ export function createWorkflow<
                   )
                 : new NoOpWorkflowStreamWriter();
 
-              // Create a modified execution context with the current step span
-              const stepExecutionContext = {
-                ...executionContext,
-                currentStepSpan: attemptSpan, // Add the current step span for agent integration
-              };
-
               const stepContext = createStepExecutionContext<
                 WorkflowInput<INPUT_SCHEMA>,
                 typeof stateManager.state.data,
@@ -2266,10 +2267,10 @@ export function createWorkflow<
                 stateManager.state.data,
                 convertWorkflowStateToParam(
                   stateManager.state,
-                  stepExecutionContext,
+                  executionContext,
                   options?.suspendController?.signal,
                 ),
-                stepExecutionContext,
+                executionContext,
                 typedSuspendFn,
                 bailFn,
                 abortFn,
@@ -2462,6 +2463,10 @@ export function createWorkflow<
               });
 
               throw stepError; // Re-throw the original error
+            } finally {
+              if (executionContext.currentStepSpan === attemptSpan) {
+                executionContext.currentStepSpan = undefined;
+              }
             }
           }
         }
@@ -2490,9 +2495,16 @@ export function createWorkflow<
           const bailStep = (steps as BaseStep[])[bailStepIndex];
           const bailStepName = bailStep?.name || bailStep?.id || `Step ${bailStepIndex + 1}`;
           const finalResult =
-            error.result !== undefined
-              ? (error.result as z.infer<RESULT_SCHEMA>)
-              : (stateManager.state.data as z.infer<RESULT_SCHEMA>);
+            error.result !== undefined ? (error.result as z.infer<RESULT_SCHEMA>) : null;
+          if (executionContext.currentStepSpan) {
+            traceContext.endStepSpan(executionContext.currentStepSpan, "completed", {
+              output: finalResult,
+              attributes: {
+                "workflow.step.bailed": true,
+              },
+            });
+            executionContext.currentStepSpan = undefined;
+          }
 
           return completeSuccessfulExecution(
             finalResult,

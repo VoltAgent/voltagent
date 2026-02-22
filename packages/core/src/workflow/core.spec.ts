@@ -380,6 +380,51 @@ describe.sequential("workflow.run", () => {
     expect(persisted?.output).toEqual({ final: 30 });
   });
 
+  it("should support bail() without result to complete early without output", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let finalStepReached = false;
+
+    const workflow = createWorkflow(
+      {
+        id: "execution-primitives-bail-no-result",
+        name: "Execution Primitives Bail No Result",
+        input: z.object({ value: z.number() }),
+        result: z.object({ final: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "prepare",
+        execute: async ({ data }) => ({ prepared: data.value + 1 }),
+      }),
+      andThen({
+        id: "bail-step",
+        execute: async ({ bail }) => {
+          bail();
+        },
+      }),
+      andThen({
+        id: "should-not-run",
+        execute: async () => {
+          finalStepReached = true;
+          return { final: -1 };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run({ value: 2 });
+
+    expect(result.status).toBe("completed");
+    expect(result.result).toBeNull();
+    expect(finalStepReached).toBe(false);
+
+    const persisted = await memory.getWorkflowState(result.executionId);
+    expect(persisted?.status).toBe("completed");
+    expect(persisted?.output).toBeNull();
+  });
+
   it("should support abort() to cancel execution and persist cancellation metadata", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let finalStepReached = false;
