@@ -1716,6 +1716,17 @@ export function createWorkflow<
           stepData.error = null;
         }
 
+        if (finalResult === null) {
+          stateManager.update({
+            result: null,
+          });
+        } else {
+          stateManager.update({
+            data: finalResult,
+            result: finalResult,
+          });
+        }
+
         emitAndCollectEvent({
           type: "step-complete",
           executionId,
