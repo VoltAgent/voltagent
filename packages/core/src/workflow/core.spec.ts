@@ -382,6 +382,97 @@ describe.sequential("workflow streaming", () => {
     expect(result).toEqual({ result: 10 });
   });
 
+  it("should expose watch/watchAsync and streamLegacy on workflow stream results", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "stream-observer-surface",
+        name: "Stream Observer Surface",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "multiply",
+        execute: async ({ data }) => ({ result: data.value * 3 }),
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const stream = workflow.stream({ value: 7 });
+    const watchedEvents: string[] = [];
+    const watchedAsyncEvents: string[] = [];
+
+    const unsubscribe = stream.watch((event) => {
+      watchedEvents.push(event.type);
+    });
+    const unsubscribeAsync = await stream.watchAsync((event) => {
+      watchedAsyncEvents.push(event.type);
+    });
+
+    for await (const _event of stream) {
+      // Drain the iterator to completion.
+    }
+
+    unsubscribe();
+    unsubscribeAsync();
+
+    expect(watchedEvents.length).toBeGreaterThan(0);
+    expect(watchedAsyncEvents.length).toBeGreaterThan(0);
+    expect(watchedEvents).toContain("workflow-start");
+    expect(watchedEvents).toContain("workflow-complete");
+    expect(watchedAsyncEvents).toContain("workflow-start");
+    expect(watchedAsyncEvents).toContain("workflow-complete");
+
+    const legacyState = await stream.streamLegacy().getWorkflowState();
+    expect(legacyState).toEqual(
+      expect.objectContaining({
+        id: stream.executionId,
+        status: "completed",
+      }),
+    );
+  });
+
+  it("should expose observeStream as readable stream on workflow stream results", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "stream-observe-readable",
+        name: "Stream Observe Readable",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "multiply",
+        execute: async ({ data }) => ({ result: data.value * 2 }),
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const stream = workflow.stream({ value: 4 });
+    const reader = stream.observeStream().getReader();
+    const observedTypes: string[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value) {
+        observedTypes.push(value.type);
+      }
+    }
+
+    expect(observedTypes).toContain("workflow-start");
+    expect(observedTypes).toContain("workflow-complete");
+    expect(await stream.result).toEqual({ result: 8 });
+  });
+
   it("should have usage with default values", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     const workflow = createWorkflow(
