@@ -85,6 +85,172 @@ describe("WorkflowStreamController", () => {
     expect(events).toHaveLength(1);
     expect(events[0].type).toBe("before-abort");
   });
+
+  it("should deliver events to watch subscribers in order", () => {
+    const controller = new WorkflowStreamController();
+    const receivedTypes: string[] = [];
+
+    const unsubscribe = controller.watch((event) => {
+      receivedTypes.push(event.type);
+    });
+
+    controller.emit({
+      type: "watch-event-1",
+      executionId: "exec-1",
+      from: "test",
+      status: "running",
+      timestamp: new Date().toISOString(),
+    });
+    controller.emit({
+      type: "watch-event-2",
+      executionId: "exec-1",
+      from: "test",
+      status: "success",
+      timestamp: new Date().toISOString(),
+    });
+
+    unsubscribe();
+    controller.close();
+
+    expect(receivedTypes).toEqual(["watch-event-1", "watch-event-2"]);
+  });
+
+  it("should stop delivering events after unsubscribe", () => {
+    const controller = new WorkflowStreamController();
+    const receivedTypes: string[] = [];
+
+    const unsubscribe = controller.watch((event) => {
+      receivedTypes.push(event.type);
+    });
+
+    controller.emit({
+      type: "before-unsubscribe",
+      executionId: "exec-1",
+      from: "test",
+      status: "running",
+      timestamp: new Date().toISOString(),
+    });
+
+    unsubscribe();
+
+    controller.emit({
+      type: "after-unsubscribe",
+      executionId: "exec-1",
+      from: "test",
+      status: "running",
+      timestamp: new Date().toISOString(),
+    });
+
+    controller.close();
+
+    expect(receivedTypes).toEqual(["before-unsubscribe"]);
+  });
+
+  it("should support multiple watch subscribers", () => {
+    const controller = new WorkflowStreamController();
+    const watcherOne: string[] = [];
+    const watcherTwo: string[] = [];
+
+    controller.watch((event) => {
+      watcherOne.push(event.type);
+    });
+    controller.watch((event) => {
+      watcherTwo.push(event.type);
+    });
+
+    controller.emit({
+      type: "multi-watch",
+      executionId: "exec-1",
+      from: "test",
+      status: "running",
+      timestamp: new Date().toISOString(),
+    });
+    controller.close();
+
+    expect(watcherOne).toEqual(["multi-watch"]);
+    expect(watcherTwo).toEqual(["multi-watch"]);
+  });
+
+  it("should continue emitting when one watch callback throws", async () => {
+    const controller = new WorkflowStreamController();
+    const streamEvents: string[] = [];
+    const safeWatcherEvents: string[] = [];
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      const consumePromise = (async () => {
+        for await (const event of controller.getStream()) {
+          streamEvents.push(event.type);
+        }
+      })();
+
+      controller.watch(() => {
+        throw new Error("watch callback failure");
+      });
+      controller.watch((event) => {
+        safeWatcherEvents.push(event.type);
+      });
+
+      controller.emit({
+        type: "safe-event-1",
+        executionId: "exec-1",
+        from: "test",
+        status: "running",
+        timestamp: new Date().toISOString(),
+      });
+      controller.emit({
+        type: "safe-event-2",
+        executionId: "exec-1",
+        from: "test",
+        status: "success",
+        timestamp: new Date().toISOString(),
+      });
+      controller.close();
+
+      await consumePromise;
+
+      expect(safeWatcherEvents).toEqual(["safe-event-1", "safe-event-2"]);
+      expect(streamEvents).toEqual(["safe-event-1", "safe-event-2"]);
+      expect(warnSpy).toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("should expose observeStream as a closing ReadableStream", async () => {
+    const controller = new WorkflowStreamController();
+    const observedTypes: string[] = [];
+    const observedStream = controller.observeStream();
+    const reader = observedStream.getReader();
+
+    controller.emit({
+      type: "observe-event-1",
+      executionId: "exec-1",
+      from: "test",
+      status: "running",
+      timestamp: new Date().toISOString(),
+    });
+    controller.emit({
+      type: "observe-event-2",
+      executionId: "exec-1",
+      from: "test",
+      status: "success",
+      timestamp: new Date().toISOString(),
+    });
+    controller.close();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value) {
+        observedTypes.push(value.type);
+      }
+    }
+
+    expect(observedTypes).toEqual(["observe-event-1", "observe-event-2"]);
+  });
 });
 
 describe("WorkflowStreamWriterImpl", () => {

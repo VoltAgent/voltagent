@@ -204,6 +204,26 @@ export interface WorkflowStreamResult<
    * Abort the workflow execution
    */
   abort: () => void;
+  /**
+   * Subscribe to run-level stream events without consuming the main async iterator.
+   * Returns an unsubscribe function.
+   */
+  watch: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => () => void;
+  /**
+   * Async variant of watch() for compatibility with observer-based integrations.
+   */
+  watchAsync: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => Promise<() => void>;
+  /**
+   * Create a ReadableStream view over workflow events.
+   */
+  observeStream: () => ReadableStream<WorkflowStreamEvent>;
+  /**
+   * Compatibility surface for legacy stream consumers.
+   */
+  streamLegacy: () => {
+    stream: ReadableStream<WorkflowStreamEvent>;
+    getWorkflowState: () => ReturnType<Memory["getWorkflowState"]>;
+  };
 }
 
 /**

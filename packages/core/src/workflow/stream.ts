@@ -11,6 +11,8 @@ export class WorkflowStreamController {
   private eventEmitter: EventTarget;
   private abortController: AbortController;
   private isClosed = false;
+  private watchers = new Map<number, (event: WorkflowStreamEvent) => void | Promise<void>>();
+  private watcherIdCounter = 0;
 
   constructor() {
     this.eventEmitter = new EventTarget();
@@ -25,6 +27,24 @@ export class WorkflowStreamController {
 
     this.eventQueue.push(event);
     this.eventEmitter.dispatchEvent(new CustomEvent("event", { detail: event }));
+
+    for (const [watcherId, watcher] of this.watchers.entries()) {
+      try {
+        Promise.resolve(watcher(event)).catch((error) => {
+          console.warn("Workflow stream watch callback rejected", {
+            watcherId,
+            eventType: event.type,
+            error,
+          });
+        });
+      } catch (error) {
+        console.warn("Workflow stream watch callback failed", {
+          watcherId,
+          eventType: event.type,
+          error,
+        });
+      }
+    }
   }
 
   /**
@@ -47,13 +67,20 @@ export class WorkflowStreamController {
       // Wait for next event
       await new Promise<void>((resolve) => {
         const handler = () => {
+          this.eventEmitter.removeEventListener("close", closeHandler);
+          resolve();
+        };
+        const closeHandler = () => {
+          this.eventEmitter.removeEventListener("event", handler);
           resolve();
         };
         this.eventEmitter.addEventListener("event", handler, { once: true });
+        this.eventEmitter.addEventListener("close", closeHandler, { once: true });
 
         // Also listen for abort
-        if (this.abortController.signal.aborted) {
+        if (this.abortController.signal.aborted || this.isClosed) {
           this.eventEmitter.removeEventListener("event", handler);
+          this.eventEmitter.removeEventListener("close", closeHandler);
           resolve();
         }
       });
@@ -64,7 +91,11 @@ export class WorkflowStreamController {
    * Close the stream
    */
   close(): void {
+    if (this.isClosed) {
+      return;
+    }
     this.isClosed = true;
+    this.watchers.clear();
     this.eventEmitter.dispatchEvent(new Event("close"));
   }
 
@@ -81,6 +112,78 @@ export class WorkflowStreamController {
    */
   get signal(): AbortSignal {
     return this.abortController.signal;
+  }
+
+  /**
+   * Subscribe to stream events with callback-based observation.
+   */
+  watch(cb: (event: WorkflowStreamEvent) => void | Promise<void>): () => void {
+    if (this.isClosed) {
+      return () => {};
+    }
+
+    const watcherId = this.watcherIdCounter++;
+    this.watchers.set(watcherId, cb);
+
+    return () => {
+      this.watchers.delete(watcherId);
+    };
+  }
+
+  /**
+   * Async variant for callback-based observation.
+   */
+  async watchAsync(cb: (event: WorkflowStreamEvent) => void | Promise<void>): Promise<() => void> {
+    return this.watch(cb);
+  }
+
+  /**
+   * Convert stream events into a ReadableStream for observer integrations.
+   */
+  observeStream(): ReadableStream<WorkflowStreamEvent> {
+    let cleanup: (() => void) | undefined;
+
+    return new ReadableStream<WorkflowStreamEvent>({
+      start: (controller) => {
+        const unsubscribe = this.watch((event) => {
+          controller.enqueue(event);
+        });
+
+        const handleClose = () => {
+          cleanup?.();
+          try {
+            controller.close();
+          } catch {
+            // Ignore if already closed
+          }
+        };
+
+        const handleAbort = () => {
+          cleanup?.();
+          try {
+            controller.close();
+          } catch {
+            // Ignore if already closed
+          }
+        };
+
+        cleanup = () => {
+          unsubscribe();
+          this.eventEmitter.removeEventListener("close", handleClose);
+          this.abortController.signal.removeEventListener("abort", handleAbort);
+        };
+
+        this.eventEmitter.addEventListener("close", handleClose);
+        this.abortController.signal.addEventListener("abort", handleAbort);
+
+        if (this.isClosed || this.abortController.signal.aborted) {
+          handleClose();
+        }
+      },
+      cancel: () => {
+        cleanup?.();
+      },
+    });
   }
 }
 

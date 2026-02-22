@@ -3116,6 +3116,14 @@ export function createWorkflow<
             resumedSuspendController.cancel(reason);
           },
           abort: () => streamController.abort(),
+          watch: (cb) => streamController.watch(cb),
+          watchAsync: (cb) => streamController.watchAsync(cb),
+          observeStream: () => streamController.observeStream(),
+          streamLegacy: () => ({
+            stream: streamController.observeStream(),
+            getWorkflowState: () =>
+              replayExecutionMemory.getWorkflowState(suspendedResult.executionId),
+          }),
           toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
           [Symbol.asyncIterator]: () => streamController.getStream(),
         };
@@ -3148,6 +3156,13 @@ export function createWorkflow<
         abort: () => {
           streamController.abort();
         },
+        watch: (cb) => streamController.watch(cb),
+        watchAsync: (cb) => streamController.watchAsync(cb),
+        observeStream: () => streamController.observeStream(),
+        streamLegacy: () => ({
+          stream: streamController.observeStream(),
+          getWorkflowState: () => replayExecutionMemory.getWorkflowState(executionId),
+        }),
         [Symbol.asyncIterator]: () => streamController.getStream(),
       };
 
@@ -3294,6 +3309,14 @@ export function createWorkflow<
             resumedSuspendController.cancel(reason);
           },
           abort: () => streamController.abort(),
+          watch: (cb) => streamController.watch(cb),
+          watchAsync: (cb) => streamController.watchAsync(cb),
+          observeStream: () => streamController.observeStream(),
+          streamLegacy: () => ({
+            stream: streamController.observeStream(),
+            getWorkflowState: () =>
+              streamExecutionMemory.getWorkflowState(suspendedResult.executionId),
+          }),
           toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
           [Symbol.asyncIterator]: () => streamController.getStream(),
         };
@@ -3327,6 +3350,13 @@ export function createWorkflow<
         abort: () => {
           streamController.abort();
         },
+        watch: (cb) => streamController.watch(cb),
+        watchAsync: (cb) => streamController.watchAsync(cb),
+        observeStream: () => streamController.observeStream(),
+        streamLegacy: () => ({
+          stream: streamController.observeStream(),
+          getWorkflowState: () => streamExecutionMemory.getWorkflowState(executionId),
+        }),
         // AsyncIterable implementation
         [Symbol.asyncIterator]: () => streamController.getStream(),
       };
