@@ -1056,6 +1056,92 @@ Use pandas and summarize findings.`.split("\n"),
       expect(emittedTypes).toContain("text-delta");
       expect(emittedTypes).toContain("finish");
     });
+
+    it("does not lock getter-based teeing fullStream after probe", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const streamParts = [
+        { type: "start" as const },
+        { type: "text-start" as const, id: "text-1" },
+        { type: "text-delta" as const, id: "text-1", delta: "Hello " },
+        { type: "text-delta" as const, id: "text-1", delta: "world" },
+        { type: "text-end" as const, id: "text-1" },
+        { type: "finish" as const, finishReason: "stop", totalUsage: {} },
+      ];
+
+      class TeeingStreamResult {
+        private baseStream: ReadableStream<any>;
+        private readonly cachedText: Promise<string>;
+
+        constructor(parts: ReadonlyArray<any>) {
+          this.baseStream = convertArrayToReadableStream([...parts]);
+          this.cachedText = this.consumeText();
+        }
+
+        private teeStream(): ai.AsyncIterableStream<any> {
+          const [probeStream, passthroughStream] = this.baseStream.tee();
+          this.baseStream = passthroughStream;
+          return toAsyncIterableStream(probeStream);
+        }
+
+        get fullStream(): ai.AsyncIterableStream<any> {
+          return this.teeStream();
+        }
+
+        get text(): Promise<string> {
+          return this.cachedText;
+        }
+
+        get textStream(): AsyncIterable<string> {
+          return (async function* () {
+            yield "Hello world";
+          })();
+        }
+
+        readonly usage = Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 2,
+          totalTokens: 12,
+        });
+        readonly finishReason = Promise.resolve("stop");
+        readonly warnings: never[] = [];
+        readonly toUIMessageStream = vi.fn();
+        readonly toUIMessageStreamResponse = vi.fn();
+        readonly pipeUIMessageStreamToResponse = vi.fn();
+        readonly pipeTextStreamToResponse = vi.fn();
+        readonly toTextStreamResponse = vi.fn();
+        readonly partialOutputStream = undefined;
+
+        private async consumeText(): Promise<string> {
+          let text = "";
+          for await (const part of this.fullStream) {
+            if (part.type === "text-delta" && typeof part.delta === "string") {
+              text += part.delta;
+            }
+          }
+          return text;
+        }
+      }
+
+      const mockStream = new TeeingStreamResult(streamParts);
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("answer me");
+      const emittedTypes: string[] = [];
+
+      for await (const part of result.fullStream as AsyncIterable<{ type: string }>) {
+        emittedTypes.push(part.type);
+      }
+
+      expect(emittedTypes).toContain("start");
+      expect(emittedTypes).toContain("text-delta");
+      expect(emittedTypes).toContain("finish");
+      await expect(result.text).resolves.toBe("Hello world");
+    });
   });
 
   describe("Tool Management", () => {

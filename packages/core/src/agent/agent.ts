@@ -2010,11 +2010,13 @@ export class Agent {
               },
             });
 
-            const probeResult = await this.probeStreamStart(streamResult.fullStream, attemptState);
-            const streamResultForConsumption =
-              probeResult.stream === streamResult.fullStream
-                ? streamResult
-                : this.cloneResultWithFullStream(streamResult, probeResult.stream);
+            const originalFullStream = streamResult.fullStream;
+            const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
+            const streamResultForConsumption = this.withProbedFullStream(
+              streamResult,
+              originalFullStream,
+              probeResult.stream,
+            );
 
             if (probeResult.status === "error") {
               this.discardStream(streamResultForConsumption.fullStream);
@@ -3136,11 +3138,13 @@ export class Agent {
               },
             });
 
-            const probeResult = await this.probeStreamStart(streamResult.fullStream, attemptState);
-            const streamResultForConsumption =
-              probeResult.stream === streamResult.fullStream
-                ? streamResult
-                : this.cloneResultWithFullStream(streamResult, probeResult.stream);
+            const originalFullStream = streamResult.fullStream;
+            const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
+            const streamResultForConsumption = this.withProbedFullStream(
+              streamResult,
+              originalFullStream,
+              probeResult.stream,
+            );
 
             if (probeResult.status === "error") {
               this.discardStream(streamResultForConsumption.fullStream);
@@ -5315,6 +5319,53 @@ export class Agent {
       enumerable: true,
     });
     return clone;
+  }
+
+  private withProbedFullStream<
+    TResult extends {
+      fullStream: AsyncIterableStream<unknown>;
+    },
+  >(
+    result: TResult,
+    originalFullStream: TResult["fullStream"],
+    probedFullStream: TResult["fullStream"],
+  ): TResult {
+    if (probedFullStream === originalFullStream) {
+      return result;
+    }
+
+    if (this.usesGetterBasedTeeingFullStream(result)) {
+      // AI SDK stream results expose fullStream via a teeing getter.
+      // Preserving the original instance keeps that multi-consumer behavior intact.
+      return result;
+    }
+
+    return this.cloneResultWithFullStream(result, probedFullStream);
+  }
+
+  private usesGetterBasedTeeingFullStream(result: {
+    fullStream: AsyncIterableStream<unknown>;
+  }): boolean {
+    const descriptor = this.findPropertyDescriptor(result, "fullStream");
+    return (
+      typeof descriptor?.get === "function" &&
+      typeof (result as { teeStream?: unknown }).teeStream === "function"
+    );
+  }
+
+  private findPropertyDescriptor(
+    target: object,
+    propertyName: string,
+  ): PropertyDescriptor | undefined {
+    let current: object | null = target;
+    while (current) {
+      const descriptor = Object.getOwnPropertyDescriptor(current, propertyName);
+      if (descriptor) {
+        return descriptor;
+      }
+      current = Object.getPrototypeOf(current);
+    }
+    return undefined;
   }
 
   private toAsyncIterableStream<T>(stream: ReadableStream<T>): AsyncIterableStream<T> {
