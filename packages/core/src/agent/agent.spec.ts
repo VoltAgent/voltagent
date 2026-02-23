@@ -1082,7 +1082,7 @@ Use pandas and summarize findings.`.split("\n"),
           this.cachedText = this.consumeText();
         }
 
-        teeStream(): ai.AsyncIterableStream<any> {
+        private teeStream(): ai.AsyncIterableStream<any> {
           const [probeStream, passthroughStream] = this.baseStream.tee();
           this.baseStream = passthroughStream;
           return toAsyncIterableStream(probeStream);
@@ -1137,6 +1137,7 @@ Use pandas and summarize findings.`.split("\n"),
         emittedTypes.push(part.type);
       }
 
+      expect(emittedTypes).toContain("start");
       expect(emittedTypes).toContain("text-delta");
       expect(emittedTypes).toContain("finish");
       await expect(result.text).resolves.toBe("Hello world");
