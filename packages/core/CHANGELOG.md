@@ -1,5 +1,159 @@
 # @voltagent/core
 
+## 2.6.0
+
+### Minor Changes
+
+- [#1100](https://github.com/VoltAgent/voltagent/pull/1100) [`314ed40`](https://github.com/VoltAgent/voltagent/commit/314ed4096de7c4e1da551a5716fcd21690db3c1a) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow observer/watch APIs for stream results
+
+  ### What's New
+  - Added run-level observer APIs on `WorkflowStreamResult`:
+    - `watch(cb)`
+    - `watchAsync(cb)`
+    - `observeStream()`
+    - `streamLegacy()`
+  - These APIs are now available on:
+    - `workflow.stream(...)`
+    - `workflow.timeTravelStream(...)`
+    - resumed stream results returned from `.resume(...)`
+  - Added test coverage for event ordering, unsubscribe behavior, multiple watchers, callback isolation, and `observeStream()` close semantics.
+
+  ### SDK Example
+
+  ```ts
+  const stream = workflow.stream({ value: 3 });
+
+  const unwatch = stream.watch((event) => {
+    console.log("[watch]", event.type, event.from);
+  });
+
+  const unwatchAsync = await stream.watchAsync(async (event) => {
+    if (event.type === "workflow-error") {
+      await notifyOps(event);
+    }
+  });
+
+  const reader = stream.observeStream().getReader();
+  const observerTask = (async () => {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      console.log("[observeStream]", value.type);
+    }
+  })();
+
+  for await (const event of stream) {
+    console.log("[main iterator]", event.type);
+  }
+
+  unwatch();
+  unwatchAsync();
+  await observerTask;
+
+  const state = await stream.streamLegacy().getWorkflowState();
+  console.log("final status:", state?.status);
+  ```
+
+  ### Time Travel Stream Example
+
+  ```ts
+  const replayStream = workflow.timeTravelStream({
+    executionId: sourceExecutionId,
+    stepId: "step-approval",
+  });
+
+  const stopReplayWatch = replayStream.watch((event) => {
+    console.log("[replay]", event.type, event.from);
+  });
+
+  for await (const event of replayStream) {
+    console.log("[replay iterator]", event.type);
+  }
+
+  stopReplayWatch();
+  ```
+
+- [#1102](https://github.com/VoltAgent/voltagent/pull/1102) [`7f923d2`](https://github.com/VoltAgent/voltagent/commit/7f923d2e4032a39cdfa430469afbdeafaac39b1c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow execution primitives (`bail`, `abort`, `getStepResult`, `getInitData`)
+
+  ### What's New
+
+  Step execution context now includes four new primitives:
+  - `bail(result?)`: complete the workflow early with a custom final result
+  - `abort()`: cancel the workflow immediately
+  - `getStepResult(stepId)`: get a prior step output directly (returns `null` if not available)
+  - `getInitData()`: get the original workflow input (stable across resume paths)
+
+  These primitives are available in all step contexts, including nested step flows.
+
+  ### Example: Early Complete with `bail`
+
+  ```ts
+  const workflow = createWorkflowChain({
+    id: "bail-demo",
+    input: z.object({ amount: z.number() }),
+    result: z.object({ status: z.string() }),
+  })
+    .andThen({
+      id: "risk-check",
+      execute: async ({ data, bail }) => {
+        if (data.amount > 10_000) {
+          bail({ status: "rejected" });
+        }
+        return { status: "approved" };
+      },
+    })
+    .andThen({
+      id: "never-runs-on-bail",
+      execute: async () => ({ status: "approved" }),
+    });
+  ```
+
+  ### Example: Cancel with `abort`
+
+  ```ts
+  const workflow = createWorkflowChain({
+    id: "abort-demo",
+    input: z.object({ requestId: z.string() }),
+    result: z.object({ done: z.boolean() }),
+  })
+    .andThen({
+      id: "authorization",
+      execute: async ({ abort }) => {
+        abort(); // terminal status: cancelled
+      },
+    })
+    .andThen({
+      id: "never-runs-on-abort",
+      execute: async () => ({ done: true }),
+    });
+  ```
+
+  ### Example: Use `getStepResult` + `getInitData`
+
+  ```ts
+  const workflow = createWorkflowChain({
+    id: "introspection-demo",
+    input: z.object({ userId: z.string(), value: z.number() }),
+    result: z.object({ total: z.number(), userId: z.string() }),
+  })
+    .andThen({
+      id: "step-1",
+      execute: async ({ data }) => ({ partial: data.value + 1 }),
+    })
+    .andThen({
+      id: "step-2",
+      execute: async ({ getStepResult, getInitData }) => {
+        const s1 = getStepResult<{ partial: number }>("step-1");
+        const init = getInitData();
+
+        return {
+          total: (s1?.partial ?? 0) + init.value,
+          userId: init.userId,
+        };
+      },
+    });
+  ```
+
 ## 2.5.0
 
 ### Minor Changes
