@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 2.6.1
+
+### Patch Changes
+
+- [#1103](https://github.com/VoltAgent/voltagent/pull/1103) [`edd7181`](https://github.com/VoltAgent/voltagent/commit/edd718147e0493cebd2ee5145d239577ee73139b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve getter-based `fullStream` tee behavior after startup probing in `streamText`/`streamObject`
+
+  This prevents `TypeError [ERR_INVALID_STATE]: Invalid state: ReadableStream is locked` when SDK consumers iterate `result.fullStream` while other result accessors (such as `result.text` or UI stream helpers) are also consuming the stream.
+
 ## 2.6.0
 
 ### Minor Changes
