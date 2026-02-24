@@ -33,6 +33,7 @@ Quick reference guides for common VoltAgent features.
 
 - [Calling Agents](./calling-agents) - Invoke agents via code, REST API, or frameworks.
 - [Tools](./tools) - Add custom tools to your agents.
+- [Human-in-the-Loop](./hitl) - Require explicit approval for sensitive tool calls in direct and subagent flows.
 - [Authentication](./authentication) - Protect endpoints with JWT auth.
 - [Hooks](./hooks) - Lifecycle hooks for agent behavior.
 - [Retrying](./retrying) - Automatic retries for transient model errors.

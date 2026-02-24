@@ -6,6 +6,11 @@ import { getGlobalLogger } from "../../logger";
 import { AgentRegistry } from "../../registries/agent-registry";
 import { createTool } from "../../tool";
 import type { Tool } from "../../tool";
+import { convertModelMessagesToUIMessages } from "../../utils/message-converter";
+import {
+  type ToolApprovalOutputPayload,
+  extractToolApprovalOutput,
+} from "../../utils/tool-approval";
 import type { Agent } from "../agent";
 import type {
   GenerateObjectOptions,
@@ -13,6 +18,7 @@ import type {
   StreamObjectOptions,
   StreamTextOptions,
 } from "../agent";
+import { ToolDeniedError, isToolDeniedError } from "../errors";
 import {
   AGENT_METADATA_CONTEXT_KEY,
   type AgentMetadataContextValue,
@@ -405,26 +411,38 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
       if (this.isDirectAgent(targetAgentConfig)) {
         // Direct agent - use streamText by default
-        const { finalResult: streamResult, usage: streamUsage } =
-          await this.streamTextWithForwarding(
-            targetAgent,
-            messages,
-            baseOptions,
-            parentOperationContext,
-          );
+        const {
+          finalResult: streamResult,
+          usage: streamUsage,
+          pendingApproval,
+        } = await this.streamTextWithForwarding(
+          targetAgent,
+          messages,
+          baseOptions,
+          parentOperationContext,
+        );
+        if (pendingApproval) {
+          throw this.createSubagentToolApprovalError(pendingApproval);
+        }
         finalResult = streamResult;
         usage = streamUsage;
         finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else if (this.isStreamTextConfig(targetAgentConfig)) {
         // StreamText configuration
         const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
-        const { finalResult: streamResult, usage: streamUsage } =
-          await this.streamTextWithForwarding(
-            targetAgent,
-            messages,
-            options,
-            parentOperationContext,
-          );
+        const {
+          finalResult: streamResult,
+          usage: streamUsage,
+          pendingApproval,
+        } = await this.streamTextWithForwarding(
+          targetAgent,
+          messages,
+          options,
+          parentOperationContext,
+        );
+        if (pendingApproval) {
+          throw this.createSubagentToolApprovalError(pendingApproval);
+        }
         finalResult = streamResult;
         usage = streamUsage;
         finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
@@ -432,6 +450,12 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // GenerateText configuration
         const options: GenerateTextOptions = { ...baseOptions, ...targetAgentConfig.options };
         const response = await targetAgent.generateText(messages, options);
+        const pendingApproval = this.extractPendingApprovalFromToolResults(
+          (response as { toolResults?: Array<{ output?: unknown }> }).toolResults,
+        );
+        if (pendingApproval) {
+          throw this.createSubagentToolApprovalError(pendingApproval);
+        }
         finalResult = response.text;
         usage = response.usage;
         finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
@@ -539,6 +563,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         usage,
       };
     } catch (error) {
+      if (isToolDeniedError(error)) {
+        throw error;
+      }
+
       // If this is the stream error we marked for rethrowing, rethrow it
       if (streamErrorToThrow && error === streamErrorToThrow) {
         throw error;
@@ -619,7 +647,12 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       const enrichedStream = createMetadataEnrichedStream(
         subagentUIStream,
         forwardingMetadata,
-        this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+        this.supervisorConfig?.fullStreamEventForwarding?.types || [
+          "tool-call",
+          "tool-result",
+          "tool-approval-request",
+          "tool-approval-response",
+        ],
       );
 
       // Use the writer to merge the enriched stream
@@ -650,6 +683,8 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
       "tool-call",
       "tool-result",
+      "tool-approval-request",
+      "tool-approval-response",
     ];
 
     // Write subagent's fullStream events with metadata
@@ -683,13 +718,20 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
   private async resolveStreamResult(
     response: Awaited<ReturnType<Agent["streamText"]>>,
     parentOperationContext?: OperationContext,
-  ): Promise<{ finalResult: string; usage: any }> {
+  ): Promise<{
+    finalResult: string;
+    usage: any;
+    pendingApproval: ToolApprovalOutputPayload | null;
+  }> {
     const bailedResultFromContext = parentOperationContext?.systemContext?.get("bailedResult") as
       | { agentName: string; response: string }
       | undefined;
+    const [pendingApproval, usage] = await Promise.all([
+      this.resolvePendingApprovalFromStream(response),
+      response.usage,
+    ]);
     const finalResult = bailedResultFromContext?.response || (await response.text);
-    const usage = await response.usage;
-    return { finalResult, usage };
+    return { finalResult, usage, pendingApproval };
   }
 
   private async streamTextWithForwarding(
@@ -697,11 +739,86 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     messages: UIMessage[],
     options: StreamTextOptions,
     parentOperationContext: OperationContext | undefined,
-  ): Promise<{ finalResult: string; usage: any }> {
+  ): Promise<{
+    finalResult: string;
+    usage: any;
+    pendingApproval: ToolApprovalOutputPayload | null;
+  }> {
     const response = await targetAgent.streamText(messages, options);
     const forwardingMetadata = this.buildForwardingMetadata(targetAgent, parentOperationContext);
     this.forwardStreamEvents(response, forwardingMetadata, parentOperationContext, targetAgent);
     return this.resolveStreamResult(response, parentOperationContext);
+  }
+
+  private async resolvePendingApprovalFromStream(
+    response: Awaited<ReturnType<Agent["streamText"]>>,
+  ): Promise<ToolApprovalOutputPayload | null> {
+    const stepsPromise = (
+      response as {
+        steps?:
+          | PromiseLike<Array<{ toolResults?: Array<{ output?: unknown }> }> | undefined>
+          | undefined;
+      }
+    ).steps;
+
+    if (!stepsPromise) {
+      return null;
+    }
+
+    try {
+      const steps = await stepsPromise;
+      if (!Array.isArray(steps) || steps.length === 0) {
+        return null;
+      }
+
+      const lastStep = steps.at(-1);
+      return this.extractPendingApprovalFromToolResults(lastStep?.toolResults);
+    } catch {
+      return null;
+    }
+  }
+
+  private extractPendingApprovalFromToolResults(
+    toolResults: Array<{ output?: unknown }> | undefined,
+  ): ToolApprovalOutputPayload | null {
+    if (!Array.isArray(toolResults) || toolResults.length === 0) {
+      return null;
+    }
+
+    for (const toolResult of toolResults) {
+      const approvalOutput = extractToolApprovalOutput(toolResult?.output);
+      if (approvalOutput?.status === "requested") {
+        return approvalOutput;
+      }
+    }
+
+    return null;
+  }
+
+  private createSubagentToolApprovalError(approval: ToolApprovalOutputPayload): ToolDeniedError {
+    const status = approval.status === "requested" ? "pending" : "denied";
+    const error = new ToolDeniedError({
+      toolName: approval.toolName,
+      message:
+        status === "pending"
+          ? `Tool ${approval.toolName} requires approval.`
+          : approval.reason || `Tool ${approval.toolName} execution denied.`,
+      code: "TOOL_FORBIDDEN",
+      httpStatus: 403,
+    });
+
+    Object.assign(error, {
+      toolApproval: {
+        status,
+        approvalId: approval.approvalId,
+        toolCallId: approval.toolCallId,
+        toolName: approval.toolName,
+        input: approval.input || {},
+        reason: approval.reason,
+      },
+    });
+
+    return error;
   }
 
   /**
@@ -822,12 +939,14 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
           // Convert context from record to Map
           const contextMap = new Map(Object.entries(context));
+          const sharedContext = this.resolveSharedContextFromExecuteOptions(executeOptions);
 
           // Execute handoffToMultiple - Agent.ts wrapper handles span creation
           const results = await this.handoffToMultiple({
             task,
             targetAgents: agents,
             context: contextMap,
+            sharedContext,
             sourceAgent,
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
@@ -859,6 +978,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Always return array for consistent API
           return structuredResults;
         } catch (error) {
+          if (isToolDeniedError(error)) {
+            throw error;
+          }
+
           logger.error("Error in delegate_task tool execution", { error });
 
           // Return structured error to the LLM
@@ -869,6 +992,24 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         }
       },
     });
+  }
+
+  private resolveSharedContextFromExecuteOptions(
+    executeOptions: Record<string, unknown> | undefined,
+  ): UIMessage[] {
+    const toolMessages = (executeOptions as { toolContext?: { messages?: unknown } })?.toolContext
+      ?.messages;
+
+    if (!Array.isArray(toolMessages) || toolMessages.length === 0) {
+      return [];
+    }
+
+    try {
+      const uiMessages = convertModelMessagesToUIMessages(toolMessages as any);
+      return uiMessages;
+    } catch {
+      return [];
+    }
   }
 
   /**

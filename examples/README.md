@@ -87,6 +87,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Summarization](./with-summarization) — Agent summarization with a low trigger window for easy testing.
 - [Retries and Fallbacks](./with-retries-fallback) — Model fallback list with per-model retries and agent-level defaults.
 - [Middleware](./with-middleware) — Input/output middleware with retry feedback.
+- [Human-in-the-Loop](./with-hitl) — Tool approvals with `needsApproval` and approval-response resume flow.
 - [PlanAgents](./with-planagents) — Quickstart for PlanAgents with planning, filesystem tools, and subagent tasks.
 - [Slack](./with-slack) — Slack app mention bot that replies in the same channel/thread via VoltOps Slack actions.
 - [Airtable](./with-airtable) — React to new Airtable records and write updates back using VoltOps Airtable actions.

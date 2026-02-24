@@ -80,6 +80,11 @@ import type {
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
+import {
+  createToolApprovalFingerprint,
+  createToolApprovalOutput,
+  extractToolApprovalOutput,
+} from "../utils/tool-approval";
 import { zodSchemaToJsonUI } from "../utils/toolParser";
 import { convertUsage } from "../utils/usage-converter";
 import { normalizeFinishUsageStream, resolveFinishUsage } from "../utils/usage-normalizer";
@@ -505,6 +510,7 @@ export type StreamTextResultWithContext<
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
   readonly usage: AIStreamTextResult<TOOLS, any>["usage"];
   readonly finishReason: AIStreamTextResult<TOOLS, any>["finishReason"];
+  readonly steps?: PromiseLike<Array<{ toolResults?: Array<{ output?: unknown }> }> | undefined>;
   // Partial output stream for streaming structured objects
   readonly partialOutputStream?: AIStreamTextResult<TOOLS, any>["partialOutputStream"];
   toUIMessageStream: AIStreamTextResult<TOOLS, any>["toUIMessageStream"];
@@ -1077,6 +1083,7 @@ export class Agent {
               feedback: _feedback,
               maxSteps: userMaxSteps,
               tools: userTools,
+              stopWhen: userStopWhen,
               conversationPersistence: _conversationPersistence,
               output,
               providerOptions,
@@ -1131,7 +1138,10 @@ export class Agent {
                       // Default values
                       temperature: this.temperature,
                       maxOutputTokens: this.maxOutputTokens,
-                      stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+                      stopWhen: this.resolveStopWhen({
+                        override: userStopWhen,
+                        maxSteps,
+                      }),
                       // User overrides from AI SDK options
                       ...aiSDKOptions,
                       maxRetries: 0,
@@ -1656,6 +1666,7 @@ export class Agent {
           feedback: _feedback,
           maxSteps: userMaxSteps,
           tools: userTools,
+          stopWhen: userStopWhen,
           onFinish: userOnFinish,
           conversationPersistence: _conversationPersistence,
           output,
@@ -1717,7 +1728,10 @@ export class Agent {
               // Default values
               temperature: this.temperature,
               maxOutputTokens: this.maxOutputTokens,
-              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              stopWhen: this.resolveStopWhen({
+                override: userStopWhen,
+                maxSteps,
+              }),
               // User overrides from AI SDK options
               ...aiSDKOptions,
               maxRetries: 0,
@@ -2290,6 +2304,62 @@ export class Agent {
           });
         };
 
+        const normalizeToolApprovalChunks = (
+          baseStream: ToUIMessageStreamReturn,
+        ): ToUIMessageStreamReturn => {
+          return createAsyncIterableReadable<UIStreamChunk>(async (controller) => {
+            const reader = (baseStream as ReadableStream<UIStreamChunk>).getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                if (
+                  value &&
+                  typeof value === "object" &&
+                  (value as Record<string, unknown>).type === "tool-output-available"
+                ) {
+                  const chunk = value as {
+                    toolCallId?: string;
+                    output?: unknown;
+                  };
+                  const approvalOutput = extractToolApprovalOutput(chunk.output);
+                  const chunkToolCallId =
+                    typeof chunk.toolCallId === "string" && chunk.toolCallId.trim().length > 0
+                      ? chunk.toolCallId
+                      : undefined;
+
+                  if (approvalOutput?.status === "requested") {
+                    controller.enqueue({
+                      type: "tool-approval-request",
+                      approvalId: approvalOutput.approvalId,
+                      toolCallId: chunkToolCallId ?? approvalOutput.toolCallId,
+                    } as UIStreamChunk);
+                    continue;
+                  }
+
+                  if (approvalOutput?.status === "denied") {
+                    controller.enqueue({
+                      type: "tool-output-denied",
+                      toolCallId: chunkToolCallId ?? approvalOutput.toolCallId,
+                    } as UIStreamChunk);
+                    continue;
+                  }
+                }
+
+                if (value !== undefined) {
+                  controller.enqueue(value);
+                }
+              }
+              controller.close();
+            } catch (error) {
+              controller.error(error);
+            } finally {
+              reader.releaseLock();
+            }
+          });
+        };
+
         const attachFeedbackMetadata = (
           baseStream: ToUIMessageStreamReturn,
         ): ToUIMessageStreamReturn => {
@@ -2334,7 +2404,8 @@ export class Agent {
           const baseStream = agent.subAgentManager.hasSubAgents()
             ? createMergedUIStream(resolvedStreamOptions)
             : getGuardrailAwareUIStream(resolvedStreamOptions);
-          return attachFeedbackMetadata(baseStream);
+          const approvalNormalizedStream = normalizeToolApprovalChunks(baseStream);
+          return attachFeedbackMetadata(approvalNormalizedStream);
         };
 
         const toUIMessageStreamResponseSanitized = (
@@ -2374,6 +2445,15 @@ export class Agent {
           },
           usage: result.usage,
           finishReason: result.finishReason,
+          get steps() {
+            return (
+              result as unknown as {
+                steps?:
+                  | PromiseLike<Array<{ toolResults?: Array<{ output?: unknown }> }> | undefined>
+                  | undefined;
+              }
+            ).steps;
+          },
           get partialOutputStream() {
             return result.partialOutputStream;
           },
@@ -5623,6 +5703,39 @@ export class Agent {
       };
 
       const handleToolError = async (errorValue: unknown) => {
+        const toolApprovalError = this.getToolApprovalErrorDetails(errorValue);
+        if (toolApprovalError) {
+          const approvalOutput = createToolApprovalOutput({
+            status: toolApprovalError.status === "pending" ? "requested" : "denied",
+            approvalId: toolApprovalError.approvalId,
+            toolCallId: toolApprovalError.toolCallId,
+            toolName: toolApprovalError.toolName,
+            input: toolApprovalError.input,
+            reason: toolApprovalError.reason,
+          });
+
+          spanOutcome = { status: "completed", output: approvalOutput };
+
+          await tool.hooks?.onEnd?.({
+            tool,
+            args,
+            output: approvalOutput,
+            error: undefined,
+            options: executionOptions,
+          });
+
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool,
+            output: approvalOutput,
+            error: undefined,
+            context: oc,
+            options: executionOptions,
+          });
+
+          return approvalOutput;
+        }
+
         const error = errorValue instanceof Error ? errorValue : new Error(String(errorValue));
         const voltAgentError = createVoltAgentError(error, {
           stage: "tool_execution",
@@ -5692,6 +5805,12 @@ export class Agent {
       if (execute && isAsyncGeneratorFunction(execute)) {
         return async function* (this: Agent): AsyncGenerator<any, void, void> {
           try {
+            await this.ensureToolApproval(
+              tool as Tool<any, any>,
+              args,
+              executionOptions,
+              toolCallId,
+            );
             await oc.traceContext.withSpan(toolSpan, async () => {
               await runToolStartHooks();
             });
@@ -5752,6 +5871,8 @@ export class Agent {
 
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
+          await this.ensureToolApproval(tool as Tool<any, any>, args, executionOptions, toolCallId);
+
           // Call tool start hook - can throw ToolDeniedError
           await runToolStartHooks();
 
@@ -6236,13 +6357,6 @@ export class Agent {
           }
         }
 
-        await this.ensureToolApproval(
-          target as Tool<any, any>,
-          parsedArgs,
-          executionOptions,
-          toolCallId,
-        );
-
         const execute = this.createToolExecutionFactory(oc, hooks)(target as Tool<any, any>);
         return await execute(parsedArgs, {
           toolCallId,
@@ -6383,6 +6497,541 @@ export class Agent {
     return toolResult.output;
   }
 
+  private createToolApprovalId(toolCallId: string): string {
+    return `approval-${toolCallId}`;
+  }
+
+  private createToolApprovalInputFingerprint(args: Record<string, unknown>): string {
+    return safeStringify(args);
+  }
+
+  private hasPendingToolApprovalInSteps(steps: Array<StepResult<any>>): boolean {
+    const lastStep = steps.at(-1) as { toolResults?: Array<{ output?: unknown }> } | undefined;
+    if (!lastStep || !Array.isArray(lastStep.toolResults) || lastStep.toolResults.length === 0) {
+      return false;
+    }
+
+    return lastStep.toolResults.some((toolResult) => {
+      const approvalOutput = extractToolApprovalOutput(toolResult?.output);
+      return approvalOutput?.status === "requested";
+    });
+  }
+
+  private resolveStopWhen(params: { override?: StopWhen; maxSteps: number }): StopWhen {
+    const { override, maxSteps } = params;
+    const baseStopWhen = override ?? this.stopWhen ?? stepCountIs(maxSteps);
+
+    const stopWhenPendingApproval = ({ steps }: { steps: Array<StepResult<any>> }): boolean => {
+      return this.hasPendingToolApprovalInSteps(steps);
+    };
+
+    if (Array.isArray(baseStopWhen)) {
+      return [...baseStopWhen, stopWhenPendingApproval];
+    }
+
+    return [baseStopWhen, stopWhenPendingApproval];
+  }
+
+  private createToolApprovalError(params: {
+    status: "pending" | "denied";
+    toolName: string;
+    toolCallId: string;
+    approvalId: string;
+    input: Record<string, unknown>;
+    reason?: string;
+  }): ToolDeniedError {
+    const error = new ToolDeniedError({
+      toolName: params.toolName,
+      message:
+        params.status === "pending"
+          ? `Tool ${params.toolName} requires approval.`
+          : params.reason || `Tool ${params.toolName} execution denied.`,
+      code: "TOOL_FORBIDDEN",
+      httpStatus: 403,
+    });
+
+    Object.assign(error, {
+      toolApproval: {
+        status: params.status,
+        approvalId: params.approvalId,
+        toolCallId: params.toolCallId,
+        toolName: params.toolName,
+        input: params.input,
+        reason: params.reason,
+      },
+    });
+
+    return error;
+  }
+
+  private getToolApprovalErrorDetails(error: unknown): {
+    status: "pending" | "denied";
+    approvalId: string;
+    toolCallId: string;
+    toolName: string;
+    input: Record<string, unknown>;
+    reason?: string;
+  } | null {
+    if (!isToolDeniedError(error) || !isRecord(error)) {
+      return null;
+    }
+
+    const approval = error.toolApproval;
+    if (!isRecord(approval)) {
+      return null;
+    }
+
+    const status =
+      approval.status === "pending" || approval.status === "denied" ? approval.status : null;
+    const approvalId = hasNonEmptyString(approval.approvalId) ? approval.approvalId : null;
+    const toolCallId = hasNonEmptyString(approval.toolCallId) ? approval.toolCallId : null;
+    const toolName = hasNonEmptyString(approval.toolName) ? approval.toolName : null;
+    const input =
+      isRecord(approval.input) && !Array.isArray(approval.input)
+        ? (approval.input as Record<string, unknown>)
+        : null;
+
+    if (!status || !approvalId || !toolCallId || !toolName || !input) {
+      return null;
+    }
+
+    return {
+      status,
+      approvalId,
+      toolCallId,
+      toolName,
+      input,
+      reason: hasNonEmptyString(approval.reason) ? approval.reason : undefined,
+    };
+  }
+
+  private resolveToolApprovalDecisionFromMessages(params: {
+    messages: ModelMessage[];
+    toolName: string;
+    args: Record<string, unknown>;
+    approvalId: string;
+  }): { approved: boolean; reason?: string } | null {
+    const { messages, toolName, args, approvalId } = params;
+    if (!messages.length) {
+      return null;
+    }
+
+    const toolCallFingerprintById = new Map<string, string>();
+    const toolCallInputFingerprintById = new Map<string, string>();
+    const toolCallNameById = new Map<string, string>();
+    const approvalIdToToolCallId = new Map<string, string>();
+    const approvalIdToFingerprint = new Map<string, string>();
+    const approvalIdToInputFingerprint = new Map<string, string>();
+    const approvalIdToToolName = new Map<string, string>();
+    const decisionByApprovalId = new Map<string, { approved: boolean; reason?: string }>();
+
+    for (const message of messages) {
+      if (message.role === "assistant") {
+        if (!Array.isArray(message.content)) {
+          continue;
+        }
+
+        for (const rawPart of message.content as unknown[]) {
+          if (!isRecord(rawPart)) {
+            continue;
+          }
+
+          const part = rawPart as Record<string, unknown>;
+          const partType = hasNonEmptyString(part.type) ? part.type : null;
+          if (partType === "tool-call") {
+            const toolCallId = hasNonEmptyString(part.toolCallId) ? part.toolCallId : null;
+            const toolCallName = hasNonEmptyString(part.toolName) ? part.toolName : null;
+            const input =
+              isRecord(part.input) && !Array.isArray(part.input)
+                ? (part.input as Record<string, unknown>)
+                : {};
+            if (toolCallId && toolCallName) {
+              toolCallFingerprintById.set(
+                toolCallId,
+                createToolApprovalFingerprint(toolCallName, input),
+              );
+              toolCallInputFingerprintById.set(
+                toolCallId,
+                this.createToolApprovalInputFingerprint(input),
+              );
+              toolCallNameById.set(toolCallId, toolCallName);
+            }
+            continue;
+          }
+
+          if (partType === "tool-approval-request") {
+            const approvalRequestId = hasNonEmptyString(part.approvalId) ? part.approvalId : null;
+            const toolCallId = hasNonEmptyString(part.toolCallId) ? part.toolCallId : null;
+            if (!approvalRequestId || !toolCallId) {
+              continue;
+            }
+
+            approvalIdToToolCallId.set(approvalRequestId, toolCallId);
+            const fingerprint = toolCallFingerprintById.get(toolCallId);
+            if (fingerprint) {
+              approvalIdToFingerprint.set(approvalRequestId, fingerprint);
+            }
+            const inputFingerprint = toolCallInputFingerprintById.get(toolCallId);
+            if (inputFingerprint) {
+              approvalIdToInputFingerprint.set(approvalRequestId, inputFingerprint);
+            }
+            const toolCallName = toolCallNameById.get(toolCallId);
+            if (toolCallName) {
+              approvalIdToToolName.set(approvalRequestId, toolCallName);
+            }
+          }
+        }
+        continue;
+      }
+
+      if (message.role !== "tool" || !Array.isArray(message.content)) {
+        continue;
+      }
+
+      for (const rawPart of message.content as unknown[]) {
+        if (!isRecord(rawPart)) {
+          continue;
+        }
+
+        const part = rawPart as Record<string, unknown>;
+        const partType = hasNonEmptyString(part.type) ? part.type : null;
+        if (partType === "tool-result") {
+          const approvalOutput = extractToolApprovalOutput(part.output);
+          if (!approvalOutput) {
+            continue;
+          }
+
+          approvalIdToToolCallId.set(approvalOutput.approvalId, approvalOutput.toolCallId);
+          approvalIdToFingerprint.set(
+            approvalOutput.approvalId,
+            createToolApprovalFingerprint(approvalOutput.toolName, approvalOutput.input || {}),
+          );
+          approvalIdToInputFingerprint.set(
+            approvalOutput.approvalId,
+            this.createToolApprovalInputFingerprint(approvalOutput.input || {}),
+          );
+          approvalIdToToolName.set(approvalOutput.approvalId, approvalOutput.toolName);
+
+          if (approvalOutput.status === "denied") {
+            decisionByApprovalId.set(approvalOutput.approvalId, {
+              approved: false,
+              reason: approvalOutput.reason,
+            });
+          }
+          continue;
+        }
+
+        if (partType !== "tool-approval-response") {
+          continue;
+        }
+
+        const approvalResponseId = hasNonEmptyString(part.approvalId) ? part.approvalId : null;
+        if (!approvalResponseId || typeof part.approved !== "boolean") {
+          continue;
+        }
+
+        decisionByApprovalId.set(approvalResponseId, {
+          approved: part.approved,
+          reason: hasNonEmptyString(part.reason) ? part.reason : undefined,
+        });
+      }
+    }
+
+    if (!approvalIdToFingerprint.has(approvalId)) {
+      const toolCallId = approvalIdToToolCallId.get(approvalId);
+      if (toolCallId) {
+        const fingerprint = toolCallFingerprintById.get(toolCallId);
+        if (fingerprint) {
+          approvalIdToFingerprint.set(approvalId, fingerprint);
+        }
+        const inputFingerprint = toolCallInputFingerprintById.get(toolCallId);
+        if (inputFingerprint) {
+          approvalIdToInputFingerprint.set(approvalId, inputFingerprint);
+        }
+        const toolNameFromCall = toolCallNameById.get(toolCallId);
+        if (toolNameFromCall) {
+          approvalIdToToolName.set(approvalId, toolNameFromCall);
+        }
+      }
+    }
+
+    const directDecision = decisionByApprovalId.get(approvalId);
+    if (directDecision) {
+      return directDecision;
+    }
+
+    const decisionByFingerprint = new Map<string, { approved: boolean; reason?: string }>();
+    const decisionByDelegateInputFingerprint = new Map<
+      string,
+      { approved: boolean; reason?: string }
+    >();
+    for (const [approvalResponseId, decision] of decisionByApprovalId.entries()) {
+      if (!approvalIdToFingerprint.has(approvalResponseId)) {
+        const toolCallId = approvalIdToToolCallId.get(approvalResponseId);
+        if (toolCallId) {
+          const fingerprint = toolCallFingerprintById.get(toolCallId);
+          if (fingerprint) {
+            approvalIdToFingerprint.set(approvalResponseId, fingerprint);
+          }
+          const inputFingerprint = toolCallInputFingerprintById.get(toolCallId);
+          if (inputFingerprint) {
+            approvalIdToInputFingerprint.set(approvalResponseId, inputFingerprint);
+          }
+          const toolNameFromCall = toolCallNameById.get(toolCallId);
+          if (toolNameFromCall) {
+            approvalIdToToolName.set(approvalResponseId, toolNameFromCall);
+          }
+        }
+      }
+
+      const fingerprint = approvalIdToFingerprint.get(approvalResponseId);
+      if (fingerprint) {
+        decisionByFingerprint.set(fingerprint, decision);
+      }
+
+      const inputFingerprint = approvalIdToInputFingerprint.get(approvalResponseId);
+      const sourceToolName = approvalIdToToolName.get(approvalResponseId);
+      if (inputFingerprint && sourceToolName === "delegate_task") {
+        decisionByDelegateInputFingerprint.set(inputFingerprint, decision);
+      }
+    }
+
+    const currentFingerprint = createToolApprovalFingerprint(toolName, args);
+    const directFingerprintDecision = decisionByFingerprint.get(currentFingerprint);
+    if (directFingerprintDecision) {
+      return directFingerprintDecision;
+    }
+
+    if (toolName !== "delegate_task") {
+      const currentInputFingerprint = this.createToolApprovalInputFingerprint(args);
+      const delegateDecision = decisionByDelegateInputFingerprint.get(currentInputFingerprint);
+      if (delegateDecision) {
+        return delegateDecision;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveToolApprovalDecisionFromInput(params: {
+    input: unknown;
+    toolName: string;
+    args: Record<string, unknown>;
+    approvalId: string;
+  }): { approved: boolean; reason?: string } | null {
+    const { input, toolName, args, approvalId } = params;
+    if (!Array.isArray(input) || input.length === 0) {
+      return null;
+    }
+
+    const first = input[0];
+    if (!isRecord(first)) {
+      return null;
+    }
+
+    if (Array.isArray((first as { parts?: unknown }).parts)) {
+      return this.resolveToolApprovalDecisionFromUIMessages({
+        messages: input as UIMessage[],
+        toolName,
+        args,
+        approvalId,
+      });
+    }
+
+    if ("role" in first && "content" in first) {
+      return this.resolveToolApprovalDecisionFromMessages({
+        messages: input as ModelMessage[],
+        toolName,
+        args,
+        approvalId,
+      });
+    }
+
+    return null;
+  }
+
+  private resolveToolApprovalDecisionFromUIMessages(params: {
+    messages: UIMessage[];
+    toolName: string;
+    args: Record<string, unknown>;
+    approvalId: string;
+  }): { approved: boolean; reason?: string } | null {
+    const { messages, toolName, args, approvalId } = params;
+    if (!messages.length) {
+      return null;
+    }
+
+    const approvalIdToFingerprint = new Map<string, string>();
+    const approvalIdToInputFingerprint = new Map<string, string>();
+    const approvalIdToToolName = new Map<string, string>();
+    const decisionByApprovalId = new Map<string, { approved: boolean; reason?: string }>();
+
+    const resolveReasonFromOutput = (output: unknown): string | undefined => {
+      if (!isRecord(output)) {
+        return undefined;
+      }
+      if (hasNonEmptyString(output.reason)) {
+        return output.reason;
+      }
+      if (hasNonEmptyString(output.message)) {
+        return output.message;
+      }
+      return undefined;
+    };
+
+    for (const message of messages) {
+      if (!Array.isArray((message as { parts?: unknown }).parts)) {
+        continue;
+      }
+
+      const parts = (message as { parts: unknown[] }).parts;
+      for (const part of parts) {
+        if (!isRecord(part) || !hasNonEmptyString(part.type)) {
+          continue;
+        }
+
+        if (!part.type.startsWith("tool-")) {
+          continue;
+        }
+
+        const partToolName = part.type.slice("tool-".length);
+        if (!partToolName) {
+          continue;
+        }
+
+        const partInput =
+          isRecord(part.input) && !Array.isArray(part.input)
+            ? (part.input as Record<string, unknown>)
+            : {};
+
+        const partFingerprint = createToolApprovalFingerprint(partToolName, partInput);
+        const partInputFingerprint = this.createToolApprovalInputFingerprint(partInput);
+
+        const approval = isRecord(part.approval) ? part.approval : null;
+        if (!approval) {
+          continue;
+        }
+
+        const approvalEntryId = hasNonEmptyString(approval.id) ? approval.id : null;
+        if (!approvalEntryId) {
+          continue;
+        }
+
+        approvalIdToFingerprint.set(approvalEntryId, partFingerprint);
+        approvalIdToInputFingerprint.set(approvalEntryId, partInputFingerprint);
+        approvalIdToToolName.set(approvalEntryId, partToolName);
+
+        if (typeof approval.approved === "boolean") {
+          decisionByApprovalId.set(approvalEntryId, {
+            approved: approval.approved,
+            reason: hasNonEmptyString(approval.reason) ? approval.reason : undefined,
+          });
+          continue;
+        }
+
+        if (part.state === "output-denied") {
+          decisionByApprovalId.set(approvalEntryId, {
+            approved: false,
+            reason:
+              (hasNonEmptyString(approval.reason) ? approval.reason : undefined) ??
+              resolveReasonFromOutput(part.output),
+          });
+        }
+      }
+    }
+
+    const directDecision = decisionByApprovalId.get(approvalId);
+    if (directDecision) {
+      return directDecision;
+    }
+
+    const decisionByFingerprint = new Map<string, { approved: boolean; reason?: string }>();
+    const decisionByDelegateInputFingerprint = new Map<
+      string,
+      { approved: boolean; reason?: string }
+    >();
+    for (const [approvalEntryId, decision] of decisionByApprovalId.entries()) {
+      const fingerprint = approvalIdToFingerprint.get(approvalEntryId);
+      if (fingerprint) {
+        decisionByFingerprint.set(fingerprint, decision);
+      }
+
+      const inputFingerprint = approvalIdToInputFingerprint.get(approvalEntryId);
+      const sourceToolName = approvalIdToToolName.get(approvalEntryId);
+      if (inputFingerprint && sourceToolName === "delegate_task") {
+        decisionByDelegateInputFingerprint.set(inputFingerprint, decision);
+      }
+    }
+
+    const currentFingerprint = createToolApprovalFingerprint(toolName, args);
+    const directFingerprintDecision = decisionByFingerprint.get(currentFingerprint);
+    if (directFingerprintDecision) {
+      return directFingerprintDecision;
+    }
+
+    if (toolName !== "delegate_task") {
+      const currentInputFingerprint = this.createToolApprovalInputFingerprint(args);
+      const delegateDecision = decisionByDelegateInputFingerprint.get(currentInputFingerprint);
+      if (delegateDecision) {
+        return delegateDecision;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveToolApprovalDecisionFromElicitation(
+    result: unknown,
+  ): { approved: boolean; reason?: string } | null {
+    if (typeof result === "boolean") {
+      return { approved: result };
+    }
+
+    if (!isRecord(result)) {
+      return null;
+    }
+
+    if (typeof result.approved === "boolean") {
+      return {
+        approved: result.approved,
+        reason: hasNonEmptyString(result.reason) ? result.reason : undefined,
+      };
+    }
+
+    const action = hasNonEmptyString(result.action) ? result.action.toLowerCase() : null;
+    const content = isRecord(result.content) ? result.content : null;
+    const contentReason = content && hasNonEmptyString(content.reason) ? content.reason : undefined;
+
+    if (content && typeof content.approved === "boolean") {
+      return {
+        approved: content.approved,
+        reason: contentReason || (hasNonEmptyString(result.reason) ? result.reason : undefined),
+      };
+    }
+
+    if (content && typeof content.confirm === "boolean") {
+      return {
+        approved: content.confirm,
+        reason: contentReason || (hasNonEmptyString(result.reason) ? result.reason : undefined),
+      };
+    }
+
+    if (action === "accept") {
+      return {
+        approved: true,
+        reason: contentReason || (hasNonEmptyString(result.reason) ? result.reason : undefined),
+      };
+    }
+    if (action === "decline" || action === "cancel" || action === "reject") {
+      return {
+        approved: false,
+        reason: contentReason || (hasNonEmptyString(result.reason) ? result.reason : undefined),
+      };
+    }
+
+    return null;
+  }
+
   private async ensureToolApproval(
     tool: Tool<any, any> | ProviderTool,
     args: Record<string, unknown>,
@@ -6404,14 +7053,87 @@ export class Agent {
           })
         : needsApproval;
 
-    if (requiresApproval) {
-      throw new ToolDeniedError({
+    if (!requiresApproval) {
+      return;
+    }
+
+    const approvalId = this.createToolApprovalId(toolCallId);
+    const messages = (options.toolContext?.messages ?? []) as ModelMessage[];
+    const decisionFromMessages = this.resolveToolApprovalDecisionFromMessages({
+      messages,
+      toolName: tool.name,
+      args,
+      approvalId,
+    });
+
+    const decisionFromInput = this.resolveToolApprovalDecisionFromInput({
+      input: options.input,
+      toolName: tool.name,
+      args,
+      approvalId,
+    });
+
+    const approvalDecision = decisionFromMessages ?? decisionFromInput;
+
+    if (approvalDecision?.approved) {
+      return;
+    }
+
+    if (approvalDecision && !approvalDecision.approved) {
+      throw this.createToolApprovalError({
+        status: "denied",
         toolName: tool.name,
-        message: `Tool ${tool.name} requires approval.`,
-        code: "TOOL_FORBIDDEN",
-        httpStatus: 403,
+        toolCallId,
+        approvalId,
+        input: args,
+        reason: approvalDecision.reason || "Tool execution denied by user.",
       });
     }
+
+    const elicitation = options.elicitation;
+    if (typeof elicitation === "function") {
+      const elicitationResult = await elicitation({
+        type: "tool-approval",
+        approvalId,
+        toolCallId,
+        toolName: tool.name,
+        args,
+        message: `Approve tool "${tool.name}" before execution.`,
+        requestedSchema: {
+          type: "object",
+          properties: {
+            approved: { type: "boolean", description: "Whether to approve tool execution." },
+            reason: { type: "string", description: "Optional reason for denial." },
+          },
+          required: ["approved"],
+        },
+      });
+      const decisionFromElicitation =
+        this.resolveToolApprovalDecisionFromElicitation(elicitationResult);
+
+      if (decisionFromElicitation?.approved) {
+        return;
+      }
+
+      if (decisionFromElicitation && !decisionFromElicitation.approved) {
+        throw this.createToolApprovalError({
+          status: "denied",
+          toolName: tool.name,
+          toolCallId,
+          approvalId,
+          input: args,
+          reason: decisionFromElicitation.reason || "Tool execution denied by user.",
+        });
+      }
+    }
+
+    throw this.createToolApprovalError({
+      status: "pending",
+      toolName: tool.name,
+      toolCallId,
+      approvalId,
+      input: args,
+    });
   }
 
   private async runInternalGenerateText(params: {

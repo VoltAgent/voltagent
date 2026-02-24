@@ -580,7 +580,7 @@ const coordinator = new Agent({
 
 #### Event Filtering
 
-When streaming with sub-agents, by default only `tool-call` and `tool-result` events are forwarded from sub-agents to reduce noise.
+When streaming with sub-agents, by default `tool-call`, `tool-result`, `tool-approval-request`, and `tool-approval-response` events are forwarded from sub-agents to reduce noise.
 
 **Enable all event types:**
 
@@ -595,6 +595,8 @@ const coordinator = new Agent({
       types: [
         "tool-call",
         "tool-result",
+        "tool-approval-request",
+        "tool-approval-response",
         "text-start",
         "text-delta",
         "text-end",
@@ -617,6 +619,8 @@ for await (const chunk of response.fullStream) {
   }
 }
 ```
+
+If you provide a custom `types` list and delegated tools use `needsApproval`, include `tool-approval-request` and `tool-approval-response`.
 
 [Sub-Agents documentation](./subagents.md)
 

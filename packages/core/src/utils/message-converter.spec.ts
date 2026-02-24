@@ -175,6 +175,54 @@ describe("convertResponseMessagesToUIMessages", () => {
     });
   });
 
+  it("maps internal approval output markers to approval-requested tool state", async () => {
+    const messages: (AssistantModelMessage | ToolModelMessage)[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-internal-approval",
+            toolName: "deleteFile",
+            input: { path: "/tmp/a.txt" },
+          },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "call-internal-approval",
+            toolName: "deleteFile",
+            output: {
+              __voltagentToolApproval: {
+                status: "requested",
+                approvalId: "approval-call-internal-approval",
+                toolCallId: "call-internal-approval",
+                toolName: "deleteFile",
+                input: { path: "/tmp/a.txt" },
+              },
+            },
+          },
+        ],
+      },
+    ];
+
+    const result = await convertResponseMessagesToUIMessages(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].parts).toHaveLength(1);
+    expect(result[0].parts[0]).toEqual({
+      type: "tool-deleteFile",
+      toolCallId: "call-internal-approval",
+      state: "approval-requested",
+      input: { path: "/tmp/a.txt" },
+      approval: { id: "approval-call-internal-approval" },
+      providerExecuted: false,
+    });
+  });
+
   it("should merge tool results with tool calls", async () => {
     const messages: (AssistantModelMessage | ToolModelMessage)[] = [
       {
@@ -747,6 +795,57 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
       state: "approval-responded",
       input: { location: "Rome" },
       approval: { id: "approval-1", approved: true },
+    });
+  });
+
+  it("maps internal denied approval marker to output-denied state", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-denied",
+            toolName: "deleteFile",
+            input: { path: "/tmp/a.txt" },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-denied",
+            toolName: "deleteFile",
+            output: {
+              __voltagentToolApproval: {
+                status: "denied",
+                approvalId: "approval-call-denied",
+                toolCallId: "call-denied",
+                toolName: "deleteFile",
+                input: { path: "/tmp/a.txt" },
+                reason: "Denied by reviewer",
+              },
+            },
+          },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "tool-deleteFile",
+      toolCallId: "call-denied",
+      state: "output-denied",
+      input: { path: "/tmp/a.txt" },
+      output: {
+        error: true,
+        message: "Denied by reviewer",
+      },
+      approval: {
+        id: "approval-call-denied",
+        approved: false,
+        reason: "Denied by reviewer",
+      },
+      providerExecuted: false,
     });
   });
 

@@ -14,6 +14,7 @@ import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { Tool } from "../tool";
+import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
@@ -2328,6 +2329,327 @@ Use pandas and summarize findings.`.split("\n"),
       expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ error: thrownError }));
       expect(abortSpy).toBeDefined();
       expect(abortSpy).toHaveBeenCalledWith(thrownError);
+    });
+  });
+
+  describe("Tool Approval", () => {
+    it("returns approval-requested tool state when tool needs approval", async () => {
+      const executeSpy = vi.fn().mockResolvedValue({ ok: true });
+      const tool = new Tool({
+        name: "dangerousAction",
+        description: "Requires explicit user approval",
+        parameters: z.object({ target: z.string() }),
+        needsApproval: true,
+        execute: executeSpy,
+      });
+
+      const agent = new Agent({
+        name: "ApprovalAgent",
+        instructions: "Use tools when needed.",
+        model: mockModel as any,
+        tools: [tool],
+      });
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        const output = await args.tools?.dangerousAction?.execute(
+          { target: "db" },
+          { toolCallId: "call-approval-1", messages: args.messages },
+        );
+
+        return {
+          text: "Approval required before running dangerousAction.",
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: "stop",
+          toolCalls: [
+            {
+              toolCallId: "call-approval-1",
+              toolName: "dangerousAction",
+              input: { target: "db" },
+            },
+          ],
+          toolResults: [
+            {
+              toolCallId: "call-approval-1",
+              toolName: "dangerousAction",
+              output,
+            },
+          ],
+          response: {
+            id: "resp-approval-1",
+            modelId: "test-model",
+            timestamp: new Date(),
+            messages: [
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "call-approval-1",
+                    toolName: "dangerousAction",
+                    input: { target: "db" },
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolCallId: "call-approval-1",
+                    toolName: "dangerousAction",
+                    output,
+                  },
+                ],
+              },
+            ],
+          },
+        } as any;
+      });
+
+      const result = await agent.generateText("Run dangerous action.");
+
+      expect(executeSpy).not.toHaveBeenCalled();
+      expect(result.response?.messages).toBeDefined();
+
+      const uiMessages = convertModelMessagesToUIMessages(result.response?.messages || []);
+      expect(uiMessages).toHaveLength(1);
+      expect(uiMessages[0].parts[0]).toEqual({
+        type: "tool-dangerousAction",
+        toolCallId: "call-approval-1",
+        state: "approval-requested",
+        input: { target: "db" },
+        approval: { id: "approval-call-approval-1" },
+        providerExecuted: false,
+      });
+    });
+
+    it("executes approved tool calls using approval response history", async () => {
+      const executeSpy = vi.fn().mockResolvedValue({ ok: true, target: "db" });
+      const tool = new Tool({
+        name: "dangerousAction",
+        description: "Requires explicit user approval",
+        parameters: z.object({ target: z.string() }),
+        needsApproval: true,
+        execute: executeSpy,
+      });
+
+      const agent = new Agent({
+        name: "ApprovalAgent",
+        instructions: "Use tools when needed.",
+        model: mockModel as any,
+        tools: [tool],
+      });
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        const output = await args.tools?.dangerousAction?.execute(
+          { target: "db" },
+          { toolCallId: "call-approval-2", messages: args.messages },
+        );
+
+        return {
+          text: "Action completed.",
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: "stop",
+          toolCalls: [
+            {
+              toolCallId: "call-approval-2",
+              toolName: "dangerousAction",
+              input: { target: "db" },
+            },
+          ],
+          toolResults: [
+            {
+              toolCallId: "call-approval-2",
+              toolName: "dangerousAction",
+              output,
+            },
+          ],
+          response: {
+            id: "resp-approval-2",
+            modelId: "test-model",
+            timestamp: new Date(),
+            messages: [
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "call-approval-2",
+                    toolName: "dangerousAction",
+                    input: { target: "db" },
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolCallId: "call-approval-2",
+                    toolName: "dangerousAction",
+                    output,
+                  },
+                ],
+              },
+            ],
+          },
+        } as any;
+      });
+
+      const inputMessages: ModelMessage[] = [
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              toolCallId: "call-approval-1",
+              toolName: "dangerousAction",
+              input: { target: "db" },
+            },
+            {
+              type: "tool-approval-request",
+              approvalId: "approval-call-approval-1",
+              toolCallId: "call-approval-1",
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-approval-response",
+              approvalId: "approval-call-approval-1",
+              approved: true,
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: "Continue and run approved action.",
+        },
+      ];
+
+      await agent.generateText(inputMessages as any);
+
+      expect(executeSpy).toHaveBeenCalledTimes(1);
+      expect(executeSpy).toHaveBeenCalledWith(
+        { target: "db" },
+        expect.objectContaining({
+          toolContext: expect.objectContaining({
+            callId: "call-approval-2",
+          }),
+        }),
+      );
+    });
+
+    it("executes approved tool calls when approval comes from delegate_task UI part", async () => {
+      const executeSpy = vi.fn().mockResolvedValue({ ok: true, target: "db" });
+      const tool = new Tool({
+        name: "dangerousAction",
+        description: "Requires explicit user approval",
+        parameters: z.object({ target: z.string() }),
+        needsApproval: true,
+        execute: executeSpy,
+      });
+
+      const agent = new Agent({
+        name: "ApprovalAgent",
+        instructions: "Use tools when needed.",
+        model: mockModel as any,
+        tools: [tool],
+      });
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        const output = await args.tools?.dangerousAction?.execute(
+          { target: "db" },
+          { toolCallId: "call-approval-2", messages: args.messages },
+        );
+
+        return {
+          text: "Action completed.",
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: "stop",
+          toolCalls: [
+            {
+              toolCallId: "call-approval-2",
+              toolName: "dangerousAction",
+              input: { target: "db" },
+            },
+          ],
+          toolResults: [
+            {
+              toolCallId: "call-approval-2",
+              toolName: "dangerousAction",
+              output,
+            },
+          ],
+          response: {
+            id: "resp-approval-2",
+            modelId: "test-model",
+            timestamp: new Date(),
+            messages: [
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "call-approval-2",
+                    toolName: "dangerousAction",
+                    input: { target: "db" },
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolCallId: "call-approval-2",
+                    toolName: "dangerousAction",
+                    output,
+                  },
+                ],
+              },
+            ],
+          },
+        } as any;
+      });
+
+      const inputMessages: UIMessage[] = [
+        {
+          id: "approval-msg-1",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-delegate_task",
+              toolCallId: "delegate-call-1",
+              state: "approval-responded",
+              input: { target: "db" },
+              approval: {
+                id: "approval-call-approval-1",
+                approved: true,
+              },
+            } as any,
+          ],
+        },
+        {
+          id: "approval-msg-2",
+          role: "user",
+          parts: [{ type: "text", text: "Continue and run approved action." }],
+        },
+      ];
+
+      await agent.generateText(inputMessages as any);
+
+      expect(executeSpy).toHaveBeenCalledTimes(1);
+      expect(executeSpy).toHaveBeenCalledWith(
+        { target: "db" },
+        expect.objectContaining({
+          toolContext: expect.objectContaining({
+            callId: "call-approval-2",
+          }),
+        }),
+      );
     });
   });
 

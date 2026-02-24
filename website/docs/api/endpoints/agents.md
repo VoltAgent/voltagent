@@ -530,6 +530,56 @@ function ChatComponent({ agentId }) {
 
 **Note:** VoltAgent requires a custom transport with `prepareSendMessagesRequest` to format the request body correctly. The endpoint expects `input` as an array of UIMessage objects and options in a specific format.
 
+### Tool Approval Resume (`tool-approval-response`)
+
+For tools configured with `needsApproval`, `/agents/:id/chat` may return a tool part with `state: "approval-requested"`.
+To continue, send another chat request that includes a `tool-approval-response` part.
+
+```bash
+curl -N -X POST http://localhost:3141/agents/assistant/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": [
+      {
+        "id": "asst-approval-1",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "tool-deleteCrmUser",
+            "toolCallId": "call_123",
+            "state": "approval-requested",
+            "input": { "userId": "user_123" },
+            "approval": { "id": "approval-call_123" }
+          }
+        ]
+      },
+      {
+        "id": "tool-approval-1",
+        "role": "tool",
+        "parts": [
+          {
+            "type": "tool-approval-response",
+            "approvalId": "approval-call_123",
+            "approved": true,
+            "reason": "approved by operator"
+          }
+        ]
+      },
+      {
+        "id": "user-continue-1",
+        "role": "user",
+        "parts": [{ "type": "text", "text": "Continue." }]
+      }
+    ],
+    "options": {
+      "conversationId": "conv-hitl-1",
+      "userId": "user-1"
+    }
+  }'
+```
+
+This resumes the pending call and executes the guarded tool if approved.
+
 ## Generate Object
 
 Generate a structured object that conforms to a JSON schema.

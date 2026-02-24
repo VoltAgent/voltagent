@@ -13,6 +13,7 @@ export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
  * Stream event type from AI SDK
  */
 export type StreamEventType = TextStreamPart<any>["type"];
+export type ForwardableStreamEventType = StreamEventType | "tool-approval-response";
 
 /**
  * Metadata to be added to stream parts
@@ -38,7 +39,7 @@ const SUBAGENT_DATA_EVENT_TYPE = "data-subagent-stream" as const;
 export function createMetadataEnrichedStream<T = any>(
   originalStream: AsyncIterableStream<T>,
   metadata: StreamMetadata,
-  allowedTypes?: StreamEventType[],
+  allowedTypes?: ForwardableStreamEventType[],
 ): AsyncIterableStream<T> {
   // Create a ReadableStream that prefixes event types
   const readableStream = new ReadableStream<T>({
@@ -104,11 +105,14 @@ export function createMetadataEnrichedStream<T = any>(
  * @param allowedTypes - Optional list of allowed event types
  * @returns Whether the chunk should be forwarded
  */
-export function shouldForwardChunk(chunk: any, allowedTypes?: StreamEventType[]): boolean {
+export function shouldForwardChunk(
+  chunk: any,
+  allowedTypes?: ForwardableStreamEventType[],
+): boolean {
   if (!allowedTypes || allowedTypes.length === 0) {
     return true; // Forward all chunks if no filter
   }
 
-  const chunkType = chunk?.type as StreamEventType | undefined;
+  const chunkType = chunk?.type as ForwardableStreamEventType | undefined;
   return chunkType ? allowedTypes.includes(chunkType) : false;
 }

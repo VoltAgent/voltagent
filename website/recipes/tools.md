@@ -68,3 +68,5 @@ const agent = new Agent({
 ## Full Example
 
 See the complete example: [with-tools on GitHub](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tools)
+
+For approval-gated tools (`needsApproval`) including subagent delegation, see [Human-in-the-Loop](./hitl).

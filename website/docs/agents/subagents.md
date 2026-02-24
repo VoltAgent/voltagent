@@ -113,7 +113,7 @@ const supervisorAgent = new Agent({
 
 ### Stream Event Forwarding Configuration
 
-Control which events from sub-agents are forwarded to the parent stream. By default, only `tool-call` and `tool-result` events are forwarded.
+Control which events from sub-agents are forwarded to the parent stream. By default, `tool-call`, `tool-result`, `tool-approval-request`, and `tool-approval-response` events are forwarded.
 
 ```ts
 const supervisorAgent = new Agent({
@@ -125,10 +125,12 @@ const supervisorAgent = new Agent({
   supervisorConfig: {
     // Configure which sub-agent events to forward
     fullStreamEventForwarding: {
-      // Default: ['tool-call', 'tool-result']
+      // Default: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response']
       types: [
         "tool-call",
         "tool-result",
+        "tool-approval-request",
+        "tool-approval-response",
         "text-delta",
         "reasoning-start",
         "reasoning-delta",
@@ -145,14 +147,14 @@ const supervisorAgent = new Agent({
 **Common Configurations:**
 
 ```ts
-// Minimal - Only tool events (default)
+// Minimal - Tool + approval events (default)
 fullStreamEventForwarding: {
-  types: ['tool-call', 'tool-result'],
+  types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response'],
 }
 
 // Text + Tools - Include text generation
 fullStreamEventForwarding: {
-  types: ['tool-call', 'tool-result', 'text-delta'],
+  types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response', 'text-delta'],
 }
 
 // Full visibility - All events including reasoning
@@ -160,6 +162,8 @@ fullStreamEventForwarding: {
   types: [
     'tool-call',
     'tool-result',
+    'tool-approval-request',
+    'tool-approval-response',
     'text-delta',
     'reasoning-start',
     'reasoning-delta',
@@ -172,11 +176,12 @@ fullStreamEventForwarding: {
 
 // Clean tool names - No agent prefix (add prefix manually when consuming events if desired)
 fullStreamEventForwarding: {
-  types: ['tool-call', 'tool-result'],
+  types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response'],
 }
 ```
 
 This configuration balances stream performance and information detail for sub-agent interactions.
+If you override `types` and delegated tools use `needsApproval`, keep `tool-approval-request` and `tool-approval-response` in the forwarded list.
 
 ### Error Handling Configuration
 
@@ -460,7 +465,7 @@ const writerAgent = new Agent({
 ```ts
 supervisorConfig: {
   fullStreamEventForwarding: {
-    types: ['tool-call', 'tool-result', 'text-delta'], // Control which events to forward
+    types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response', 'text-delta'], // Control which events to forward
   }
 }
 ```
@@ -520,6 +525,8 @@ This tool is automatically added to supervisor agents and handles delegation.
     ```
 
   When `bailed: true`, the supervisor's execution is terminated immediately and the subagent's response is returned to the user. See [Early Termination (Bail)](#early-termination-bail) for details.
+
+  When a delegated sub-agent tool requests approval (`needsApproval`), `delegate_task` does not immediately return this array. Instead, the run emits an approval request (`tool-approval-request` / `approval-requested`) and waits for an approval response. After approval, execution resumes and then returns the normal result array.
 
 5. Sub-agents process their delegated tasks independently. They can use their own tools or delegate further if they are also supervisors.
 6. Each sub-agent returns its result to the `delegate_task` tool execution context.
@@ -780,13 +787,13 @@ When using bail with `toUIMessageStream()` or consuming `fullStream` events, you
 
 **Default Behavior:**
 
-By default, only `tool-call` and `tool-result` events are forwarded from subagents. This means **subagent text chunks are NOT visible** in the stream:
+By default, `tool-call`, `tool-result`, `tool-approval-request`, and `tool-approval-response` events are forwarded from subagents. This means **subagent text chunks are NOT visible** in the stream:
 
 ```ts
 // Default configuration (implicit)
 supervisorConfig: {
   fullStreamEventForwarding: {
-    types: ['tool-call', 'tool-result'], // ⚠️ text-delta NOT included
+    types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response'], // ⚠️ text-delta NOT included
   }
 }
 ```
@@ -801,7 +808,13 @@ const supervisor = new Agent({
   subAgents: [workoutBuilder],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result", "text-delta"], // ✅ Include text-delta
+      types: [
+        "tool-call",
+        "tool-result",
+        "tool-approval-request",
+        "tool-approval-response",
+        "text-delta",
+      ], // ✅ Include text-delta
     },
   },
   hooks: {
@@ -834,6 +847,8 @@ for await (const message of result.toUIMessageStream()) {
 | ------------------------------------------------------- | ---------------------------------------- | --------------- |
 | `tool-call`                                             | Tool invocations                         | ✅ Included     |
 | `tool-result`                                           | Tool results                             | ✅ Included     |
+| `tool-approval-request`                                 | Tool approval requested                  | ✅ Included     |
+| `tool-approval-response`                                | Tool approval response                   | ✅ Included     |
 | `text-delta`                                            | Text chunk generation                    | ❌ NOT included |
 | `reasoning-start` / `reasoning-delta` / `reasoning-end` | Model reasoning lifecycle (if available) | ❌ NOT included |
 | `source`                                                | Retrieved sources (if available)         | ❌ NOT included |

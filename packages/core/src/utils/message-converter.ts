@@ -6,6 +6,7 @@ import type { AssistantModelMessage, ModelMessage, ToolModelMessage } from "@ai-
 import type { FileUIPart, ReasoningUIPart, TextUIPart, ToolUIPart, UIMessage } from "ai";
 import { bytesToBase64 } from "./base64";
 import { randomUUID } from "./id";
+import { extractToolApprovalOutput } from "./tool-approval";
 
 const hasOpenAIReasoningProviderOptions = (providerOptions: unknown): boolean => {
   if (!providerOptions || typeof providerOptions !== "object") {
@@ -147,9 +148,7 @@ export async function convertResponseMessagesToUIMessages(
           }
           case "tool-result": {
             const assignOutput = (target: ToolUIPart) => {
-              target.state = "output-available";
-              target.output = contentPart.output;
-              target.providerExecuted = true;
+              applyToolResultToPart(target, contentPart.output, true);
             };
 
             const existing = toolPartsById.get(contentPart.toolCallId);
@@ -165,14 +164,12 @@ export async function convertResponseMessagesToUIMessages(
               break;
             }
 
-            const resultPart = {
-              type: `tool-${contentPart.toolName}` as const,
-              toolCallId: contentPart.toolCallId,
-              state: "output-available" as const,
-              input: {},
-              output: contentPart.output,
-              providerExecuted: true,
-            } satisfies ToolUIPart;
+            const resultPart = createToolPartFromResult(
+              contentPart.toolName,
+              contentPart.toolCallId,
+              contentPart.output,
+              true,
+            );
             uiMessage.parts.push(resultPart);
             toolPartsById.set(contentPart.toolCallId, resultPart);
             break;
@@ -201,18 +198,14 @@ export async function convertResponseMessagesToUIMessages(
         if (toolResult.type === "tool-result") {
           const existing = toolPartsById.get(toolResult.toolCallId);
           if (existing) {
-            existing.state = "output-available";
-            existing.output = toolResult.output;
-            existing.providerExecuted = false;
+            applyToolResultToPart(existing, toolResult.output, false);
           } else {
-            const resultPart = {
-              type: `tool-${toolResult.toolName}` as const,
-              toolCallId: toolResult.toolCallId,
-              state: "output-available" as const,
-              input: {},
-              output: toolResult.output,
-              providerExecuted: false,
-            } satisfies ToolUIPart;
+            const resultPart = createToolPartFromResult(
+              toolResult.toolName,
+              toolResult.toolCallId,
+              toolResult.output,
+              false,
+            );
             uiMessage.parts.push(resultPart);
             toolPartsById.set(toolResult.toolCallId, resultPart);
           }
@@ -308,6 +301,89 @@ function applyApprovalResponseToToolPart(
   }
 }
 
+function applyToolResultToPart(
+  toolPart: ToolUIPart,
+  output: unknown,
+  providerExecuted: boolean,
+): void {
+  const approvalOutput = extractToolApprovalOutput(output);
+  if (!approvalOutput) {
+    toolPart.state = "output-available";
+    toolPart.output = output;
+    toolPart.providerExecuted = providerExecuted;
+    return;
+  }
+
+  if (approvalOutput.status === "requested") {
+    applyApprovalRequestToToolPart(toolPart, approvalOutput.approvalId);
+    if (approvalOutput.input) {
+      toolPart.input = approvalOutput.input as any;
+    }
+    toolPart.providerExecuted = false;
+    (toolPart as any).output = undefined;
+    return;
+  }
+
+  applyApprovalResponseToToolPart(toolPart, {
+    id: approvalOutput.approvalId,
+    approved: false,
+    ...(approvalOutput.reason ? { reason: approvalOutput.reason } : {}),
+  });
+  (toolPart as any).state = "output-denied";
+  toolPart.output = {
+    error: true,
+    message: approvalOutput.reason || `Tool ${approvalOutput.toolName} execution denied.`,
+  } as any;
+  toolPart.providerExecuted = false;
+}
+
+function createToolPartFromResult(
+  toolName: string,
+  toolCallId: string,
+  output: unknown,
+  providerExecuted: boolean,
+): ToolUIPart {
+  const approvalOutput = extractToolApprovalOutput(output);
+  if (!approvalOutput) {
+    return {
+      type: `tool-${toolName}` as const,
+      toolCallId,
+      state: "output-available" as const,
+      input: {},
+      output,
+      providerExecuted,
+    } satisfies ToolUIPart;
+  }
+
+  if (approvalOutput.status === "requested") {
+    return {
+      type: `tool-${toolName}` as const,
+      toolCallId,
+      state: "approval-requested" as const,
+      input: (approvalOutput.input || {}) as any,
+      approval: { id: approvalOutput.approvalId } as any,
+      providerExecuted: false,
+    } satisfies ToolUIPart;
+  }
+
+  return {
+    type: `tool-${toolName}` as const,
+    toolCallId,
+    state: "output-denied" as const,
+    input: (approvalOutput.input || {}) as any,
+    output: {
+      error: true,
+      message: approvalOutput.reason || `Tool ${toolName} execution denied.`,
+    } as any,
+    approval: {
+      id: approvalOutput.approvalId,
+      approved: false,
+      ...(approvalOutput.reason ? { reason: approvalOutput.reason } : {}),
+    } as any,
+    providerExecuted: false,
+  } satisfies ToolUIPart;
+}
+
 /**
  * Convert input ModelMessages (AI SDK) to UIMessage array used by VoltAgent.
  * - Preserves roles (user/assistant/system). Tool messages are represented as
@@ -328,18 +404,14 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
   ) => {
     const existing = toolPartsById.get(toolCallId);
     if (existing) {
-      existing.state = "output-available";
-      existing.output = output;
-      existing.providerExecuted = providerExecuted;
+      applyToolResultToPart(existing, output, providerExecuted);
       return true;
     }
 
     if (partsToSearch) {
       const fallback = findExistingToolPart(partsToSearch, toolCallId);
       if (fallback) {
-        fallback.state = "output-available";
-        fallback.output = output;
-        fallback.providerExecuted = providerExecuted;
+        applyToolResultToPart(fallback, output, providerExecuted);
         toolPartsById.set(toolCallId, fallback);
         return true;
       }
@@ -350,9 +422,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
       toolCallId,
     );
     if (globalFallback) {
-      globalFallback.state = "output-available";
-      globalFallback.output = output;
-      globalFallback.providerExecuted = providerExecuted;
+      applyToolResultToPart(globalFallback, output, providerExecuted);
       toolPartsById.set(toolCallId, globalFallback);
       return true;
     }
@@ -375,16 +445,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             const toolMessage: UIMessage = {
               id: randomUUID(),
               role: "assistant",
-              parts: [
-                {
-                  type: `tool-${part.toolName}` as const,
-                  toolCallId: part.toolCallId,
-                  state: "output-available" as const,
-                  input: {},
-                  output: part.output,
-                  providerExecuted: false,
-                } satisfies ToolUIPart,
-              ],
+              parts: [createToolPartFromResult(part.toolName, part.toolCallId, part.output, false)],
             };
             uiMessages.push(toolMessage);
             toolPartsById.set(part.toolCallId, toolMessage.parts[0] as ToolUIPart);
@@ -522,14 +583,12 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
           );
 
           if (!merged) {
-            const resultPart = {
-              type: `tool-${contentPart.toolName}` as const,
-              toolCallId: contentPart.toolCallId,
-              state: "output-available" as const,
-              input: {},
-              output: contentPart.output,
-              providerExecuted: true,
-            } satisfies ToolUIPart;
+            const resultPart = createToolPartFromResult(
+              contentPart.toolName,
+              contentPart.toolCallId,
+              contentPart.output,
+              true,
+            );
             ui.parts.push(resultPart);
             toolPartsById.set(contentPart.toolCallId, resultPart);
           }

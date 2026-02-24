@@ -78,6 +78,11 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "hitl",
+          label: "Human-in-the-Loop",
+        },
+        {
+          type: "doc",
           id: "tool-routing",
           label: "Tool Routing",
         },

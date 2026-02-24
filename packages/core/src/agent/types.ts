@@ -335,7 +335,7 @@ export type FullStreamEventForwardingConfig = {
    *         'tool-call', 'tool-result', 'tool-error'
    * - Other: 'source', 'file', 'start-step', 'finish-step',
    *          'start', 'finish', 'abort', 'error', 'raw'
-   * @default ['tool-call', 'tool-result']
+   * @default ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response']
    * @example ['tool-call', 'tool-result', 'text-delta']
    */
   types?: StreamEventType[];
@@ -363,7 +363,7 @@ export type SupervisorConfig = {
   /**
    * Configuration for forwarding events from subagents to the parent agent's full stream
    * Controls which event types are forwarded
-   * @default { types: ['tool-call', 'tool-result'] }
+   * @default { types: ['tool-call', 'tool-result', 'tool-approval-request', 'tool-approval-response'] }
    */
   fullStreamEventForwarding?: FullStreamEventForwardingConfig;
 

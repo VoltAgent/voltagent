@@ -513,37 +513,45 @@ function Chat() {
       {messages.map((message) => (
         <div key={message.id}>
           {message.parts.map((part) => {
-            if (part.type === "tool-runCommand") {
-              if (part.state === "approval-requested") {
-                return (
-                  <div key={part.toolCallId}>
-                    <p>Approve command: {part.input.command}?</p>
-                    <button
-                      onClick={() =>
-                        addToolApprovalResponse({
-                          id: part.approval.id,
-                          approved: true,
-                        })
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() =>
-                        addToolApprovalResponse({
-                          id: part.approval.id,
-                          approved: false,
-                          reason: "User denied",
-                        })
-                      }
-                    >
-                      Deny
-                    </button>
-                  </div>
-                );
-              }
+            if (!("state" in part) || part.state !== "approval-requested") {
+              return null;
             }
-            return null;
+
+            const approval = "approval" in part ? part.approval : undefined;
+            if (!approval?.id) {
+              return null;
+            }
+
+            const toolLabel = part.type.startsWith("tool-")
+              ? part.type.slice("tool-".length)
+              : "tool";
+
+            return (
+              <div key={part.toolCallId}>
+                <p>Approve {toolLabel} execution?</p>
+                <button
+                  onClick={() =>
+                    addToolApprovalResponse({
+                      id: approval.id,
+                      approved: true,
+                    })
+                  }
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() =>
+                    addToolApprovalResponse({
+                      id: approval.id,
+                      approved: false,
+                      reason: "User denied",
+                    })
+                  }
+                >
+                  Deny
+                </button>
+              </div>
+            );
           })}
         </div>
       ))}
@@ -552,7 +560,69 @@ function Chat() {
 }
 ```
 
+In delegated sub-agent flows, the approval part can be emitted as `tool-delegate_task` while the guarded tool runs inside the sub-agent. Match approvals using `part.state` and `part.approval.id`, not a hardcoded tool part type.
+
 If you do not use `sendAutomaticallyWhen`, call `sendMessage` manually after approval to continue the flow.
+
+### Raw API Flow (`/agents/:id/chat`)
+
+If you are not using AI SDK helpers, you can continue the approval flow by sending a `tool-approval-response` part in the next request.
+
+1. First call triggers a guarded tool and returns `approval-requested`.
+
+```bash
+curl -N -X POST http://localhost:3141/agents/assistant/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Delete CRM account user_123",
+    "options": { "conversationId": "conv-hitl-1", "userId": "user-1" }
+  }'
+```
+
+2. Extract the returned `approval.id` from the assistant tool part.
+3. Send a follow-up call with previous messages plus a `tool-approval-response` message:
+
+```bash
+curl -N -X POST http://localhost:3141/agents/assistant/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": [
+      {
+        "id": "asst-1",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "tool-deleteCrmUser",
+            "toolCallId": "call_123",
+            "state": "approval-requested",
+            "input": { "userId": "user_123" },
+            "approval": { "id": "approval-call_123" }
+          }
+        ]
+      },
+      {
+        "id": "tool-approval-1",
+        "role": "tool",
+        "parts": [
+          {
+            "type": "tool-approval-response",
+            "approvalId": "approval-call_123",
+            "approved": true,
+            "reason": "approved by operator"
+          }
+        ]
+      },
+      {
+        "id": "user-continue-1",
+        "role": "user",
+        "parts": [{ "type": "text", "text": "Continue." }]
+      }
+    ],
+    "options": { "conversationId": "conv-hitl-1", "userId": "user-1" }
+  }'
+```
+
+VoltAgent resumes execution, runs the approved tool call, and continues the same conversation.
 
 ## Client-Side Tools
 

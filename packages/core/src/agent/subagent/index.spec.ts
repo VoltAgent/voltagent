@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createToolApprovalOutput } from "../../utils/tool-approval";
 import type { Agent } from "../agent";
+import { isToolDeniedError } from "../errors";
 import { AGENT_METADATA_CONTEXT_KEY } from "../memory-persist-queue";
 import { SubAgentManager } from "./index";
 import {
@@ -433,6 +435,158 @@ describe("SubAgentManager", () => {
           usage: expect.any(Object),
         }),
       );
+    });
+
+    it("should propagate sub-agent pending approvals to delegate_task", async () => {
+      const approvalAgent = createMockAgent({
+        id: "crm-agent",
+        name: "CRM Agent",
+      });
+      const pendingApprovalOutput = createToolApprovalOutput({
+        status: "requested",
+        approvalId: "approval-call-delete-1",
+        toolCallId: "call-delete-1",
+        toolName: "delete_crm_user",
+        input: { userId: "user_123" },
+      });
+
+      vi.spyOn(approvalAgent, "streamText").mockResolvedValue({
+        fullStream: createMockStream([
+          mockStreamEvents.toolCall("call-delete-1", "delete_crm_user", {
+            userId: "user_123",
+          }),
+          mockStreamEvents.toolResult("call-delete-1", "delete_crm_user", pendingApprovalOutput),
+          mockStreamEvents.finish(),
+        ]),
+        toUIMessageStream: vi.fn(),
+        text: Promise.resolve(""),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        steps: Promise.resolve([
+          {
+            toolResults: [{ output: pendingApprovalOutput }],
+          },
+        ]),
+      } as any);
+
+      subAgentManager.addSubAgent(approvalAgent);
+      const tool = subAgentManager.createDelegateTool(mockDelegateToolOptions);
+
+      let thrown: unknown;
+      try {
+        await tool.execute({
+          targetAgents: ["CRM Agent"],
+          task: "Delete account user_123",
+        });
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(isToolDeniedError(thrown)).toBe(true);
+      expect(thrown).toMatchObject({
+        toolApproval: {
+          status: "pending",
+          approvalId: "approval-call-delete-1",
+          toolCallId: "call-delete-1",
+          toolName: "delete_crm_user",
+          input: { userId: "user_123" },
+        },
+      });
+    });
+
+    it("should forward parent user messages as shared context to delegated agent", async () => {
+      const contextAwareAgent = createMockAgentWithStubs({
+        id: "crm-context-agent",
+        name: "CRM Agent",
+      });
+      const streamTextSpy = vi.spyOn(contextAwareAgent, "streamText");
+
+      subAgentManager.addSubAgent(contextAwareAgent);
+      const tool = subAgentManager.createDelegateTool(mockDelegateToolOptions);
+
+      await tool.execute(
+        {
+          targetAgents: ["CRM Agent"],
+          task: "Delete account",
+        },
+        {
+          toolContext: {
+            name: "delegate_task",
+            callId: "delegate-call-context-1",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: 'CRMdeki "user_123" kullanicisini kalici olarak sil.',
+                  },
+                ],
+              },
+              {
+                role: "user",
+                content: [{ type: "text", text: 'userid: "user_123"' }],
+              },
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "delegate-call-context-1",
+                    toolName: "delegate_task",
+                    input: {
+                      task: "Delete account",
+                      targetAgents: ["CRM Agent"],
+                    },
+                  },
+                  {
+                    type: "tool-approval-request",
+                    approvalId: "approval-call-delete-1",
+                    toolCallId: "delegate-call-context-1",
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-approval-response",
+                    approvalId: "approval-call-delete-1",
+                    approved: true,
+                  },
+                ],
+              },
+            ],
+          },
+        } as any,
+      );
+
+      expect(streamTextSpy).toHaveBeenCalledTimes(1);
+      const [forwardedMessages] = streamTextSpy.mock.calls[0];
+      const flattenedText = (forwardedMessages as any[])
+        .flatMap((message) => (Array.isArray(message?.parts) ? message.parts : []))
+        .filter((part) => part?.type === "text")
+        .map((part) => part.text)
+        .join("\n");
+
+      expect(flattenedText).toContain("user_123");
+      expect(flattenedText).toContain("Delete account");
+
+      const hasApprovalResponse = (forwardedMessages as any[]).some(
+        (message) =>
+          message?.role === "assistant" &&
+          Array.isArray(message?.parts) &&
+          message.parts.some(
+            (part: any) =>
+              part?.toolCallId === "delegate-call-context-1" &&
+              part?.approval?.id === "approval-call-delete-1" &&
+              part?.approval?.approved === true,
+          ),
+      );
+      expect(hasApprovalResponse).toBe(true);
     });
 
     it("should return error when no valid agents found", async () => {

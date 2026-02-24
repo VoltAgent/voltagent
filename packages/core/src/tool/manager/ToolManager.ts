@@ -54,7 +54,6 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
       description: string;
       inputSchema: AgentTool["parameters"];
       execute?: (args: any, options?: ToolExecutionOptions) => ToolExecutionResult<any>;
-      needsApproval?: AgentTool["needsApproval"];
       providerOptions?: AgentTool["providerOptions"];
       toModelOutput?: AgentTool["toModelOutput"];
       outputSchema?: AgentTool["outputSchema"];
@@ -66,7 +65,6 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
       tools[tool.name] = {
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
-        needsApproval: tool.needsApproval,
         providerOptions: tool.providerOptions, // Pass provider-specific options to AI SDK
         toModelOutput: tool.toModelOutput, // Pass multi-modal output converter to AI SDK
       };
