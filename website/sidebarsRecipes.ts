@@ -24,6 +24,11 @@ const sidebars: SidebarsConfig = {
           id: "slack-agent",
           label: "Slack Agent",
         },
+        {
+          type: "doc",
+          id: "slack-agent-chat-sdk",
+          label: "Slack Agent with Chat SDK",
+        },
       ],
     },
     {

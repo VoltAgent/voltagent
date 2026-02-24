@@ -322,7 +322,12 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Integrations",
       collapsed: true,
-      items: ["integrations/overview", "integrations/nextjs", "integrations/vercel-ai"],
+      items: [
+        "integrations/overview",
+        "integrations/nextjs",
+        "integrations/chat-sdk",
+        "integrations/vercel-ai",
+      ],
     },
 
     {

@@ -89,6 +89,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Middleware](./with-middleware) — Input/output middleware with retry feedback.
 - [PlanAgents](./with-planagents) — Quickstart for PlanAgents with planning, filesystem tools, and subagent tasks.
 - [Slack](./with-slack) — Slack app mention bot that replies in the same channel/thread via VoltOps Slack actions.
+- [Chat SDK (Slack)](./with-chat-sdk) — Next.js webhook bot with Chat SDK transport and VoltAgent-powered responses.
 - [Airtable](./with-airtable) — React to new Airtable records and write updates back using VoltOps Airtable actions.
 - [GitHub Repo Analyzer](./github-repo-analyzer) — Agents read repository code and summarize insights/issues from GitHub projects.
 - [GitHub Star Stories](./github-star-stories) — Celebrate new GitHub stars with enriched profiles, AI-written stories, and VoltOps Discord actions.

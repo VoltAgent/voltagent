@@ -10,3 +10,4 @@ For specific framework integrations, we provide guides to streamline the setup p
 ## Framework Guides
 
 - **[Next.js](./nextjs.md):** Learn how to integrate VoltAgent seamlessly into your Next.js applications, leveraging Server Actions and the Vercel AI SDK.
+- **[Chat SDK](./chat-sdk.md):** Build Slack bots with Chat SDK transport and VoltAgent-powered responses.

@@ -13,6 +13,7 @@ End-to-end setup with code, triggers, and VoltOps actions.
 
 - [Airtable Agent](./airtable-agent) - React to new records and write updates back into Airtable.
 - [Slack Agent](./slack-agent) - Respond to channel messages and reply via VoltOps Slack actions.
+- [Slack Agent with Chat SDK](./slack-agent-chat-sdk) - Build a Slack bot in Next.js with Chat SDK transport and VoltAgent responses.
 
 ## Examples
 
