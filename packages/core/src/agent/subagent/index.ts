@@ -1006,10 +1006,94 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
     try {
       const uiMessages = convertModelMessagesToUIMessages(toolMessages as any);
-      return uiMessages;
+      return this.stripOpenAIItemIdsFromSharedContext(uiMessages);
     } catch {
       return [];
     }
+  }
+
+  private stripOpenAIItemIdsFromSharedContext(messages: UIMessage[]): UIMessage[] {
+    return messages.map((message) => {
+      if (!Array.isArray(message.parts) || message.parts.length === 0) {
+        return message;
+      }
+
+      let mutatedMessage = false;
+      const sanitizedParts = message.parts.map((part) => {
+        if (!part || typeof part !== "object" || Array.isArray(part)) {
+          return part;
+        }
+
+        let nextPart = part as Record<string, unknown>;
+        let mutatedPart = false;
+
+        const sanitizeMetadata = (value: unknown): unknown => {
+          if (!value || typeof value !== "object" || Array.isArray(value)) {
+            return value;
+          }
+
+          const metadata = value as Record<string, unknown>;
+          const openai = metadata.openai;
+          if (!openai || typeof openai !== "object" || Array.isArray(openai)) {
+            return value;
+          }
+
+          const openaiRecord = openai as Record<string, unknown>;
+          if (!("itemId" in openaiRecord)) {
+            return value;
+          }
+
+          const { itemId: _itemId, ...openaiWithoutItemId } = openaiRecord;
+          if (Object.keys(openaiWithoutItemId).length === 0) {
+            const { openai: _openai, ...metadataWithoutOpenai } = metadata;
+            return metadataWithoutOpenai;
+          }
+
+          return {
+            ...metadata,
+            openai: openaiWithoutItemId,
+          };
+        };
+
+        const applySanitizedMetadata = (key: "callProviderMetadata" | "providerMetadata") => {
+          const current = nextPart[key];
+          const sanitized = sanitizeMetadata(current);
+          if (sanitized === current) {
+            return;
+          }
+
+          mutatedPart = true;
+          if (sanitized === undefined) {
+            const { [key]: _ignored, ...rest } = nextPart;
+            nextPart = rest;
+          } else {
+            nextPart = {
+              ...nextPart,
+              [key]: sanitized,
+            };
+          }
+        };
+
+        applySanitizedMetadata("callProviderMetadata");
+        applySanitizedMetadata("providerMetadata");
+
+        if (!mutatedPart) {
+          return part;
+        }
+
+        mutatedMessage = true;
+        return nextPart as typeof part;
+      });
+
+      if (!mutatedMessage) {
+        return message;
+      }
+
+      return {
+        ...message,
+        parts: sanitizedParts,
+      };
+    });
   }
 
   /**

@@ -541,6 +541,11 @@ describe("SubAgentManager", () => {
                       task: "Delete account",
                       targetAgents: ["CRM Agent"],
                     },
+                    providerOptions: {
+                      openai: {
+                        itemId: "fc_test_duplicate_item_1",
+                      },
+                    },
                   },
                   {
                     type: "tool-approval-request",
@@ -574,6 +579,17 @@ describe("SubAgentManager", () => {
 
       expect(flattenedText).toContain("user_123");
       expect(flattenedText).toContain("Delete account");
+
+      const hasOpenAIItemId = (forwardedMessages as any[]).some(
+        (message) =>
+          Array.isArray(message?.parts) &&
+          message.parts.some(
+            (part: any) =>
+              typeof part?.callProviderMetadata?.openai?.itemId === "string" ||
+              typeof part?.providerMetadata?.openai?.itemId === "string",
+          ),
+      );
+      expect(hasOpenAIItemId).toBe(false);
 
       const hasApprovalResponse = (forwardedMessages as any[]).some(
         (message) =>
