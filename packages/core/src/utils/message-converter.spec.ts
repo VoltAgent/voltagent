@@ -836,14 +836,67 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
       toolCallId: "call-denied",
       state: "output-denied",
       input: { path: "/tmp/a.txt" },
-      output: {
-        error: true,
-        message: "Denied by reviewer",
-      },
       approval: {
         id: "approval-call-denied",
         approved: false,
         reason: "Denied by reviewer",
+      },
+      providerExecuted: false,
+    });
+  });
+
+  it("keeps denied approvals in output-denied state when approval response precedes tool-result", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-delegate-denied",
+            toolName: "delegate_task",
+            input: { task: "delete account", targetAgents: ["CRM Agent"] },
+          },
+          {
+            type: "tool-approval-request",
+            approvalId: "approval-delegate-denied",
+            toolCallId: "call-delegate-denied",
+          },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-approval-response",
+            approvalId: "approval-delegate-denied",
+            approved: false,
+            reason: "User denied",
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-delegate-denied",
+            toolName: "delegate_task",
+            output: {
+              type: "error-text",
+              value: "User denied",
+            },
+          },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "tool-delegate_task",
+      toolCallId: "call-delegate-denied",
+      state: "output-denied",
+      input: { task: "delete account", targetAgents: ["CRM Agent"] },
+      approval: {
+        id: "approval-delegate-denied",
+        approved: false,
+        reason: "User denied",
       },
       providerExecuted: false,
     });

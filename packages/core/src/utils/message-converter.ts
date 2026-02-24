@@ -274,6 +274,41 @@ function findToolPartByApprovalId(parts: UIMessage["parts"], approvalId: string)
   return undefined;
 }
 
+function extractErrorTextFromToolOutput(output: unknown): string | undefined {
+  if (!output || typeof output !== "object" || Array.isArray(output)) {
+    return undefined;
+  }
+
+  const value = output as Record<string, unknown>;
+  if (
+    value.type === "error-text" &&
+    typeof value.value === "string" &&
+    value.value.trim().length > 0
+  ) {
+    return value.value;
+  }
+
+  if (typeof value.message === "string" && value.message.trim().length > 0) {
+    return value.message;
+  }
+
+  return undefined;
+}
+
+function applyOutputDeniedToToolPart(
+  toolPart: ToolUIPart,
+  approval: {
+    id: string;
+    approved: false;
+    reason?: string;
+  },
+) {
+  (toolPart as any).state = "output-denied";
+  (toolPart as any).output = undefined;
+  (toolPart as any).errorText = undefined;
+  (toolPart as any).approval = approval;
+}
+
 function applyApprovalRequestToToolPart(toolPart: ToolUIPart, approvalId: string) {
   const currentState = (toolPart as any).state as string | undefined;
   (toolPart as any).approval = { id: approvalId };
@@ -290,13 +325,18 @@ function applyApprovalResponseToToolPart(
   toolPart: ToolUIPart,
   approval: { id: string; approved: boolean; reason?: string },
 ) {
+  if (!approval.approved) {
+    applyOutputDeniedToToolPart(toolPart, {
+      id: approval.id,
+      approved: false,
+      ...(approval.reason ? { reason: approval.reason } : {}),
+    });
+    return;
+  }
+
   const currentState = (toolPart as any).state as string | undefined;
   (toolPart as any).approval = approval;
-  if (
-    currentState !== "output-available" &&
-    currentState !== "output-error" &&
-    currentState !== "output-denied"
-  ) {
+  if (currentState !== "output-available" && currentState !== "output-error") {
     (toolPart as any).state = "approval-responded";
   }
 }
@@ -306,6 +346,22 @@ function applyToolResultToPart(
   output: unknown,
   providerExecuted: boolean,
 ): void {
+  const existingApproval = (toolPart as any).approval as
+    | { id?: string; approved?: boolean; reason?: string }
+    | undefined;
+  if (existingApproval?.approved === false && typeof existingApproval.id === "string") {
+    const outputReason = extractErrorTextFromToolOutput(output);
+    applyOutputDeniedToToolPart(toolPart, {
+      id: existingApproval.id,
+      approved: false,
+      ...(outputReason || existingApproval.reason
+        ? { reason: outputReason || existingApproval.reason }
+        : {}),
+    });
+    toolPart.providerExecuted = false;
+    return;
+  }
+
   const approvalOutput = extractToolApprovalOutput(output);
   if (!approvalOutput) {
     toolPart.state = "output-available";
@@ -329,11 +385,7 @@ function applyToolResultToPart(
     approved: false,
     ...(approvalOutput.reason ? { reason: approvalOutput.reason } : {}),
   });
-  (toolPart as any).state = "output-denied";
-  toolPart.output = {
-    error: true,
-    message: approvalOutput.reason || `Tool ${approvalOutput.toolName} execution denied.`,
-  } as any;
+  (toolPart as any).output = undefined;
   toolPart.providerExecuted = false;
 }
 
@@ -371,10 +423,6 @@ function createToolPartFromResult(
     toolCallId,
     state: "output-denied" as const,
     input: (approvalOutput.input || {}) as any,
-    output: {
-      error: true,
-      message: approvalOutput.reason || `Tool ${toolName} execution denied.`,
-    } as any,
     approval: {
       id: approvalOutput.approvalId,
       approved: false,
