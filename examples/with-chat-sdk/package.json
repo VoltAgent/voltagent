@@ -1,7 +1,6 @@
 {
   "name": "voltagent-example-with-chat-sdk",
   "version": "0.1.0",
-  "private": true,
   "author": "",
   "dependencies": {
     "@chat-adapter/slack": "^4.14.0",
@@ -29,6 +28,7 @@
     "voltagent"
   ],
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/VoltAgent/voltagent.git",
