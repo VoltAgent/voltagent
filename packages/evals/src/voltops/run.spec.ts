@@ -16,6 +16,8 @@ const baseDataset: ExperimentDatasetInfo = {
   name: "sample-dataset",
 };
 
+const BASE_DATASET_ITEM_ID = "11111111-1111-4111-8111-111111111111";
+
 const baseConfig: ExperimentConfig = {
   id: "exp-1",
   runner: (() => ({ output: "ok" })) as () => ExperimentRunnerReturn<unknown>,
@@ -24,14 +26,14 @@ const baseConfig: ExperimentConfig = {
 
 const baseItemResult: ExperimentItemResult = {
   item: {
-    id: "item-1",
+    id: BASE_DATASET_ITEM_ID,
     input: "question",
     expected: "answer",
     datasetId: baseDataset.id,
     datasetVersionId: baseDataset.versionId,
     datasetName: baseDataset.name,
   },
-  itemId: "item-1",
+  itemId: BASE_DATASET_ITEM_ID,
   index: 0,
   status: "passed",
   runner: {
@@ -80,6 +82,7 @@ describe("VoltOpsRunManager", () => {
     expect(append.runId).toBe("run-1");
     expect(append.payload.results).toHaveLength(1);
     const result = append.payload.results[0];
+    expect(result.datasetItemId).toBe(BASE_DATASET_ITEM_ID);
     expect(result.datasetVersionId).toBe(baseDataset.versionId);
     expect(result.thresholdPassed).toBe(true);
   });
@@ -116,7 +119,7 @@ describe("VoltOpsRunManager", () => {
     expect(failCall.payload.error.message).toBe("boom");
   });
 
-  it("skips run creation when dataset version is missing", async () => {
+  it("creates a run even when dataset version is missing", async () => {
     const client = new FakeVoltOpsClient();
     const manager = new VoltOpsRunManager({
       client,
@@ -125,7 +128,43 @@ describe("VoltOpsRunManager", () => {
     });
 
     await manager.prepare();
-    expect(client.createCalls).toHaveLength(0);
-    expect(manager.runId).toBeUndefined();
+    expect(client.createCalls).toHaveLength(1);
+    expect(client.createCalls[0]).toEqual({
+      datasetVersionId: undefined,
+      experimentId: undefined,
+      triggerSource: "run-experiment",
+    });
+    expect(manager.runId).toBe("run-1");
+  });
+
+  it("uses null datasetItemId for non-UUID inline items", async () => {
+    const client = new FakeVoltOpsClient();
+    const manager = new VoltOpsRunManager({
+      client,
+      config: baseConfig,
+      dataset: { name: "inline-dataset" },
+    });
+
+    const inlineItemResult: ExperimentItemResult = {
+      ...baseItemResult,
+      item: {
+        ...baseItemResult.item,
+        id: "inline-item-1",
+        datasetId: undefined,
+        datasetVersionId: undefined,
+        datasetName: undefined,
+      },
+      itemId: "inline-item-1",
+      datasetId: undefined,
+      datasetVersionId: undefined,
+      datasetName: undefined,
+    };
+
+    await manager.appendResult({ item: inlineItemResult });
+
+    expect(client.createCalls).toHaveLength(1);
+    expect(client.appendCalls).toHaveLength(1);
+    expect(client.appendCalls[0]?.payload.results[0]?.datasetItemId).toBeNull();
+    expect(client.appendCalls[0]?.payload.results[0]?.datasetItemHash).toBe("inline-item-1");
   });
 });
