@@ -4048,8 +4048,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.1(@opentelemetry/api@1.9.0)
       langfuse:
-        specifier: ^3.37.2
-        version: 3.38.4
+        specifier: ^3.38.6
+        version: 3.38.6
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -30603,18 +30603,18 @@ packages:
       - ws
     dev: false
 
-  /langfuse-core@3.38.4:
-    resolution: {integrity: sha512-onTAqcEGhoXuBgqDFXe2t+bt9Vi+5YChRgdz3voM49JKoHwtVZQiUdqTfjSivGR75eSbYoiaIL8IRoio+jaqwg==}
+  /langfuse-core@3.38.6:
+    resolution: {integrity: sha512-EcZXa+DK9FJdi1I30+u19eKjuBJ04du6j2Nybk19KKCuraLczg/ppkTQcGvc4QOk//OAi3qUHrajUuV74RXsBQ==}
     engines: {node: '>=18'}
     dependencies:
       mustache: 4.2.0
     dev: false
 
-  /langfuse@3.38.4:
-    resolution: {integrity: sha512-2UqMeHLl3DGNX1Nh/cO4jGhk7TzDJ6gjQLlyS9rwFCKVO81xot6b58yeTsTB5YrWupWsOxQtMNoQYIQGOUlH9Q==}
+  /langfuse@3.38.6:
+    resolution: {integrity: sha512-mtwfsNGIYvObRh+NYNGlJQJDiBN+Wr3Hnr++wN25mxuOpSTdXX+JQqVCyAqGL5GD2TAXRZ7COsN42Vmp9krYmg==}
     engines: {node: '>=18'}
     dependencies:
-      langfuse-core: 3.38.4
+      langfuse-core: 3.38.6
     dev: false
 
   /langium@3.3.1:

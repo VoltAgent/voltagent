@@ -5,7 +5,7 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "langfuse": "^3.37.2"
+    "langfuse": "^3.38.6"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
