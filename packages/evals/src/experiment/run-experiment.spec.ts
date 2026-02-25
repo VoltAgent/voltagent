@@ -7,17 +7,19 @@ import type { ExperimentDatasetItem } from "./types.js";
 
 const DATASET_ID = "dataset-integration";
 const DATASET_VERSION_ID = "dataset-version-integration";
+const DATASET_ITEM_1_ID = "11111111-1111-4111-8111-111111111111";
+const DATASET_ITEM_2_ID = "22222222-2222-4222-8222-222222222222";
 
 function createDatasetItems(): ExperimentDatasetItem[] {
   return [
     {
-      id: "item-1",
+      id: DATASET_ITEM_1_ID,
       label: "first",
       input: "hello",
       expected: "world",
     },
     {
-      id: "item-2",
+      id: DATASET_ITEM_2_ID,
       label: "second",
       input: "foo",
       expected: "bar",
@@ -55,7 +57,7 @@ describe("runExperiment integration", () => {
 
     expect(client.appendCalls).toHaveLength(2);
     const appendedIds = client.appendCalls.map((call) => call.payload.results[0]?.datasetItemId);
-    expect(appendedIds).toEqual(["item-1", "item-2"]);
+    expect(appendedIds).toEqual([DATASET_ITEM_1_ID, DATASET_ITEM_2_ID]);
 
     expect(client.completeCalls).toHaveLength(1);
     expect(client.completeCalls[0].payload.status).toBe("succeeded");
