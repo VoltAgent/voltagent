@@ -4,7 +4,7 @@
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
     "@voltagent/core": "^2.6.1",
-    "@voltagent/evals": "^2.0.3",
+    "@voltagent/evals": "^2.0.4",
     "@voltagent/scorers": "^2.1.0",
     "@voltagent/sdk": "^2.0.2",
     "ai": "^6.0.0",
