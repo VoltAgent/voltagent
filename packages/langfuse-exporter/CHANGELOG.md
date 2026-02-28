@@ -1,5 +1,11 @@
 # @voltagent/langfuse-exporter
 
+## 2.0.3
+
+### Patch Changes
+
+- [#1110](https://github.com/VoltAgent/voltagent/pull/1110) [`8c8aa14`](https://github.com/VoltAgent/voltagent/commit/8c8aa1425f59d876f9c413842a514eb98110006c) Thanks [@pandego](https://github.com/pandego)! - chore(langfuse-exporter): update `langfuse` dependency to `^3.38.6` to include upstream fixes for non-JSON error responses during export retries (fixes #670)
+
 ## 2.0.2
 
 ### Patch Changes
