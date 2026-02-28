@@ -1,5 +1,14 @@
 # @voltagent/core
 
+## 2.6.2
+
+### Patch Changes
+
+- [#1117](https://github.com/VoltAgent/voltagent/pull/1117) [`8cb05dc`](https://github.com/VoltAgent/voltagent/commit/8cb05dc3880a59bc81f4013600edc20fa11e9a54) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve user-defined `searchTools` and `callTool` when tool routing is enabled
+  - User-defined tools named `searchTools` or `callTool` now take precedence over internal tool-routing support tools.
+  - These tools are no longer silently filtered from routing pool/state just because of their names.
+  - `toolRouting: false` no longer fails for user-defined tools that reuse those names.
+
 ## 2.6.1
 
 ### Patch Changes
