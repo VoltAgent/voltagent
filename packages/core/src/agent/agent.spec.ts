@@ -2956,6 +2956,24 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("prepareTools", () => {
+    type TestAgentInternals = {
+      createOperationContext(input: string): unknown;
+      prepareTools(
+        adHocTools: unknown[],
+        oc: unknown,
+        maxSteps: number,
+        options?: unknown,
+      ): Promise<
+        Record<
+          string,
+          {
+            description?: string;
+            execute: (args: unknown, options?: unknown) => unknown;
+          }
+        >
+      >;
+    };
+
     it("should merge static and runtime tools with runtime overrides", async () => {
       const staticOnlyTool = new Tool({
         name: "static-only",
@@ -3036,8 +3054,9 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [callTool, searchTools, normalTool],
       });
 
-      const operationContext = (agent as any).createOperationContext("input message");
-      const prepared = await (agent as any).prepareTools([], operationContext, 3, {});
+      const testAgent = agent as unknown as TestAgentInternals;
+      const operationContext = testAgent.createOperationContext("input message");
+      const prepared = await testAgent.prepareTools([], operationContext, 3, {});
 
       await expect(prepared.callTool.execute({ toolName: "normalTool" })).resolves.toBe(
         "called:normalTool",
@@ -3076,8 +3095,9 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [callTool, searchTools],
       });
 
-      const operationContext = (agent as any).createOperationContext("input message");
-      const prepared = await (agent as any).prepareTools([], operationContext, 3, {
+      const testAgent = agent as unknown as TestAgentInternals;
+      const operationContext = testAgent.createOperationContext("input message");
+      const prepared = await testAgent.prepareTools([], operationContext, 3, {
         toolRouting: false,
       });
 

@@ -7186,15 +7186,11 @@ export class Agent {
             callTool && this.isToolRoutingSupportTool(callTool)
               ? new ToolManager([callTool], this.logger).getToolsForApi()[0]
               : undefined;
-          const internalPoolSupportNames = new Set(
-            this.toolPoolManager
-              .getAllTools()
-              .filter((tool) => this.isToolRoutingSupportTool(tool))
-              .map((tool) => tool.name),
-          );
-          const poolApiTools = this.toolPoolManager
-            .getToolsForApi()
-            .filter((tool) => !internalPoolSupportNames.has(tool.name));
+          const poolTools = this.toolPoolManager
+            .getAllTools()
+            .filter((tool) => !this.isToolRoutingSupportTool(tool));
+          const poolApiTools =
+            poolTools.length > 0 ? new ToolManager(poolTools, this.logger).getToolsForApi() : [];
           const exposeApiTools =
             toolRoutingConfig.expose && toolRoutingConfig.expose.length > 0
               ? new ToolManager(toolRoutingConfig.expose, this.logger).getToolsForApi()
