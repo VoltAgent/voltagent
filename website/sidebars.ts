@@ -311,6 +311,7 @@ const sidebars: SidebarsConfig = {
         "observability/developer-console",
         "observability/logging",
         "observability/langfuse",
+        "observability/mlflow",
       ],
     },
     {
