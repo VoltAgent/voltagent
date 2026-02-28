@@ -134,6 +134,8 @@ const agent3 = new Agent({
 
 For stateless sub-agents, set `memory: false` on each sub-agent explicitly.
 
+When a supervisor delegates to sub-agents, delegated messages are tagged with sub-agent metadata so supervisor memory reads can filter sub-agent records from parent conversation context.
+
 ### Global Defaults (VoltAgent)
 
 Set default memory instances once at the VoltAgent entrypoint. Defaults apply only when an agent or workflow does not specify `memory`. If nothing is configured, VoltAgent still falls back to built-in in-memory storage. An explicit `memory: false` on an agent disables memory and bypasses defaults.
