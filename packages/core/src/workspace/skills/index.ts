@@ -30,7 +30,10 @@ import type {
   WorkspaceSkillSearchOptions,
   WorkspaceSkillSearchResult,
   WorkspaceSkillsConfig,
+  WorkspaceSkillsPromptContext,
+  WorkspaceSkillsPromptContextOptions,
   WorkspaceSkillsPromptOptions,
+  WorkspaceSkillsPromptSkill,
   WorkspaceSkillsRootResolver,
   WorkspaceSkillsRootResolverContext,
 } from "./types";
@@ -977,51 +980,71 @@ export class WorkspaceSkills {
     );
   }
 
-  async buildPrompt(
-    options: WorkspaceSkillsPromptOptions & { context?: WorkspaceFilesystemCallContext } = {},
-  ): Promise<string | null> {
-    await this.ensureDiscovered({ context: options.context });
+  async getPromptContext(
+    options: WorkspaceSkillsPromptContextOptions & {
+      context?: WorkspaceFilesystemCallContext;
+    } = {},
+  ): Promise<WorkspaceSkillsPromptContext> {
+    if (options.refresh) {
+      await this.discoverSkills({ refresh: true, context: options.context });
+    } else {
+      await this.ensureDiscovered({ context: options.context });
+    }
 
     const includeAvailable = options.includeAvailable ?? true;
     const includeActivated = options.includeActivated ?? true;
     const maxAvailable = options.maxAvailable ?? DEFAULT_MAX_AVAILABLE;
     const maxActivated = options.maxActivated ?? DEFAULT_MAX_ACTIVATED;
     const maxInstructionChars = options.maxInstructionChars ?? DEFAULT_MAX_INSTRUCTION_CHARS;
+    const activeIds = new Set(this.activeSkills);
+
+    const toPromptSkill = (skill: WorkspaceSkillMetadata): WorkspaceSkillsPromptSkill => ({
+      id: skill.id,
+      name: skill.name,
+      description: skill.description
+        ? truncateText(skill.description, maxInstructionChars)
+        : undefined,
+      path: skill.path,
+      active: activeIds.has(skill.id),
+    });
+
+    const available = includeAvailable
+      ? Array.from(this.skillsById.values()).slice(0, maxAvailable).map(toPromptSkill)
+      : [];
+
+    const activated = includeActivated
+      ? Array.from(this.activeSkills)
+          .slice(0, maxActivated)
+          .map((id) => this.skillsById.get(id))
+          .filter((skill): skill is WorkspaceSkillMetadata => Boolean(skill))
+          .map(toPromptSkill)
+      : [];
+
+    return { available, activated };
+  }
+
+  async buildPrompt(
+    options: WorkspaceSkillsPromptOptions & { context?: WorkspaceFilesystemCallContext } = {},
+  ): Promise<string | null> {
+    const promptContext = await this.getPromptContext(options);
     const maxPromptChars = options.maxPromptChars ?? DEFAULT_MAX_PROMPT_CHARS;
 
     const sections: string[] = [];
 
-    if (includeAvailable) {
-      const skills = Array.from(this.skillsById.values()).slice(0, maxAvailable);
-      if (skills.length > 0) {
-        const lines = skills.map((skill) => {
-          const descriptionText = skill.description
-            ? truncateText(skill.description, maxInstructionChars)
-            : "";
-          const description = descriptionText ? ` - ${descriptionText}` : "";
-          return `- ${skill.name} (${skill.id})${description}`;
-        });
-        sections.push(`Available skills:\n${lines.join("\n")}`);
-      }
+    if (promptContext.available.length > 0) {
+      const lines = promptContext.available.map((skill) => {
+        const description = skill.description ? ` - ${skill.description}` : "";
+        return `- ${skill.name} (${skill.id})${description}`;
+      });
+      sections.push(`Available skills:\n${lines.join("\n")}`);
     }
 
-    if (includeActivated) {
-      const activeIds = Array.from(this.activeSkills).slice(0, maxActivated);
-      if (activeIds.length > 0) {
-        const lines = activeIds
-          .map((id) => this.skillsById.get(id))
-          .filter((skill): skill is WorkspaceSkillMetadata => Boolean(skill))
-          .map((skill) => {
-            const descriptionText = skill.description
-              ? truncateText(skill.description, maxInstructionChars)
-              : "";
-            const description = descriptionText ? ` - ${descriptionText}` : "";
-            return `- ${skill.name} (${skill.id})${description}`;
-          });
-        if (lines.length > 0) {
-          sections.push(`Activated skills:\n${lines.join("\n")}`);
-        }
-      }
+    if (promptContext.activated.length > 0) {
+      const lines = promptContext.activated.map((skill) => {
+        const description = skill.description ? ` - ${skill.description}` : "";
+        return `- ${skill.name} (${skill.id})${description}`;
+      });
+      sections.push(`Activated skills:\n${lines.join("\n")}`);
     }
 
     if (sections.length === 0) {

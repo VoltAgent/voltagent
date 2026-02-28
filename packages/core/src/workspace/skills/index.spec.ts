@@ -182,6 +182,55 @@ Run deep analysis and produce charts.`.split("\n"),
     expect(prompt).not.toContain("INSTRUCTIONS_SHOULD_NOT_APPEAR");
   });
 
+  it("returns structured prompt context for custom prompt formatting", async () => {
+    const timestamp = new Date().toISOString();
+    const workspace = new Workspace({
+      filesystem: {
+        files: {
+          "/skills/data/SKILL.md": {
+            content: `---
+name: Data Analyst
+description: Analyze CSV data
+---
+Use pandas.`.split("\n"),
+            created_at: timestamp,
+            modified_at: timestamp,
+          },
+        },
+      },
+      skills: {
+        rootPaths: ["/skills"],
+        autoDiscover: false,
+      },
+    });
+
+    await workspace.skills?.discoverSkills();
+    await workspace.skills?.activateSkill("/skills/data");
+
+    const promptContext = await workspace.skills?.getPromptContext({
+      includeAvailable: true,
+      includeActivated: true,
+    });
+
+    expect(promptContext?.available).toHaveLength(1);
+    expect(promptContext?.available[0]).toMatchObject({
+      id: "/skills/data",
+      name: "Data Analyst",
+      description: "Analyze CSV data",
+      path: "/skills/data/SKILL.md",
+      active: true,
+    });
+
+    expect(promptContext?.activated).toHaveLength(1);
+    expect(promptContext?.activated[0]).toMatchObject({
+      id: "/skills/data",
+      name: "Data Analyst",
+      description: "Analyze CSV data",
+      path: "/skills/data/SKILL.md",
+      active: true,
+    });
+  });
+
   it("includes explicit guidance to use workspace skill tools", () => {
     const workspace = new Workspace({
       skills: {
