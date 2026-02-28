@@ -5438,18 +5438,18 @@ export class Agent {
     const toolRouting = this.resolveToolRouting(options);
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
     if (toolRouting === false) {
-      const supportNames = this.getToolRoutingSupportToolNames();
-      const allNames = new Set([
-        ...Object.keys(preparedStaticTools),
-        ...Object.keys(preparedDynamicTools),
-      ]);
-      const conflicts = [...allNames].filter((name) => supportNames.has(name));
-      if (conflicts.length > 0) {
+      const conflicts = new Set<string>();
+      for (const tool of [...this.toolManager.getAllTools(), ...tempManager.getAllTools()]) {
+        if (this.isToolRoutingSupportTool(tool)) {
+          conflicts.add(tool.name);
+        }
+      }
+      if (conflicts.size > 0) {
         throw new Error(
           [
-            "toolRouting is disabled but reserved routing tool names are in use:",
-            conflicts.join(", "),
-            "Rename these tools or enable toolRouting to use the built-in names.",
+            "toolRouting is disabled but internal routing support tools are in use:",
+            Array.from(conflicts).join(", "),
+            "Enable toolRouting or remove internal routing tools before disabling it for this request.",
           ].join(" "),
         );
       }
@@ -5791,10 +5791,7 @@ export class Agent {
     if (!tool || typeof tool !== "object") {
       return false;
     }
-    if (TOOL_ROUTING_INTERNAL_TOOL_SYMBOL in tool) {
-      return true;
-    }
-    return tool.name === TOOL_ROUTING_SEARCH_TOOL_NAME || tool.name === TOOL_ROUTING_CALL_TOOL_NAME;
+    return Object.prototype.hasOwnProperty.call(tool, TOOL_ROUTING_INTERNAL_TOOL_SYMBOL);
   }
 
   private isToolExecutableForRouting(tool: BaseTool | ProviderTool): boolean {
@@ -7179,7 +7176,6 @@ export class Agent {
       this.toolRouting && typeof this.toolRouting === "object" ? this.toolRouting : undefined;
     const toolRoutingState: AgentToolRoutingState | undefined = toolRoutingConfig
       ? (() => {
-          const supportNames = this.getToolRoutingSupportToolNames();
           const searchTool = this.toolManager.getToolByName(TOOL_ROUTING_SEARCH_TOOL_NAME);
           const callTool = this.toolManager.getToolByName(TOOL_ROUTING_CALL_TOOL_NAME);
           const searchApiTool =
@@ -7190,9 +7186,11 @@ export class Agent {
             callTool && this.isToolRoutingSupportTool(callTool)
               ? new ToolManager([callTool], this.logger).getToolsForApi()[0]
               : undefined;
-          const poolApiTools = this.toolPoolManager
-            .getToolsForApi()
-            .filter((tool) => !supportNames.has(tool.name));
+          const poolTools = this.toolPoolManager
+            .getAllTools()
+            .filter((tool) => !this.isToolRoutingSupportTool(tool));
+          const poolApiTools =
+            poolTools.length > 0 ? new ToolManager(poolTools, this.logger).getToolsForApi() : [];
           const exposeApiTools =
             toolRoutingConfig.expose && toolRoutingConfig.expose.length > 0
               ? new ToolManager(toolRoutingConfig.expose, this.logger).getToolsForApi()
@@ -7572,9 +7570,10 @@ export class Agent {
   private upsertToolRoutingSupportTool(tool: Tool<any, any>): void {
     const existing = this.toolManager.getToolByName(tool.name);
     if (existing && !this.isToolRoutingSupportTool(existing)) {
-      throw new Error(
-        `Tool routing requires reserved tool name "${tool.name}". Rename the conflicting tool to enable tool routing.`,
+      this.logger.debug(
+        `Tool routing support tool "${tool.name}" not added because a user-defined tool with the same name exists.`,
       );
+      return;
     }
 
     if (existing && this.isToolRoutingSupportTool(existing)) {

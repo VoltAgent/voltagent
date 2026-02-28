@@ -2956,6 +2956,24 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("prepareTools", () => {
+    type TestAgentInternals = {
+      createOperationContext(input: string): unknown;
+      prepareTools(
+        adHocTools: unknown[],
+        oc: unknown,
+        maxSteps: number,
+        options?: unknown,
+      ): Promise<
+        Record<
+          string,
+          {
+            description?: string;
+            execute: (args: unknown, options?: unknown) => unknown;
+          }
+        >
+      >;
+    };
+
     it("should merge static and runtime tools with runtime overrides", async () => {
       const staticOnlyTool = new Tool({
         name: "static-only",
@@ -3002,6 +3020,93 @@ Use pandas and summarize findings.`.split("\n"),
       expect(prepared["shared-tool"].description).toBe("Runtime override tool");
       expect(typeof prepared["runtime-only"].execute).toBe("function");
       expect(prepared["static-only"].description).toBe("Static only tool");
+    });
+
+    it("should prefer user-defined callTool/searchTools when tool routing is enabled", async () => {
+      const callTool = new Tool({
+        name: "callTool",
+        description: "Custom callTool",
+        parameters: z.object({
+          toolName: z.string(),
+        }),
+        execute: async ({ toolName }) => `called:${toolName}`,
+      });
+      const searchTools = new Tool({
+        name: "searchTools",
+        description: "Custom searchTools",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        execute: async ({ query }) => `searched:${query}`,
+      });
+      const normalTool = new Tool({
+        name: "normalTool",
+        description: "Normal tool",
+        parameters: z.object({}),
+        execute: async () => "normal",
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolRouting: {},
+        tools: [callTool, searchTools, normalTool],
+      });
+
+      const testAgent = agent as unknown as TestAgentInternals;
+      const operationContext = testAgent.createOperationContext("input message");
+      const prepared = await testAgent.prepareTools([], operationContext, 3, {});
+
+      await expect(prepared.callTool.execute({ toolName: "normalTool" })).resolves.toBe(
+        "called:normalTool",
+      );
+      await expect(prepared.searchTools.execute({ query: "normalTool" })).resolves.toBe(
+        "searched:normalTool",
+      );
+
+      const poolNames = agent.getFullState().toolRouting?.pool?.map((tool) => tool.name) ?? [];
+      expect(poolNames).toEqual(expect.arrayContaining(["callTool", "searchTools", "normalTool"]));
+    });
+
+    it("should allow user-defined callTool/searchTools when tool routing is disabled per request", async () => {
+      const callTool = new Tool({
+        name: "callTool",
+        description: "Custom callTool",
+        parameters: z.object({
+          toolName: z.string(),
+        }),
+        execute: async ({ toolName }) => `called:${toolName}`,
+      });
+      const searchTools = new Tool({
+        name: "searchTools",
+        description: "Custom searchTools",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        execute: async ({ query }) => `searched:${query}`,
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolRouting: {},
+        tools: [callTool, searchTools],
+      });
+
+      const testAgent = agent as unknown as TestAgentInternals;
+      const operationContext = testAgent.createOperationContext("input message");
+      const prepared = await testAgent.prepareTools([], operationContext, 3, {
+        toolRouting: false,
+      });
+
+      await expect(prepared.callTool.execute({ toolName: "searchTools" })).resolves.toBe(
+        "called:searchTools",
+      );
+      await expect(prepared.searchTools.execute({ query: "callTool" })).resolves.toBe(
+        "searched:callTool",
+      );
     });
 
     it("should add delegate tool when subagents are present", async () => {
