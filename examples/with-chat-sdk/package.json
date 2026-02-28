@@ -6,7 +6,7 @@
     "@chat-adapter/slack": "^4.14.0",
     "@chat-adapter/state-redis": "^4.14.0",
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.6.1",
+    "@voltagent/core": "^2.6.2",
     "ai": "^6.0.0",
     "chat": "^4.14.0",
     "next": "^16.0.7",
