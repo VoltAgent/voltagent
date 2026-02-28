@@ -3004,6 +3004,91 @@ Use pandas and summarize findings.`.split("\n"),
       expect(prepared["static-only"].description).toBe("Static only tool");
     });
 
+    it("should prefer user-defined callTool/searchTools when tool routing is enabled", async () => {
+      const callTool = new Tool({
+        name: "callTool",
+        description: "Custom callTool",
+        parameters: z.object({
+          toolName: z.string(),
+        }),
+        execute: async ({ toolName }) => `called:${toolName}`,
+      });
+      const searchTools = new Tool({
+        name: "searchTools",
+        description: "Custom searchTools",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        execute: async ({ query }) => `searched:${query}`,
+      });
+      const normalTool = new Tool({
+        name: "normalTool",
+        description: "Normal tool",
+        parameters: z.object({}),
+        execute: async () => "normal",
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolRouting: {},
+        tools: [callTool, searchTools, normalTool],
+      });
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const prepared = await (agent as any).prepareTools([], operationContext, 3, {});
+
+      await expect(prepared.callTool.execute({ toolName: "normalTool" })).resolves.toBe(
+        "called:normalTool",
+      );
+      await expect(prepared.searchTools.execute({ query: "normalTool" })).resolves.toBe(
+        "searched:normalTool",
+      );
+
+      const poolNames = agent.getFullState().toolRouting?.pool?.map((tool) => tool.name) ?? [];
+      expect(poolNames).toEqual(expect.arrayContaining(["callTool", "searchTools", "normalTool"]));
+    });
+
+    it("should allow user-defined callTool/searchTools when tool routing is disabled per request", async () => {
+      const callTool = new Tool({
+        name: "callTool",
+        description: "Custom callTool",
+        parameters: z.object({
+          toolName: z.string(),
+        }),
+        execute: async ({ toolName }) => `called:${toolName}`,
+      });
+      const searchTools = new Tool({
+        name: "searchTools",
+        description: "Custom searchTools",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        execute: async ({ query }) => `searched:${query}`,
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolRouting: {},
+        tools: [callTool, searchTools],
+      });
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const prepared = await (agent as any).prepareTools([], operationContext, 3, {
+        toolRouting: false,
+      });
+
+      await expect(prepared.callTool.execute({ toolName: "searchTools" })).resolves.toBe(
+        "called:searchTools",
+      );
+      await expect(prepared.searchTools.execute({ query: "callTool" })).resolves.toBe(
+        "searched:callTool",
+      );
+    });
+
     it("should add delegate tool when subagents are present", async () => {
       const agent = new Agent({
         name: "TestAgent",
