@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Agent } from "./agent";
+import { ConversationBuffer } from "./conversation-buffer";
+import { MemoryPersistQueue } from "./memory-persist-queue";
 import type { AgentConversationPersistenceOptions } from "./types";
 
 type QueueMock = {
@@ -126,5 +128,142 @@ describe("Step-level persistence", () => {
     expect(queue.scheduleSave).not.toHaveBeenCalled();
     expect(queue.flush).not.toHaveBeenCalled();
     expect(recordStepResultsSpy).not.toHaveBeenCalled();
+  });
+
+  it("reuses assistant message id across step checkpoints after intermediate flushes", async () => {
+    const agent = new Agent({
+      name: "step-persistence-agent",
+      instructions: "Test",
+      model: "openai/gpt-4o-mini",
+    });
+
+    const oc = createOperationContext();
+    const buffer = new ConversationBuffer();
+    const memoryManager = {
+      saveMessage: vi.fn().mockResolvedValue(undefined),
+    };
+    const queue = new MemoryPersistQueue(memoryManager as any, {
+      debounceMs: 0,
+      logger: oc.logger as any,
+    });
+
+    vi.spyOn(agent as any, "getConversationBuffer").mockReturnValue(buffer);
+    vi.spyOn(agent as any, "getMemoryPersistQueue").mockReturnValue(queue);
+    vi.spyOn(agent as any, "getConversationPersistenceOptionsForContext").mockReturnValue({
+      mode: "step",
+      debounceMs: 0,
+      flushOnToolResult: true,
+    });
+    vi.spyOn(agent as any, "recordStepResults").mockResolvedValue(undefined);
+
+    const handler = (agent as any).createStepHandler(oc, undefined) as (
+      event: any,
+    ) => Promise<void>;
+
+    await handler({
+      content: [
+        {
+          type: "tool-call",
+          toolName: "calc",
+          toolCallId: "call-1",
+          input: { a: 2, b: 2 },
+        },
+      ],
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool-call",
+                toolName: "calc",
+                toolCallId: "call-1",
+                input: { a: 2, b: 2 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await handler({
+      content: [
+        {
+          type: "tool-result",
+          toolName: "calc",
+          toolCallId: "call-1",
+          output: { result: 4 },
+        },
+      ],
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool-call",
+                toolName: "calc",
+                toolCallId: "call-1",
+                input: { a: 2, b: 2 },
+              },
+              {
+                type: "tool-result",
+                toolName: "calc",
+                toolCallId: "call-1",
+                output: { result: 4 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await handler({
+      content: [
+        {
+          type: "tool-result",
+          toolName: "calc",
+          toolCallId: "call-1",
+          output: { result: 4 },
+        },
+        {
+          type: "text",
+          text: "The result is 4.",
+        },
+      ],
+      response: {
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool-call",
+                toolName: "calc",
+                toolCallId: "call-1",
+                input: { a: 2, b: 2 },
+              },
+              {
+                type: "tool-result",
+                toolName: "calc",
+                toolCallId: "call-1",
+                output: { result: 4 },
+              },
+              {
+                type: "text",
+                text: "The result is 4.",
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const persistedAssistantIds = memoryManager.saveMessage.mock.calls
+      .map((call) => call[1])
+      .filter((message) => message?.role === "assistant")
+      .map((message) => message.id);
+
+    expect(persistedAssistantIds.length).toBeGreaterThan(1);
+    expect(new Set(persistedAssistantIds).size).toBe(1);
   });
 });

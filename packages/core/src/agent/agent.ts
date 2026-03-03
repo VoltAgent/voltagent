@@ -201,6 +201,7 @@ const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 const ABORT_LISTENER_ATTACHED_KEY = Symbol("abortListenerAttached");
 const MIDDLEWARE_RETRY_FEEDBACK_KEY = Symbol("middlewareRetryFeedback");
 const STREAM_RESPONSE_MESSAGE_ID_KEY = Symbol("streamResponseMessageId");
+const STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY = Symbol("stepResponseMessageFingerprints");
 const DEFAULT_FEEDBACK_KEY = "satisfaction";
 const DEFAULT_CONVERSATION_TITLE_PROMPT = [
   "You generate concise titles for new conversations.",
@@ -3579,6 +3580,7 @@ export class Agent {
     oc.systemContext.delete("conversationSteps");
     oc.systemContext.delete("bailedResult");
     oc.systemContext.delete(STREAM_RESPONSE_MESSAGE_ID_KEY);
+    oc.systemContext.delete(STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY);
     oc.conversationSteps = [];
     oc.output = undefined;
   }
@@ -3609,12 +3611,7 @@ export class Agent {
     oc: OperationContext,
     buffer: ConversationBuffer,
   ): Promise<string | null> {
-    const existing = oc.systemContext.get(STREAM_RESPONSE_MESSAGE_ID_KEY);
-    if (typeof existing === "string" && existing.trim().length > 0) {
-      return existing;
-    }
-
-    const messageId = generateId();
+    const messageId = this.getOrCreateStepResponseMessageId(oc);
     const placeholder: UIMessage = {
       id: messageId,
       role: "assistant",
@@ -3622,8 +3619,66 @@ export class Agent {
     };
 
     buffer.ingestUIMessages([placeholder], false);
+    return messageId;
+  }
+
+  private getOrCreateStepResponseMessageId(oc: OperationContext): string {
+    const existing = oc.systemContext.get(STREAM_RESPONSE_MESSAGE_ID_KEY);
+    if (typeof existing === "string" && existing.trim().length > 0) {
+      return existing;
+    }
+
+    const messageId = generateId();
     oc.systemContext.set(STREAM_RESPONSE_MESSAGE_ID_KEY, messageId);
     return messageId;
+  }
+
+  private getStepResponseMessageFingerprints(oc: OperationContext): Set<string> {
+    const existing = oc.systemContext.get(STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY);
+    if (existing instanceof Set) {
+      return existing as Set<string>;
+    }
+
+    const fingerprints = new Set<string>();
+    oc.systemContext.set(STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY, fingerprints);
+    return fingerprints;
+  }
+
+  private normalizeStepResponseMessages(
+    oc: OperationContext,
+    responseMessages: ModelMessage[] | undefined,
+  ): ModelMessage[] | undefined {
+    if (!responseMessages?.length) {
+      return undefined;
+    }
+
+    const fallbackAssistantMessageId = this.getOrCreateStepResponseMessageId(oc);
+    const fingerprints = this.getStepResponseMessageFingerprints(oc);
+    const normalized: ModelMessage[] = [];
+
+    for (const responseMessage of responseMessages) {
+      const rawMessageId = (responseMessage as { id?: unknown }).id;
+      const normalizedMessage =
+        responseMessage.role === "assistant" &&
+        (typeof rawMessageId !== "string" || rawMessageId.trim().length === 0)
+          ? ({ ...responseMessage, id: fallbackAssistantMessageId } as ModelMessage)
+          : responseMessage;
+
+      const fingerprint = safeStringify({
+        role: normalizedMessage.role,
+        id: (normalizedMessage as { id?: unknown }).id ?? null,
+        content: normalizedMessage.content,
+      });
+
+      if (fingerprints.has(fingerprint)) {
+        continue;
+      }
+
+      fingerprints.add(fingerprint);
+      normalized.push(normalizedMessage);
+    }
+
+    return normalized.length > 0 ? normalized : undefined;
   }
 
   private async flushPendingMessagesOnError(oc: OperationContext): Promise<void> {
@@ -6475,7 +6530,10 @@ export class Agent {
     return async (event: StepResult<ToolSet>) => {
       const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(oc, event);
 
-      const responseMessages = filterResponseMessages(event.response?.messages);
+      const responseMessages = this.normalizeStepResponseMessages(
+        oc,
+        filterResponseMessages(event.response?.messages),
+      );
       const hasResponseMessages = Boolean(responseMessages && responseMessages.length > 0);
       if (hasResponseMessages && responseMessages) {
         buffer.addModelMessages(responseMessages, "response");
