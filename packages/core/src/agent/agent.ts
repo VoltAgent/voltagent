@@ -3657,10 +3657,8 @@ export class Agent {
     const normalized: ModelMessage[] = [];
 
     for (const responseMessage of responseMessages) {
-      const rawMessageId = (responseMessage as { id?: unknown }).id;
       const normalizedMessage =
-        responseMessage.role === "assistant" &&
-        (typeof rawMessageId !== "string" || rawMessageId.trim().length === 0)
+        responseMessage.role === "assistant"
           ? ({ ...responseMessage, id: fallbackAssistantMessageId } as ModelMessage)
           : responseMessage;
 
