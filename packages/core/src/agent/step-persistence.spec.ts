@@ -1,6 +1,10 @@
+import type { Logger } from "@voltagent/internal";
+import type { StepResult, ToolSet } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Agent } from "./agent";
+import { ConversationBuffer } from "./conversation-buffer";
+import { MemoryPersistQueue, type MemoryPersistQueueMemoryManager } from "./memory-persist-queue";
 import type { AgentConversationPersistenceOptions } from "./types";
 
 type QueueMock = {
@@ -8,21 +12,37 @@ type QueueMock = {
   flush: ReturnType<typeof vi.fn>;
 };
 
+type StepEventInput = Pick<StepResult<ToolSet>, "content" | "response">;
+
 const createOperationContext = () =>
   ({
     operationId: "op-step-persist",
     systemContext: new Map<string | symbol, unknown>(),
-    logger: {
-      debug: vi.fn(),
-      info: vi.fn(),
-    },
+    logger: createLogger(),
     abortController: new AbortController(),
     userId: "user-1",
     conversationId: "conv-1",
   }) as any;
 
-const createStepEvent = (content: any[]) =>
-  ({
+const createLogger = () => {
+  const logger = {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(),
+  } satisfies Logger;
+
+  logger.child.mockImplementation(() => logger);
+  return logger;
+};
+
+const toStepResult = (event: StepEventInput): StepResult<ToolSet> => event as StepResult<ToolSet>;
+
+const createStepEvent = (content: StepEventInput["content"]) =>
+  toStepResult({
     content,
     response: {
       messages: [
@@ -32,7 +52,7 @@ const createStepEvent = (content: any[]) =>
         },
       ],
     },
-  }) as any;
+  });
 
 const createHarness = (overrides: AgentConversationPersistenceOptions) => {
   const agent = new Agent({
@@ -68,7 +88,14 @@ const createHarness = (overrides: AgentConversationPersistenceOptions) => {
     .spyOn(agent as any, "recordStepResults")
     .mockResolvedValue(undefined);
 
-  const handler = (agent as any).createStepHandler(oc, undefined) as (event: any) => Promise<void>;
+  const handler = (
+    agent as unknown as {
+      createStepHandler: (
+        operationContext: unknown,
+        options?: unknown,
+      ) => (event: StepResult<ToolSet>) => Promise<void>;
+    }
+  ).createStepHandler(oc, undefined);
 
   return {
     queue,
@@ -126,5 +153,162 @@ describe("Step-level persistence", () => {
     expect(queue.scheduleSave).not.toHaveBeenCalled();
     expect(queue.flush).not.toHaveBeenCalled();
     expect(recordStepResultsSpy).not.toHaveBeenCalled();
+  });
+
+  it("reuses assistant message id across step checkpoints after intermediate flushes", async () => {
+    const agent = new Agent({
+      name: "step-persistence-agent",
+      instructions: "Test",
+      model: "openai/gpt-4o-mini",
+    });
+
+    const oc = createOperationContext();
+    const buffer = new ConversationBuffer();
+    const saveMessage = vi.fn().mockResolvedValue(undefined);
+    const memoryManager: MemoryPersistQueueMemoryManager = {
+      saveMessage,
+    };
+    const queue = new MemoryPersistQueue(memoryManager, {
+      debounceMs: 0,
+      logger: oc.logger,
+    });
+
+    vi.spyOn(agent as any, "getConversationBuffer").mockReturnValue(buffer);
+    vi.spyOn(agent as any, "getMemoryPersistQueue").mockReturnValue(queue);
+    vi.spyOn(agent as any, "getConversationPersistenceOptionsForContext").mockReturnValue({
+      mode: "step",
+      debounceMs: 0,
+      flushOnToolResult: true,
+    });
+    vi.spyOn(agent as any, "recordStepResults").mockResolvedValue(undefined);
+
+    const handler = (
+      agent as unknown as {
+        createStepHandler: (
+          operationContext: unknown,
+          options?: unknown,
+        ) => (event: StepResult<ToolSet>) => Promise<void>;
+      }
+    ).createStepHandler(oc, undefined);
+
+    await handler(
+      toStepResult({
+        content: [
+          {
+            type: "tool-call",
+            toolName: "calc",
+            toolCallId: "call-1",
+            input: { a: 2, b: 2 },
+          },
+        ],
+        response: {
+          messages: [
+            {
+              id: "m1",
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolName: "calc",
+                  toolCallId: "call-1",
+                  input: { a: 2, b: 2 },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+
+    await handler(
+      toStepResult({
+        content: [
+          {
+            type: "tool-result",
+            toolName: "calc",
+            toolCallId: "call-1",
+            output: { result: 4 },
+          },
+        ],
+        response: {
+          messages: [
+            {
+              id: "m2",
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolName: "calc",
+                  toolCallId: "call-1",
+                  input: { a: 2, b: 2 },
+                },
+                {
+                  type: "tool-result",
+                  toolName: "calc",
+                  toolCallId: "call-1",
+                  output: { result: 4 },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+
+    await handler(
+      toStepResult({
+        content: [
+          {
+            type: "tool-result",
+            toolName: "calc",
+            toolCallId: "call-1",
+            output: { result: 4 },
+          },
+          {
+            type: "text",
+            text: "The result is 4.",
+          },
+        ],
+        response: {
+          messages: [
+            {
+              id: "m3",
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolName: "calc",
+                  toolCallId: "call-1",
+                  input: { a: 2, b: 2 },
+                },
+                {
+                  type: "tool-result",
+                  toolName: "calc",
+                  toolCallId: "call-1",
+                  output: { result: 4 },
+                },
+                {
+                  type: "text",
+                  text: "The result is 4.",
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+
+    const persistedAssistantIds = saveMessage.mock.calls
+      .map((call) => call[1])
+      .filter((message) => message?.role === "assistant")
+      .map((message) => message.id);
+
+    expect(persistedAssistantIds.length).toBeGreaterThan(1);
+    const stringAssistantIds = persistedAssistantIds.filter(
+      (messageId): messageId is string =>
+        typeof messageId === "string" && messageId.trim().length > 0,
+    );
+    expect(stringAssistantIds).toHaveLength(persistedAssistantIds.length);
+    expect(new Set(stringAssistantIds).size).toBe(1);
   });
 });
