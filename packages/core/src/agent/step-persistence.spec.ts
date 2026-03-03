@@ -1,8 +1,9 @@
+import type { Logger } from "@voltagent/internal";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Agent } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
-import { MemoryPersistQueue } from "./memory-persist-queue";
+import { MemoryPersistQueue, type MemoryPersistQueueMemoryManager } from "./memory-persist-queue";
 import type { AgentConversationPersistenceOptions } from "./types";
 
 type QueueMock = {
@@ -14,14 +15,26 @@ const createOperationContext = () =>
   ({
     operationId: "op-step-persist",
     systemContext: new Map<string | symbol, unknown>(),
-    logger: {
-      debug: vi.fn(),
-      info: vi.fn(),
-    },
+    logger: createLogger(),
     abortController: new AbortController(),
     userId: "user-1",
     conversationId: "conv-1",
   }) as any;
+
+const createLogger = () => {
+  const logger = {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(),
+  } satisfies Logger;
+
+  logger.child.mockImplementation(() => logger);
+  return logger;
+};
 
 const createStepEvent = (content: any[]) =>
   ({
@@ -139,12 +152,13 @@ describe("Step-level persistence", () => {
 
     const oc = createOperationContext();
     const buffer = new ConversationBuffer();
-    const memoryManager = {
-      saveMessage: vi.fn().mockResolvedValue(undefined),
+    const saveMessage = vi.fn().mockResolvedValue(undefined);
+    const memoryManager: MemoryPersistQueueMemoryManager = {
+      saveMessage,
     };
-    const queue = new MemoryPersistQueue(memoryManager as any, {
+    const queue = new MemoryPersistQueue(memoryManager, {
       debounceMs: 0,
-      logger: oc.logger as any,
+      logger: oc.logger,
     });
 
     vi.spyOn(agent as any, "getConversationBuffer").mockReturnValue(buffer);
@@ -258,12 +272,17 @@ describe("Step-level persistence", () => {
       },
     });
 
-    const persistedAssistantIds = memoryManager.saveMessage.mock.calls
+    const persistedAssistantIds = saveMessage.mock.calls
       .map((call) => call[1])
       .filter((message) => message?.role === "assistant")
       .map((message) => message.id);
 
     expect(persistedAssistantIds.length).toBeGreaterThan(1);
-    expect(new Set(persistedAssistantIds).size).toBe(1);
+    const stringAssistantIds = persistedAssistantIds.filter(
+      (messageId): messageId is string =>
+        typeof messageId === "string" && messageId.trim().length > 0,
+    );
+    expect(stringAssistantIds).toHaveLength(persistedAssistantIds.length);
+    expect(new Set(stringAssistantIds).size).toBe(1);
   });
 });

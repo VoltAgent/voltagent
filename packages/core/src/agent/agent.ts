@@ -3664,9 +3664,14 @@ export class Agent {
           ? ({ ...responseMessage, id: fallbackAssistantMessageId } as ModelMessage)
           : responseMessage;
 
+      const fingerprintMessageId =
+        normalizedMessage.role === "assistant"
+          ? fallbackAssistantMessageId
+          : ((normalizedMessage as { id?: unknown }).id ?? null);
+
       const fingerprint = safeStringify({
         role: normalizedMessage.role,
-        id: (normalizedMessage as { id?: unknown }).id ?? null,
+        id: fingerprintMessageId,
         content: normalizedMessage.content,
       });
 

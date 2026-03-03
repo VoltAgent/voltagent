@@ -15,6 +15,8 @@ export interface MemoryPersistQueueOptions {
   logger?: Logger;
 }
 
+export type MemoryPersistQueueMemoryManager = Pick<MemoryManager, "saveMessage">;
+
 export const AGENT_METADATA_CONTEXT_KEY = Symbol("agentMetadata");
 export const SUBAGENT_TOOL_CALL_METADATA_KEY = Symbol("subAgentToolCallMetadata");
 
@@ -32,7 +34,7 @@ export class MemoryPersistQueue {
   private readonly entries = new Map<string, QueueEntry>();
 
   constructor(
-    private readonly memoryManager: MemoryManager,
+    private readonly memoryManager: MemoryPersistQueueMemoryManager,
     options: MemoryPersistQueueOptions = {},
   ) {
     this.debounceMs = options.debounceMs ?? 200;
