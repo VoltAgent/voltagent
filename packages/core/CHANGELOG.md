@@ -1,5 +1,24 @@
 # @voltagent/core
 
+## 2.6.3
+
+### Patch Changes
+
+- [#1123](https://github.com/VoltAgent/voltagent/pull/1123) [`527f2cf`](https://github.com/VoltAgent/voltagent/commit/527f2cf1bdbb1ef830f1567504ec7aa24881a84b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent duplicate assistant message persistence during step checkpoints (#1121)
+
+  When `conversationPersistence.mode = "step"` flushed around tool results, the same assistant
+  response could be persisted multiple times with different `message_id` values. This created
+  duplicate assistant rows in memory and could surface downstream provider errors like duplicate
+  OpenAI reasoning item ids.
+
+  This update keeps a stable assistant response message id across step checkpoints and skips duplicate
+  step response payloads before buffering, so intermediate checkpoint flushes update the same memory
+  message instead of inserting new duplicates.
+
+- [#1122](https://github.com/VoltAgent/voltagent/pull/1122) [`e03e1ec`](https://github.com/VoltAgent/voltagent/commit/e03e1ec582bdc3bde3b2872997a78a40bbcc2e04) Thanks [@omeraplak](https://github.com/omeraplak)! - Avoid reinitializing serverless observability remote exporters when the resolved VoltOps endpoint and headers are unchanged. This prevents unnecessary provider shutdown/recreation cycles that can surface as noisy "Processor shutdown" traces in long-lived serverless instances.
+
+  Adds a unit test to ensure repeated environment sync calls do not trigger duplicate `updateServerlessRemote` invocations when config is stable.
+
 ## 2.6.2
 
 ### Patch Changes
