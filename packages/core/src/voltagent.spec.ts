@@ -6,6 +6,7 @@ import { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 import { ServerlessVoltAgentObservability } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
 import { VoltAgent } from "./voltagent";
+import { VoltOpsClient } from "./voltops/client";
 import { createWorkflow } from "./workflow";
 import { WorkflowRegistry } from "./workflow/registry";
 import { andThen } from "./workflow/steps";
@@ -167,16 +168,17 @@ describe("VoltAgent defaults", () => {
     const observability = new ServerlessVoltAgentObservability();
     const updateSpy = vi.spyOn(observability, "updateServerlessRemote");
 
-    const mockVoltOpsClient = {
-      getApiUrl: () => "https://api.voltops.example",
-      getAuthHeaders: () => ({ Authorization: "Bearer test-token" }),
-    };
+    const mockVoltOpsClient = new VoltOpsClient({
+      baseUrl: "https://api.voltops.example",
+      publicKey: "pk_test_public_key",
+      secretKey: "sk_test_secret_key",
+    });
 
     let ensureEnvironmentHook: ((env?: Record<string, unknown>) => void) | undefined;
 
     const voltAgent = new VoltAgent({
       observability,
-      voltOpsClient: mockVoltOpsClient as any,
+      voltOpsClient: mockVoltOpsClient,
       checkDependencies: false,
       serverless: (deps) => {
         ensureEnvironmentHook = deps.ensureEnvironment;
