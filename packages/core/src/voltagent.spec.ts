@@ -1,10 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Agent } from "./agent/agent";
 import { Memory } from "./memory";
 import { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
+import { ServerlessVoltAgentObservability } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
 import { VoltAgent } from "./voltagent";
+import { VoltOpsClient } from "./voltops/client";
 import { createWorkflow } from "./workflow";
 import { WorkflowRegistry } from "./workflow/registry";
 import { andThen } from "./workflow/steps";
@@ -160,5 +162,47 @@ describe("VoltAgent defaults", () => {
       debounceMs: 25,
       flushOnToolResult: true,
     });
+  });
+
+  it("does not recreate serverless observability remote config when unchanged", async () => {
+    const observability = new ServerlessVoltAgentObservability();
+    const updateSpy = vi.spyOn(observability, "updateServerlessRemote");
+
+    const mockVoltOpsClient = new VoltOpsClient({
+      baseUrl: "https://api.voltops.example",
+      publicKey: "pk_test_public_key",
+      secretKey: "sk_test_secret_key",
+    });
+
+    let ensureEnvironmentHook: ((env?: Record<string, unknown>) => void) | undefined;
+
+    const voltAgent = new VoltAgent({
+      observability,
+      voltOpsClient: mockVoltOpsClient,
+      checkDependencies: false,
+      serverless: (deps) => {
+        ensureEnvironmentHook = deps.ensureEnvironment;
+        return {
+          handleRequest: async () => new Response(null, { status: 200 }),
+          toCloudflareWorker: () => ({
+            fetch: async () => new Response(null, { status: 200 }),
+          }),
+          toVercelEdge: () => async () => new Response(null, { status: 200 }),
+          toDeno: () => async () => new Response(null, { status: 200 }),
+          auto: () => ({
+            fetch: async () => new Response(null, { status: 200 }),
+          }),
+        };
+      },
+    });
+
+    await voltAgent.ready;
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+
+    ensureEnvironmentHook?.();
+    ensureEnvironmentHook?.();
+
+    expect(updateSpy).toHaveBeenCalledTimes(1);
+    await observability.shutdown();
   });
 });

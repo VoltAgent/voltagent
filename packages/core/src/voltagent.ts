@@ -45,6 +45,11 @@ export class VoltAgent {
   private readonly ensureEnvironmentBinding: (env?: Record<string, unknown>) => void;
   private readonly triggerRegistry: TriggerRegistry;
   private readonly agentRefs: Record<string, Agent>;
+  private lastServerlessRemoteConfig?: {
+    tracesUrl: string;
+    logsUrl: string;
+    headers: Record<string, string>;
+  };
   public readonly ready: Promise<void>;
   public initError?: unknown;
   public degraded = false;
@@ -320,17 +325,69 @@ export class VoltAgent {
 
     const baseUrl = voltOpsClient.getApiUrl().replace(/\/$/, "");
     const headers = voltOpsClient.getAuthHeaders();
+    const nextConfig = {
+      tracesUrl: `${baseUrl}/api/public/otel/v1/traces`,
+      logsUrl: `${baseUrl}/api/public/otel/v1/logs`,
+      headers,
+    };
+
+    if (this.isSameServerlessRemoteConfig(nextConfig)) {
+      return;
+    }
+
+    this.lastServerlessRemoteConfig = {
+      tracesUrl: nextConfig.tracesUrl,
+      logsUrl: nextConfig.logsUrl,
+      headers: { ...nextConfig.headers },
+    };
 
     this.observability.updateServerlessRemote({
       traces: {
-        url: `${baseUrl}/api/public/otel/v1/traces`,
-        headers,
+        url: nextConfig.tracesUrl,
+        headers: nextConfig.headers,
       },
       logs: {
-        url: `${baseUrl}/api/public/otel/v1/logs`,
-        headers,
+        url: nextConfig.logsUrl,
+        headers: nextConfig.headers,
       },
     });
+  }
+
+  private isSameServerlessRemoteConfig(nextConfig: {
+    tracesUrl: string;
+    logsUrl: string;
+    headers: Record<string, string>;
+  }): boolean {
+    const previous = this.lastServerlessRemoteConfig;
+    if (!previous) {
+      return false;
+    }
+
+    if (previous.tracesUrl !== nextConfig.tracesUrl || previous.logsUrl !== nextConfig.logsUrl) {
+      return false;
+    }
+
+    return this.areHeaderRecordsEqual(previous.headers, nextConfig.headers);
+  }
+
+  private areHeaderRecordsEqual(
+    left: Record<string, string>,
+    right: Record<string, string>,
+  ): boolean {
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+
+    if (leftKeys.length !== rightKeys.length) {
+      return false;
+    }
+
+    for (const key of leftKeys) {
+      if (left[key] !== right[key]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
