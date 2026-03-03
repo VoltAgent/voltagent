@@ -14,6 +14,7 @@ VoltAgent's `Memory` class stores conversation history and enables agents to mai
 | **InMemory**       | `@voltagent/core`             | None (RAM only)        | Development, testing             |
 | **Managed Memory** | `@voltagent/voltagent-memory` | VoltOps-hosted         | Production-ready, zero-setup     |
 | **LibSQL**         | `@voltagent/libsql`           | Local SQLite or remote | Self-hosted, edge deployments    |
+| **MongoDB**        | `@voltagent/mongodb`          | Self-hosted or Atlas   | Existing MongoDB infrastructure  |
 | **Postgres**       | `@voltagent/postgres`         | Self-hosted Postgres   | Existing Postgres infrastructure |
 | **Supabase**       | `@voltagent/supabase`         | Supabase               | Supabase-based applications      |
 
@@ -62,6 +63,7 @@ For detailed configuration, provider setup, and advanced features:
 - **[Memory Overview](./memory/overview.md)** - Full memory system documentation
 - **[Memory API Endpoints](../api/endpoints/memory.md)** - HTTP endpoints for conversations and messages
 - **[Managed Memory](./memory/managed-memory.md)** - Production-ready hosted storage
+- **[MongoDB Memory](./memory/mongodb.md)** - MongoDB adapter setup and configuration
 - **[Semantic Search](./memory/semantic-search.md)** - Vector-based message retrieval
 - **[Working Memory](./memory/working-memory.md)** - Compact context management
 - **[Storage Adapters](./memory/in-memory.md)** - Provider-specific guides

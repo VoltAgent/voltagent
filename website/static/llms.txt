@@ -683,6 +683,7 @@ Beyond basic LibSQL storage, VoltAgent supports multiple memory backends.
 
 *   **`InMemoryStorage`**: Non-persistent, development use
 *   **`LibSQLStorage`**: SQLite/Turso for local or cloud persistence
+*   **`MongoDBMemoryAdapter`** (`@voltagent/mongodb`): Persistent MongoDB storage for self-hosted deployments or MongoDB Atlas
 *   **`PostgreSQLMemoryAdapter`** (`@voltagent/postgres`): Production PostgreSQL with connection pooling
 *   **`SupabaseMemoryAdapter`** (`@voltagent/supabase`): Supabase Postgres with RLS support
 
@@ -695,6 +696,7 @@ Beyond basic LibSQL storage, VoltAgent supports multiple memory backends.
 **More Info:**
 
 *   `[Memory Overview](/docs/agents/memory/overview.md)`
+*   `[MongoDB Memory](/docs/agents/memory/mongodb.md)`
 *   `[PostgreSQL Memory](/docs/agents/memory/postgres.md)`
 *   `[Supabase Memory](/docs/agents/memory/supabase.md)`
 *   `[Working Memory](/docs/agents/memory/working-memory.md)`

@@ -15,6 +15,7 @@ VoltAgent's `Memory` class stores conversation history and optional semantic sea
 | **Managed Memory** | `@voltagent/voltagent-memory` | VoltOps-hosted         | Production-ready, zero-setup     |
 | **LibSQL**         | `@voltagent/libsql`           | Local SQLite or remote | Self-hosted, edge deployments    |
 | **Cloudflare D1**  | `@voltagent/cloudflare-d1`    | Cloudflare D1 (SQLite) | Cloudflare Workers deployments   |
+| **MongoDB**        | `@voltagent/mongodb`          | Self-hosted or Atlas   | Existing MongoDB infrastructure  |
 | **Postgres**       | `@voltagent/postgres`         | Self-hosted Postgres   | Existing Postgres infrastructure |
 | **Supabase**       | `@voltagent/supabase`         | Supabase               | Supabase-based applications      |
 
@@ -194,6 +195,24 @@ const agent = new Agent({
 });
 ```
 
+### MongoDB
+
+```ts
+import { Agent, Memory } from "@voltagent/core";
+import { MongoDBMemoryAdapter } from "@voltagent/mongodb";
+
+const agent = new Agent({
+  name: "Assistant",
+  model: "openai/gpt-4o-mini",
+  memory: new Memory({
+    storage: new MongoDBMemoryAdapter({
+      connection: process.env.MONGODB_URI!,
+      database: process.env.MONGODB_DATABASE ?? "voltagent",
+    }),
+  }),
+});
+```
+
 ### Semantic Search + Working Memory
 
 ```ts
@@ -350,6 +369,7 @@ See [Operation Context](../context.md#memory-adapters) for more examples and pat
 - **[Semantic Search](./semantic-search.md)** - Retrieve messages by similarity
 - **[Working Memory](./working-memory.md)** - Maintain compact context across turns
 - **[LibSQL / SQLite](./libsql.md)** - Self-hosted SQLite or edge deployments
+- **[MongoDB](./mongodb.md)** - MongoDB adapter for persistent memory
 - **[PostgreSQL](./postgres.md)** - Self-hosted Postgres adapter
 - **[Supabase](./supabase.md)** - Supabase integration
 - **[In-Memory Storage](./in-memory.md)** - Default ephemeral storage
