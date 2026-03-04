@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OperationContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
@@ -5,6 +6,15 @@ import { Memory } from "../../memory";
 import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory";
 import { createTestUIMessage } from "../../memory/test-utils";
 import { MemoryManager } from "./memory-manager";
+
+type EnsureConversationExistsSpyTarget = {
+  ensureConversationExists: (
+    context: OperationContext,
+    userId: string,
+    conversationId: string,
+    input?: OperationContext["input"] | UIMessage,
+  ) => Promise<boolean>;
+};
 
 // Helper function to create mock OperationContext
 function createMockOperationContext(): OperationContext {
@@ -256,8 +266,10 @@ describe("MemoryManager", () => {
       const context = createMockOperationContext();
       context.input = "first turn";
 
+      const managerWithEnsureConversationExists =
+        manager as unknown as EnsureConversationExistsSpyTarget;
       const ensureConversationExistsSpy = vi
-        .spyOn(manager as any, "ensureConversationExists")
+        .spyOn(managerWithEnsureConversationExists, "ensureConversationExists")
         .mockResolvedValue(false);
       const saveConversationStepsSpy = vi.spyOn(memory, "saveConversationSteps");
 
