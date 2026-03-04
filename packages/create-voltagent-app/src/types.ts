@@ -89,14 +89,14 @@ export const PACKAGE_MANAGER_CONFIG = {
     command: "pnpm",
     installCommand: "pnpm install",
     runCommand: "pnpm",
-    installArgsForQuiet: ["install", "-q"],
+    installArgsForQuiet: ["install", "--loglevel=error"],
   },
   bun: {
     name: "Bun",
     command: "bun",
     installCommand: "bun install",
     runCommand: "bun",
-    installArgsForQuiet: ["install", "--quiet"],
+    installArgsForQuiet: ["install", "--silent"],
   },
   yarn: {
     name: "Yarn",

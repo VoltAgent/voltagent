@@ -101,20 +101,31 @@ export const runCLI = async (): Promise<void> => {
         },
       ]);
 
-      const { packageManager } = await inquirer.prompt<{
-        packageManager: ProjectOptions["packageManager"];
-      }>([
-        {
-          type: "list",
-          name: "packageManager",
-          message: "Which package manager would you like to use?",
-          choices: getInstalledPackageManagers().map((pm) => ({
-            name: PACKAGE_MANAGER_CONFIG[pm].name,
-            value: pm,
-          })),
-          default: getDefaultPackageManager(),
-        },
-      ]);
+      const installedPackageManagers = getInstalledPackageManagers();
+      let packageManager: ProjectOptions["packageManager"] = "npm";
+
+      if (installedPackageManagers.length === 0) {
+        logger.warning(
+          "No package manager detected in PATH. Falling back to npm. Make sure Node.js and npm are installed from https://nodejs.org/.",
+        );
+      } else {
+        const result = await inquirer.prompt<{
+          packageManager: ProjectOptions["packageManager"];
+        }>([
+          {
+            type: "list",
+            name: "packageManager",
+            message: "Which package manager would you like to use?",
+            choices: installedPackageManagers.map((pm) => ({
+              name: PACKAGE_MANAGER_CONFIG[pm].name,
+              value: pm,
+            })),
+            default: getDefaultPackageManager(),
+          },
+        ]);
+
+        packageManager = result.packageManager;
+      }
 
       // Start installing base dependencies immediately
       const baseDependencyInstaller = await createBaseDependencyInstaller(
