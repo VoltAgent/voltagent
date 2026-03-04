@@ -1,13 +1,5 @@
 import { execSync } from "node:child_process";
-import type { PackageManager } from "../types";
-
-interface PackageManagerInfo {
-  name: PackageManager;
-  command: string;
-  installCommand: string;
-  runCommand: string;
-  isInstalled: boolean;
-}
+import { PACKAGE_MANAGER_CONFIG, type PackageManager } from "../types";
 
 /**
  * Check if a command exists on the system
@@ -25,59 +17,30 @@ const commandExists = (command: string): boolean => {
 };
 
 /**
- * Get information about all package managers
- */
-export const getPackageManagers = (): PackageManagerInfo[] => {
-  const managers: PackageManagerInfo[] = [
-    {
-      name: "npm",
-      command: "npm",
-      installCommand: "npm install",
-      runCommand: "npm run",
-      isInstalled: false,
-    },
-    {
-      name: "yarn",
-      command: "yarn",
-      installCommand: "yarn",
-      runCommand: "yarn",
-      isInstalled: false,
-    },
-    {
-      name: "pnpm",
-      command: "pnpm",
-      installCommand: "pnpm install",
-      runCommand: "pnpm",
-      isInstalled: false,
-    },
-  ];
-
-  // Check which package managers are installed
-  for (const manager of managers) {
-    manager.isInstalled = commandExists(manager.command);
-  }
-
-  return managers;
-};
-
-/**
  * Get only the installed package managers
  */
-export const getInstalledPackageManagers = (): PackageManagerInfo[] => {
-  return getPackageManagers().filter((pm) => pm.isInstalled);
+export const getInstalledPackageManagers = (): PackageManager[] => {
+  const packageManagers = Object.keys(PACKAGE_MANAGER_CONFIG) as PackageManager[];
+  const installedPackageManagers: PackageManager[] = [];
+
+  for (const pm of packageManagers) {
+    if (commandExists(PACKAGE_MANAGER_CONFIG[pm].command)) {
+      installedPackageManagers.push(pm);
+    }
+  }
+
+  return installedPackageManagers;
 };
 
 /**
- * Get the default package manager (prefer pnpm > yarn > npm)
+ * Get the default package manager (prefer pnpm > bun > yarn > npm)
  */
 export const getDefaultPackageManager = (): PackageManager => {
   const installed = getInstalledPackageManagers();
+  const packageManagers = Object.keys(PACKAGE_MANAGER_CONFIG) as PackageManager[];
 
-  // Prefer pnpm, then yarn, then npm
-  const preferred = ["pnpm", "yarn", "npm"] as const;
-
-  for (const pm of preferred) {
-    if (installed.some((i) => i.name === pm)) {
+  for (const pm of packageManagers) {
+    if (installed.some((name) => name === pm)) {
       return pm;
     }
   }

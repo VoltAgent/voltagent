@@ -1,9 +1,11 @@
 export type AIProvider = "openai" | "anthropic" | "google" | "groq" | "mistral" | "ollama";
 export type ServerProvider = "hono" | "elysia";
+export type PackageManager = "npm" | "bun" | "yarn" | "pnpm";
 
 export type ProjectOptions = {
   projectName: string;
   typescript: boolean;
+  packageManager: PackageManager;
   features: Feature[];
   ide?: "cursor" | "windsurf" | "vscode" | "none";
   aiProvider?: AIProvider;
@@ -76,5 +78,38 @@ export const SERVER_CONFIG = {
     package: "@voltagent/server-elysia",
     packageVersion: "^2.0.0",
     factory: "elysiaServer",
+  },
+} as const;
+
+// Prefer pnpm, then bun, then yarn, then npm
+export const PREFERRED_PACKAGE_MANAGERS_CONFIG = ["pnpm", "bun", "yarn", "npm"] as const;
+export const PACKAGE_MANAGER_CONFIG = {
+  pnpm: {
+    name: "PNPM",
+    command: "pnpm",
+    installCommand: "pnpm install",
+    runCommand: "pnpm",
+    installArgsForQuiet: ["install", "--loglevel=error"],
+  },
+  bun: {
+    name: "Bun",
+    command: "bun",
+    installCommand: "bun install",
+    runCommand: "bun",
+    installArgsForQuiet: ["install", "--silent"],
+  },
+  yarn: {
+    name: "Yarn",
+    command: "yarn",
+    installCommand: "yarn install",
+    runCommand: "yarn",
+    installArgsForQuiet: ["install", "--silent"],
+  },
+  npm: {
+    name: "NPM",
+    command: "npm",
+    installCommand: "npm install",
+    runCommand: "npm run",
+    installArgsForQuiet: ["install", "--loglevel=error"],
   },
 } as const;
