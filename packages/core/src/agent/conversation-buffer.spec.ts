@@ -104,6 +104,78 @@ describe("ConversationBuffer", () => {
     expect(reasoningParts[1]?.providerMetadata).toEqual({ openai: { itemId: "rs_TWO" } });
   });
 
+  it("merges subsequent response checkpoints with same assistant id after an intermediate flush", () => {
+    const buffer = new ConversationBuffer();
+
+    buffer.addModelMessages(
+      [
+        {
+          id: "response-1",
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              toolCallId: "call-1",
+              toolName: "getWeather",
+              input: { location: "Berlin" },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: "call-1",
+              toolName: "getWeather",
+              output: { condition: "sunny" },
+            },
+          ],
+        },
+      ],
+      "response",
+    );
+
+    const firstFlush = buffer.drainPendingMessages();
+    expect(firstFlush).toHaveLength(1);
+    expect(firstFlush[0]?.id).toBe("response-1");
+
+    buffer.addModelMessages(
+      [
+        {
+          id: "response-1",
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "Berlin hava durumu güneşli.",
+            },
+          ],
+        },
+      ],
+      "response",
+    );
+
+    const secondFlush = buffer.drainPendingMessages();
+    expect(secondFlush).toHaveLength(1);
+    expect(secondFlush[0]?.id).toBe("response-1");
+    expect(secondFlush[0]?.parts).toEqual([
+      {
+        type: "tool-getWeather",
+        toolCallId: "call-1",
+        state: "output-available",
+        input: { location: "Berlin" },
+        output: { condition: "sunny" },
+        providerExecuted: false,
+      },
+      { type: "step-start" },
+      { type: "text", text: "Berlin hava durumu güneşli." },
+    ]);
+
+    const all = buffer.getAllMessages();
+    expect(all).toHaveLength(1);
+  });
+
   it("preserves preloaded memory messages without marking them pending", () => {
     const existing: UIMessage[] = [
       {

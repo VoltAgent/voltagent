@@ -217,4 +217,39 @@ describe("MemoryManager", () => {
       await expect(manager.shutdown()).resolves.not.toThrow();
     });
   });
+
+  describe("saveConversationSteps", () => {
+    it("should create conversation automatically before persisting steps", async () => {
+      const context = createMockOperationContext();
+      context.input = "first turn";
+
+      await manager.saveConversationSteps(
+        context,
+        [
+          {
+            id: "step-1",
+            conversationId: "conv-steps-auto",
+            userId: "user-steps-auto",
+            agentId: "agent-1",
+            agentName: "Agent 1",
+            operationId: "op-1",
+            stepIndex: 0,
+            type: "text",
+            role: "assistant",
+            content: "hello",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        "user-steps-auto",
+        "conv-steps-auto",
+      );
+
+      const conversation = await memory.getConversation("conv-steps-auto");
+      expect(conversation).not.toBeNull();
+
+      const steps = await memory.getConversationSteps("user-steps-auto", "conv-steps-auto");
+      expect(steps).toHaveLength(1);
+      expect(steps[0]?.id).toBe("step-1");
+    });
+  });
 });

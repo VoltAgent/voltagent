@@ -172,3 +172,63 @@ jobs:
           npm run test:integration:ci
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    name: E2E Tests
+    concurrency:
+      group: ${{ github.ref }}-e2e-tests
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: voltagent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for E2E-related changes
+        id: check_e2e
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -E '^(\.github/workflows/pull-request\.yml|packages/e2e/|packages/core/|packages/libsql/|packages/postgres/|packages/internal/|packages/logger/|package\.json|pnpm-lock\.yaml)'; then
+            echo "e2e_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "e2e_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if no E2E-related changes
+        if: steps.check_e2e.outputs.e2e_changed == 'false'
+        run: echo "No E2E-related changes detected, skipping E2E tests"
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check_e2e.outputs.e2e_changed == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.check_e2e.outputs.e2e_changed == 'true'
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        if: steps.check_e2e.outputs.e2e_changed == 'true'
+        run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Build E2E Dependencies
+        if: steps.check_e2e.outputs.e2e_changed == 'true'
+        run: pnpm lerna run build --scope @voltagent/e2e --include-dependencies
+
+      - name: Run E2E Tests
+        if: steps.check_e2e.outputs.e2e_changed == 'true'
+        run: pnpm --filter @voltagent/e2e test

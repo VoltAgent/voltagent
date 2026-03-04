@@ -304,6 +304,19 @@ export class ConversationBuffer {
     }
 
     if (source === "response") {
+      const hasSameAssistantId =
+        typeof message.id === "string" &&
+        message.id.length > 0 &&
+        typeof lastMessage.id === "string" &&
+        lastMessage.id.length > 0 &&
+        message.id === lastMessage.id;
+
+      if (hasSameAssistantId) {
+        this.mergeAssistantMessage(message);
+        this.activeAssistantMessageId = lastMessage.id;
+        return;
+      }
+
       const isActiveTarget =
         this.activeAssistantMessageId !== undefined &&
         this.activeAssistantMessageId === lastMessage.id;

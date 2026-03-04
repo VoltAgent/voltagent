@@ -242,6 +242,7 @@ export class MemoryManager {
 
     try {
       await trace.withSpan(span, async () => {
+        await this.ensureConversationExists(context, userId, conversationId, context.input);
         await this.conversationMemory?.saveConversationSteps?.(steps);
       });
       trace.endChildSpan(span, "completed", {
