@@ -1,5 +1,31 @@
 # @voltagent/core
 
+## 2.6.4
+
+### Patch Changes
+
+- [#1131](https://github.com/VoltAgent/voltagent/pull/1131) [`9a3ff6b`](https://github.com/VoltAgent/voltagent/commit/9a3ff6bf8c30016f7867d867a23ad5b180448073) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(core): persist reasoning and tool parts across step checkpoint flushes (#1130)
+
+  When `conversationPersistence.mode = "step"` was used with tool calls, some checkpoint flows could
+  persist incomplete assistant messages and lose non-text parts in stored conversation history.
+
+  This update preserves complete assistant message parts during checkpoint merges and persistence
+  flushes, including reasoning, tool-call, tool-result, and text parts.
+
+  Regression coverage is expanded with end-to-end agent persistence tests against both LibSQL and
+  PostgreSQL backends to reduce the chance of similar regressions.
+
+- [#1123](https://github.com/VoltAgent/voltagent/pull/1123) [`13f4f40`](https://github.com/VoltAgent/voltagent/commit/13f4f40df980b5b114ea58b23e5683c8a1b208dc) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent duplicate assistant message persistence during step checkpoints (#1121)
+
+  When `conversationPersistence.mode = "step"` flushed around tool results, the same assistant
+  response could be persisted multiple times with different `message_id` values. This created
+  duplicate assistant rows in memory and could surface downstream provider errors like duplicate
+  OpenAI reasoning item ids.
+
+  This update keeps a stable assistant response message id across step checkpoints and skips duplicate
+  step response payloads before buffering, so intermediate checkpoint flushes update the same memory
+  message instead of inserting new duplicates.
+
 ## 2.6.3
 
 ### Patch Changes
