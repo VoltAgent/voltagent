@@ -251,5 +251,39 @@ describe("MemoryManager", () => {
       expect(steps).toHaveLength(1);
       expect(steps[0]?.id).toBe("step-1");
     });
+
+    it("should skip step persistence when ensuring conversation fails", async () => {
+      const context = createMockOperationContext();
+      context.input = "first turn";
+
+      const ensureConversationExistsSpy = vi
+        .spyOn(manager as any, "ensureConversationExists")
+        .mockResolvedValue(false);
+      const saveConversationStepsSpy = vi.spyOn(memory, "saveConversationSteps");
+
+      await manager.saveConversationSteps(
+        context,
+        [
+          {
+            id: "step-2",
+            conversationId: "conv-steps-fail",
+            userId: "user-steps-fail",
+            agentId: "agent-1",
+            agentName: "Agent 1",
+            operationId: "op-2",
+            stepIndex: 0,
+            type: "text",
+            role: "assistant",
+            content: "hello",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        "user-steps-fail",
+        "conv-steps-fail",
+      );
+
+      expect(ensureConversationExistsSpy).toHaveBeenCalledTimes(1);
+      expect(saveConversationStepsSpy).not.toHaveBeenCalled();
+    });
   });
 });

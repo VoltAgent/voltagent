@@ -289,7 +289,7 @@ describe("Conversation persistence integration", () => {
 
     expect(firstMessage?.id).toBe("assistant-checkpoint");
     expect(finalMessage?.id).toBe("assistant-checkpoint");
-    expect(finalMessage?.parts.map((part: any) => part.type)).toEqual([
+    expect(finalMessage?.parts.map((part) => part.type)).toEqual([
       "reasoning",
       "tool-checkCalendar",
       "step-start",
