@@ -37,38 +37,39 @@ describe.sequential("message persistence e2e (libsql)", () => {
     await runFiveTurns(memory, userId, conversationId);
 
     const client = createClient({ url: dbUrl });
+    try {
+      const conversationRows = await client.execute({
+        sql: `SELECT id, user_id, resource_id FROM ${tablePrefix}_conversations WHERE id = ?`,
+        args: [conversationId],
+      });
+      expect(conversationRows.rows).toHaveLength(1);
+      expect(conversationRows.rows[0]?.id).toBe(conversationId);
+      expect(conversationRows.rows[0]?.user_id).toBe(userId);
+      expect(conversationRows.rows[0]?.resource_id).toBe("persistence-e2e-agent");
 
-    const conversationRows = await client.execute({
-      sql: `SELECT id, user_id, resource_id FROM ${tablePrefix}_conversations WHERE id = ?`,
-      args: [conversationId],
-    });
-    expect(conversationRows.rows).toHaveLength(1);
-    expect(conversationRows.rows[0]?.id).toBe(conversationId);
-    expect(conversationRows.rows[0]?.user_id).toBe(userId);
-    expect(conversationRows.rows[0]?.resource_id).toBe("persistence-e2e-agent");
+      const messageRows = await client.execute({
+        sql: `SELECT role, parts FROM ${tablePrefix}_messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC`,
+        args: [conversationId, userId],
+      });
+      const assistantRows = messageRows.rows.filter((row) => row.role === "assistant");
+      expect(assistantRows).toHaveLength(5);
 
-    const messageRows = await client.execute({
-      sql: `SELECT role, parts FROM ${tablePrefix}_messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC`,
-      args: [conversationId, userId],
-    });
-    const assistantRows = messageRows.rows.filter((row) => row.role === "assistant");
-    expect(assistantRows).toHaveLength(5);
-
-    for (const [index, row] of assistantRows.entries()) {
-      const rawParts = row.parts;
-      if (typeof rawParts !== "string") {
-        throw new Error("Expected libsql parts to be JSON string.");
+      for (const [index, row] of assistantRows.entries()) {
+        const rawParts = row.parts;
+        if (typeof rawParts !== "string") {
+          throw new Error("Expected libsql parts to be JSON string.");
+        }
+        const parts = JSON.parse(rawParts) as UIMessage["parts"];
+        assertAssistantParts({ id: "libsql-row", role: "assistant", parts }, index + 1);
       }
-      const parts = JSON.parse(rawParts) as UIMessage["parts"];
-      assertAssistantParts({ id: "libsql-row", role: "assistant", parts }, index + 1);
+
+      const stepCountRows = await client.execute({
+        sql: `SELECT COUNT(*) AS count FROM ${tablePrefix}_steps WHERE conversation_id = ? AND user_id = ?`,
+        args: [conversationId, userId],
+      });
+      expect(Number(stepCountRows.rows[0]?.count ?? 0)).toBeGreaterThan(0);
+    } finally {
+      client.close();
     }
-
-    const stepCountRows = await client.execute({
-      sql: `SELECT COUNT(*) AS count FROM ${tablePrefix}_steps WHERE conversation_id = ? AND user_id = ?`,
-      args: [conversationId, userId],
-    });
-    expect(Number(stepCountRows.rows[0]?.count ?? 0)).toBeGreaterThan(0);
-
-    client.close();
   });
 });

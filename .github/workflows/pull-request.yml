@@ -179,20 +179,6 @@ jobs:
     concurrency:
       group: ${{ github.ref }}-e2e-tests
       cancel-in-progress: true
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: voltagent_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -201,7 +187,14 @@ jobs:
       - name: Check for E2E-related changes
         id: check_e2e
         run: |
-          if git diff --name-only origin/main...HEAD | grep -E '^(\.github/workflows/pull-request\.yml|packages/e2e/|packages/core/|packages/libsql/|packages/postgres/|packages/internal/|packages/logger/|package\.json|pnpm-lock\.yaml)'; then
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
+            BASE_SHA="origin/${{ github.event.pull_request.base.ref }}"
+          fi
+
+          if git diff --name-only "$BASE_SHA"...HEAD | grep -E '^(\.github/workflows/pull-request\.yml|packages/e2e/|packages/core/|packages/libsql/|packages/postgres/|packages/internal/|packages/logger/|package\.json|pnpm-lock\.yaml)'; then
             echo "e2e_changed=true" >> $GITHUB_OUTPUT
           else
             echo "e2e_changed=false" >> $GITHUB_OUTPUT
