@@ -52,9 +52,28 @@ jobs:
       - name: Test Package
         run: lerna run test --scope "${{ steps.scope.outputs.scope }}"
 
+  e2e-tests:
+    runs-on: ubuntu-latest
+    name: E2E Tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install Dependencies
+        run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+      - name: Build E2E Dependencies
+        run: pnpm lerna run build --scope @voltagent/e2e --include-dependencies
+      - name: Run E2E Tests
+        run: pnpm --filter @voltagent/e2e test
+
   prerelease:
     name: Prerelease
-    needs: test-packages
+    needs: [test-packages, e2e-tests]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -1,0 +1,23 @@
+{
+  "name": "@voltagent/e2e",
+  "dependencies": {
+    "@libsql/client": "^0.15.0",
+    "@voltagent/core": "^2.6.3",
+    "@voltagent/internal": "^1.0.3",
+    "@voltagent/libsql": "^2.1.2",
+    "@voltagent/postgres": "^2.1.2",
+    "ai": "^6.0.0",
+    "pg": "^8.16.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  },
+  "private": true,
+  "scripts": {
+    "build": "echo \"No build step for @voltagent/e2e\"",
+    "lint": "biome check .",
+    "test": "sh -c 'docker compose -f ../postgres/docker-compose.test.yaml up -d && vitest run --config vitest.config.mts; status=$?; docker compose -f ../postgres/docker-compose.test.yaml down -v; exit $status'"
+  },
+  "type": "module"
+}

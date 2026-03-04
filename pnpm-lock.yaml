@@ -4014,6 +4014,37 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11
 
+  packages/e2e:
+    dependencies:
+      '@libsql/client':
+        specifier: ^0.15.0
+        version: 0.15.10
+      '@voltagent/core':
+        specifier: ^2.6.3
+        version: link:../core
+      '@voltagent/internal':
+        specifier: ^1.0.3
+        version: link:../internal
+      '@voltagent/libsql':
+        specifier: ^2.1.2
+        version: link:../libsql
+      '@voltagent/postgres':
+        specifier: ^2.1.2
+        version: link:../postgres
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      pg:
+        specifier: ^8.16.0
+        version: 8.16.3
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
+
   packages/evals:
     dependencies:
       '@voltagent/internal':
@@ -17276,13 +17307,8 @@ packages:
     resolution: {integrity: sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ==}
     dev: true
 
-  /@rolldown/pluginutils@1.0.0-beta.58:
-    resolution: {integrity: sha512-qWhDs6yFGR5xDfdrwiSa3CWGIHxD597uGE/A9xGqytBjANvh4rLCTTkq7szhMV4+Ygh+PMS90KVJ8xWG/TkX4w==}
-    dev: false
-
   /@rolldown/pluginutils@1.0.0-rc.6:
     resolution: {integrity: sha512-Y0+JT8Mi1mmW08K6HieG315XNRu4L0rkfCpA364HtytjgiqYnMYRdFPcxRl+BQQqNXzecL2S9nii+RUpO93XIA==}
-    dev: true
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -20979,7 +21005,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0-beta.58
+      '@rolldown/pluginutils': 1.0.0-rc.6
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)

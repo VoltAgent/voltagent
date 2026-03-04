@@ -242,6 +242,17 @@ export class MemoryManager {
 
     try {
       await trace.withSpan(span, async () => {
+        const ensuredConversation = await this.ensureConversationExists(
+          context,
+          userId,
+          conversationId,
+          context.input,
+        );
+        if (!ensuredConversation) {
+          throw new Error(
+            `Failed to ensure conversation exists before step persistence for conversation ${conversationId}`,
+          );
+        }
         await this.conversationMemory?.saveConversationSteps?.(steps);
       });
       trace.endChildSpan(span, "completed", {
@@ -522,7 +533,17 @@ export class MemoryManager {
       operation: async () => {
         try {
           // First ensure conversation exists
-          await this.ensureConversationExists(context, userId, conversationId, input);
+          const ensuredConversation = await this.ensureConversationExists(
+            context,
+            userId,
+            conversationId,
+            input,
+          );
+          if (!ensuredConversation) {
+            throw new Error(
+              `Failed to ensure conversation exists before input persistence for conversation ${conversationId}`,
+            );
+          }
 
           // Then save current input
           await this.saveCurrentInput(context, input, userId, conversationId);
@@ -583,13 +604,36 @@ export class MemoryManager {
    * Ensure conversation exists (background task)
    * PRESERVED FROM ORIGINAL
    */
+  private isConversationAlreadyExistsError(error: unknown): boolean {
+    if (!error || typeof error !== "object") {
+      return false;
+    }
+
+    const record = error as Record<string, unknown>;
+    const code = typeof record.code === "string" ? record.code : "";
+    const duplicateCodes = new Set([
+      "CONVERSATION_ALREADY_EXISTS",
+      "23505", // PostgreSQL unique violation
+      "SQLITE_CONSTRAINT_PRIMARYKEY",
+      "SQLITE_CONSTRAINT_UNIQUE",
+      "SQLITE_CONSTRAINT",
+    ]);
+
+    if (duplicateCodes.has(code)) {
+      return true;
+    }
+
+    const message = typeof record.message === "string" ? record.message.toLowerCase() : "";
+    return message.includes("already exists") || message.includes("duplicate");
+  }
+
   private async ensureConversationExists(
     context: OperationContext,
     userId: string,
     conversationId: string,
     input?: OperationContext["input"] | UIMessage,
-  ): Promise<void> {
-    if (!this.conversationMemory) return;
+  ): Promise<boolean> {
+    if (!this.conversationMemory) return false;
 
     try {
       const existingConversation = await this.conversationMemory.getConversation(conversationId);
@@ -607,9 +651,9 @@ export class MemoryManager {
           context.logger.debug("[Memory] Created new conversation", {
             title,
           });
-        } catch (createError: any) {
+        } catch (createError: unknown) {
           // If conversation already exists (race condition), that's fine - our goal is achieved
-          if (createError.code === "CONVERSATION_ALREADY_EXISTS") {
+          if (this.isConversationAlreadyExistsError(createError)) {
             context.logger.debug("[Memory] Conversation already exists (race condition handled)", {
               conversationId,
             });
@@ -625,10 +669,12 @@ export class MemoryManager {
         await this.conversationMemory.updateConversation(conversationId, {});
         context.logger.trace("[Memory] Updated conversation");
       }
+      return true;
     } catch (error) {
       context.logger.error("[Memory] Failed to ensure conversation exists", {
         error,
       });
+      return false;
     }
   }
 

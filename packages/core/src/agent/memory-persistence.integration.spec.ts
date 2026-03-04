@@ -210,4 +210,105 @@ describe("Conversation persistence integration", () => {
       output: { results: ["Result A", "Result B"] },
     });
   });
+
+  it("keeps tool call/result parts when final text arrives after an intermediate checkpoint flush", async () => {
+    const logger = createLogger();
+    const memoryManager = {
+      saveMessage: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const buffer = new ConversationBuffer(undefined, logger as any);
+    const queue = new MemoryPersistQueue(memoryManager as any, {
+      debounceMs: 0,
+      logger: logger as any,
+    });
+    const oc = createOperationContext(logger);
+
+    buffer.addModelMessages(
+      [
+        {
+          id: "assistant-checkpoint",
+          role: "assistant",
+          content: [
+            {
+              type: "reasoning",
+              text: "First I should read the calendar for that date.",
+            },
+            {
+              type: "tool-call",
+              toolCallId: "call-1",
+              toolName: "checkCalendar",
+              input: { date: "2023-11-15" },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: "call-1",
+              toolName: "checkCalendar",
+              output: {
+                events: [{ title: "Team meeting" }],
+              },
+            },
+          ],
+        },
+      ],
+      "response",
+    );
+
+    await queue.flush(buffer, oc);
+
+    buffer.addModelMessages(
+      [
+        {
+          id: "assistant-checkpoint",
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "You have one event: Team meeting.",
+            },
+          ],
+        },
+      ],
+      "response",
+    );
+
+    await queue.flush(buffer, oc);
+
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(2);
+
+    const persistedAssistantMessages = memoryManager.saveMessage.mock.calls.map(
+      (call) => call[1] as UIMessage,
+    );
+    const firstMessage = persistedAssistantMessages[0];
+    const finalMessage = persistedAssistantMessages[1];
+
+    expect(firstMessage?.id).toBe("assistant-checkpoint");
+    expect(finalMessage?.id).toBe("assistant-checkpoint");
+    expect(finalMessage?.parts.map((part) => part.type)).toEqual([
+      "reasoning",
+      "tool-checkCalendar",
+      "step-start",
+      "text",
+    ]);
+    expect(finalMessage?.parts[0]).toMatchObject({
+      type: "reasoning",
+      text: "First I should read the calendar for that date.",
+    });
+    expect(finalMessage?.parts[1]).toMatchObject({
+      toolCallId: "call-1",
+      state: "output-available",
+      output: {
+        events: [{ title: "Team meeting" }],
+      },
+    });
+    expect(finalMessage?.parts[3]).toMatchObject({
+      type: "text",
+      text: "You have one event: Team meeting.",
+    });
+  });
 });
