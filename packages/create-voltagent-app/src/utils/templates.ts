@@ -6,9 +6,20 @@ import {
   type TemplateFile,
 } from "../types";
 
-// Determine the correct base path for templates.
-// In the built version, templates are at ../templates relative to dist/
-const TEMPLATES_DIR = path.resolve(__dirname, "..", "templates");
+// Resolve templates for both source execution (src/) and built execution (dist/).
+const resolveTemplatesDir = () => {
+  const distPath = path.resolve(__dirname, "..", "templates");
+  const sourcePath = path.resolve(__dirname, "..", "..", "templates");
+
+  if (process.env.NODE_ENV === "test") {
+    // Prefer source templates in tests to avoid requiring a prior build step.
+    return sourcePath;
+  }
+
+  return distPath;
+};
+
+const TEMPLATES_DIR = resolveTemplatesDir();
 
 export const getBaseTemplates = (): TemplateFile[] => {
   return [
