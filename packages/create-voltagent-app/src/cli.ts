@@ -5,7 +5,13 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
 import { createProject } from "./project-creator";
-import { type AIProvider, AI_PROVIDER_CONFIG, type ProjectOptions, SERVER_CONFIG } from "./types";
+import {
+  type AIProvider,
+  AI_PROVIDER_CONFIG,
+  PACKAGE_MANAGER_CONFIG,
+  type ProjectOptions,
+  SERVER_CONFIG,
+} from "./types";
 import { captureError, captureProjectCreation } from "./utils/analytics";
 import {
   colorTypewriter,
@@ -18,6 +24,7 @@ import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
+import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -94,11 +101,27 @@ export const runCLI = async (): Promise<void> => {
         },
       ]);
 
+      const { packageManager } = await inquirer.prompt<{
+        packageManager: ProjectOptions["packageManager"];
+      }>([
+        {
+          type: "list",
+          name: "packageManager",
+          message: "Which package manager would you like to use?",
+          choices: getInstalledPackageManagers().map((pm) => ({
+            name: PACKAGE_MANAGER_CONFIG[pm].name,
+            value: pm,
+          })),
+          default: getDefaultPackageManager(),
+        },
+      ]);
+
       // Start installing base dependencies immediately
       const baseDependencyInstaller = await createBaseDependencyInstaller(
         targetDir,
         projectName,
         server || "hono",
+        packageManager || "npm",
       );
 
       // Wait for base dependencies to finish installing before asking more questions
@@ -146,6 +169,7 @@ export const runCLI = async (): Promise<void> => {
       const projectOptions: ProjectOptions = {
         projectName,
         typescript: true, // VoltAgent uses TypeScript by default
+        packageManager: packageManager || "npm",
         features: [], // Features aren't used anymore
         ide,
         aiProvider,
@@ -158,7 +182,7 @@ export const runCLI = async (): Promise<void> => {
         // Capture project creation event
         captureProjectCreation({
           projectName,
-          packageManager: "npm",
+          packageManager: packageManager || "npm",
           typescript: projectOptions.typescript,
           ide: projectOptions.ide,
           aiProvider: projectOptions.aiProvider,
@@ -173,7 +197,7 @@ export const runCLI = async (): Promise<void> => {
         logger.info("To start your application:");
         logger.blank();
         logger.info(`  ${chalk.cyan(`cd ${projectName}`)}`);
-        logger.info(`  ${chalk.cyan("npm run dev")}`);
+        logger.info(`  ${chalk.cyan(`${PACKAGE_MANAGER_CONFIG[packageManager].runCommand} dev`)}`);
 
         // Show MCP configuration info
         if (ide && ide !== "none") {

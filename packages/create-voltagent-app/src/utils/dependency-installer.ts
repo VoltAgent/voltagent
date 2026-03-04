@@ -1,6 +1,11 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { SERVER_CONFIG, type ServerProvider } from "../types";
+import {
+  PACKAGE_MANAGER_CONFIG,
+  type PackageManager,
+  SERVER_CONFIG,
+  type ServerProvider,
+} from "../types";
 import { createSpinner } from "./animation";
 import fileManager from "./file-manager";
 import logger from "./logger";
@@ -12,6 +17,7 @@ export const createBaseDependencyInstaller = async (
   targetDir: string,
   projectName: string,
   server: ServerProvider,
+  packageManager: PackageManager,
 ): Promise<{
   waitForCompletion: () => Promise<void>;
 }> => {
@@ -23,6 +29,7 @@ export const createBaseDependencyInstaller = async (
   await fileManager.ensureDir(path.join(targetDir, ".voltagent"));
 
   const serverConfig = SERVER_CONFIG[server];
+  const packageManagerConfig = PACKAGE_MANAGER_CONFIG[packageManager];
 
   const baseDependencies: Record<string, string> = {
     "@voltagent/core": "^2.0.0",
@@ -83,11 +90,15 @@ export const createBaseDependencyInstaller = async (
   const installPromise = new Promise<void>((resolve, reject) => {
     try {
       // Use spawn for async execution
-      const npmInstall = spawn("npm", ["install", "--loglevel=error"], {
-        cwd: targetDir,
-        stdio: ["ignore", "ignore", "pipe"], // Only capture stderr
-        shell: process.platform === "win32", // Only use shell on Windows
-      });
+      const npmInstall = spawn(
+        packageManagerConfig.command,
+        packageManagerConfig.installArgsForQuiet,
+        {
+          cwd: targetDir,
+          stdio: ["ignore", "ignore", "pipe"], // Only capture stderr
+          shell: process.platform === "win32", // Only use shell on Windows
+        },
+      );
 
       // Capture error output
       npmInstall.stderr?.on("data", (data) => {
@@ -101,7 +112,7 @@ export const createBaseDependencyInstaller = async (
           installComplete = true;
           resolve();
         } else {
-          const error = new Error(`npm install failed with code ${code}`);
+          const error = new Error(`Dependencies install failed with code ${code}`);
           logger.error("Failed to install base dependencies");
           if (errorOutput) {
             console.error(errorOutput);
