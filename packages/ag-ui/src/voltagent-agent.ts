@@ -130,19 +130,30 @@ export class VoltAgentAGUI extends AbstractAgent {
             stack: error instanceof Error ? error.stack : undefined,
           });
 
-          // Make sure any partial text messages are closed before finishing
+          // Emit the error event so consumers know what went wrong.
           const runError: RunErrorEvent = {
             type: EventType.RUN_ERROR,
             message: error instanceof Error ? error.message : "Unknown error",
           };
           subscriber.next(runError);
-          const finished: RunFinishedEvent = {
-            type: EventType.RUN_FINISHED,
-            threadId: input.threadId,
-            runId: input.runId,
-          };
-          subscriber.next(finished);
-          finishedSent = true;
+
+          // The AG-UI verify layer may reject further events once RUN_ERROR
+          // has been emitted (the run is considered terminal). Guard the
+          // RUN_FINISHED emission so the subscriber can still be completed
+          // cleanly without an unhandled exception.
+          try {
+            const finished: RunFinishedEvent = {
+              type: EventType.RUN_FINISHED,
+              threadId: input.threadId,
+              runId: input.runId,
+            };
+            subscriber.next(finished);
+            finishedSent = true;
+          } catch {
+            // Verify layer rejected the event – that's OK, mark as sent
+            // so the unsubscribe handler doesn't attempt it again.
+            finishedSent = true;
+          }
           subscriber.complete();
         }
       };
