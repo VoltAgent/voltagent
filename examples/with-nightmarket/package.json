@@ -1,0 +1,16 @@
+{
+  "name": "with-nightmarket",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "start": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@voltagent/core": "workspace:*",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  }
+}
