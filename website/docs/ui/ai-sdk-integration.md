@@ -92,8 +92,10 @@ function ChatWithMemory() {
             input: [lastMessage],
             options: {
               // Memory
-              userId,
-              conversationId,
+              memory: {
+                userId,
+                conversationId,
+              },
 
               // Model parameters
               temperature: 0.7,
@@ -137,7 +139,9 @@ function ChatWithFiles() {
           body: {
             input: [lastMessage],
             options: {
-              userId: 'user-123'
+              memory: {
+                userId: 'user-123'
+              }
             }
           }
         };
@@ -245,7 +249,7 @@ import { useCallback, useState, useRef } from 'react';
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [userId] = useState('user-123');
-  const [conversationId] = useState(() => crypto.randomUUID());
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
 
   const createTransport = useCallback(() => {
     return new DefaultChatTransport({
@@ -257,8 +261,10 @@ export function ChatInterface() {
           body: {
             input: [lastMessage],
             options: {
-              userId,
-              conversationId,
+              memory: {
+                userId,
+                conversationId,
+              },
               temperature: 0.7,
               maxSteps: 10
             }
@@ -293,7 +299,9 @@ export function ChatInterface() {
   };
 
   const resetConversation = () => {
+    stop();
     setMessages([]);
+    setConversationId(crypto.randomUUID());
   };
 
   return (
@@ -342,29 +350,43 @@ export function ChatInterface() {
 
 ### VoltAgent Specific
 
-| Option                                      | Type    | Description                                                                    |
-| ------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `userId`                                    | string  | User identifier for memory persistence                                         |
-| `conversationId`                            | string  | Conversation thread ID                                                         |
-| `context`                                   | object  | Dynamic context (converted to Map internally)                                  |
-| `contextLimit`                              | number  | Number of previous messages to include from memory                             |
-| `conversationPersistence.mode`              | string  | `"step"` (default) or `"finish"`                                               |
-| `conversationPersistence.debounceMs`        | number  | Debounce window in milliseconds (default: `200`)                               |
-| `conversationPersistence.flushOnToolResult` | boolean | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
+| Option                                                     | Type    | Description                                                                    |
+| ---------------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| `memory`                                                   | object  | Runtime memory envelope (preferred)                                            |
+| `memory.userId`                                            | string  | User identifier for memory persistence                                         |
+| `memory.conversationId`                                    | string  | Conversation thread ID                                                         |
+| `context`                                                  | object  | Dynamic context (converted to Map internally)                                  |
+| `memory.options.contextLimit`                              | number  | Number of previous messages to include from memory                             |
+| `memory.options.conversationPersistence.mode`              | string  | `"step"` (default) or `"finish"`                                               |
+| `memory.options.conversationPersistence.debounceMs`        | number  | Debounce window in milliseconds (default: `200`)                               |
+| `memory.options.conversationPersistence.flushOnToolResult` | boolean | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
+| `userId`                                                   | string  | Deprecated: use `memory.userId`                                                |
+| `conversationId`                                           | string  | Deprecated: use `memory.conversationId`                                        |
+| `contextLimit`                                             | number  | Deprecated: use `memory.options.contextLimit`                                  |
+| `semanticMemory`                                           | object  | Deprecated: use `memory.options.semanticMemory`                                |
+| `conversationPersistence.mode`                             | string  | Deprecated: use `memory.options.conversationPersistence.mode`                  |
+| `conversationPersistence.debounceMs`                       | number  | Deprecated: use `memory.options.conversationPersistence.debounceMs`            |
+| `conversationPersistence.flushOnToolResult`                | boolean | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult`     |
 
 Example:
 
 ```ts
 options: {
-  userId,
-  conversationId,
-  conversationPersistence: {
-    mode: "step",
-    debounceMs: 200,
-    flushOnToolResult: true,
+  memory: {
+    userId,
+    conversationId,
+    options: {
+      conversationPersistence: {
+        mode: "step",
+        debounceMs: 200,
+        flushOnToolResult: true,
+      },
+    },
   },
 }
 ```
+
+When both top-level legacy memory fields and `memory` envelope fields are provided, `memory` values are used.
 
 ### AI SDK Core Options
 
@@ -397,11 +419,13 @@ options: {
 
 ### Semantic Memory Options
 
-| Option                            | Type   | Description                       |
-| --------------------------------- | ------ | --------------------------------- |
-| `semanticSearchOptions`           | object | Configuration for semantic search |
-| `semanticSearchOptions.maxChunks` | number | Maximum chunks to retrieve        |
-| `semanticSearchOptions.minScore`  | number | Minimum similarity score          |
+| Option                                            | Type    | Description                                 |
+| ------------------------------------------------- | ------- | ------------------------------------------- |
+| `memory.options.semanticMemory`                   | object  | Configuration for semantic search           |
+| `memory.options.semanticMemory.enabled`           | boolean | Enable semantic retrieval for this call     |
+| `memory.options.semanticMemory.semanticLimit`     | number  | Maximum similar messages to retrieve        |
+| `memory.options.semanticMemory.semanticThreshold` | number  | Minimum similarity score                    |
+| `memory.options.semanticMemory.mergeStrategy`     | string  | `"prepend"` or `"append"` or `"interleave"` |
 
 ## useChat Hook Options
 
@@ -428,8 +452,8 @@ options: {
 
 ### Messages not persisting
 
-- Include `userId` in options
-- Use consistent `conversationId`
+- Include `options.memory.userId`
+- Use consistent `options.memory.conversationId`
 - Check agent memory configuration
 
 ### CORS errors

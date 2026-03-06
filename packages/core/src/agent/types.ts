@@ -943,18 +943,73 @@ export type ProviderType<T> = T extends { llm: LLMProvider<infer P> } ? P : neve
  * Common generate options - internal version that includes historyEntryId
  * Not exposed directly to users
  */
+export interface CommonSemanticMemoryOptions {
+  enabled?: boolean;
+  semanticLimit?: number;
+  semanticThreshold?: number;
+  mergeStrategy?: "prepend" | "append" | "interleave";
+}
+
+export interface CommonRuntimeMemoryBehaviorOptions {
+  contextLimit?: number;
+  semanticMemory?: CommonSemanticMemoryOptions;
+  conversationPersistence?: AgentConversationPersistenceOptions;
+}
+
+export interface CommonRuntimeMemoryEnvelope {
+  conversationId?: string;
+  userId?: string;
+  options?: CommonRuntimeMemoryBehaviorOptions;
+}
+
+export type SemanticMemoryOptions = CommonSemanticMemoryOptions;
+export type RuntimeMemoryBehaviorOptions = CommonRuntimeMemoryBehaviorOptions;
+export type RuntimeMemoryEnvelope = CommonRuntimeMemoryEnvelope;
+
+export interface CommonResolvedRuntimeMemoryOptions {
+  userId?: string;
+  conversationId?: string;
+  contextLimit?: number;
+  semanticMemory?: CommonSemanticMemoryOptions;
+  conversationPersistence?: AgentConversationPersistenceOptions;
+}
+
 export interface CommonGenerateOptions {
   // Common LLM provider properties
   provider?: ProviderOptions;
 
+  // Preferred runtime memory envelope for per-call memory identity and behavior overrides.
+  memory?: CommonRuntimeMemoryEnvelope;
+
+  /**
+   * @deprecated Use `memory.conversationId` instead.
+   */
   // Conversation ID to maintain context
   conversationId?: string;
 
+  /**
+   * @deprecated Use `memory.userId` instead.
+   */
   // User ID for authentication
   userId?: string;
 
+  /**
+   * @deprecated Use `memory.options.contextLimit` instead.
+   */
   // Context limit for conversation
   contextLimit?: number;
+
+  /**
+   * @deprecated Use `memory.options.semanticMemory` instead.
+   */
+  // Semantic memory runtime overrides
+  semanticMemory?: CommonSemanticMemoryOptions;
+
+  /**
+   * @deprecated Use `memory.options.conversationPersistence` instead.
+   */
+  // Conversation persistence runtime overrides
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Specific tools to use for this generation (overrides agent's tools)
   tools?: BaseTool[];
@@ -1201,6 +1256,9 @@ export type OperationContext = {
 
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
+
+  /** Resolved runtime memory options (memory envelope preferred, legacy as fallback) */
+  resolvedMemory?: CommonResolvedRuntimeMemoryOptions;
 
   /** Workspace configured on the executing agent (if any). */
   workspace?: Workspace;

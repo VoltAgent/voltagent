@@ -117,6 +117,11 @@ import type {
 } from "./providers/base/types";
 import { coerceStringifiedJsonToolArgs } from "./tool-input-coercion";
 export type { AgentHooks } from "./hooks";
+export type {
+  RuntimeMemoryBehaviorOptions,
+  RuntimeMemoryEnvelope,
+  SemanticMemoryOptions,
+} from "./types";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
@@ -183,6 +188,7 @@ import type {
   AgentSummarizationOptions,
   AgentToolRoutingState,
   ApiToolInfo,
+  CommonResolvedRuntimeMemoryOptions,
   DynamicValue,
   DynamicValueOptions,
   InputGuardrail,
@@ -191,6 +197,8 @@ import type {
   OperationContext,
   OutputGuardrail,
   OutputMiddleware,
+  RuntimeMemoryEnvelope,
+  SemanticMemoryOptions,
   SupervisorConfig,
 } from "./types";
 
@@ -232,6 +240,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const hasNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
+
+const firstNonBlank = (...values: Array<unknown>): string | undefined => {
+  for (const value of values) {
+    if (hasNonEmptyString(value)) {
+      return value;
+    }
+  }
+  return undefined;
+};
 
 const isAssistantContentPart = (value: unknown): boolean => {
   if (!isRecord(value)) {
@@ -679,7 +696,17 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   extends Partial<CallSettings> {
   // === VoltAgent Specific ===
   // Context
+  /**
+   * Runtime memory envelope for per-call memory identity and behavior overrides.
+   */
+  memory?: RuntimeMemoryEnvelope;
+  /**
+   * @deprecated Use `memory.userId` instead.
+   */
   userId?: string;
+  /**
+   * @deprecated Use `memory.conversationId` instead.
+   */
   conversationId?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
@@ -691,15 +718,19 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
 
   // Memory
+  /**
+   * @deprecated Use `memory.options.contextLimit` instead.
+   */
   contextLimit?: number;
 
   // Semantic memory options
-  semanticMemory?: {
-    enabled?: boolean;
-    semanticLimit?: number;
-    semanticThreshold?: number;
-    mergeStrategy?: "prepend" | "append" | "interleave";
-  };
+  /**
+   * @deprecated Use `memory.options.semanticMemory` instead.
+   */
+  semanticMemory?: SemanticMemoryOptions;
+  /**
+   * @deprecated Use `memory.options.conversationPersistence` instead.
+   */
   conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Steps control
@@ -1005,7 +1036,8 @@ export class Agent {
 
             const { messages, uiMessages, modelName, tools, maxSteps } =
               await this.prepareExecution(effectiveInput, oc, options);
-            const contextLimit = options?.contextLimit;
+            const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+            const contextLimit = resolvedMemory.contextLimit;
 
             // Add model attributes and all options
             addModelAttributesToSpan(
@@ -1071,6 +1103,7 @@ export class Agent {
             const {
               userId,
               conversationId,
+              memory: _memory,
               context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
               parentAgentId,
               parentOperationContext,
@@ -1078,6 +1111,8 @@ export class Agent {
               feedback: _feedback,
               maxSteps: userMaxSteps,
               tools: userTools,
+              contextLimit: _contextLimit,
+              semanticMemory: _semanticMemory,
               conversationPersistence: _conversationPersistence,
               output,
               providerOptions,
@@ -1590,7 +1625,8 @@ export class Agent {
           oc,
           options,
         );
-        const contextLimit = options?.contextLimit;
+        const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+        const contextLimit = resolvedMemory.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
         // Input is now set during TraceContext creation in createContext
@@ -1650,6 +1686,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          memory: _memory,
           context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
@@ -1658,6 +1695,8 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          contextLimit: _contextLimit,
+          semanticMemory: _semanticMemory,
           conversationPersistence: _conversationPersistence,
           output,
           providerOptions,
@@ -2530,6 +2569,7 @@ export class Agent {
             const {
               userId,
               conversationId,
+              memory: _memory,
               context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
               parentAgentId,
               parentOperationContext,
@@ -2537,6 +2577,8 @@ export class Agent {
               feedback: _feedback,
               maxSteps: userMaxSteps,
               tools: userTools,
+              contextLimit: _contextLimit,
+              semanticMemory: _semanticMemory,
               conversationPersistence: _conversationPersistence,
               output: _output,
               providerOptions,
@@ -2889,6 +2931,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          memory: _memory,
           context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
@@ -2897,6 +2940,8 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          contextLimit: _contextLimit,
+          semanticMemory: _semanticMemory,
           conversationPersistence: _conversationPersistence,
           output: _output,
           providerOptions,
@@ -3414,18 +3459,63 @@ export class Agent {
   private resolveConversationPersistenceOptions(
     options?: BaseGenerationOptions,
   ): ResolvedConversationPersistenceOptions {
-    if (!options?.conversationPersistence) {
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    if (!resolvedMemory.conversationPersistence) {
       return { ...this.conversationPersistence };
     }
 
+    const conversationPersistence = resolvedMemory.conversationPersistence;
     return this.normalizeConversationPersistenceOptions({
-      mode: options.conversationPersistence.mode ?? this.conversationPersistence.mode,
-      debounceMs:
-        options.conversationPersistence.debounceMs ?? this.conversationPersistence.debounceMs,
+      mode: conversationPersistence.mode ?? this.conversationPersistence.mode,
+      debounceMs: conversationPersistence.debounceMs ?? this.conversationPersistence.debounceMs,
       flushOnToolResult:
-        options.conversationPersistence.flushOnToolResult ??
-        this.conversationPersistence.flushOnToolResult,
+        conversationPersistence.flushOnToolResult ?? this.conversationPersistence.flushOnToolResult,
     });
+  }
+
+  private resolveMemoryRuntimeOptions(
+    options?: BaseGenerationOptions,
+    operationContext?: OperationContext,
+  ): CommonResolvedRuntimeMemoryOptions {
+    const memory = options?.memory;
+    const memoryOptions = memory?.options;
+    const contextResolvedMemory = operationContext?.resolvedMemory;
+    const parentResolvedMemory = options?.parentOperationContext?.resolvedMemory;
+    const parentUserId = parentResolvedMemory?.userId ?? options?.parentOperationContext?.userId;
+    const parentConversationId =
+      parentResolvedMemory?.conversationId ?? options?.parentOperationContext?.conversationId;
+
+    return {
+      userId: firstNonBlank(
+        contextResolvedMemory?.userId,
+        operationContext?.userId,
+        memory?.userId,
+        options?.userId,
+        parentUserId,
+      ),
+      conversationId: firstNonBlank(
+        contextResolvedMemory?.conversationId,
+        operationContext?.conversationId,
+        memory?.conversationId,
+        options?.conversationId,
+        parentConversationId,
+      ),
+      contextLimit:
+        contextResolvedMemory?.contextLimit ??
+        memoryOptions?.contextLimit ??
+        options?.contextLimit ??
+        parentResolvedMemory?.contextLimit,
+      semanticMemory:
+        contextResolvedMemory?.semanticMemory ??
+        memoryOptions?.semanticMemory ??
+        options?.semanticMemory ??
+        parentResolvedMemory?.semanticMemory,
+      conversationPersistence:
+        contextResolvedMemory?.conversationPersistence ??
+        memoryOptions?.conversationPersistence ??
+        options?.conversationPersistence ??
+        parentResolvedMemory?.conversationPersistence,
+    };
   }
 
   private getConversationPersistenceOptionsForContext(
@@ -3454,6 +3544,7 @@ export class Agent {
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -3502,8 +3593,8 @@ export class Agent {
 
     const logger = this.getContextualLogger(options?.parentAgentId).child({
       operationId,
-      userId: options?.userId,
-      conversationId: options?.conversationId,
+      userId: resolvedMemory.userId,
+      conversationId: resolvedMemory.conversationId,
       executionId: operationId,
     });
 
@@ -3511,8 +3602,8 @@ export class Agent {
     const traceContext = new AgentTraceContext(observability, this.name, {
       agentId: this.id,
       agentName: this.name,
-      userId: options?.userId,
-      conversationId: options?.conversationId,
+      userId: resolvedMemory.userId,
+      conversationId: resolvedMemory.conversationId,
       operationId,
       parentSpan: options?.parentSpan,
       inheritParentSpan: options?.inheritParentSpan ?? this.inheritParentSpan,
@@ -3562,8 +3653,9 @@ export class Agent {
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
       abortController,
-      userId: options?.userId,
-      conversationId: options?.conversationId,
+      userId: resolvedMemory.userId,
+      conversationId: resolvedMemory.conversationId,
+      resolvedMemory: { ...resolvedMemory },
       workspace: this.workspace,
       parentAgentId: options?.parentAgentId,
       traceContext,
@@ -4213,6 +4305,142 @@ export class Agent {
   ): Promise<UIMessage[]> {
     const resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+    const canIUseMemory = Boolean(resolvedMemory.userId);
+    const memoryContextMessages: UIMessage[] = [];
+
+    // Load memory context if available (already returns UIMessages)
+    if (canIUseMemory) {
+      // Check if we should use semantic search
+      // Default to true if vector support is available
+      const useSemanticSearch =
+        resolvedMemory.semanticMemory?.enabled ?? this.hasSemanticSearchSupport();
+
+      // Extract user query for semantic search if enabled
+      const currentQuery = useSemanticSearch ? this.extractUserQuery(resolvedInput) : undefined;
+
+      // Prepare memory read parameters
+      const semanticLimit = resolvedMemory.semanticMemory?.semanticLimit ?? 5;
+      const semanticThreshold = resolvedMemory.semanticMemory?.semanticThreshold ?? 0.7;
+      const mergeStrategy = resolvedMemory.semanticMemory?.mergeStrategy ?? "append";
+      const isSemanticSearch = useSemanticSearch && currentQuery;
+
+      const traceContext = oc.traceContext;
+
+      if (traceContext) {
+        // Create unified memory read span
+
+        const spanInput = {
+          query: isSemanticSearch ? currentQuery : resolvedInput,
+          userId: resolvedMemory.userId,
+          conversationId: resolvedMemory.conversationId,
+        };
+        const memoryReadSpan = traceContext.createChildSpan("memory.read", "memory", {
+          label: isSemanticSearch ? "Semantic Memory Read" : "Memory Context Read",
+          attributes: {
+            "memory.operation": "read",
+            "memory.semantic": isSemanticSearch,
+            input: safeStringify(spanInput),
+            ...(isSemanticSearch && {
+              "memory.semantic.limit": semanticLimit,
+              "memory.semantic.threshold": semanticThreshold,
+              "memory.semantic.merge_strategy": mergeStrategy,
+            }),
+          },
+        });
+
+        try {
+          const memoryResult = await traceContext.withSpan(memoryReadSpan, async () => {
+            if (isSemanticSearch) {
+              // Semantic search
+              const memMessages = await this.memoryManager.getMessages(
+                oc,
+                oc.userId,
+                oc.conversationId,
+                resolvedMemory.contextLimit,
+                {
+                  useSemanticSearch: true,
+                  currentQuery,
+                  semanticLimit,
+                  semanticThreshold,
+                  mergeStrategy,
+                  traceContext: traceContext,
+                  parentMemorySpan: memoryReadSpan,
+                },
+              );
+              buffer.ingestUIMessages(memMessages, true);
+              return memMessages;
+            }
+            // Regular memory context
+            // Convert model messages to UI for memory context if needed
+            const inputForMemory =
+              typeof resolvedInput === "string"
+                ? resolvedInput
+                : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
+                  ? (resolvedInput as UIMessage[])
+                  : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
+
+            const result = await this.memoryManager.prepareConversationContext(
+              oc,
+              inputForMemory,
+              oc.userId,
+              oc.conversationId,
+              resolvedMemory.contextLimit,
+            );
+
+            // Update conversation ID
+            oc.conversationId = result.conversationId;
+            if (oc.resolvedMemory) {
+              oc.resolvedMemory.conversationId = result.conversationId;
+            }
+
+            buffer.ingestUIMessages(result.messages, true);
+
+            return result.messages;
+          });
+
+          const retrievedMessagesCount = Array.isArray(memoryResult) ? memoryResult.length : 0;
+
+          traceContext.endChildSpan(memoryReadSpan, "completed", {
+            output: memoryResult,
+            attributes: {
+              "memory.message_count": retrievedMessagesCount,
+            },
+          });
+
+          // Ensure conversation ID exists for semantic search
+          if (isSemanticSearch && !oc.conversationId) {
+            oc.conversationId = randomUUID();
+            if (oc.resolvedMemory) {
+              oc.resolvedMemory.conversationId = oc.conversationId;
+            }
+          }
+
+          memoryContextMessages.push(...memoryResult);
+
+          // When using semantic search, also persist the current input in background
+          // so user messages are stored and embedded consistently.
+          if (isSemanticSearch && oc.userId && oc.conversationId) {
+            try {
+              const inputForMemory =
+                typeof resolvedInput === "string"
+                  ? resolvedInput
+                  : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
+                    ? (resolvedInput as UIMessage[])
+                    : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
+              this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+            } catch (_e) {
+              // Non-fatal: background persistence should not block message preparation
+            }
+          }
+        } catch (error) {
+          traceContext.endChildSpan(memoryReadSpan, "error", {
+            error: error as Error,
+          });
+          throw error;
+        }
+      }
+    }
 
     // Get system message with retriever context and working memory
     const systemMessage = await this.getSystemMessage(resolvedInput, oc, options, runtimeToolkits);
@@ -4268,133 +4496,8 @@ export class Agent {
       });
     }
 
-    const canIUseMemory = options?.userId && options.conversationId;
-
-    // Load memory context if available (already returns UIMessages)
-    if (canIUseMemory) {
-      // Check if we should use semantic search
-      // Default to true if vector support is available
-      const useSemanticSearch = options?.semanticMemory?.enabled ?? this.hasSemanticSearchSupport();
-
-      // Extract user query for semantic search if enabled
-      const currentQuery = useSemanticSearch ? this.extractUserQuery(resolvedInput) : undefined;
-
-      // Prepare memory read parameters
-      const semanticLimit = options?.semanticMemory?.semanticLimit ?? 5;
-      const semanticThreshold = options?.semanticMemory?.semanticThreshold ?? 0.7;
-      const mergeStrategy = options?.semanticMemory?.mergeStrategy ?? "append";
-      const isSemanticSearch = useSemanticSearch && currentQuery;
-
-      const traceContext = oc.traceContext;
-
-      if (traceContext) {
-        // Create unified memory read span
-
-        const spanInput = {
-          query: isSemanticSearch ? currentQuery : resolvedInput,
-          userId: options?.userId,
-          conversationId: options?.conversationId,
-        };
-        const memoryReadSpan = traceContext.createChildSpan("memory.read", "memory", {
-          label: isSemanticSearch ? "Semantic Memory Read" : "Memory Context Read",
-          attributes: {
-            "memory.operation": "read",
-            "memory.semantic": isSemanticSearch,
-            input: safeStringify(spanInput),
-            ...(isSemanticSearch && {
-              "memory.semantic.limit": semanticLimit,
-              "memory.semantic.threshold": semanticThreshold,
-              "memory.semantic.merge_strategy": mergeStrategy,
-            }),
-          },
-        });
-
-        try {
-          const memoryResult = await traceContext.withSpan(memoryReadSpan, async () => {
-            if (isSemanticSearch) {
-              // Semantic search
-              const memMessages = await this.memoryManager.getMessages(
-                oc,
-                oc.userId,
-                oc.conversationId,
-                options?.contextLimit,
-                {
-                  useSemanticSearch: true,
-                  currentQuery,
-                  semanticLimit,
-                  semanticThreshold,
-                  mergeStrategy,
-                  traceContext: traceContext,
-                  parentMemorySpan: memoryReadSpan,
-                },
-              );
-              buffer.ingestUIMessages(memMessages, true);
-              return memMessages;
-            }
-            // Regular memory context
-            // Convert model messages to UI for memory context if needed
-            const inputForMemory =
-              typeof resolvedInput === "string"
-                ? resolvedInput
-                : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
-                  ? (resolvedInput as UIMessage[])
-                  : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
-
-            const result = await this.memoryManager.prepareConversationContext(
-              oc,
-              inputForMemory,
-              oc.userId,
-              oc.conversationId,
-              options?.contextLimit,
-            );
-
-            // Update conversation ID
-            oc.conversationId = result.conversationId;
-
-            buffer.ingestUIMessages(result.messages, true);
-
-            return result.messages;
-          });
-
-          const retrievedMessagesCount = Array.isArray(memoryResult) ? memoryResult.length : 0;
-
-          traceContext.endChildSpan(memoryReadSpan, "completed", {
-            output: memoryResult,
-            attributes: {
-              "memory.message_count": retrievedMessagesCount,
-            },
-          });
-
-          // Ensure conversation ID exists for semantic search
-          if (isSemanticSearch && !oc.conversationId) {
-            oc.conversationId = randomUUID();
-          }
-
-          // Add memory messages
-          messages.push(...memoryResult);
-
-          // When using semantic search, also persist the current input in background
-          // so user messages are stored and embedded consistently.
-          if (isSemanticSearch && oc.userId && oc.conversationId) {
-            try {
-              const inputForMemory =
-                typeof resolvedInput === "string"
-                  ? resolvedInput
-                  : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
-                    ? (resolvedInput as UIMessage[])
-                    : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
-              this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
-            } catch (_e) {
-              // Non-fatal: background persistence should not block message preparation
-            }
-          }
-        } catch (error) {
-          traceContext.endChildSpan(memoryReadSpan, "error", {
-            error: error as Error,
-          });
-          throw error;
-        }
-      }
+    if (memoryContextMessages.length > 0) {
+      messages.push(...memoryContextMessages);
     }
 
     // Add current input
@@ -4486,6 +4589,10 @@ export class Agent {
     options?: BaseGenerationOptions,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<BaseMessage | BaseMessage[]> {
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+    const workingMemoryConversationId = oc.conversationId ?? resolvedMemory.conversationId;
+    const workingMemoryUserId = oc.userId ?? resolvedMemory.userId;
+
     // Resolve dynamic instructions
     const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
       this.id,
@@ -4556,17 +4663,23 @@ export class Agent {
       retrieverContext = await this.getRetrieverContext(input, oc);
     }
 
-    // Get working memory instructions if available
+    // Get working memory instructions if available.
+    // Prefer conversation scope when conversationId exists; otherwise fall back to user scope.
     let workingMemoryContext: string | null = null;
-    if (this.hasWorkingMemorySupport() && options?.conversationId) {
+    const workingMemoryLookup =
+      workingMemoryConversationId || workingMemoryUserId
+        ? {
+            ...(workingMemoryConversationId ? { conversationId: workingMemoryConversationId } : {}),
+            ...(workingMemoryUserId ? { userId: workingMemoryUserId } : {}),
+          }
+        : undefined;
+    if (this.hasWorkingMemorySupport() && workingMemoryLookup) {
       const memory = this.memoryManager.getMemory();
 
       if (memory) {
         // Get full working memory instructions with current data
-        const workingMemoryInstructions = await memory.getWorkingMemoryInstructions({
-          conversationId: options.conversationId,
-          userId: options.userId,
-        });
+        const workingMemoryInstructions =
+          await memory.getWorkingMemoryInstructions(workingMemoryLookup);
 
         if (workingMemoryInstructions) {
           workingMemoryContext = `\n\n${workingMemoryInstructions}`;
@@ -4577,10 +4690,7 @@ export class Agent {
           const rootSpan = oc.traceContext.getRootSpan();
 
           // Get the raw working memory content
-          const workingMemoryContent = await memory.getWorkingMemory({
-            conversationId: options.conversationId,
-            userId: options.userId,
-          });
+          const workingMemoryContent = await memory.getWorkingMemory(workingMemoryLookup);
 
           if (workingMemoryContent) {
             rootSpan.setAttribute("agent.workingMemory.content", workingMemoryContent);
@@ -5472,6 +5582,7 @@ export class Agent {
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const hooks = this.getMergedHooks(options);
     const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
 
@@ -5484,13 +5595,13 @@ export class Agent {
         currentHistoryEntryId: oc.operationId,
         operationContext: oc,
         maxSteps: maxSteps,
-        conversationId: options?.conversationId,
-        userId: options?.userId,
+        conversationId: resolvedMemory.conversationId,
+        userId: resolvedMemory.userId,
       });
       runtimeTools.push(delegateTool);
     }
     // Add working memory tools if Memory V2 with working memory is configured
-    const workingMemoryTools = this.createWorkingMemoryTools(options);
+    const workingMemoryTools = this.createWorkingMemoryTools(options, oc);
     if (workingMemoryTools.length > 0) {
       runtimeTools.push(...workingMemoryTools);
     }
@@ -7765,13 +7876,36 @@ export class Agent {
         // Extract OperationContext from options if available
         // Since ToolExecuteOptions extends Partial<OperationContext>, we can extract the fields
         const oc = options as OperationContext | undefined;
+        const resolvedMemory = options?.resolvedMemory;
+        const memoryBehaviorOverrides = resolvedMemory
+          ? {
+              ...(resolvedMemory.contextLimit !== undefined
+                ? { contextLimit: resolvedMemory.contextLimit }
+                : {}),
+              ...(resolvedMemory.semanticMemory !== undefined
+                ? { semanticMemory: resolvedMemory.semanticMemory }
+                : {}),
+              ...(resolvedMemory.conversationPersistence !== undefined
+                ? { conversationPersistence: resolvedMemory.conversationPersistence }
+                : {}),
+            }
+          : undefined;
+        const memory =
+          resolvedMemory || options?.conversationId || options?.userId
+            ? {
+                conversationId: resolvedMemory?.conversationId ?? options?.conversationId,
+                userId: resolvedMemory?.userId ?? options?.userId,
+                ...(memoryBehaviorOverrides && Object.keys(memoryBehaviorOverrides).length > 0
+                  ? { options: memoryBehaviorOverrides }
+                  : {}),
+              }
+            : undefined;
 
         // Generate response using this agent
         const result = await this.generateText(prompt, {
           // Pass through the operation context if available
           parentOperationContext: oc,
-          conversationId: options?.conversationId,
-          userId: options?.userId,
+          ...(memory ? { memory } : {}),
         });
 
         // Return the text result
@@ -7813,10 +7947,14 @@ export class Agent {
   /**
    * Create working memory tools if configured
    */
-  private createWorkingMemoryTools(options?: BaseGenerationOptions): Tool<any, any>[] {
+  private createWorkingMemoryTools(
+    options?: BaseGenerationOptions,
+    operationContext?: OperationContext,
+  ): Tool<any, any>[] {
     if (!this.hasWorkingMemorySupport()) {
       return [];
     }
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, operationContext);
 
     const memoryManager = this.memoryManager as unknown as MemoryManager;
     const memory = memoryManager.getMemory();
@@ -7835,8 +7973,8 @@ export class Agent {
         parameters: z.object({}),
         execute: async () => {
           const content = await memory.getWorkingMemory({
-            conversationId: options?.conversationId,
-            userId: options?.userId,
+            conversationId: resolvedMemory.conversationId,
+            userId: resolvedMemory.userId,
           });
           return content || "No working memory content found.";
         },
@@ -7870,8 +8008,8 @@ export class Agent {
         parameters: z.object({ ...baseParams, ...modeParam }),
         execute: async ({ content, mode }, oc) => {
           await memory.updateWorkingMemory({
-            conversationId: options?.conversationId,
-            userId: options?.userId,
+            conversationId: resolvedMemory.conversationId,
+            userId: resolvedMemory.userId,
             content,
             options: {
               mode: mode as MemoryUpdateMode | undefined,
@@ -7881,8 +8019,8 @@ export class Agent {
           // Update root span with final content
           if (oc?.traceContext) {
             const finalContent = await memory.getWorkingMemory({
-              conversationId: options?.conversationId,
-              userId: options?.userId,
+              conversationId: resolvedMemory.conversationId,
+              userId: resolvedMemory.userId,
             });
             const rootSpan = oc.traceContext.getRootSpan();
             rootSpan.setAttribute("agent.workingMemory.finalContent", finalContent || "");
@@ -7902,8 +8040,8 @@ export class Agent {
         parameters: z.object({}),
         execute: async (_, oc) => {
           await memory.clearWorkingMemory({
-            conversationId: options?.conversationId,
-            userId: options?.userId,
+            conversationId: resolvedMemory.conversationId,
+            userId: resolvedMemory.userId,
           });
 
           // Update root span to indicate cleared state

@@ -232,14 +232,18 @@ const agent = new Agent({
 
 // First conversation
 await agent.generateText("I prefer casual communication and I'm into AI and music.", {
-  userId: "user-123",
-  conversationId: "conv-1",
+  memory: {
+    userId: "user-123",
+    conversationId: "conv-1",
+  },
 });
 
 // Different conversation - agent remembers user preferences
 await agent.generateText("What should I learn next?", {
-  userId: "user-123",
-  conversationId: "conv-2", // different thread
+  memory: {
+    userId: "user-123",
+    conversationId: "conv-2", // different thread
+  },
 });
 ```
 
@@ -273,13 +277,17 @@ const agent = new Agent({
 
 // Each project gets its own working memory
 await agent.generateText("Let's plan the e-commerce project using Next.js.", {
-  userId: "user-123",
-  conversationId: "project-ecommerce",
+  memory: {
+    userId: "user-123",
+    conversationId: "project-ecommerce",
+  },
 });
 
 await agent.generateText("For the analytics dashboard, we'll use React and D3.", {
-  userId: "user-123",
-  conversationId: "project-analytics",
+  memory: {
+    userId: "user-123",
+    conversationId: "project-analytics",
+  },
 });
 ```
 

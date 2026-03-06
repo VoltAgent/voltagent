@@ -412,12 +412,36 @@ describe("Agent Type System", () => {
   describe("Options Type Tests", () => {
     it("should distinguish PublicGenerateOptions from InternalGenerateOptions", () => {
       const publicOptions: PublicGenerateOptions = {
-        conversationId: "123",
-        userId: "user-123",
-        contextLimit: 1000,
+        memory: {
+          conversationId: "123",
+          userId: "user-123",
+          options: {
+            contextLimit: 1000,
+            semanticMemory: {
+              enabled: true,
+              semanticLimit: 3,
+            },
+            conversationPersistence: {
+              mode: "step",
+            },
+          },
+        },
         maxSteps: 5,
         signal: new AbortSignal(),
         context: new Map(),
+      };
+
+      const legacyOptions: PublicGenerateOptions = {
+        conversationId: "legacy-conversation",
+        userId: "legacy-user",
+        contextLimit: 250,
+        semanticMemory: {
+          enabled: true,
+          semanticThreshold: 0.75,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
       };
 
       const internalOptions: InternalGenerateOptions = {
@@ -432,6 +456,7 @@ describe("Agent Type System", () => {
       publicOptions.operationContext;
 
       expectTypeOf(publicOptions).toMatchTypeOf<PublicGenerateOptions>();
+      expectTypeOf(legacyOptions).toMatchTypeOf<PublicGenerateOptions>();
       expectTypeOf(internalOptions).toMatchTypeOf<InternalGenerateOptions>();
     });
 

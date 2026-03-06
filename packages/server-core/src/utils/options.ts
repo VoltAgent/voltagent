@@ -7,6 +7,24 @@ import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-jso
  * Process agent options from request body
  */
 export interface ProcessedAgentOptions {
+  memory?: {
+    conversationId?: string;
+    userId?: string;
+    options?: {
+      contextLimit?: number;
+      semanticMemory?: {
+        enabled?: boolean;
+        semanticLimit?: number;
+        semanticThreshold?: number;
+        mergeStrategy?: "prepend" | "append" | "interleave";
+      };
+      conversationPersistence?: {
+        mode?: "step" | "finish";
+        debounceMs?: number;
+        flushOnToolResult?: boolean;
+      };
+    };
+  };
   conversationId?: string;
   userId?: string;
   context?: Map<string, any>;
@@ -14,6 +32,17 @@ export interface ProcessedAgentOptions {
   maxOutputTokens?: number;
   maxSteps?: number;
   contextLimit?: number;
+  semanticMemory?: {
+    enabled?: boolean;
+    semanticLimit?: number;
+    semanticThreshold?: number;
+    mergeStrategy?: "prepend" | "append" | "interleave";
+  };
+  conversationPersistence?: {
+    mode?: "step" | "finish";
+    debounceMs?: number;
+    flushOnToolResult?: boolean;
+  };
   topP?: number;
   topK?: number;
   frequencyPenalty?: number;

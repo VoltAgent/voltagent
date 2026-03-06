@@ -44,14 +44,18 @@ const agent = new Agent({
 
 // First message
 await agent.generateText("My name is Sarah", {
-  userId: "user-123",
-  conversationId: "chat-001",
+  memory: {
+    userId: "user-123",
+    conversationId: "chat-001",
+  },
 });
 
 // Agent remembers context
 await agent.generateText("What's my name?", {
-  userId: "user-123",
-  conversationId: "chat-001",
+  memory: {
+    userId: "user-123",
+    conversationId: "chat-001",
+  },
 });
 ```
 

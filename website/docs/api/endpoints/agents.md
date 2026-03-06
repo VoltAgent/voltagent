@@ -86,9 +86,18 @@ Generate a text response from an agent synchronously.
 {
   "input": "What is the weather like today?",
   "options": {
-    "userId": "user-123",
-    "conversationId": "conv-456",
-    "contextLimit": 10,
+    "memory": {
+      "userId": "user-123",
+      "conversationId": "conv-456",
+      "options": {
+        "contextLimit": 10,
+        "conversationPersistence": {
+          "mode": "step",
+          "debounceMs": 200,
+          "flushOnToolResult": true
+        }
+      }
+    },
     "maxSteps": 5,
     "temperature": 0.7,
     "maxOutputTokens": 1000,
@@ -105,11 +114,6 @@ Generate a text response from an agent synchronously.
     "context": {
       "role": "admin",
       "tier": "premium"
-    },
-    "conversationPersistence": {
-      "mode": "step",
-      "debounceMs": 200,
-      "flushOnToolResult": true
     }
   }
 }
@@ -177,9 +181,27 @@ Generate a text response from an agent synchronously.
 **Options:**
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `userId` | string | - | User ID for tracking |
-| `conversationId` | string | - | Conversation ID for context |
-| `contextLimit` | number | 10 | Message history limit |
+| `memory` | object | - | Runtime memory envelope (preferred) |
+| `memory.userId` | string | - | User ID for memory scoping |
+| `memory.conversationId` | string | - | Conversation ID for memory scoping |
+| `memory.options.contextLimit` | number | 10 | Message history limit |
+| `memory.options.semanticMemory` | object | - | Semantic retrieval config |
+| `memory.options.semanticMemory.enabled` | boolean | - | Enable semantic retrieval for this call. Default: `undefined` (auto-enables if vectors are available). |
+| `memory.options.semanticMemory.semanticLimit` | number | 5 | Number of similar messages to retrieve |
+| `memory.options.semanticMemory.semanticThreshold` | number | 0.7 | Minimum similarity score (0-1) |
+| `memory.options.semanticMemory.mergeStrategy` | string | `"append"` | `"prepend"` or `"append"` or `"interleave"` |
+| `memory.options.conversationPersistence` | object | - | Groups conversation persistence settings (`mode`, `debounceMs`, `flushOnToolResult`) |
+| `memory.options.conversationPersistence.mode` | string | `"step"` | Persistence strategy: `"step"` or `"finish"` |
+| `memory.options.conversationPersistence.debounceMs` | number | `200` | Debounce interval for step checkpoint persistence |
+| `memory.options.conversationPersistence.flushOnToolResult` | boolean | `true` | Flush immediately on `tool-result`/`tool-error` in step mode |
+| `userId` | string | - | Deprecated: use `memory.userId` |
+| `conversationId` | string | - | Deprecated: use `memory.conversationId` |
+| `contextLimit` | number | 10 | Deprecated: use `memory.options.contextLimit` |
+| `semanticMemory` | object | - | Deprecated: use `memory.options.semanticMemory` |
+| `semanticMemory.enabled` | boolean | - | Deprecated: use `memory.options.semanticMemory.enabled`. Default: `undefined` (auto-enables if vectors are available). |
+| `semanticMemory.semanticLimit` | number | 5 | Deprecated: use `memory.options.semanticMemory.semanticLimit` |
+| `semanticMemory.semanticThreshold` | number | 0.7 | Deprecated: use `memory.options.semanticMemory.semanticThreshold` |
+| `semanticMemory.mergeStrategy` | string | `"append"` | Deprecated: use `memory.options.semanticMemory.mergeStrategy` |
 | `maxSteps` | number | - | Max iteration steps (for tool use) |
 | `temperature` | number | 0.7 | Randomness (0-1) |
 | `maxOutputTokens` | number | 4000 | Max tokens to generate |
@@ -190,9 +212,12 @@ Generate a text response from an agent synchronously.
 | `stopSequences` | string[] | - | Stop generation sequences |
 | `providerOptions` | object | - | Provider-specific options |
 | `context` | object | - | Dynamic agent context |
-| `conversationPersistence.mode` | string | `"step"` | Persistence strategy: `"step"` or `"finish"` |
-| `conversationPersistence.debounceMs` | number | `200` | Debounce interval for step checkpoint persistence |
-| `conversationPersistence.flushOnToolResult` | boolean | `true` | Flush immediately on `tool-result`/`tool-error` in step mode |
+| `conversationPersistence` | object | - | Deprecated: use `memory.options.conversationPersistence` (groups `mode`, `debounceMs`, `flushOnToolResult`) |
+| `conversationPersistence.mode` | string | `"step"` | Deprecated: use `memory.options.conversationPersistence.mode` |
+| `conversationPersistence.debounceMs` | number | `200` | Deprecated: use `memory.options.conversationPersistence.debounceMs` |
+| `conversationPersistence.flushOnToolResult` | boolean | `true` | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult` |
+
+When both top-level legacy memory fields and `memory` envelope fields are provided, runtime resolution follows `resolveMemoryRuntimeOptions()` and values under `memory` take precedence.
 
 **Response:**
 
@@ -494,8 +519,10 @@ function ChatComponent({ agentId }) {
           body: {
             input: [lastMessage], // Send as array of UIMessage
             options: {
-              userId: "user-123",
-              conversationId: "conv-456",
+              memory: {
+                userId: "user-123",
+                conversationId: "conv-456",
+              },
               temperature: 0.7,
               maxSteps: 10,
             },
@@ -670,7 +697,7 @@ The agent receives this context and can:
 1. **Use streaming for long responses** - Better UX for lengthy generation
 2. **Set appropriate temperature** - Lower (0.3) for factual, higher (0.9) for creative
 3. **Limit tokens for cost control** - Use `maxOutputTokens` wisely
-4. **Provide context** - Use `userId` and `conversationId` for conversation continuity
+4. **Provide context** - Use `options.memory.userId` and `options.memory.conversationId` for conversation continuity
 5. **Handle errors gracefully** - Check `success` field and handle errors
 6. **Use abort signals** - Allow users to cancel long-running requests
 

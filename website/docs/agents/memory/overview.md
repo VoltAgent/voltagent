@@ -164,12 +164,14 @@ new VoltAgent({
 
 ## Usage with User and Conversation IDs
 
-Provide `userId` and `conversationId` in generation calls to scope memory:
+Provide `memory.userId` and `memory.conversationId` in generation calls to scope memory:
 
 ```ts
 const response = await agent.generateText("What did we discuss yesterday?", {
-  userId: "user-123",
-  conversationId: "thread-abc",
+  memory: {
+    userId: "user-123",
+    conversationId: "thread-abc",
+  },
 });
 ```
 
@@ -236,12 +238,16 @@ const agent = new Agent({
 
 // Enable semantic search per call
 const result = await agent.generateText("What preferences did I mention?", {
-  userId: "user-123",
-  conversationId: "thread-abc",
-  semanticMemory: {
-    enabled: true,
-    semanticLimit: 5,
-    semanticThreshold: 0.7,
+  memory: {
+    userId: "user-123",
+    conversationId: "thread-abc",
+    options: {
+      semanticMemory: {
+        enabled: true,
+        semanticLimit: 5,
+        semanticThreshold: 0.7,
+      },
+    },
   },
 });
 ```
@@ -343,7 +349,9 @@ const agent = new Agent({
 
 // Pass tenant per request
 await agent.generateText("Query", {
-  userId: "user-123",
+  memory: {
+    userId: "user-123",
+  },
   context: { tenantId: "company-abc" }, // Different tenant = different data
 });
 ```

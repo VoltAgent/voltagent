@@ -242,8 +242,12 @@ You can also override this per call:
 
 ```ts
 await agent.generateText("Run the workflow", {
-  conversationPersistence: {
-    mode: "finish",
+  memory: {
+    options: {
+      conversationPersistence: {
+        mode: "finish",
+      },
+    },
   },
 });
 ```
@@ -357,8 +361,10 @@ export async function POST(req: Request) {
   const { messages, conversationId, userId } = await req.json();
 
   const result = await agent.streamText(messages, {
-    conversationId,
-    userId,
+    memory: {
+      conversationId,
+      userId,
+    },
   });
 
   return result.toUIMessageStreamResponse();

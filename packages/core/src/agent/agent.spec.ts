@@ -1918,6 +1918,211 @@ Use pandas and summarize findings.`.split("\n"),
       // Context limit should be respected
       expect(callArgs).toBeDefined();
     });
+
+    it("should prefer memory envelope over legacy memory fields", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      const getMessagesSpy = vi.spyOn(memory, "getMessages");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Test", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        contextLimit: 100,
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 2,
+          },
+        },
+      });
+
+      const matchingCall = getMessagesSpy.mock.calls.find(
+        ([userId, conversationId, options]) =>
+          userId === "memory-user" && conversationId === "memory-conv" && options?.limit === 2,
+      );
+      const usedLegacyIds = getMessagesSpy.mock.calls.some(
+        ([userId, conversationId]) => userId === "legacy-user" && conversationId === "legacy-conv",
+      );
+
+      expect(getMessagesSpy.mock.calls.length).toBe(1);
+      expect(matchingCall).toBeDefined();
+      expect(usedLegacyIds).toBe(false);
+    });
+
+    it("should fallback to legacy ids when memory envelope ids are blank", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      const getMessagesSpy = vi.spyOn(memory, "getMessages");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Test", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        memory: {
+          userId: "   ",
+          conversationId: "",
+        },
+      });
+
+      const matchingCall = getMessagesSpy.mock.calls.find(
+        ([userId, conversationId]) => userId === "legacy-user" && conversationId === "legacy-conv",
+      );
+
+      expect(getMessagesSpy.mock.calls.length).toBe(1);
+      expect(matchingCall).toBeDefined();
+    });
+
+    it("should store resolved memory envelope on operation context", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("input", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        contextLimit: 99,
+        semanticMemory: {
+          enabled: true,
+          semanticLimit: 9,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 5,
+            semanticMemory: {
+              enabled: false,
+              semanticThreshold: 0.8,
+            },
+            conversationPersistence: {
+              mode: "step",
+              debounceMs: 120,
+            },
+          },
+        },
+      });
+
+      expect(operationContext.userId).toBe("memory-user");
+      expect(operationContext.conversationId).toBe("memory-conv");
+      expect(operationContext.resolvedMemory).toMatchObject({
+        userId: "memory-user",
+        conversationId: "memory-conv",
+        contextLimit: 5,
+        semanticMemory: {
+          enabled: false,
+          semanticThreshold: 0.8,
+        },
+        conversationPersistence: {
+          mode: "step",
+          debounceMs: 120,
+        },
+      });
+    });
+
+    it("should fallback to parent operation context resolved memory when call overrides are missing", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const parentOperationContext = (agent as any).createOperationContext("parent-input", {
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 4,
+            semanticMemory: {
+              enabled: true,
+              semanticLimit: 2,
+            },
+            conversationPersistence: {
+              mode: "finish",
+            },
+          },
+        },
+      });
+
+      const resolvedFromParent = (agent as any).resolveMemoryRuntimeOptions({
+        parentOperationContext,
+      });
+
+      expect(resolvedFromParent).toMatchObject({
+        userId: "memory-user",
+        conversationId: "memory-conv",
+        contextLimit: 4,
+        semanticMemory: {
+          enabled: true,
+          semanticLimit: 2,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
+      });
+    });
   });
 
   describe("Global Memory Defaults", () => {
@@ -3154,6 +3359,46 @@ Use pandas and summarize findings.`.split("\n"),
       factorySpy.mockRestore();
     });
 
+    it("should resolve delegate tool identity from memory envelope", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const delegateTool = new Tool({
+        name: "delegate-tool",
+        description: "Delegate tool",
+        parameters: z.object({}),
+        execute: vi.fn(),
+      });
+
+      const mockHasSubAgents = vi.fn().mockReturnValue(true);
+      const mockCreateDelegateTool = vi.fn().mockReturnValue(delegateTool);
+      (agent as any).subAgentManager = {
+        hasSubAgents: mockHasSubAgents,
+        createDelegateTool: mockCreateDelegateTool,
+      };
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const options = {
+        conversationId: "legacy-conv",
+        userId: "legacy-user",
+        memory: {
+          conversationId: "memory-conv",
+          userId: "memory-user",
+        },
+      } as any;
+      await (agent as any).prepareTools([], operationContext, 7, options);
+
+      expect(mockCreateDelegateTool).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: "memory-conv",
+          userId: "memory-user",
+        }),
+      );
+    });
+
     it("should include working memory tools produced at runtime", async () => {
       const agent = new Agent({
         name: "TestAgent",
@@ -3176,7 +3421,7 @@ Use pandas and summarize findings.`.split("\n"),
       const options = { conversationId: "conv-2" } as any;
       const prepared = await (agent as any).prepareTools([], operationContext, 4, options);
 
-      expect(workingMemorySpy).toHaveBeenCalledWith(options);
+      expect(workingMemorySpy).toHaveBeenCalledWith(options, operationContext);
       expect(prepared.get_working_memory).toBeDefined();
       expect(typeof prepared.get_working_memory.execute).toBe("function");
 
@@ -3879,6 +4124,46 @@ Use pandas and summarize findings.`.split("\n"),
       expect(systemMessage.content).toContain("Base instructions");
       expect(systemMessage.content).toContain("Relevant Context:");
       expect(systemMessage.content).toContain("Retrieved context for query");
+    });
+
+    it("should include user-scoped working memory when conversationId is not set", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: {
+          enabled: true,
+          scope: "user",
+        },
+      });
+
+      await memory.updateWorkingMemory({
+        userId: "user-1",
+        content: "Preferred language: Turkish",
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        memory,
+      });
+
+      const operationContext = (agent as any).createOperationContext("user input", {
+        memory: {
+          userId: "user-1",
+        },
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage("user input", operationContext, {
+        memory: {
+          userId: "user-1",
+        },
+      });
+
+      expect(systemMessage).toMatchObject({
+        role: "system",
+      });
+      expect(systemMessage.content).toContain("<current_context>");
+      expect(systemMessage.content).toContain("Preferred language: Turkish");
     });
   });
 });
