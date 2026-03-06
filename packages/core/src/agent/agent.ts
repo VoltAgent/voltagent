@@ -117,6 +117,11 @@ import type {
 } from "./providers/base/types";
 import { coerceStringifiedJsonToolArgs } from "./tool-input-coercion";
 export type { AgentHooks } from "./hooks";
+export type {
+  RuntimeMemoryBehaviorOptions,
+  RuntimeMemoryEnvelope,
+  SemanticMemoryOptions,
+} from "./types";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
@@ -192,6 +197,8 @@ import type {
   OperationContext,
   OutputGuardrail,
   OutputMiddleware,
+  RuntimeMemoryEnvelope,
+  SemanticMemoryOptions,
   SupervisorConfig,
 } from "./types";
 
@@ -672,25 +679,6 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   return typeof (value as AsyncIterable<unknown>)[Symbol.asyncIterator] === "function";
 }
 
-export interface SemanticMemoryOptions {
-  enabled?: boolean;
-  semanticLimit?: number;
-  semanticThreshold?: number;
-  mergeStrategy?: "prepend" | "append" | "interleave";
-}
-
-export interface RuntimeMemoryBehaviorOptions {
-  contextLimit?: number;
-  semanticMemory?: SemanticMemoryOptions;
-  conversationPersistence?: AgentConversationPersistenceOptions;
-}
-
-export interface RuntimeMemoryEnvelope {
-  conversationId?: string;
-  userId?: string;
-  options?: RuntimeMemoryBehaviorOptions;
-}
-
 /**
  * Base options for all generation methods
  * Extends AI SDK's CallSettings for full compatibility
@@ -1039,7 +1027,7 @@ export class Agent {
 
             const { messages, uiMessages, modelName, tools, maxSteps } =
               await this.prepareExecution(effectiveInput, oc, options);
-            const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+            const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
             const contextLimit = resolvedMemory.contextLimit;
 
             // Add model attributes and all options
@@ -1628,7 +1616,7 @@ export class Agent {
           oc,
           options,
         );
-        const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+        const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
         const contextLimit = resolvedMemory.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
@@ -3470,24 +3458,41 @@ export class Agent {
 
   private resolveMemoryRuntimeOptions(
     options?: BaseGenerationOptions,
+    operationContext?: OperationContext,
   ): CommonResolvedRuntimeMemoryOptions {
     const memory = options?.memory;
     const memoryOptions = memory?.options;
+    const contextResolvedMemory = operationContext?.resolvedMemory;
     const parentResolvedMemory = options?.parentOperationContext?.resolvedMemory;
     const parentUserId = parentResolvedMemory?.userId ?? options?.parentOperationContext?.userId;
     const parentConversationId =
       parentResolvedMemory?.conversationId ?? options?.parentOperationContext?.conversationId;
 
     return {
-      userId: memory?.userId ?? options?.userId ?? parentUserId,
-      conversationId: memory?.conversationId ?? options?.conversationId ?? parentConversationId,
+      userId:
+        contextResolvedMemory?.userId ??
+        operationContext?.userId ??
+        memory?.userId ??
+        options?.userId ??
+        parentUserId,
+      conversationId:
+        contextResolvedMemory?.conversationId ??
+        operationContext?.conversationId ??
+        memory?.conversationId ??
+        options?.conversationId ??
+        parentConversationId,
       contextLimit:
-        memoryOptions?.contextLimit ?? options?.contextLimit ?? parentResolvedMemory?.contextLimit,
+        contextResolvedMemory?.contextLimit ??
+        memoryOptions?.contextLimit ??
+        options?.contextLimit ??
+        parentResolvedMemory?.contextLimit,
       semanticMemory:
+        contextResolvedMemory?.semanticMemory ??
         memoryOptions?.semanticMemory ??
         options?.semanticMemory ??
         parentResolvedMemory?.semanticMemory,
       conversationPersistence:
+        contextResolvedMemory?.conversationPersistence ??
         memoryOptions?.conversationPersistence ??
         options?.conversationPersistence ??
         parentResolvedMemory?.conversationPersistence,
@@ -4281,8 +4286,8 @@ export class Agent {
   ): Promise<UIMessage[]> {
     const resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
-    const canIUseMemory = resolvedMemory.userId && resolvedMemory.conversationId;
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+    const canIUseMemory = Boolean(resolvedMemory.userId);
     const memoryContextMessages: UIMessage[] = [];
 
     // Load memory context if available (already returns UIMessages)
@@ -4565,10 +4570,7 @@ export class Agent {
     options?: BaseGenerationOptions,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<BaseMessage | BaseMessage[]> {
-    const resolvedMemory = {
-      ...this.resolveMemoryRuntimeOptions(options),
-      ...(oc.resolvedMemory ?? {}),
-    };
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const workingMemoryConversationId = oc.conversationId ?? resolvedMemory.conversationId;
     const workingMemoryUserId = oc.userId ?? resolvedMemory.userId;
 
@@ -5558,7 +5560,7 @@ export class Agent {
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const hooks = this.getMergedHooks(options);
     const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
 
@@ -5577,7 +5579,7 @@ export class Agent {
       runtimeTools.push(delegateTool);
     }
     // Add working memory tools if Memory V2 with working memory is configured
-    const workingMemoryTools = this.createWorkingMemoryTools(options);
+    const workingMemoryTools = this.createWorkingMemoryTools(options, oc);
     if (workingMemoryTools.length > 0) {
       runtimeTools.push(...workingMemoryTools);
     }
@@ -7923,11 +7925,14 @@ export class Agent {
   /**
    * Create working memory tools if configured
    */
-  private createWorkingMemoryTools(options?: BaseGenerationOptions): Tool<any, any>[] {
+  private createWorkingMemoryTools(
+    options?: BaseGenerationOptions,
+    operationContext?: OperationContext,
+  ): Tool<any, any>[] {
     if (!this.hasWorkingMemorySupport()) {
       return [];
     }
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, operationContext);
 
     const memoryManager = this.memoryManager as unknown as MemoryManager;
     const memory = memoryManager.getMemory();

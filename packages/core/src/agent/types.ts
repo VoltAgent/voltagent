@@ -962,6 +962,10 @@ export interface CommonRuntimeMemoryEnvelope {
   options?: CommonRuntimeMemoryBehaviorOptions;
 }
 
+export type SemanticMemoryOptions = CommonSemanticMemoryOptions;
+export type RuntimeMemoryBehaviorOptions = CommonRuntimeMemoryBehaviorOptions;
+export type RuntimeMemoryEnvelope = CommonRuntimeMemoryEnvelope;
+
 export interface CommonResolvedRuntimeMemoryOptions {
   userId?: string;
   conversationId?: string;

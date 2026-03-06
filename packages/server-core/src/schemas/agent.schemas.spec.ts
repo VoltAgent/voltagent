@@ -70,7 +70,18 @@ describe("GenerateOptionsSchema", () => {
       },
     };
 
-    expect(() => GenerateOptionsSchema.parse(payload)).not.toThrow();
+    const result = GenerateOptionsSchema.parse(payload);
+
+    expect(result.memory?.userId).toBe("user-1");
+    expect(result.memory?.conversationId).toBe("conv-1");
+    expect(result.memory?.options?.contextLimit).toBe(12);
+    expect(result.memory?.options?.semanticMemory?.enabled).toBe(true);
+    expect(result.memory?.options?.semanticMemory?.semanticLimit).toBe(4);
+    expect(result.memory?.options?.semanticMemory?.semanticThreshold).toBe(0.8);
+    expect(result.memory?.options?.semanticMemory?.mergeStrategy).toBe("append");
+    expect(result.memory?.options?.conversationPersistence?.mode).toBe("step");
+    expect(result.memory?.options?.conversationPersistence?.debounceMs).toBe(150);
+    expect(result.memory?.options?.conversationPersistence?.flushOnToolResult).toBe(true);
   });
 
   it("keeps legacy top-level memory fields for backward compatibility", () => {

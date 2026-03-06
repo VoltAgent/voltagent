@@ -249,7 +249,7 @@ import { useCallback, useState, useRef } from 'react';
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [userId] = useState('user-123');
-  const [conversationId] = useState(() => crypto.randomUUID());
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
 
   const createTransport = useCallback(() => {
     return new DefaultChatTransport({
@@ -300,6 +300,7 @@ export function ChatInterface() {
 
   const resetConversation = () => {
     setMessages([]);
+    setConversationId(crypto.randomUUID());
   };
 
   return (

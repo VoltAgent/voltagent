@@ -190,6 +190,7 @@ Generate a text response from an agent synchronously.
 | `memory.options.semanticMemory.semanticLimit` | number | 5 | Number of similar messages to retrieve |
 | `memory.options.semanticMemory.semanticThreshold` | number | 0.7 | Minimum similarity score (0-1) |
 | `memory.options.semanticMemory.mergeStrategy` | string | `"append"` | `"prepend"` or `"append"` or `"interleave"` |
+| `memory.options.conversationPersistence` | object | - | Groups conversation persistence settings (`mode`, `debounceMs`, `flushOnToolResult`) |
 | `memory.options.conversationPersistence.mode` | string | `"step"` | Persistence strategy: `"step"` or `"finish"` |
 | `memory.options.conversationPersistence.debounceMs` | number | `200` | Debounce interval for step checkpoint persistence |
 | `memory.options.conversationPersistence.flushOnToolResult` | boolean | `true` | Flush immediately on `tool-result`/`tool-error` in step mode |
@@ -211,6 +212,7 @@ Generate a text response from an agent synchronously.
 | `stopSequences` | string[] | - | Stop generation sequences |
 | `providerOptions` | object | - | Provider-specific options |
 | `context` | object | - | Dynamic agent context |
+| `conversationPersistence` | object | - | Deprecated: use `memory.options.conversationPersistence` (groups `mode`, `debounceMs`, `flushOnToolResult`) |
 | `conversationPersistence.mode` | string | `"step"` | Deprecated: use `memory.options.conversationPersistence.mode` |
 | `conversationPersistence.debounceMs` | number | `200` | Deprecated: use `memory.options.conversationPersistence.debounceMs` |
 | `conversationPersistence.flushOnToolResult` | boolean | `true` | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult` |

@@ -1970,8 +1970,13 @@ Use pandas and summarize findings.`.split("\n"),
         ([userId, conversationId, options]) =>
           userId === "memory-user" && conversationId === "memory-conv" && options?.limit === 2,
       );
+      const usedLegacyIds = getMessagesSpy.mock.calls.some(
+        ([userId, conversationId]) => userId === "legacy-user" && conversationId === "legacy-conv",
+      );
 
+      expect(getMessagesSpy.mock.calls.length).toBe(1);
       expect(matchingCall).toBeDefined();
+      expect(usedLegacyIds).toBe(false);
     });
 
     it("should store resolved memory envelope on operation context", () => {
@@ -2009,6 +2014,8 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
+      expect(operationContext.userId).toBe("memory-user");
+      expect(operationContext.conversationId).toBe("memory-conv");
       expect(operationContext.resolvedMemory).toMatchObject({
         userId: "memory-user",
         conversationId: "memory-conv",
@@ -3363,7 +3370,7 @@ Use pandas and summarize findings.`.split("\n"),
       const options = { conversationId: "conv-2" } as any;
       const prepared = await (agent as any).prepareTools([], operationContext, 4, options);
 
-      expect(workingMemorySpy).toHaveBeenCalledWith(options);
+      expect(workingMemorySpy).toHaveBeenCalledWith(options, operationContext);
       expect(prepared.get_working_memory).toBeDefined();
       expect(typeof prepared.get_working_memory.execute).toBe("function");
 
