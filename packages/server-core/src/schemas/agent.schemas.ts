@@ -164,14 +164,87 @@ const FeedbackOptionsSchema = z
   .passthrough()
   .describe("Feedback options for the generated trace");
 
+const SemanticMemoryOptionsSchema = z
+  .object({
+    enabled: z
+      .boolean()
+      .optional()
+      .describe(
+        "Enable semantic retrieval for this call (default: auto when vectors are available)",
+      ),
+    semanticLimit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Number of similar messages to retrieve"),
+    semanticThreshold: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe("Minimum similarity score (0-1)"),
+    mergeStrategy: z
+      .enum(["prepend", "append", "interleave"])
+      .optional()
+      .describe("How semantic results merge with recent history"),
+  })
+  .passthrough();
+
+const ConversationPersistenceOptionsSchema = z
+  .object({
+    mode: z
+      .enum(["step", "finish"])
+      .optional()
+      .describe("Persistence strategy: checkpoint by step or persist on finish"),
+    debounceMs: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Debounce window for step checkpoint persistence"),
+    flushOnToolResult: z
+      .boolean()
+      .optional()
+      .describe("Flush immediately on tool-result/tool-error in step mode"),
+  })
+  .passthrough();
+
+const RuntimeMemoryBehaviorOptionsSchema = z
+  .object({
+    contextLimit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("Number of previous messages to include from memory"),
+    semanticMemory: SemanticMemoryOptionsSchema.optional().describe(
+      "Semantic retrieval configuration for this call",
+    ),
+    conversationPersistence: ConversationPersistenceOptionsSchema.optional().describe(
+      "Per-call conversation persistence behavior",
+    ),
+  })
+  .passthrough();
+
+const RuntimeMemoryEnvelopeSchema = z
+  .object({
+    conversationId: z.string().optional().describe("Conversation identifier for memory scoping"),
+    userId: z.string().optional().describe("User identifier for memory scoping"),
+    options: RuntimeMemoryBehaviorOptionsSchema.optional().describe(
+      "Per-call memory behavior overrides",
+    ),
+  })
+  .passthrough();
+
 // Generation options schema
 export const GenerateOptionsSchema = z
   .object({
-    userId: z
-      .string()
-      .optional()
-      .describe("Optional user ID for context tracking (required for resumable streams)"),
-    conversationId: z.string().optional().describe("Optional conversation ID for context tracking"),
+    memory: RuntimeMemoryEnvelopeSchema.optional().describe(
+      "Runtime memory envelope (preferred): memory.userId/memory.conversationId + memory.options.*",
+    ),
+    userId: z.string().optional().describe("Deprecated: use options.memory.userId"),
+    conversationId: z.string().optional().describe("Deprecated: use options.memory.conversationId"),
     context: z
       .record(z.string(), z.unknown())
       .nullish()
@@ -182,7 +255,13 @@ export const GenerateOptionsSchema = z
       .positive()
       .optional()
       .default(10)
-      .describe("Optional limit for conversation history context"),
+      .describe("Deprecated: use options.memory.options.contextLimit"),
+    semanticMemory: SemanticMemoryOptionsSchema.optional().describe(
+      "Deprecated: use options.memory.options.semanticMemory",
+    ),
+    conversationPersistence: ConversationPersistenceOptionsSchema.optional().describe(
+      "Deprecated: use options.memory.options.conversationPersistence",
+    ),
     maxSteps: z
       .number()
       .int()
@@ -234,7 +313,7 @@ export const GenerateOptionsSchema = z
       .boolean()
       .optional()
       .describe(
-        "When true, avoids wiring the HTTP abort signal into streams so they can be resumed (requires resumable streams and options.conversationId + options.userId). If omitted, server defaults may apply.",
+        "When true, avoids wiring the HTTP abort signal into streams so they can be resumed (requires resumable streams and conversation/user IDs via options.memory or top-level legacy fields). If omitted, server defaults may apply.",
       ),
     output: z
       .object({

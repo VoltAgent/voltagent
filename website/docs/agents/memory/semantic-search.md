@@ -62,13 +62,17 @@ Enable semantic search per generation call:
 
 ```ts
 const result = await agent.generateText("What pricing model did we discuss?", {
-  userId: "user-123",
-  conversationId: "thread-abc",
-  semanticMemory: {
-    enabled: true, // default: auto-enabled when vector support is present
-    semanticLimit: 5, // number of similar messages to retrieve
-    semanticThreshold: 0.7, // minimum similarity score (0-1)
-    mergeStrategy: "append", // "prepend" | "append" | "interleave"
+  memory: {
+    userId: "user-123",
+    conversationId: "thread-abc",
+    options: {
+      semanticMemory: {
+        enabled: true, // default: auto-enabled when vector support is present
+        semanticLimit: 5, // number of similar messages to retrieve
+        semanticThreshold: 0.7, // minimum similarity score (0-1)
+        mergeStrategy: "append", // "prepend" | "append" | "interleave"
+      },
+    },
   },
 });
 ```
@@ -77,7 +81,7 @@ const result = await agent.generateText("What pricing model did we discuss?", {
 
 When `embedding` and `vector` adapters are configured:
 
-- Semantic search auto-enables for calls with `userId` and `conversationId`
+- Semantic search auto-enables for calls with `memory.userId` and `memory.conversationId`
 - Default `semanticLimit`: 5 messages
 - Default `semanticThreshold`: 0.7
 - Default `mergeStrategy`: `"append"` (recent messages first, then similar messages)
@@ -221,11 +225,15 @@ const agent = new Agent({
 const result = await agent.generateText(
   "What did we decide about the API authentication approach?",
   {
-    userId: "user-123",
-    conversationId: "project-alpha",
-    semanticMemory: {
-      semanticLimit: 10,
-      semanticThreshold: 0.75,
+    memory: {
+      userId: "user-123",
+      conversationId: "project-alpha",
+      options: {
+        semanticMemory: {
+          semanticLimit: 10,
+          semanticThreshold: 0.75,
+        },
+      },
     },
   }
 );

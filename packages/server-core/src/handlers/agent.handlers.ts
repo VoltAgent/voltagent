@@ -246,12 +246,22 @@ export async function handleChatStream(
         ? body.options.resumableStream
         : (deps.resumableStreamDefault ?? false);
     const options = processAgentOptions(body, signal);
-    const conversationId =
-      typeof options.conversationId === "string" ? options.conversationId : undefined;
-    const userId =
-      typeof options.userId === "string" && options.userId.trim().length > 0
-        ? options.userId
+    const memory =
+      options.memory && typeof options.memory === "object" ? options.memory : undefined;
+    const memoryConversationId =
+      memory && typeof memory.conversationId === "string" ? memory.conversationId : undefined;
+    const memoryUserId =
+      memory && typeof memory.userId === "string" && memory.userId.trim().length > 0
+        ? memory.userId
         : undefined;
+    const conversationId =
+      memoryConversationId ??
+      (typeof options.conversationId === "string" ? options.conversationId : undefined);
+    const userId =
+      memoryUserId ??
+      (typeof options.userId === "string" && options.userId.trim().length > 0
+        ? options.userId
+        : undefined);
     const resumableEnabled = Boolean(deps.resumableStream);
     const resumableStreamEnabled =
       resumableEnabled &&

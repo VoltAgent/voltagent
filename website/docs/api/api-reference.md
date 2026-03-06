@@ -48,9 +48,24 @@ Default port is 3141, but may vary based on configuration.
 {
   "input": "string or message array",
   "options": {
-    "userId": "string",
-    "conversationId": "string",
-    "contextLimit": 10,
+    "memory": {
+      "userId": "string",
+      "conversationId": "string",
+      "options": {
+        "contextLimit": 10,
+        "semanticMemory": {
+          "enabled": true,
+          "semanticLimit": 5,
+          "semanticThreshold": 0.7,
+          "mergeStrategy": "append"
+        },
+        "conversationPersistence": {
+          "mode": "step",
+          "debounceMs": 200,
+          "flushOnToolResult": true
+        }
+      }
+    },
     "maxSteps": 5,
     "temperature": 0.7,
     "maxOutputTokens": 4000,

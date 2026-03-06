@@ -102,7 +102,8 @@ new VoltAgent({
 
 **Precedence**
 
-- Per-call `options.conversationPersistence`
+- Per-call `options.memory.options.conversationPersistence` (preferred)
+- Per-call `options.conversationPersistence` (deprecated)
 - Agent `conversationPersistence`
 - VoltAgent `agentConversationPersistence`
 - Built-in defaults (`mode: "step"`, `debounceMs: 200`, `flushOnToolResult: true`)

@@ -173,8 +173,10 @@ export async function POST(req: Request) {
     setWaitUntil(after);
 
     const result = await agent.streamText([lastMessage], {
-      userId: userId ?? "anonymous-user",
-      conversationId: threadId,
+      memory: {
+        userId: userId ?? "anonymous-user",
+        conversationId: threadId,
+      },
     });
 
     return result.toUIMessageStreamResponse({ sendReasoning: true });

@@ -101,8 +101,10 @@ const testAgent = new Agent({
 
 // Test conversations without persistence
 await testAgent.generateText("Test message", {
-  userId: "test-user",
-  conversationId: "test-conversation",
+  memory: {
+    userId: "test-user",
+    conversationId: "test-conversation",
+  },
 });
 ```
 
@@ -120,8 +122,10 @@ export async function handler(event) {
   });
 
   return await agent.generateText(event.message, {
-    userId: event.userId,
-    conversationId: event.sessionId,
+    memory: {
+      userId: event.userId,
+      conversationId: event.sessionId,
+    },
   });
 }
 ```

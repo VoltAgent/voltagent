@@ -1918,6 +1918,61 @@ Use pandas and summarize findings.`.split("\n"),
       // Context limit should be respected
       expect(callArgs).toBeDefined();
     });
+
+    it("should prefer memory envelope over legacy memory fields", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      const getMessagesSpy = vi.spyOn(memory, "getMessages");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Test", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        contextLimit: 100,
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 2,
+          },
+        },
+      });
+
+      const matchingCall = getMessagesSpy.mock.calls.find(
+        ([userId, conversationId, options]) =>
+          userId === "memory-user" && conversationId === "memory-conv" && options?.limit === 2,
+      );
+
+      expect(matchingCall).toBeDefined();
+    });
   });
 
   describe("Global Memory Defaults", () => {
@@ -3152,6 +3207,46 @@ Use pandas and summarize findings.`.split("\n"),
       expect(factorySpy).toHaveBeenCalledWith(operationContext, expect.any(Object));
 
       factorySpy.mockRestore();
+    });
+
+    it("should resolve delegate tool identity from memory envelope", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const delegateTool = new Tool({
+        name: "delegate-tool",
+        description: "Delegate tool",
+        parameters: z.object({}),
+        execute: vi.fn(),
+      });
+
+      const mockHasSubAgents = vi.fn().mockReturnValue(true);
+      const mockCreateDelegateTool = vi.fn().mockReturnValue(delegateTool);
+      (agent as any).subAgentManager = {
+        hasSubAgents: mockHasSubAgents,
+        createDelegateTool: mockCreateDelegateTool,
+      };
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const options = {
+        conversationId: "legacy-conv",
+        userId: "legacy-user",
+        memory: {
+          conversationId: "memory-conv",
+          userId: "memory-user",
+        },
+      } as any;
+      await (agent as any).prepareTools([], operationContext, 7, options);
+
+      expect(mockCreateDelegateTool).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: "memory-conv",
+          userId: "memory-user",
+        }),
+      );
     });
 
     it("should include working memory tools produced at runtime", async () => {

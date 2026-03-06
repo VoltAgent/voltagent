@@ -221,6 +221,13 @@ function defaultResolveConversationId<Params extends RouteParams | undefined>({
       payload.options && typeof payload.options === "object"
         ? (payload.options as Record<string, unknown>)
         : undefined;
+    const memory =
+      options?.memory && typeof options.memory === "object"
+        ? (options.memory as Record<string, unknown>)
+        : undefined;
+    if (memory && typeof memory.conversationId === "string") {
+      return memory.conversationId;
+    }
     if (options && typeof options.conversationId === "string") {
       return options.conversationId;
     }
@@ -243,6 +250,13 @@ function defaultResolveUserId<Params extends RouteParams | undefined>({
       payload.options && typeof payload.options === "object"
         ? (payload.options as Record<string, unknown>)
         : undefined;
+    const memory =
+      options?.memory && typeof options.memory === "object"
+        ? (options.memory as Record<string, unknown>)
+        : undefined;
+    if (memory && typeof memory.userId === "string") {
+      return memory.userId;
+    }
     if (options && typeof options.userId === "string") {
       return options.userId;
     }
