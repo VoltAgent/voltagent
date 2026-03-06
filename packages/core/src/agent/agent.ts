@@ -2178,7 +2178,15 @@ export class Agent {
                 } finally {
                   reader.releaseLock();
                   await parentPromise;
-                  await writer.close();
+                  // writeParentStream() already closes the writer in its own
+                  // finally block. By the time we reach here the stream is
+                  // typically already closed, so guard against the "Invalid
+                  // state: WritableStream is closed" error.
+                  try {
+                    await writer.close();
+                  } catch {
+                    // Already closed – safe to ignore.
+                  }
                 }
               };
 
