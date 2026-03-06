@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.6.5
+
+### Patch Changes
+
+- [#1135](https://github.com/VoltAgent/voltagent/pull/1135) [`a447ca3`](https://github.com/VoltAgent/voltagent/commit/a447ca3228712edbf19f53979a0429c773cc4aa3) Thanks [@corners99](https://github.com/corners99)! - fix(core,ag-ui): guard double writer.close() and RUN_FINISHED after RUN_ERROR
+
 ## 2.6.4
 
 ### Patch Changes
