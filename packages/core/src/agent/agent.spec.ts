@@ -4074,5 +4074,45 @@ Use pandas and summarize findings.`.split("\n"),
       expect(systemMessage.content).toContain("Relevant Context:");
       expect(systemMessage.content).toContain("Retrieved context for query");
     });
+
+    it("should include user-scoped working memory when conversationId is not set", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: {
+          enabled: true,
+          scope: "user",
+        },
+      });
+
+      await memory.updateWorkingMemory({
+        userId: "user-1",
+        content: "Preferred language: Turkish",
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        memory,
+      });
+
+      const operationContext = (agent as any).createOperationContext("user input", {
+        memory: {
+          userId: "user-1",
+        },
+      });
+
+      const systemMessage = await (agent as any).getSystemMessage("user input", operationContext, {
+        memory: {
+          userId: "user-1",
+        },
+      });
+
+      expect(systemMessage).toMatchObject({
+        role: "system",
+      });
+      expect(systemMessage.content).toContain("<current_context>");
+      expect(systemMessage.content).toContain("Preferred language: Turkish");
+    });
   });
 });

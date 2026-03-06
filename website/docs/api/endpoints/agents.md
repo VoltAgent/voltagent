@@ -186,7 +186,7 @@ Generate a text response from an agent synchronously.
 | `memory.conversationId` | string | - | Conversation ID for memory scoping |
 | `memory.options.contextLimit` | number | 10 | Message history limit |
 | `memory.options.semanticMemory` | object | - | Semantic retrieval config |
-| `memory.options.semanticMemory.enabled` | boolean | auto | Enable semantic retrieval for this call |
+| `memory.options.semanticMemory.enabled` | boolean | - | Enable semantic retrieval for this call. Default: `undefined` (auto-enables if vectors are available). |
 | `memory.options.semanticMemory.semanticLimit` | number | 5 | Number of similar messages to retrieve |
 | `memory.options.semanticMemory.semanticThreshold` | number | 0.7 | Minimum similarity score (0-1) |
 | `memory.options.semanticMemory.mergeStrategy` | string | `"append"` | `"prepend"` or `"append"` or `"interleave"` |
@@ -198,7 +198,7 @@ Generate a text response from an agent synchronously.
 | `conversationId` | string | - | Deprecated: use `memory.conversationId` |
 | `contextLimit` | number | 10 | Deprecated: use `memory.options.contextLimit` |
 | `semanticMemory` | object | - | Deprecated: use `memory.options.semanticMemory` |
-| `semanticMemory.enabled` | boolean | auto | Deprecated: use `memory.options.semanticMemory.enabled` |
+| `semanticMemory.enabled` | boolean | - | Deprecated: use `memory.options.semanticMemory.enabled`. Default: `undefined` (auto-enables if vectors are available). |
 | `semanticMemory.semanticLimit` | number | 5 | Deprecated: use `memory.options.semanticMemory.semanticLimit` |
 | `semanticMemory.semanticThreshold` | number | 0.7 | Deprecated: use `memory.options.semanticMemory.semanticThreshold` |
 | `semanticMemory.mergeStrategy` | string | `"append"` | Deprecated: use `memory.options.semanticMemory.mergeStrategy` |

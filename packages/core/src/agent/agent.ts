@@ -4644,17 +4644,23 @@ export class Agent {
       retrieverContext = await this.getRetrieverContext(input, oc);
     }
 
-    // Get working memory instructions if available
+    // Get working memory instructions if available.
+    // Prefer conversation scope when conversationId exists; otherwise fall back to user scope.
     let workingMemoryContext: string | null = null;
-    if (this.hasWorkingMemorySupport() && workingMemoryConversationId) {
+    const workingMemoryLookup =
+      workingMemoryConversationId || workingMemoryUserId
+        ? {
+            ...(workingMemoryConversationId ? { conversationId: workingMemoryConversationId } : {}),
+            ...(workingMemoryUserId ? { userId: workingMemoryUserId } : {}),
+          }
+        : undefined;
+    if (this.hasWorkingMemorySupport() && workingMemoryLookup) {
       const memory = this.memoryManager.getMemory();
 
       if (memory) {
         // Get full working memory instructions with current data
-        const workingMemoryInstructions = await memory.getWorkingMemoryInstructions({
-          conversationId: workingMemoryConversationId,
-          userId: workingMemoryUserId,
-        });
+        const workingMemoryInstructions =
+          await memory.getWorkingMemoryInstructions(workingMemoryLookup);
 
         if (workingMemoryInstructions) {
           workingMemoryContext = `\n\n${workingMemoryInstructions}`;
@@ -4665,10 +4671,7 @@ export class Agent {
           const rootSpan = oc.traceContext.getRootSpan();
 
           // Get the raw working memory content
-          const workingMemoryContent = await memory.getWorkingMemory({
-            conversationId: workingMemoryConversationId,
-            userId: workingMemoryUserId,
-          });
+          const workingMemoryContent = await memory.getWorkingMemory(workingMemoryLookup);
 
           if (workingMemoryContent) {
             rootSpan.setAttribute("agent.workingMemory.content", workingMemoryContent);

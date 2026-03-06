@@ -299,6 +299,7 @@ export function ChatInterface() {
   };
 
   const resetConversation = () => {
+    stop();
     setMessages([]);
     setConversationId(crypto.randomUUID());
   };
