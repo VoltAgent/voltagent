@@ -241,25 +241,19 @@ const truncateByBytes = (value: string, maxBytes: number): string => {
   return `${truncated}${TRUNCATION_SUFFIX}`;
 };
 
-const formatStreamOutput = (label: string, info: StreamEvictionResult): string[] => {
-  const lines: string[] = [];
+const formatStreamSummary = (label: string, info: StreamEvictionResult): string => {
   if (info.evicted && info.path) {
-    const note = info.truncated ? " (truncated)" : "";
-    lines.push(`${label}: saved to ${info.path} (${info.bytes} bytes${note})`);
-    if (info.error) {
-      lines.push(`${label} eviction error: ${info.error}`);
-    }
-    return lines;
+    const note = info.truncated ? ", truncated" : "";
+    const errorNote = info.error ? `, eviction error: ${info.error}` : "";
+    return `${label}: saved to ${info.path} (${info.bytes} bytes${note}${errorNote})`;
   }
 
   if (info.content) {
-    lines.push(`${label}:`);
-    lines.push(info.content);
-    return lines;
+    const note = info.truncated ? ", truncated" : "";
+    return `${label}: captured inline (${info.bytes} bytes${note})`;
   }
 
-  lines.push(`${label}: (empty)`);
-  return lines;
+  return `${label}: (empty)`;
 };
 
 export const createWorkspaceSandboxToolkit = (
@@ -437,8 +431,8 @@ export const createWorkspaceSandboxToolkit = (
 
             const lines: string[] = [];
             lines.push(...formatSandboxHeader(result));
-            lines.push(...formatStreamOutput("STDOUT", stdoutInfo));
-            lines.push(...formatStreamOutput("STDERR", stderrInfo));
+            lines.push(formatStreamSummary("STDOUT", stdoutInfo));
+            lines.push(formatStreamSummary("STDERR", stderrInfo));
 
             const summary = lines.join("\n");
             const streamErrors = [stdoutInfo.error, stderrInfo.error].filter(
