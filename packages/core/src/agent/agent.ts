@@ -241,6 +241,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const hasNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
+const firstNonBlank = (...values: Array<unknown>): string | undefined => {
+  for (const value of values) {
+    if (hasNonEmptyString(value)) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
 const isAssistantContentPart = (value: unknown): boolean => {
   if (!isRecord(value)) {
     return false;
@@ -3469,18 +3478,20 @@ export class Agent {
       parentResolvedMemory?.conversationId ?? options?.parentOperationContext?.conversationId;
 
     return {
-      userId:
-        contextResolvedMemory?.userId ??
-        operationContext?.userId ??
-        memory?.userId ??
-        options?.userId ??
+      userId: firstNonBlank(
+        contextResolvedMemory?.userId,
+        operationContext?.userId,
+        memory?.userId,
+        options?.userId,
         parentUserId,
-      conversationId:
-        contextResolvedMemory?.conversationId ??
-        operationContext?.conversationId ??
-        memory?.conversationId ??
-        options?.conversationId ??
+      ),
+      conversationId: firstNonBlank(
+        contextResolvedMemory?.conversationId,
+        operationContext?.conversationId,
+        memory?.conversationId,
+        options?.conversationId,
         parentConversationId,
+      ),
       contextLimit:
         contextResolvedMemory?.contextLimit ??
         memoryOptions?.contextLimit ??

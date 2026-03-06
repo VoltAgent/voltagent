@@ -1979,6 +1979,57 @@ Use pandas and summarize findings.`.split("\n"),
       expect(usedLegacyIds).toBe(false);
     });
 
+    it("should fallback to legacy ids when memory envelope ids are blank", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      const getMessagesSpy = vi.spyOn(memory, "getMessages");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Test", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        memory: {
+          userId: "   ",
+          conversationId: "",
+        },
+      });
+
+      const matchingCall = getMessagesSpy.mock.calls.find(
+        ([userId, conversationId]) => userId === "legacy-user" && conversationId === "legacy-conv",
+      );
+
+      expect(getMessagesSpy.mock.calls.length).toBe(1);
+      expect(matchingCall).toBeDefined();
+    });
+
     it("should store resolved memory envelope on operation context", () => {
       const agent = new Agent({
         name: "TestAgent",
