@@ -1811,6 +1811,60 @@ Use pandas and summarize findings.`.split("\n"),
       // as they're handled by the MemoryManager class
     });
 
+    it("should read memory but skip persistence when memory.options.readOnly is true", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      const getMessagesSpy = vi.spyOn(memory, "getMessages");
+      const saveMessageWithContextSpy = vi.spyOn(memory, "saveMessageWithContext");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Hello", {
+        memory: {
+          userId: "user-readonly",
+          conversationId: "conv-readonly",
+          options: {
+            readOnly: true,
+          },
+        },
+      });
+
+      const memoryReadCall = getMessagesSpy.mock.calls.find(
+        ([userId, conversationId]) =>
+          userId === "user-readonly" && conversationId === "conv-readonly",
+      );
+
+      expect(memoryReadCall).toBeDefined();
+      expect(saveMessageWithContextSpy).not.toHaveBeenCalled();
+    });
+
     it("should retrieve messages from memory", async () => {
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),
@@ -2053,6 +2107,7 @@ Use pandas and summarize findings.`.split("\n"),
           conversationId: "memory-conv",
           options: {
             contextLimit: 5,
+            readOnly: true,
             semanticMemory: {
               enabled: false,
               semanticThreshold: 0.8,
@@ -2071,6 +2126,7 @@ Use pandas and summarize findings.`.split("\n"),
         userId: "memory-user",
         conversationId: "memory-conv",
         contextLimit: 5,
+        readOnly: true,
         semanticMemory: {
           enabled: false,
           semanticThreshold: 0.8,
@@ -2095,6 +2151,7 @@ Use pandas and summarize findings.`.split("\n"),
           conversationId: "memory-conv",
           options: {
             contextLimit: 4,
+            readOnly: true,
             semanticMemory: {
               enabled: true,
               semanticLimit: 2,
@@ -2114,6 +2171,7 @@ Use pandas and summarize findings.`.split("\n"),
         userId: "memory-user",
         conversationId: "memory-conv",
         contextLimit: 4,
+        readOnly: true,
         semanticMemory: {
           enabled: true,
           semanticLimit: 2,
@@ -3426,6 +3484,39 @@ Use pandas and summarize findings.`.split("\n"),
       expect(typeof prepared.get_working_memory.execute).toBe("function");
 
       workingMemorySpy.mockRestore();
+    });
+
+    it("should disable working memory write tools when memory options are read-only", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: {
+          enabled: true,
+        },
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      const options = {
+        memory: {
+          userId: "user-1",
+          conversationId: "conv-1",
+          options: {
+            readOnly: true,
+          },
+        },
+      } as any;
+      const operationContext = (agent as any).createOperationContext("input message", options);
+      const runtimeTools = (agent as any).createWorkingMemoryTools(options, operationContext);
+      const toolNames = runtimeTools.map((tool: Tool<any, any>) => tool.name);
+
+      expect(toolNames).toContain("get_working_memory");
+      expect(toolNames).not.toContain("update_working_memory");
+      expect(toolNames).not.toContain("clear_working_memory");
     });
   });
 

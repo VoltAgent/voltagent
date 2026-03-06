@@ -85,6 +85,7 @@ Notes:
 - Three formats: Markdown template, JSON schema (Zod), or free-form
 - Two scopes: `conversation` (default) or `user`
 - Agent exposes tools: `get_working_memory`, `update_working_memory`, `clear_working_memory`
+- If `memory.options.readOnly: true` is set per call, only `get_working_memory` is exposed and memory writes are skipped
 
 ### Workflow State
 

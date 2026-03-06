@@ -954,6 +954,11 @@ export interface CommonRuntimeMemoryBehaviorOptions {
   contextLimit?: number;
   semanticMemory?: CommonSemanticMemoryOptions;
   conversationPersistence?: AgentConversationPersistenceOptions;
+  /**
+   * When true, memory is read-only for the current call.
+   * Existing memory context can be loaded, but no writes are persisted.
+   */
+  readOnly?: boolean;
 }
 
 export interface CommonRuntimeMemoryEnvelope {
@@ -972,6 +977,7 @@ export interface CommonResolvedRuntimeMemoryOptions {
   contextLimit?: number;
   semanticMemory?: CommonSemanticMemoryOptions;
   conversationPersistence?: AgentConversationPersistenceOptions;
+  readOnly?: boolean;
 }
 
 export interface CommonGenerateOptions {

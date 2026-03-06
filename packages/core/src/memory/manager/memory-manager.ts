@@ -468,6 +468,9 @@ export class MemoryManager {
     userId?: string,
     conversationIdParam?: string,
     contextLimit = 10,
+    options?: {
+      persistInput?: boolean;
+    },
   ): Promise<{ messages: UIMessage<{ createdAt: Date }>[]; conversationId: string }> {
     // Use the provided conversationId or generate a new one
     const conversationId = conversationIdParam || randomUUID();
@@ -509,7 +512,9 @@ export class MemoryManager {
       // Continue with empty messages, but don't fail the operation
     }
 
-    this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
+    if (options?.persistInput !== false) {
+      this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
+    }
 
     return { messages, conversationId };
   }

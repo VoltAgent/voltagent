@@ -357,6 +357,7 @@ export function ChatInterface() {
 | `memory.conversationId`                                    | string  | Conversation thread ID                                                         |
 | `context`                                                  | object  | Dynamic context (converted to Map internally)                                  |
 | `memory.options.contextLimit`                              | number  | Number of previous messages to include from memory                             |
+| `memory.options.readOnly`                                  | boolean | Read memory context but skip all memory writes for this call                   |
 | `memory.options.conversationPersistence.mode`              | string  | `"step"` (default) or `"finish"`                                               |
 | `memory.options.conversationPersistence.debounceMs`        | number  | Debounce window in milliseconds (default: `200`)                               |
 | `memory.options.conversationPersistence.flushOnToolResult` | boolean | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
@@ -376,6 +377,7 @@ options: {
     userId,
     conversationId,
     options: {
+      readOnly: false,
       conversationPersistence: {
         mode: "step",
         debounceMs: 200,
@@ -387,6 +389,8 @@ options: {
 ```
 
 When both top-level legacy memory fields and `memory` envelope fields are provided, `memory` values are used.
+
+Set `memory.options.readOnly: true` to load memory context without persisting new messages for that request.
 
 ### AI SDK Core Options
 

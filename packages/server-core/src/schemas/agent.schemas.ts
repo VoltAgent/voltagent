@@ -218,6 +218,10 @@ const RuntimeMemoryBehaviorOptionsSchema = z
       .positive()
       .optional()
       .describe("Number of previous messages to include from memory"),
+    readOnly: z
+      .boolean()
+      .optional()
+      .describe("When true, memory reads are allowed but no memory writes are persisted"),
     semanticMemory: SemanticMemoryOptionsSchema.optional().describe(
       "Semantic retrieval configuration for this call",
     ),
