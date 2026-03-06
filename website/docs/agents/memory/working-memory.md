@@ -99,6 +99,9 @@ When working memory is enabled, the agent:
    - `update_working_memory(content)` - Update content (validated against schema if configured)
    - `clear_working_memory()` - Clear content
 
+If you run an operation with `options.memory.options.readOnly: true`, the agent only exposes
+`get_working_memory()` and skips write operations.
+
 The agent manages working memory proactively based on conversation flow.
 
 ## Update Modes

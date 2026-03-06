@@ -250,6 +250,15 @@ const firstNonBlank = (...values: Array<unknown>): string | undefined => {
   return undefined;
 };
 
+const firstDefined = <T>(...values: Array<T | null | undefined>): T | undefined => {
+  for (const value of values) {
+    if (value !== null && value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
 const isAssistantContentPart = (value: unknown): boolean => {
   if (!isRecord(value)) {
     return false;
@@ -995,6 +1004,7 @@ export class Agent {
     const feedbackOptions = this.resolveFeedbackOptions(options);
     const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
     const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
+    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     let feedbackMetadata: AgentFeedbackMetadata | null = null;
 
     // Wrap entire execution in root span for trace context
@@ -1231,7 +1241,7 @@ export class Agent {
 
             void this.recordStepResults(result.steps, oc);
 
-            if (!shouldDeferPersist) {
+            if (!shouldDeferPersist && shouldPersistMemory) {
               await persistQueue.flush(buffer, oc);
             }
 
@@ -1331,7 +1341,7 @@ export class Agent {
               }
             }
 
-            if (shouldDeferPersist) {
+            if (shouldDeferPersist && shouldPersistMemory) {
               await persistQueue.flush(buffer, oc);
             }
 
@@ -1486,6 +1496,7 @@ export class Agent {
     const feedbackOptions = this.resolveFeedbackOptions(options);
     const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
     const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
+    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     const feedbackDeferred = feedbackOptions
       ? createDeferred<AgentFeedbackMetadata | null>()
       : null;
@@ -1529,7 +1540,7 @@ export class Agent {
             { requirePending: true },
           );
         }
-        if (shouldDeferPersist) {
+        if (shouldDeferPersist && shouldPersistMemory) {
           void persistQueue.flush(buffer, oc).catch((error) => {
             oc.logger?.debug?.("Failed to persist feedback metadata", { error });
           });
@@ -1883,7 +1894,7 @@ export class Agent {
                   finishReason: finalResult.finishReason,
                 });
 
-                if (!shouldDeferPersist) {
+                if (!shouldDeferPersist && shouldPersistMemory) {
                   await persistQueue.flush(buffer, oc);
                 }
 
@@ -2034,7 +2045,7 @@ export class Agent {
 
                 if (feedbackResolved && feedbackMetadataValue) {
                   scheduleFeedbackPersist(feedbackMetadataValue);
-                } else if (shouldDeferPersist) {
+                } else if (shouldDeferPersist && shouldPersistMemory) {
                   void persistQueue.flush(buffer, oc).catch((error) => {
                     oc.logger?.debug?.("Failed to persist deferred messages", { error });
                   });
@@ -2650,7 +2661,7 @@ export class Agent {
             });
 
             // Save the object response to memory
-            if (oc.userId && oc.conversationId) {
+            if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
               // Create UIMessage from the object response
               const message: UIMessage = {
                 id: randomUUID(),
@@ -3092,7 +3103,7 @@ export class Agent {
                     resolveGuardrailObject?.(finalObject);
                   }
 
-                  if (oc.userId && oc.conversationId) {
+                  if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
                     const message: UIMessage = {
                       id: randomUUID(),
                       role: "assistant",
@@ -3515,6 +3526,11 @@ export class Agent {
         memoryOptions?.conversationPersistence ??
         options?.conversationPersistence ??
         parentResolvedMemory?.conversationPersistence,
+      readOnly: firstDefined(
+        contextResolvedMemory?.readOnly,
+        memoryOptions?.readOnly,
+        parentResolvedMemory?.readOnly,
+      ),
     };
   }
 
@@ -3707,6 +3723,14 @@ export class Agent {
     return queue;
   }
 
+  private isReadOnlyMemoryForContext(oc: OperationContext): boolean {
+    return oc.resolvedMemory?.readOnly === true;
+  }
+
+  private shouldPersistMemoryForContext(oc: OperationContext): boolean {
+    return !this.isReadOnlyMemoryForContext(oc);
+  }
+
   private async ensureStreamingResponseMessageId(
     oc: OperationContext,
     buffer: ConversationBuffer,
@@ -3785,6 +3809,10 @@ export class Agent {
   }
 
   private async flushPendingMessagesOnError(oc: OperationContext): Promise<void> {
+    if (!this.shouldPersistMemoryForContext(oc)) {
+      return;
+    }
+
     const buffer = this.getConversationBuffer(oc);
     const queue = this.getMemoryPersistQueue(oc);
 
@@ -4307,6 +4335,7 @@ export class Agent {
     const messages: UIMessage[] = [];
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
+    const shouldPersistMemory = resolvedMemory.readOnly !== true;
     const memoryContextMessages: UIMessage[] = [];
 
     // Load memory context if available (already returns UIMessages)
@@ -4386,6 +4415,7 @@ export class Agent {
               oc.userId,
               oc.conversationId,
               resolvedMemory.contextLimit,
+              { persistInput: shouldPersistMemory },
             );
 
             // Update conversation ID
@@ -4420,7 +4450,7 @@ export class Agent {
 
           // When using semantic search, also persist the current input in background
           // so user messages are stored and embedded consistently.
-          if (isSemanticSearch && oc.userId && oc.conversationId) {
+          if (isSemanticSearch && shouldPersistMemory && oc.userId && oc.conversationId) {
             try {
               const inputForMemory =
                 typeof resolvedInput === "string"
@@ -6646,7 +6676,8 @@ export class Agent {
    */
   private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
     const buffer = this.getConversationBuffer(oc);
-    const persistQueue = this.getMemoryPersistQueue(oc);
+    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
+    const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
     const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
 
     return async (event: StepResult<ToolSet>) => {
@@ -6673,6 +6704,8 @@ export class Agent {
       }
 
       if (
+        shouldPersistMemory &&
+        persistQueue &&
         conversationPersistence.mode === "step" &&
         (hasResponseMessages || shouldFlushStepPersistence)
       ) {
@@ -6968,7 +7001,12 @@ export class Agent {
       recordTimestamp = new Date().toISOString();
     });
 
-    if (stepRecords.length > 0 && oc.userId && oc.conversationId) {
+    if (
+      this.shouldPersistMemoryForContext(oc) &&
+      stepRecords.length > 0 &&
+      oc.userId &&
+      oc.conversationId
+    ) {
       const persistStepsPromise = this.memoryManager
         .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
         .catch((error) => {
@@ -7888,6 +7926,9 @@ export class Agent {
               ...(resolvedMemory.conversationPersistence !== undefined
                 ? { conversationPersistence: resolvedMemory.conversationPersistence }
                 : {}),
+              ...(resolvedMemory.readOnly !== undefined
+                ? { readOnly: resolvedMemory.readOnly }
+                : {}),
             }
           : undefined;
         const memory =
@@ -7955,6 +7996,7 @@ export class Agent {
       return [];
     }
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, operationContext);
+    const isReadOnly = resolvedMemory.readOnly === true;
 
     const memoryManager = this.memoryManager as unknown as MemoryManager;
     const memory = memoryManager.getMemory();
@@ -7981,80 +8023,82 @@ export class Agent {
       }),
     );
 
-    // Update Working Memory tool
-    const schema = memory.getWorkingMemorySchema();
-    const template = memory.getWorkingMemoryTemplate();
+    if (!isReadOnly) {
+      // Update Working Memory tool
+      const schema = memory.getWorkingMemorySchema();
+      const template = memory.getWorkingMemoryTemplate();
 
-    // Build parameters based on schema
-    const baseParams = schema
-      ? { content: schema }
-      : { content: z.string().describe("The content to store in working memory") };
+      // Build parameters based on schema
+      const baseParams = schema
+        ? { content: schema }
+        : { content: z.string().describe("The content to store in working memory") };
 
-    const modeParam = {
-      mode: z
-        .enum(["replace", "append"])
-        .default("append")
-        .describe(
-          "How to update: 'append' (default - safely merge with existing) or 'replace' (complete overwrite - DELETES other fields!)",
-        ),
-    };
+      const modeParam = {
+        mode: z
+          .enum(["replace", "append"])
+          .default("append")
+          .describe(
+            "How to update: 'append' (default - safely merge with existing) or 'replace' (complete overwrite - DELETES other fields!)",
+          ),
+      };
 
-    tools.push(
-      createTool({
-        name: "update_working_memory",
-        description: template
-          ? `Update working memory. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>. Template: ${template}`
-          : `Update working memory with important context. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>.`,
-        parameters: z.object({ ...baseParams, ...modeParam }),
-        execute: async ({ content, mode }, oc) => {
-          await memory.updateWorkingMemory({
-            conversationId: resolvedMemory.conversationId,
-            userId: resolvedMemory.userId,
-            content,
-            options: {
-              mode: mode as MemoryUpdateMode | undefined,
-            },
-          });
+      tools.push(
+        createTool({
+          name: "update_working_memory",
+          description: template
+            ? `Update working memory. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>. Template: ${template}`
+            : `Update working memory with important context. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>.`,
+          parameters: z.object({ ...baseParams, ...modeParam }),
+          execute: async ({ content, mode }, oc) => {
+            await memory.updateWorkingMemory({
+              conversationId: resolvedMemory.conversationId,
+              userId: resolvedMemory.userId,
+              content,
+              options: {
+                mode: mode as MemoryUpdateMode | undefined,
+              },
+            });
 
-          // Update root span with final content
-          if (oc?.traceContext) {
-            const finalContent = await memory.getWorkingMemory({
+            // Update root span with final content
+            if (oc?.traceContext) {
+              const finalContent = await memory.getWorkingMemory({
+                conversationId: resolvedMemory.conversationId,
+                userId: resolvedMemory.userId,
+              });
+              const rootSpan = oc.traceContext.getRootSpan();
+              rootSpan.setAttribute("agent.workingMemory.finalContent", finalContent || "");
+              rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
+            }
+
+            return `Working memory ${mode === "replace" ? "replaced" : "updated (appended)"} successfully.`;
+          },
+        }),
+      );
+
+      // Clear Working Memory tool (optional, might not always be needed)
+      tools.push(
+        createTool({
+          name: "clear_working_memory",
+          description: "Clear the working memory content",
+          parameters: z.object({}),
+          execute: async (_, oc) => {
+            await memory.clearWorkingMemory({
               conversationId: resolvedMemory.conversationId,
               userId: resolvedMemory.userId,
             });
-            const rootSpan = oc.traceContext.getRootSpan();
-            rootSpan.setAttribute("agent.workingMemory.finalContent", finalContent || "");
-            rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
-          }
 
-          return `Working memory ${mode === "replace" ? "replaced" : "updated (appended)"} successfully.`;
-        },
-      }),
-    );
+            // Update root span to indicate cleared state
+            if (oc?.traceContext) {
+              const rootSpan = oc.traceContext.getRootSpan();
+              rootSpan.setAttribute("agent.workingMemory.finalContent", "");
+              rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
+            }
 
-    // Clear Working Memory tool (optional, might not always be needed)
-    tools.push(
-      createTool({
-        name: "clear_working_memory",
-        description: "Clear the working memory content",
-        parameters: z.object({}),
-        execute: async (_, oc) => {
-          await memory.clearWorkingMemory({
-            conversationId: resolvedMemory.conversationId,
-            userId: resolvedMemory.userId,
-          });
-
-          // Update root span to indicate cleared state
-          if (oc?.traceContext) {
-            const rootSpan = oc.traceContext.getRootSpan();
-            rootSpan.setAttribute("agent.workingMemory.finalContent", "");
-            rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
-          }
-
-          return "Working memory cleared.";
-        },
-      }),
-    );
+            return "Working memory cleared.";
+          },
+        }),
+      );
+    }
 
     return tools;
   }

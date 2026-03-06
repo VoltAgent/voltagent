@@ -417,6 +417,7 @@ describe("Agent Type System", () => {
           userId: "user-123",
           options: {
             contextLimit: 1000,
+            readOnly: true,
             semanticMemory: {
               enabled: true,
               semanticLimit: 3,

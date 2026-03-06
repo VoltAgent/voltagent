@@ -12,6 +12,7 @@ export interface ProcessedAgentOptions {
     userId?: string;
     options?: {
       contextLimit?: number;
+      readOnly?: boolean;
       semanticMemory?: {
         enabled?: boolean;
         semanticLimit?: number;

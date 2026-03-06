@@ -53,6 +53,7 @@ Default port is 3141, but may vary based on configuration.
       "conversationId": "string",
       "options": {
         "contextLimit": 10,
+        "readOnly": false,
         "semanticMemory": {
           "enabled": true,
           "semanticLimit": 5,

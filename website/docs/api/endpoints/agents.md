@@ -91,6 +91,7 @@ Generate a text response from an agent synchronously.
       "conversationId": "conv-456",
       "options": {
         "contextLimit": 10,
+        "readOnly": false,
         "conversationPersistence": {
           "mode": "step",
           "debounceMs": 200,
@@ -185,6 +186,7 @@ Generate a text response from an agent synchronously.
 | `memory.userId` | string | - | User ID for memory scoping |
 | `memory.conversationId` | string | - | Conversation ID for memory scoping |
 | `memory.options.contextLimit` | number | 10 | Message history limit |
+| `memory.options.readOnly` | boolean | `false` | Read memory context but disable memory writes for this call |
 | `memory.options.semanticMemory` | object | - | Semantic retrieval config |
 | `memory.options.semanticMemory.enabled` | boolean | - | Enable semantic retrieval for this call. Default: `undefined` (auto-enables if vectors are available). |
 | `memory.options.semanticMemory.semanticLimit` | number | 5 | Number of similar messages to retrieve |
@@ -218,6 +220,8 @@ Generate a text response from an agent synchronously.
 | `conversationPersistence.flushOnToolResult` | boolean | `true` | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult` |
 
 When both top-level legacy memory fields and `memory` envelope fields are provided, runtime resolution follows `resolveMemoryRuntimeOptions()` and values under `memory` take precedence.
+
+Use `memory.options.readOnly: true` when you need memory context reads without persisting new conversation state.
 
 **Response:**
 
