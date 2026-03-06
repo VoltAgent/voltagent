@@ -249,7 +249,9 @@ export async function handleChatStream(
     const memory =
       options.memory && typeof options.memory === "object" ? options.memory : undefined;
     const memoryConversationId =
-      memory && typeof memory.conversationId === "string" ? memory.conversationId : undefined;
+      memory && typeof memory.conversationId === "string" && memory.conversationId.trim().length > 0
+        ? memory.conversationId
+        : undefined;
     const memoryUserId =
       memory && typeof memory.userId === "string" && memory.userId.trim().length > 0
         ? memory.userId

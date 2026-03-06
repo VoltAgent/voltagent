@@ -85,6 +85,8 @@ describe("server-core: agent.handlers resumable memory envelope", () => {
         input: "hello",
         options: {
           resumableStream: true,
+          conversationId: "legacy-conv",
+          userId: "legacy-user",
           memory: {
             conversationId: "conv-1",
             userId: "user-1",
@@ -108,6 +110,52 @@ describe("server-core: agent.handlers resumable memory envelope", () => {
     );
     expect(deps.resumableStream.clearActiveStream).toHaveBeenCalledWith({
       conversationId: "conv-1",
+      agentId: "agent-1",
+      userId: "user-1",
+    });
+  });
+
+  it("handleChatStream should ignore blank memory.conversationId and fall back to legacy conversationId", async () => {
+    const logger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+    } as any;
+
+    const streamText = vi.fn(async () => ({
+      toUIMessageStreamResponse: vi.fn(() => new Response("ok", { status: 200 })),
+    }));
+
+    const deps = {
+      agentRegistry: {
+        getAgent: vi.fn(() => ({ streamText })),
+      },
+      resumableStreamDefault: false,
+      resumableStream: {
+        clearActiveStream: vi.fn(async () => undefined),
+      },
+    } as any;
+
+    const res = await handleChatStream(
+      "agent-1",
+      {
+        input: "hello",
+        options: {
+          resumableStream: true,
+          conversationId: "legacy-conv",
+          userId: "legacy-user",
+          memory: {
+            conversationId: "   ",
+            userId: "user-1",
+          },
+        },
+      },
+      deps,
+      logger,
+    );
+
+    expect(res.status).toBe(200);
+    expect(deps.resumableStream.clearActiveStream).toHaveBeenCalledWith({
+      conversationId: "legacy-conv",
       agentId: "agent-1",
       userId: "user-1",
     });

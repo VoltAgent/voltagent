@@ -1973,6 +1973,98 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(matchingCall).toBeDefined();
     });
+
+    it("should store resolved memory envelope on operation context", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("input", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        contextLimit: 99,
+        semanticMemory: {
+          enabled: true,
+          semanticLimit: 9,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 5,
+            semanticMemory: {
+              enabled: false,
+              semanticThreshold: 0.8,
+            },
+            conversationPersistence: {
+              mode: "step",
+              debounceMs: 120,
+            },
+          },
+        },
+      });
+
+      expect(operationContext.resolvedMemory).toMatchObject({
+        userId: "memory-user",
+        conversationId: "memory-conv",
+        contextLimit: 5,
+        semanticMemory: {
+          enabled: false,
+          semanticThreshold: 0.8,
+        },
+        conversationPersistence: {
+          mode: "step",
+          debounceMs: 120,
+        },
+      });
+    });
+
+    it("should fallback to parent operation context resolved memory when call overrides are missing", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const parentOperationContext = (agent as any).createOperationContext("parent-input", {
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+          options: {
+            contextLimit: 4,
+            semanticMemory: {
+              enabled: true,
+              semanticLimit: 2,
+            },
+            conversationPersistence: {
+              mode: "finish",
+            },
+          },
+        },
+      });
+
+      const resolvedFromParent = (agent as any).resolveMemoryRuntimeOptions({
+        parentOperationContext,
+      });
+
+      expect(resolvedFromParent).toMatchObject({
+        userId: "memory-user",
+        conversationId: "memory-conv",
+        contextLimit: 4,
+        semanticMemory: {
+          enabled: true,
+          semanticLimit: 2,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
+      });
+    });
   });
 
   describe("Global Memory Defaults", () => {

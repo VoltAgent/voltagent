@@ -183,6 +183,7 @@ import type {
   AgentSummarizationOptions,
   AgentToolRoutingState,
   ApiToolInfo,
+  CommonResolvedRuntimeMemoryOptions,
   DynamicValue,
   DynamicValueOptions,
   InputGuardrail,
@@ -3467,23 +3468,29 @@ export class Agent {
     });
   }
 
-  private resolveMemoryRuntimeOptions(options?: BaseGenerationOptions): {
-    userId?: string;
-    conversationId?: string;
-    contextLimit?: number;
-    semanticMemory?: SemanticMemoryOptions;
-    conversationPersistence?: AgentConversationPersistenceOptions;
-  } {
+  private resolveMemoryRuntimeOptions(
+    options?: BaseGenerationOptions,
+  ): CommonResolvedRuntimeMemoryOptions {
     const memory = options?.memory;
     const memoryOptions = memory?.options;
+    const parentResolvedMemory = options?.parentOperationContext?.resolvedMemory;
+    const parentUserId = parentResolvedMemory?.userId ?? options?.parentOperationContext?.userId;
+    const parentConversationId =
+      parentResolvedMemory?.conversationId ?? options?.parentOperationContext?.conversationId;
 
     return {
-      userId: memory?.userId ?? options?.userId,
-      conversationId: memory?.conversationId ?? options?.conversationId,
-      contextLimit: memoryOptions?.contextLimit ?? options?.contextLimit,
-      semanticMemory: memoryOptions?.semanticMemory ?? options?.semanticMemory,
+      userId: memory?.userId ?? options?.userId ?? parentUserId,
+      conversationId: memory?.conversationId ?? options?.conversationId ?? parentConversationId,
+      contextLimit:
+        memoryOptions?.contextLimit ?? options?.contextLimit ?? parentResolvedMemory?.contextLimit,
+      semanticMemory:
+        memoryOptions?.semanticMemory ??
+        options?.semanticMemory ??
+        parentResolvedMemory?.semanticMemory,
       conversationPersistence:
-        memoryOptions?.conversationPersistence ?? options?.conversationPersistence,
+        memoryOptions?.conversationPersistence ??
+        options?.conversationPersistence ??
+        parentResolvedMemory?.conversationPersistence,
     };
   }
 
@@ -3624,6 +3631,7 @@ export class Agent {
       abortController,
       userId: resolvedMemory.userId,
       conversationId: resolvedMemory.conversationId,
+      resolvedMemory: { ...resolvedMemory },
       workspace: this.workspace,
       parentAgentId: options?.parentAgentId,
       traceContext,
@@ -4273,63 +4281,9 @@ export class Agent {
   ): Promise<UIMessage[]> {
     const resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
-
-    // Get system message with retriever context and working memory
-    const systemMessage = await this.getSystemMessage(resolvedInput, oc, options, runtimeToolkits);
-    if (systemMessage) {
-      const systemMessagesAsUI: UIMessage[] = (() => {
-        if (typeof systemMessage === "string") {
-          return [
-            {
-              id: randomUUID(),
-              role: "system",
-              parts: [
-                {
-                  type: "text",
-                  text: systemMessage,
-                },
-              ],
-            },
-          ];
-        }
-
-        if (Array.isArray(systemMessage)) {
-          return convertModelMessagesToUIMessages(systemMessage);
-        }
-
-        return convertModelMessagesToUIMessages([systemMessage]);
-      })();
-
-      for (const systemUIMessage of systemMessagesAsUI) {
-        messages.push(systemUIMessage);
-      }
-
-      const instructionText = systemMessagesAsUI
-        .flatMap((msg) =>
-          msg.parts.flatMap((part) =>
-            part.type === "text" && typeof (part as any).text === "string"
-              ? [(part as any).text as string]
-              : [],
-          ),
-        )
-        .join("\n\n");
-
-      if (instructionText) {
-        oc.traceContext.setInstructions(instructionText);
-      }
-    }
-
-    const middlewareRetryFeedback = this.consumeMiddlewareRetryFeedback(oc);
-    if (middlewareRetryFeedback) {
-      messages.push({
-        id: randomUUID(),
-        role: "system",
-        parts: [{ type: "text", text: middlewareRetryFeedback }],
-      });
-    }
-
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
     const canIUseMemory = resolvedMemory.userId && resolvedMemory.conversationId;
+    const memoryContextMessages: UIMessage[] = [];
 
     // Load memory context if available (already returns UIMessages)
     if (canIUseMemory) {
@@ -4412,6 +4366,9 @@ export class Agent {
 
             // Update conversation ID
             oc.conversationId = result.conversationId;
+            if (oc.resolvedMemory) {
+              oc.resolvedMemory.conversationId = result.conversationId;
+            }
 
             buffer.ingestUIMessages(result.messages, true);
 
@@ -4430,10 +4387,12 @@ export class Agent {
           // Ensure conversation ID exists for semantic search
           if (isSemanticSearch && !oc.conversationId) {
             oc.conversationId = randomUUID();
+            if (oc.resolvedMemory) {
+              oc.resolvedMemory.conversationId = oc.conversationId;
+            }
           }
 
-          // Add memory messages
-          messages.push(...memoryResult);
+          memoryContextMessages.push(...memoryResult);
 
           // When using semantic search, also persist the current input in background
           // so user messages are stored and embedded consistently.
@@ -4457,6 +4416,64 @@ export class Agent {
           throw error;
         }
       }
+    }
+
+    // Get system message with retriever context and working memory
+    const systemMessage = await this.getSystemMessage(resolvedInput, oc, options, runtimeToolkits);
+    if (systemMessage) {
+      const systemMessagesAsUI: UIMessage[] = (() => {
+        if (typeof systemMessage === "string") {
+          return [
+            {
+              id: randomUUID(),
+              role: "system",
+              parts: [
+                {
+                  type: "text",
+                  text: systemMessage,
+                },
+              ],
+            },
+          ];
+        }
+
+        if (Array.isArray(systemMessage)) {
+          return convertModelMessagesToUIMessages(systemMessage);
+        }
+
+        return convertModelMessagesToUIMessages([systemMessage]);
+      })();
+
+      for (const systemUIMessage of systemMessagesAsUI) {
+        messages.push(systemUIMessage);
+      }
+
+      const instructionText = systemMessagesAsUI
+        .flatMap((msg) =>
+          msg.parts.flatMap((part) =>
+            part.type === "text" && typeof (part as any).text === "string"
+              ? [(part as any).text as string]
+              : [],
+          ),
+        )
+        .join("\n\n");
+
+      if (instructionText) {
+        oc.traceContext.setInstructions(instructionText);
+      }
+    }
+
+    const middlewareRetryFeedback = this.consumeMiddlewareRetryFeedback(oc);
+    if (middlewareRetryFeedback) {
+      messages.push({
+        id: randomUUID(),
+        role: "system",
+        parts: [{ type: "text", text: middlewareRetryFeedback }],
+      });
+    }
+
+    if (memoryContextMessages.length > 0) {
+      messages.push(...memoryContextMessages);
     }
 
     // Add current input
@@ -4548,7 +4565,12 @@ export class Agent {
     options?: BaseGenerationOptions,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<BaseMessage | BaseMessage[]> {
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    const resolvedMemory = {
+      ...this.resolveMemoryRuntimeOptions(options),
+      ...(oc.resolvedMemory ?? {}),
+    };
+    const workingMemoryConversationId = oc.conversationId ?? resolvedMemory.conversationId;
+    const workingMemoryUserId = oc.userId ?? resolvedMemory.userId;
 
     // Resolve dynamic instructions
     const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
@@ -4622,14 +4644,14 @@ export class Agent {
 
     // Get working memory instructions if available
     let workingMemoryContext: string | null = null;
-    if (this.hasWorkingMemorySupport() && resolvedMemory.conversationId) {
+    if (this.hasWorkingMemorySupport() && workingMemoryConversationId) {
       const memory = this.memoryManager.getMemory();
 
       if (memory) {
         // Get full working memory instructions with current data
         const workingMemoryInstructions = await memory.getWorkingMemoryInstructions({
-          conversationId: resolvedMemory.conversationId,
-          userId: resolvedMemory.userId,
+          conversationId: workingMemoryConversationId,
+          userId: workingMemoryUserId,
         });
 
         if (workingMemoryInstructions) {
@@ -4642,8 +4664,8 @@ export class Agent {
 
           // Get the raw working memory content
           const workingMemoryContent = await memory.getWorkingMemory({
-            conversationId: resolvedMemory.conversationId,
-            userId: resolvedMemory.userId,
+            conversationId: workingMemoryConversationId,
+            userId: workingMemoryUserId,
           });
 
           if (workingMemoryContent) {
@@ -7830,11 +7852,28 @@ export class Agent {
         // Extract OperationContext from options if available
         // Since ToolExecuteOptions extends Partial<OperationContext>, we can extract the fields
         const oc = options as OperationContext | undefined;
+        const resolvedMemory = options?.resolvedMemory;
+        const memoryBehaviorOverrides = resolvedMemory
+          ? {
+              ...(resolvedMemory.contextLimit !== undefined
+                ? { contextLimit: resolvedMemory.contextLimit }
+                : {}),
+              ...(resolvedMemory.semanticMemory !== undefined
+                ? { semanticMemory: resolvedMemory.semanticMemory }
+                : {}),
+              ...(resolvedMemory.conversationPersistence !== undefined
+                ? { conversationPersistence: resolvedMemory.conversationPersistence }
+                : {}),
+            }
+          : undefined;
         const memory =
-          options?.conversationId || options?.userId
+          resolvedMemory || options?.conversationId || options?.userId
             ? {
-                conversationId: options?.conversationId,
-                userId: options?.userId,
+                conversationId: resolvedMemory?.conversationId ?? options?.conversationId,
+                userId: resolvedMemory?.userId ?? options?.userId,
+                ...(memoryBehaviorOverrides && Object.keys(memoryBehaviorOverrides).length > 0
+                  ? { options: memoryBehaviorOverrides }
+                  : {}),
               }
             : undefined;
 

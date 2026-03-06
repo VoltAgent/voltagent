@@ -435,6 +435,13 @@ describe("Agent Type System", () => {
         conversationId: "legacy-conversation",
         userId: "legacy-user",
         contextLimit: 250,
+        semanticMemory: {
+          enabled: true,
+          semanticThreshold: 0.75,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
       };
 
       const internalOptions: InternalGenerateOptions = {

@@ -88,4 +88,21 @@ describe("GenerateOptionsSchema", () => {
 
     expect(() => GenerateOptionsSchema.parse(payload)).not.toThrow();
   });
+
+  it("rejects invalid nested memory.options values", () => {
+    const payload = {
+      memory: {
+        userId: "user-1",
+        conversationId: "conv-1",
+        options: {
+          contextLimit: "12",
+          semanticMemory: {
+            mergeStrategy: "invalid-strategy",
+          },
+        },
+      },
+    };
+
+    expect(() => GenerateOptionsSchema.parse(payload)).toThrow();
+  });
 });

@@ -361,6 +361,10 @@ export function ChatInterface() {
 | `userId`                                                   | string  | Deprecated: use `memory.userId`                                                |
 | `conversationId`                                           | string  | Deprecated: use `memory.conversationId`                                        |
 | `contextLimit`                                             | number  | Deprecated: use `memory.options.contextLimit`                                  |
+| `semanticMemory`                                           | object  | Deprecated: use `memory.options.semanticMemory`                                |
+| `conversationPersistence.mode`                             | string  | Deprecated: use `memory.options.conversationPersistence.mode`                  |
+| `conversationPersistence.debounceMs`                       | number  | Deprecated: use `memory.options.conversationPersistence.debounceMs`            |
+| `conversationPersistence.flushOnToolResult`                | boolean | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult`     |
 
 Example:
 
@@ -379,6 +383,8 @@ options: {
   },
 }
 ```
+
+When both top-level legacy memory fields and `memory` envelope fields are provided, `memory` values are used.
 
 ### AI SDK Core Options
 

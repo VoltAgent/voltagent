@@ -962,6 +962,14 @@ export interface CommonRuntimeMemoryEnvelope {
   options?: CommonRuntimeMemoryBehaviorOptions;
 }
 
+export interface CommonResolvedRuntimeMemoryOptions {
+  userId?: string;
+  conversationId?: string;
+  contextLimit?: number;
+  semanticMemory?: CommonSemanticMemoryOptions;
+  conversationPersistence?: AgentConversationPersistenceOptions;
+}
+
 export interface CommonGenerateOptions {
   // Common LLM provider properties
   provider?: ProviderOptions;
@@ -986,6 +994,18 @@ export interface CommonGenerateOptions {
    */
   // Context limit for conversation
   contextLimit?: number;
+
+  /**
+   * @deprecated Use `memory.options.semanticMemory` instead.
+   */
+  // Semantic memory runtime overrides
+  semanticMemory?: CommonSemanticMemoryOptions;
+
+  /**
+   * @deprecated Use `memory.options.conversationPersistence` instead.
+   */
+  // Conversation persistence runtime overrides
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Specific tools to use for this generation (overrides agent's tools)
   tools?: BaseTool[];
@@ -1232,6 +1252,9 @@ export type OperationContext = {
 
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
+
+  /** Resolved runtime memory options (memory envelope preferred, legacy as fallback) */
+  resolvedMemory?: CommonResolvedRuntimeMemoryOptions;
 
   /** Workspace configured on the executing agent (if any). */
   workspace?: Workspace;

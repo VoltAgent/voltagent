@@ -196,6 +196,11 @@ Generate a text response from an agent synchronously.
 | `userId` | string | - | Deprecated: use `memory.userId` |
 | `conversationId` | string | - | Deprecated: use `memory.conversationId` |
 | `contextLimit` | number | 10 | Deprecated: use `memory.options.contextLimit` |
+| `semanticMemory` | object | - | Deprecated: use `memory.options.semanticMemory` |
+| `semanticMemory.enabled` | boolean | auto | Deprecated: use `memory.options.semanticMemory.enabled` |
+| `semanticMemory.semanticLimit` | number | 5 | Deprecated: use `memory.options.semanticMemory.semanticLimit` |
+| `semanticMemory.semanticThreshold` | number | 0.7 | Deprecated: use `memory.options.semanticMemory.semanticThreshold` |
+| `semanticMemory.mergeStrategy` | string | `"append"` | Deprecated: use `memory.options.semanticMemory.mergeStrategy` |
 | `maxSteps` | number | - | Max iteration steps (for tool use) |
 | `temperature` | number | 0.7 | Randomness (0-1) |
 | `maxOutputTokens` | number | 4000 | Max tokens to generate |
@@ -209,6 +214,8 @@ Generate a text response from an agent synchronously.
 | `conversationPersistence.mode` | string | `"step"` | Deprecated: use `memory.options.conversationPersistence.mode` |
 | `conversationPersistence.debounceMs` | number | `200` | Deprecated: use `memory.options.conversationPersistence.debounceMs` |
 | `conversationPersistence.flushOnToolResult` | boolean | `true` | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult` |
+
+When both top-level legacy memory fields and `memory` envelope fields are provided, runtime resolution follows `resolveMemoryRuntimeOptions()` and values under `memory` take precedence.
 
 **Response:**
 
