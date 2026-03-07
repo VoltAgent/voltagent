@@ -150,6 +150,7 @@ export const runCLI = async (): Promise<void> => {
             { name: `Google (${AI_PROVIDER_CONFIG.google.modelName})`, value: "google" },
             { name: `Groq (${AI_PROVIDER_CONFIG.groq.modelName})`, value: "groq" },
             { name: `Mistral (${AI_PROVIDER_CONFIG.mistral.modelName})`, value: "mistral" },
+            { name: `Novita (${AI_PROVIDER_CONFIG.novita.modelName})`, value: "novita" },
             { name: `Ollama (${AI_PROVIDER_CONFIG.ollama.modelName} - Local)`, value: "ollama" },
           ],
           default: "openai",
