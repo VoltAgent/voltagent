@@ -67,8 +67,8 @@ export const AI_PROVIDER_CONFIG = {
   novita: {
     name: "Novita",
     envVar: "NOVITA_API_KEY",
-    model: "novita-ai/deepseek/deepseek-v3.1",
-    modelName: "DeepSeek V3.1",
+    model: "deepseek/deepseek-v3.2",
+    modelName: "DeepSeek V3.2",
     apiKeyUrl: "https://novita.ai/dashboard/settings/api-keys",
   },
 } as const;
