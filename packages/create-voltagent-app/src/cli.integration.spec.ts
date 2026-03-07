@@ -109,6 +109,14 @@ const scenarios: Scenario[] = [
     aiProvider: "ollama",
     ide: "none",
   },
+  {
+    name: "novita-hono-pnpm-none",
+    server: "hono",
+    packageManager: "pnpm",
+    aiProvider: "novita",
+    ide: "none",
+    apiKey: "novita-key-1",
+  },
 ];
 
 const waitUntil = async (
@@ -317,7 +325,7 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
     expect(serverCoverage).toEqual(new Set<ServerProvider>(["hono", "elysia"]));
     expect(packageManagerCoverage).toEqual(new Set<PackageManager>(["pnpm", "bun", "yarn", "npm"]));
     expect(providerCoverage).toEqual(
-      new Set<AIProvider>(["openai", "anthropic", "google", "groq", "mistral", "ollama"]),
+      new Set<AIProvider>(["openai", "anthropic", "google", "groq", "mistral", "ollama", "novita"]),
     );
     expect(ideCoverage).toEqual(
       new Set<NonNullable<ProjectOptions["ide"]>>(["none", "cursor", "windsurf", "vscode"]),

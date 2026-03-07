@@ -1,4 +1,4 @@
-export type AIProvider = "openai" | "anthropic" | "google" | "groq" | "mistral" | "ollama";
+export type AIProvider = "openai" | "anthropic" | "google" | "groq" | "mistral" | "ollama" | "novita";
 export type ServerProvider = "hono" | "elysia";
 export type PackageManager = "npm" | "bun" | "yarn" | "pnpm";
 
@@ -63,6 +63,13 @@ export const AI_PROVIDER_CONFIG = {
     model: "ollama/llama3.2",
     modelName: "Llama 3.2",
     apiKeyUrl: "https://ollama.com/download",
+  },
+  novita: {
+    name: "Novita",
+    envVar: "NOVITA_API_KEY",
+    model: "deepseek/deepseek-v3.2",
+    modelName: "DeepSeek V3.2",
+    apiKeyUrl: "https://novita.ai/dashboard/settings/api-keys",
   },
 } as const;
 
