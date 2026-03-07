@@ -125,6 +125,32 @@ const agent = new Agent({
 });
 ```
 
+For custom prompt formatting, use `workspace.skills.getPromptContext(...)` and build your own section:
+
+```ts
+const promptContext = await workspace.skills?.getPromptContext({
+  refresh: true,
+  includeAvailable: true,
+  includeActivated: true,
+});
+
+const skillLines =
+  promptContext && promptContext.available.length > 0
+    ? promptContext.available.map(
+        (skill) => `- ${skill.name}: ${skill.description ?? "No description"} (path: ${skill.path})`
+      )
+    : ["- (none discovered)"];
+
+const customSkillsPrompt = [
+  "## Skills",
+  "",
+  "A skill is a set of local instructions stored in a `SKILL.md` file.",
+  "",
+  "### Available Skills",
+  ...skillLines,
+].join("\n");
+```
+
 Disable auto prompt injection:
 
 ```ts

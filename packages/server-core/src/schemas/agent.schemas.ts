@@ -87,16 +87,27 @@ export const WorkspaceReadFileSchema = z.object({
 });
 
 export const WorkspaceSkillMetadataSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  version: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  path: z.string(),
-  root: z.string(),
-  references: z.array(z.string()).optional(),
-  scripts: z.array(z.string()).optional(),
-  assets: z.array(z.string()).optional(),
+  id: z.string().describe("Unique skill identifier (for example `/skills/playwright-cli`)"),
+  name: z.string().describe("Skill name"),
+  description: z.string().optional().describe("Human-readable skill description"),
+  version: z.string().optional().describe("Skill version from `SKILL.md` frontmatter"),
+  tags: z.array(z.string()).optional().describe("Optional skill tags from frontmatter"),
+  path: z
+    .string()
+    .describe("Full path to `SKILL.md` (for example `/skills/playwright-cli/SKILL.md`)"),
+  root: z.string().describe("Skill root directory path (for example `/skills/playwright-cli`)"),
+  references: z
+    .array(z.string())
+    .optional()
+    .describe("Readable files under `references/` (for example `references/running-code.md`)"),
+  scripts: z
+    .array(z.string())
+    .optional()
+    .describe("Readable scripts under `scripts/` (for example `scripts/run.sh`)"),
+  assets: z
+    .array(z.string())
+    .optional()
+    .describe("Readable assets under `assets/` (for example `assets/input.csv`)"),
 });
 
 export const WorkspaceSkillListItemSchema = WorkspaceSkillMetadataSchema.extend({
