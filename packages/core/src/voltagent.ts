@@ -5,6 +5,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { NoOutputGeneratedError } from "ai";
 import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
+import { isVoltAgentError } from "./agent/errors";
 import type { AgentConversationPersistenceOptions } from "./agent/types";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
@@ -432,7 +433,10 @@ export class VoltAgent {
     // Handle unhandled promise rejections to prevent server crashes
     // This is particularly important for AI SDK's NoOutputGeneratedError
     process.on("unhandledRejection", (reason) => {
+      const isStructuredOutputWrapperError =
+        isVoltAgentError(reason) && reason.code === "STRUCTURED_OUTPUT_NOT_GENERATED";
       const isNoOutputGeneratedError =
+        isStructuredOutputWrapperError ||
         reason instanceof NoOutputGeneratedError ||
         (reason instanceof Error && reason.name === "AI_NoOutputGeneratedError");
 

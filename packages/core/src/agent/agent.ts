@@ -1192,6 +1192,13 @@ export class Agent {
                     }),
                   );
 
+                  this.ensureStructuredOutputGenerated({
+                    result: response,
+                    output,
+                    tools,
+                    maxSteps,
+                  });
+
                   const resolvedProviderUsage = response.usage
                     ? await Promise.resolve(response.usage)
                     : undefined;
@@ -1206,13 +1213,6 @@ export class Agent {
                   throw error;
                 }
               },
-            });
-
-            this.ensureStructuredOutputGenerated({
-              result,
-              output,
-              tools,
-              maxSteps,
             });
 
             addModelAttributesToSpan(
@@ -5261,6 +5261,10 @@ export class Agent {
   }
 
   private isRetryableError(error: unknown): boolean {
+    if (isVoltAgentError(error) && error.code === "STRUCTURED_OUTPUT_NOT_GENERATED") {
+      return true;
+    }
+
     const retryable = (error as { isRetryable?: boolean } | undefined)?.isRetryable;
     if (typeof retryable === "boolean") {
       return retryable;
