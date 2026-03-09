@@ -29,6 +29,7 @@ import {
   type FinishReason,
   type InferGenerateOutput,
   type LanguageModelUsage,
+  NoOutputGeneratedError,
   type Output,
   type Warning,
   consumeStream,
@@ -1190,6 +1191,13 @@ export class Agent {
                       onStepFinish: this.createStepHandler(oc, options),
                     }),
                   );
+
+                  this.ensureStructuredOutputGenerated({
+                    result: response,
+                    output,
+                    tools,
+                    maxSteps,
+                  });
 
                   const resolvedProviderUsage = response.usage
                     ? await Promise.resolve(response.usage)
@@ -3443,6 +3451,64 @@ export class Agent {
     };
   }
 
+  private ensureStructuredOutputGenerated<
+    TOOLS extends ToolSet,
+    OUTPUT extends OutputSpec,
+  >(params: {
+    result: GenerateTextResult<TOOLS, OUTPUT>;
+    output: OUTPUT | undefined;
+    tools: Record<string, any>;
+    maxSteps: number;
+  }): void {
+    const { result, output, tools, maxSteps } = params;
+    if (!output) {
+      return;
+    }
+
+    try {
+      void result.output;
+    } catch (error) {
+      const isNoOutputGeneratedError =
+        error instanceof NoOutputGeneratedError ||
+        (error instanceof Error && error.name === "AI_NoOutputGeneratedError");
+
+      if (!isNoOutputGeneratedError) {
+        throw error;
+      }
+
+      const { toolCalls } = this.collectToolDataFromResult(result);
+      const configuredToolCount = Object.keys(tools ?? {}).length;
+      const stepCount = result.steps?.length ?? 0;
+      const finishReason = result.finishReason ?? "unknown";
+      const reachedMaxSteps = stepCount >= maxSteps;
+
+      const guidance =
+        configuredToolCount > 0 || toolCalls.length > 0
+          ? "When tools are enabled, ensure the model emits a final non-tool response that matches the output schema, or split this into two calls (tools first, schema formatting second)."
+          : "Ensure the model emits a final response that matches the requested output schema.";
+
+      const maxStepHint = reachedMaxSteps
+        ? ` Generation stopped after ${stepCount} steps (maxSteps=${maxSteps}).`
+        : "";
+
+      throw createVoltAgentError(
+        `Structured output was requested but no final output was generated (finishReason: ${finishReason}). ${guidance}${maxStepHint}`,
+        {
+          stage: "response_parsing",
+          code: "STRUCTURED_OUTPUT_NOT_GENERATED",
+          originalError: error,
+          metadata: {
+            finishReason,
+            stepCount,
+            maxSteps,
+            configuredToolCount,
+            toolCallCount: toolCalls.length,
+          },
+        },
+      );
+    }
+  }
+
   /**
    * Create execution context
    */
@@ -5195,6 +5261,10 @@ export class Agent {
   }
 
   private isRetryableError(error: unknown): boolean {
+    if (isVoltAgentError(error) && error.code === "STRUCTURED_OUTPUT_NOT_GENERATED") {
+      return true;
+    }
+
     const retryable = (error as { isRetryable?: boolean } | undefined)?.isRetryable;
     if (typeof retryable === "boolean") {
       return retryable;

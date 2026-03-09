@@ -2,8 +2,10 @@ import type { Logger } from "@voltagent/internal";
 import type { A2AServerDeps, A2AServerFactory, A2AServerLike } from "@voltagent/internal/a2a";
 import type { MCPServerDeps, MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { NoOutputGeneratedError } from "ai";
 import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
+import { isVoltAgentError } from "./agent/errors";
 import type { AgentConversationPersistenceOptions } from "./agent/types";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
@@ -431,9 +433,19 @@ export class VoltAgent {
     // Handle unhandled promise rejections to prevent server crashes
     // This is particularly important for AI SDK's NoOutputGeneratedError
     process.on("unhandledRejection", (reason) => {
+      const isStructuredOutputWrapperError =
+        isVoltAgentError(reason) && reason.code === "STRUCTURED_OUTPUT_NOT_GENERATED";
+      const isNoOutputGeneratedError =
+        isStructuredOutputWrapperError ||
+        reason instanceof NoOutputGeneratedError ||
+        (reason instanceof Error && reason.name === "AI_NoOutputGeneratedError");
+
       this.logger.error("[VoltAgent] Unhandled Promise Rejection:", {
         reason: reason instanceof Error ? reason.message : reason,
         stack: reason instanceof Error ? reason.stack : undefined,
+        hint: isNoOutputGeneratedError
+          ? "Structured output was requested but no final output was generated. If tools are enabled, ensure a final schema-matching response or split into two calls."
+          : undefined,
       });
       // Don't crash the server, just log the error
       // In production, you might want to send this to an error tracking service

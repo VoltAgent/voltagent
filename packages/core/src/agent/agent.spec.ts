@@ -799,6 +799,114 @@ Use pandas and summarize findings.`.split("\n"),
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       expect(callArgs.messages).toContain(injectedModelMessage);
     });
+
+    it("should throw a descriptive error when structured output is missing", async () => {
+      const tool = new Tool({
+        name: "echo_tool",
+        description: "Echo tool",
+        parameters: z.object({ value: z.string() }),
+        execute: async ({ value }) => ({ echoed: value }),
+      });
+
+      const agent = new Agent({
+        name: "StructuredOutputAgent",
+        instructions: "Use tools and return structured output",
+        model: mockModel as any,
+        tools: [tool],
+        maxRetries: 0,
+      });
+
+      const toolCall = {
+        type: "tool-call" as const,
+        toolCallId: "call-1",
+        toolName: "echo_tool",
+        input: { value: "hello" },
+      };
+      const toolResult = {
+        type: "tool-result" as const,
+        toolCallId: "call-1",
+        toolName: "echo_tool",
+        input: { value: "hello" },
+        output: { echoed: "hello" },
+      };
+
+      const mockResponse = {
+        text: "Tool call completed.",
+        content: [{ type: "text", text: "Tool call completed." }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [toolCall],
+        toolResults: [toolResult],
+        finishReason: "tool-calls",
+        usage: {
+          inputTokens: 12,
+          outputTokens: 6,
+          totalTokens: 18,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [
+          {
+            text: "Tool call completed.",
+            content: [{ type: "text", text: "Tool call completed." }],
+            reasoning: [],
+            reasoningText: undefined,
+            files: [],
+            sources: [],
+            toolCalls: [toolCall],
+            staticToolCalls: [],
+            dynamicToolCalls: [],
+            toolResults: [toolResult],
+            staticToolResults: [],
+            dynamicToolResults: [],
+            finishReason: "tool-calls",
+            usage: {
+              inputTokens: 12,
+              outputTokens: 6,
+              totalTokens: 18,
+            },
+            warnings: [],
+            request: {},
+            response: {
+              id: "test-response-step-1",
+              modelId: "test-model",
+              timestamp: new Date(),
+              messages: [],
+            },
+            providerMetadata: undefined,
+          },
+        ],
+        get output() {
+          throw new ai.NoOutputGeneratedError();
+        },
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const resultPromise = agent.generateText("Use the tool and return JSON", {
+        output: ai.Output.object({
+          schema: z.object({
+            message: z.string(),
+          }),
+        }),
+      });
+
+      await expect(resultPromise).rejects.toThrow(
+        "Structured output was requested but no final output was generated",
+      );
+      await expect(resultPromise).rejects.toMatchObject({
+        name: "VoltAgentError",
+        stage: "response_parsing",
+        code: "STRUCTURED_OUTPUT_NOT_GENERATED",
+      });
+    });
   });
 
   describe("Stream Text", () => {
@@ -2824,6 +2932,141 @@ Use pandas and summarize findings.`.split("\n"),
       expect(vi.mocked(ai.generateText).mock.calls[0][0].model).toBe(mockModel);
       expect(vi.mocked(ai.generateText).mock.calls[1][0].model).toBe(fallbackModel);
       expect(vi.mocked(ai.generateText).mock.calls[1][0].maxRetries).toBe(0);
+    });
+
+    it("should treat missing structured output as fallback-eligible and try next model", async () => {
+      const fallbackModel = new MockLanguageModelV3({
+        modelId: "fallback-model",
+        doGenerate: {
+          content: [{ type: "text", text: "Fallback structured response" }],
+          finishReason: "stop",
+          usage: {
+            inputTokens: 10,
+            outputTokens: 5,
+            totalTokens: 15,
+            inputTokenDetails: {
+              noCacheTokens: 10,
+              cacheReadTokens: 0,
+              cacheWriteTokens: 0,
+            },
+            outputTokenDetails: {
+              textTokens: 5,
+              reasoningTokens: 0,
+            },
+          },
+          warnings: [],
+        },
+      });
+
+      const tool = new Tool({
+        name: "echo_tool",
+        description: "Echo tool",
+        parameters: z.object({ value: z.string() }),
+        execute: async ({ value }) => ({ echoed: value }),
+      });
+
+      const agent = new Agent({
+        name: "StructuredFallbackAgent",
+        instructions: "Use tools and return structured output",
+        model: [
+          { model: mockModel as any, maxRetries: 0 },
+          { model: fallbackModel as any, maxRetries: 0 },
+        ],
+        tools: [tool],
+      });
+
+      const primaryResponse = {
+        text: "Tool call completed.",
+        content: [{ type: "text", text: "Tool call completed." }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [
+          {
+            type: "tool-call" as const,
+            toolCallId: "call-1",
+            toolName: "echo_tool",
+            input: { value: "hello" },
+          },
+        ],
+        toolResults: [
+          {
+            type: "tool-result" as const,
+            toolCallId: "call-1",
+            toolName: "echo_tool",
+            input: { value: "hello" },
+            output: { echoed: "hello" },
+          },
+        ],
+        finishReason: "tool-calls",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response-primary",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+        get output() {
+          throw new ai.NoOutputGeneratedError();
+        },
+      };
+
+      const fallbackResponse = {
+        text: "Fallback structured response",
+        content: [{ type: "text", text: "Fallback structured response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response-fallback",
+          modelId: "fallback-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+        output: { message: "from fallback" },
+      };
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        if (args.model === mockModel) {
+          return primaryResponse as any;
+        }
+        if (args.model === fallbackModel) {
+          return fallbackResponse as any;
+        }
+        throw new Error("Unexpected model");
+      });
+
+      const result = await agent.generateText("Generate structured output", {
+        output: ai.Output.object({
+          schema: z.object({
+            message: z.string(),
+          }),
+        }),
+      });
+
+      expect(result.text).toBe("Fallback structured response");
+      expect(result.output).toEqual({ message: "from fallback" });
+      expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(ai.generateText).mock.calls[0][0].model).toBe(mockModel);
+      expect(vi.mocked(ai.generateText).mock.calls[1][0].model).toBe(fallbackModel);
     });
 
     it("should retry the same model before returning a response", async () => {
