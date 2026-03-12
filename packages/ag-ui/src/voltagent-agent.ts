@@ -276,7 +276,7 @@ const isToolMessage = (message: Message): message is ToolMessage => message.role
 
 type VoltUIPart =
   | { type: "text"; text: string }
-  | { type: "tool-call"; toolCallId: string; toolName: string; args?: unknown }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input?: unknown }
   | { type: "tool-result"; toolCallId?: string; toolName?: string; output?: unknown };
 
 type VoltUIMessage = {
@@ -311,13 +311,13 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
       }
 
       for (const call of msg.toolCalls ?? []) {
-        const args = safelyParseJson(call.function.arguments);
+        const input = safelyParseJson(call.function.arguments);
         toolNameById.set(call.id, call.function.name);
         parts.push({
           type: "tool-call",
           toolCallId: call.id,
           toolName: call.function.name,
-          args,
+          input,
         });
       }
 
