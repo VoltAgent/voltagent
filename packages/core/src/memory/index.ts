@@ -164,12 +164,30 @@ export class Memory {
 
   /**
    * Clear messages for a user
+   * Also purges vector embeddings when a vector adapter is configured,
+   * preventing orphaned embeddings from surfacing in future semantic searches.
    */
   async clearMessages(
     userId: string,
     conversationId?: string,
     context?: OperationContext,
   ): Promise<void> {
+    // If vector adapter is configured and a conversationId is given, clean up vectors first
+    if (this.vector && conversationId) {
+      try {
+        const messages = await this.storage.getMessages(userId, conversationId);
+        if (messages.length > 0) {
+          const vectorIds = messages.map((msg) => `msg_${conversationId}_${msg.id}`);
+          await this.vector.deleteBatch(vectorIds);
+        }
+      } catch (error) {
+        console.warn(
+          `Failed to delete vectors when clearing messages for conversation ${conversationId}:`,
+          error,
+        );
+      }
+    }
+
     return this.storage.clearMessages(userId, conversationId, context);
   }
 
