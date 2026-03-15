@@ -455,5 +455,53 @@ describe("Memory V2 - Semantic Search", () => {
         expect.arrayContaining([`msg_${conversationId}_msg1`, `msg_${conversationId}_msg2`]),
       );
     });
+
+    it("should delete vectors when conversation messages are cleared", async () => {
+      const userId = "user123";
+      const conversationId = "conv789";
+
+      await memory.createConversation({
+        id: conversationId,
+        userId,
+        resourceId: "agent1",
+        title: "Clear Conversation",
+      });
+
+      const messages: UIMessage[] = [
+        {
+          id: "msg1",
+          role: "user",
+          parts: [{ type: "text", text: "My name is Sujal" }],
+        },
+        {
+          id: "msg2",
+          role: "assistant",
+          parts: [{ type: "text", text: "Your name is Sujal." }],
+        },
+      ];
+
+      await memory.addMessages(messages, userId, conversationId);
+
+      const beforeClear = await memory.searchSimilar("What is my name?", {
+        limit: 5,
+        filter: { userId, conversationId },
+      });
+      const deleteBatchSpy = vi.spyOn(vector, "deleteBatch");
+
+      await memory.clearMessages(userId, conversationId);
+
+      const storedMessages = await memory.getMessages(userId, conversationId);
+      const afterClear = await memory.searchSimilar("What is my name?", {
+        limit: 5,
+        filter: { userId, conversationId },
+      });
+
+      expect(beforeClear.length).toBeGreaterThan(0);
+      expect(deleteBatchSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([`msg_${conversationId}_msg1`, `msg_${conversationId}_msg2`]),
+      );
+      expect(storedMessages).toHaveLength(0);
+      expect(afterClear).toHaveLength(0);
+    });
   });
 });
