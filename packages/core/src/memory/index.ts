@@ -406,9 +406,10 @@ export class Memory {
       return Array.from(vectorIds);
     }
 
+    const totalConversations = await this.storage.countConversations({ userId });
     let offset = 0;
 
-    while (true) {
+    while (offset < totalConversations) {
       const conversations = await this.storage.queryConversations({
         userId,
         limit: VECTOR_CLEAR_CONVERSATION_PAGE_SIZE,
@@ -422,11 +423,11 @@ export class Memory {
         }
       }
 
-      if (conversations.length < VECTOR_CLEAR_CONVERSATION_PAGE_SIZE) {
+      if (conversations.length === 0) {
         break;
       }
 
-      offset += VECTOR_CLEAR_CONVERSATION_PAGE_SIZE;
+      offset += conversations.length;
     }
 
     return Array.from(vectorIds);

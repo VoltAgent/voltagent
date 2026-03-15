@@ -38,15 +38,13 @@ class PagedConversationStorageAdapter extends InMemoryStorageAdapter {
     super();
   }
 
-  override async getConversationsByUserId(
-    userId: string,
-    options?: Omit<ConversationQueryOptions, "userId">,
-  ) {
-    return this.queryConversations({
+  override async queryConversations(options: ConversationQueryOptions) {
+    const limit = Math.min(options.limit ?? Number.POSITIVE_INFINITY, this.defaultPageSize);
+
+    return super.queryConversations({
       ...options,
-      userId,
-      limit: options?.limit ?? this.defaultPageSize,
-      offset: options?.offset ?? 0,
+      limit,
+      offset: options.offset ?? 0,
     });
   }
 }
