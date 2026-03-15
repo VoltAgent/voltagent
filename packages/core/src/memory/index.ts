@@ -44,6 +44,8 @@ const isEmbeddingAdapter = (value: EmbeddingAdapterInput): value is EmbeddingAda
 const isEmbeddingAdapterConfig = (value: EmbeddingAdapterInput): value is EmbeddingAdapterConfig =>
   typeof value === "object" && value !== null && "model" in value && !isEmbeddingAdapter(value);
 
+const VECTOR_CLEAR_CONVERSATION_PAGE_SIZE = 200;
+
 const resolveEmbeddingAdapter = (
   embedding?: EmbeddingAdapterInput,
 ): EmbeddingAdapter | undefined => {
@@ -404,12 +406,27 @@ export class Memory {
       return Array.from(vectorIds);
     }
 
-    const conversations = await this.storage.getConversationsByUserId(userId);
-    for (const conversation of conversations) {
-      const messages = await this.storage.getMessages(userId, conversation.id);
-      for (const message of messages) {
-        vectorIds.add(`msg_${conversation.id}_${message.id}`);
+    let offset = 0;
+
+    while (true) {
+      const conversations = await this.storage.queryConversations({
+        userId,
+        limit: VECTOR_CLEAR_CONVERSATION_PAGE_SIZE,
+        offset,
+      });
+
+      for (const conversation of conversations) {
+        const messages = await this.storage.getMessages(userId, conversation.id);
+        for (const message of messages) {
+          vectorIds.add(`msg_${conversation.id}_${message.id}`);
+        }
       }
+
+      if (conversations.length < VECTOR_CLEAR_CONVERSATION_PAGE_SIZE) {
+        break;
+      }
+
+      offset += VECTOR_CLEAR_CONVERSATION_PAGE_SIZE;
     }
 
     return Array.from(vectorIds);

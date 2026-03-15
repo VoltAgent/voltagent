@@ -8,6 +8,7 @@ import type { EmbeddingAdapter } from "./adapters/embedding/types";
 import { InMemoryStorageAdapter } from "./adapters/storage/in-memory";
 import { InMemoryVectorAdapter } from "./adapters/vector/in-memory";
 import { Memory } from "./index";
+import type { ConversationQueryOptions } from "./types";
 
 // Mock embedding adapter
 class MockEmbeddingAdapter implements EmbeddingAdapter {
@@ -29,6 +30,24 @@ class MockEmbeddingAdapter implements EmbeddingAdapter {
 
   getModelName(): string {
     return "mock-model";
+  }
+}
+
+class PagedConversationStorageAdapter extends InMemoryStorageAdapter {
+  constructor(private readonly defaultPageSize: number) {
+    super();
+  }
+
+  override async getConversationsByUserId(
+    userId: string,
+    options?: Omit<ConversationQueryOptions, "userId">,
+  ) {
+    return this.queryConversations({
+      ...options,
+      userId,
+      limit: options?.limit ?? this.defaultPageSize,
+      offset: options?.offset ?? 0,
+    });
   }
 }
 
@@ -501,6 +520,54 @@ describe("Memory V2 - Semantic Search", () => {
         expect.arrayContaining([`msg_${conversationId}_msg1`, `msg_${conversationId}_msg2`]),
       );
       expect(storedMessages).toHaveLength(0);
+      expect(afterClear).toHaveLength(0);
+    });
+
+    it("should paginate user-wide vector cleanup across all conversations", async () => {
+      const userId = "paged-user";
+      const pagedStorage = new PagedConversationStorageAdapter(2);
+      const pagedVector = new InMemoryVectorAdapter();
+      const pagedMemory = new Memory({
+        storage: pagedStorage,
+        embedding: new MockEmbeddingAdapter(),
+        vector: pagedVector,
+      });
+
+      for (const conversationId of ["conv-1", "conv-2", "conv-3"]) {
+        await pagedMemory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "agent1",
+          title: conversationId,
+        });
+
+        await pagedMemory.addMessage(
+          {
+            id: `msg-${conversationId}`,
+            role: "user",
+            parts: [{ type: "text", text: `Memory from ${conversationId}` }],
+          },
+          userId,
+          conversationId,
+        );
+      }
+
+      const beforeClear = await pagedMemory.searchSimilar("Memory from conv-3", {
+        limit: 5,
+        filter: { userId },
+      });
+
+      await pagedMemory.clearMessages(userId);
+
+      const afterClear = await pagedMemory.searchSimilar("Memory from conv-3", {
+        limit: 5,
+        filter: { userId },
+      });
+
+      expect(beforeClear.length).toBeGreaterThan(0);
+      expect(await pagedMemory.getMessages(userId, "conv-1")).toHaveLength(0);
+      expect(await pagedMemory.getMessages(userId, "conv-2")).toHaveLength(0);
+      expect(await pagedMemory.getMessages(userId, "conv-3")).toHaveLength(0);
       expect(afterClear).toHaveLength(0);
     });
   });
