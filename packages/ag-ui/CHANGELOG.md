@@ -1,5 +1,18 @@
 # @voltagent/ag-ui
 
+## 1.0.6
+
+### Patch Changes
+
+- [#1149](https://github.com/VoltAgent/voltagent/pull/1149) [`19c4fcf`](https://github.com/VoltAgent/voltagent/commit/19c4fcfc10ba0908e47c482b17355715c7467da3) Thanks [@corners99](https://github.com/corners99)! - fix: use `input` instead of `args` for tool-call parts in message conversion
+
+  When converting CopilotKit assistant messages with tool calls to VoltAgent format,
+  the adapter was setting `args` on tool-call parts. The AI SDK's `ToolCallPart`
+  interface expects `input`, causing the Anthropic provider to send `undefined` as
+  the tool_use input — rejected by the API with:
+
+  "messages.N.content.N.tool_use.input: Input should be a valid dictionary"
+
 ## 1.0.5
 
 ### Patch Changes
