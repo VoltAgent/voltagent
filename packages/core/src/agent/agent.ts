@@ -1306,6 +1306,11 @@ export class Agent {
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
+            this.recordRootSpanUsageAndProviderCost(
+              oc.traceContext,
+              usageForFinish,
+              (result as { providerMetadata?: unknown }).providerMetadata,
+            );
             const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
               this.collectToolDataFromResult(result);
 
@@ -1378,12 +1383,6 @@ export class Agent {
               },
             );
 
-            // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, usageForFinish);
-            this.recordProviderCost(
-              oc.traceContext.getRootSpan(),
-              (result as { providerMetadata?: unknown }).providerMetadata,
-            );
             oc.traceContext.setOutput(finalText);
             oc.traceContext.setFinishReason(result.finishReason);
 
@@ -1978,6 +1977,11 @@ export class Agent {
                   usage: providerUsage,
                   totalUsage: finalResult.totalUsage,
                 });
+                this.recordRootSpanUsageAndProviderCost(
+                  oc.traceContext,
+                  usageForFinish,
+                  finalResult.providerMetadata,
+                );
                 finalizeLLMSpan(SpanStatusCode.OK, {
                   usage: providerUsage,
                   finishReason: finalResult.finishReason,
@@ -1991,13 +1995,6 @@ export class Agent {
                 // History update removed - using OpenTelemetry only
 
                 // Event tracking now handled by OpenTelemetry spans
-
-                // Add usage to span
-                this.setTraceContextUsage(oc.traceContext, usageForFinish);
-                this.recordProviderCost(
-                  oc.traceContext.getRootSpan(),
-                  finalResult.providerMetadata,
-                );
 
                 const usage = convertUsage(usageForFinish);
                 let finalText: string;
@@ -2728,6 +2725,11 @@ export class Agent {
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
+            this.recordRootSpanUsageAndProviderCost(
+              oc.traceContext,
+              usageForFinish,
+              (result as { providerMetadata?: unknown }).providerMetadata,
+            );
             const usageInfo = convertUsage(usageForFinish);
             const middlewareObject = await runOutputMiddlewares<z.infer<T>>(
               result.object,
@@ -2787,12 +2789,6 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, usageForFinish);
-            this.recordProviderCost(
-              oc.traceContext.getRootSpan(),
-              (result as { providerMetadata?: unknown }).providerMetadata,
-            );
             oc.traceContext.setOutput(finalObject);
 
             // Set output in operation context
@@ -3184,6 +3180,11 @@ export class Agent {
                     usage: providerUsage,
                     totalUsage: (finalResult as { totalUsage?: LanguageModelUsage }).totalUsage,
                   });
+                  this.recordRootSpanUsageAndProviderCost(
+                    oc.traceContext,
+                    usageForFinish,
+                    finalResult.providerMetadata,
+                  );
                   const usageInfo = convertUsage(usageForFinish);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
@@ -3226,12 +3227,6 @@ export class Agent {
                     this.addStepToHistory(step, oc);
                   }
 
-                  // Add usage to span
-                  this.setTraceContextUsage(oc.traceContext, usageForFinish);
-                  this.recordProviderCost(
-                    oc.traceContext.getRootSpan(),
-                    finalResult.providerMetadata,
-                  );
                   oc.traceContext.setOutput(finalObject);
 
                   // Set output in operation context
@@ -8186,6 +8181,15 @@ export class Agent {
       cachedTokens: resolvedUsage.cachedInputTokens,
       reasoningTokens: resolvedUsage.reasoningTokens,
     });
+  }
+
+  private recordRootSpanUsageAndProviderCost(
+    traceContext: AgentTraceContext,
+    usage?: LanguageModelUsage,
+    providerMetadata?: unknown,
+  ): void {
+    this.setTraceContextUsage(traceContext, usage);
+    this.recordProviderCost(traceContext.getRootSpan(), providerMetadata);
   }
 
   /**

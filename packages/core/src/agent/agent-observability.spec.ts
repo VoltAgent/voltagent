@@ -1,9 +1,10 @@
 import { MockLanguageModelV3, mockId, simulateReadableStream } from "ai/test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
 import { Agent } from "./agent";
+import { createOutputGuardrail } from "./guardrail";
 
 const makeFinishReason = (
   unified: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other",
@@ -195,10 +196,71 @@ describe("Agent with Observability", () => {
 
       const rootSpan = endSpans.find(
         (span) =>
-          span.attributes["entity.type"] === "agent" && span.attributes["usage.cost"] === 0.0012,
+          span.name === "cost-agent" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
       );
       expect(rootSpan).toBeDefined();
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
       expect(rootSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
+
+      unsubscribe();
+    });
+
+    it("should preserve root span provider cost when post-processing fails after a successful model call", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
+        content: [{ type: "text", text: "Cost tracked" }],
+        warnings: [],
+        logprobs: undefined,
+        providerMetadata: makeOpenRouterProviderMetadata(),
+      });
+
+      const explodingGuardrail = createOutputGuardrail({
+        id: "explode-after-llm",
+        name: "Explode After LLM",
+        handler: vi.fn(async () => {
+          throw new Error("Output guardrail failed");
+        }),
+      });
+
+      const agent = new Agent({
+        name: "cost-agent-postprocess-error",
+        purpose: "Testing provider cost observability on post-processing failures",
+        instructions: "You are a cost test agent",
+        model: mockModel as any,
+        observability,
+        outputGuardrails: [explodingGuardrail],
+      });
+
+      await expect(agent.generateText("Track cost")).rejects.toThrow("Output guardrail failed");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const rootSpan = endSpans.find(
+        (span) =>
+          span.name === "cost-agent-postprocess-error" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
+      );
+      expect(rootSpan).toBeDefined();
+      expect(rootSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
 
       unsubscribe();
     });

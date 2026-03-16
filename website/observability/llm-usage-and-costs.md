@@ -79,7 +79,7 @@ If you stream responses, enable the same `usage: { include: true }` option on th
 
 If your provider does not return billed cost metadata, or if you want to apply your own billing formula, you can set cost attributes yourself in a VoltAgent hook.
 
-The simplest option is `onEnd`, because it gives you both the normalized usage object and the current `traceContext`.
+For text generation operations such as `generateText` and `streamText`, `onEnd` is a convenient option because it gives you both the normalized usage object and the current `traceContext`.
 
 ```ts
 import { Agent, createHooks } from "@voltagent/core";
@@ -110,6 +110,8 @@ const agent = new Agent({
   }),
 });
 ```
+
+Do not treat this as a universal pattern for every operation. Some flows, including `generateObject`, `streamObject`, and cancellation or error paths, can end the root span before `onEnd` runs. If you need custom cost attributes to be recorded reliably across every operation type, set them earlier in your provider integration or emit them directly through OpenTelemetry instrumentation.
 
 Use these attributes for custom cost reporting:
 

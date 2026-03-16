@@ -18,8 +18,8 @@
   "keywords": [
     "agent",
     "ai",
-    "voltagent",
-    "openrouter"
+    "openrouter",
+    "voltagent"
   ],
   "license": "MIT",
   "private": true,
@@ -29,7 +29,7 @@
     "directory": "examples/with-openrouter"
   },
   "scripts": {
-   "build": "tsc",
+    "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
