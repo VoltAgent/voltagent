@@ -1,6 +1,6 @@
 # with-openrouter
 
-An [VoltAgent](https://github.com/VoltAgent/voltagent) application using OpenRouter through `@openrouter/ai-sdk-provider`.
+A [VoltAgent](https://github.com/VoltAgent/voltagent) application using OpenRouter through `@openrouter/ai-sdk-provider`.
 
 ## Getting Started
 
@@ -39,7 +39,7 @@ pnpm dev
 
 The example starts a VoltAgent server on port `3141`.
 
-The dev script uses `tsc --watch` and `node --watch` instead of `tsx`. In this workspace, `tsx` currently trips over the OpenRouter provider import during loader resolution, while the compiled Node path works correctly.
+The dev script uses `tsx watch --env-file=.env ./src`, matching the example's `package.json` setup.
 
 ## What This Example Shows
 
@@ -50,7 +50,7 @@ The dev script uses `tsc --watch` and `node --watch` instead of `tsx`. In this w
 
 ## Notes
 
-Use `pnpm build && pnpm start` or `pnpm dev` for local testing. Both paths avoid the `tsx` loader issue and run the compiled output with Node directly.
+Use `pnpm build && pnpm start` for the compiled output, or `pnpm dev` during development.
 
 ## Project Structure
 
@@ -58,8 +58,6 @@ Use `pnpm build && pnpm start` or `pnpm dev` for local testing. Both paths avoid
 .
 ├── src/
 │   └── index.ts
-├── scripts/
-│   └── dev.mjs
 ├── .env.example
 ├── package.json
 ├── tsconfig.json
