@@ -1,5 +1,16 @@
 # @voltagent/core
 
+## 2.6.10
+
+### Patch Changes
+
+- [#1155](https://github.com/VoltAgent/voltagent/pull/1155) [`52bda94`](https://github.com/VoltAgent/voltagent/commit/52bda94d948c9f42eb4d88db388bd4f44a59b3be) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: capture provider-reported OpenRouter costs in observability spans
+
+  ### What's Changed
+  - Forward OpenRouter provider-reported cost metadata to both LLM spans and root agent spans.
+  - Record `usage.cost` and `usage.cost_details.upstream_inference_*` attributes for downstream cost consumers.
+  - Document OpenRouter usage accounting and custom `onEnd` hook-based cost reporting in the observability docs.
+
 ## 2.6.9
 
 ### Patch Changes
