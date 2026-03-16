@@ -579,6 +579,11 @@ export function addModelAttributesToSpan(
 
   // Model name
   span.setAttribute("ai.model.name", modelName);
+  const provider =
+    typeof modelName === "string" && modelName.includes("/") ? modelName.split("/")[0] : undefined;
+  if (provider) {
+    span.setAttribute("ai.model.provider", provider);
+  }
 
   // AI SDK CallSettings - use options directly, then providerOptions, then defaults
   const temperature =

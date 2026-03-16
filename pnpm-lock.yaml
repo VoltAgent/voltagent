@@ -2187,6 +2187,40 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-openrouter:
+    dependencies:
+      '@openrouter/ai-sdk-provider':
+        specifier: ^2.3.1
+        version: 2.3.1(ai@6.0.3)(zod@4.3.5)
+      '@voltagent/cli':
+        specifier: ^0.1.21
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^2.6.9
+        version: link:../../packages/core
+      '@voltagent/libsql':
+        specifier: ^2.1.2
+        version: link:../../packages/libsql
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^2.0.7
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.3.5)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   examples/with-peaka-mcp:
     dependencies:
       '@voltagent/cli':
@@ -5165,7 +5199,7 @@ packages:
       zod: ^3.25.76 || ^4
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
@@ -5178,7 +5212,7 @@ packages:
       zod: ^3.25.76 || ^4
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
     dev: false
@@ -14384,6 +14418,17 @@ packages:
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
     dev: true
 
+  /@openrouter/ai-sdk-provider@2.3.1(ai@6.0.3)(zod@4.3.5):
+    resolution: {integrity: sha512-RkOUMSetrbS1i8kW1wIkfuq0RpXtiJOiFCx/AfEjGNZA8xOjdAosqPiImo2805Q6Px/9k1LUxu8NUmlSnrWrqg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      ai: 6.0.3(zod@4.3.5)
+      zod: 4.3.5
+    dev: false
+
   /@opentelemetry/api-logs@0.203.0:
     resolution: {integrity: sha512-9B9RU0H7Ya1Dx/Rkyc4stuBZSGVQF27WigitInx2QQoj6KUpEFYPKoWjdFTunJYxmXmh17HeBvbMa1EhGyPmqQ==}
     engines: {node: '>=8.0.0'}
@@ -17325,13 +17370,8 @@ packages:
     resolution: {integrity: sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ==}
     dev: true
 
-  /@rolldown/pluginutils@1.0.0-rc.6:
-    resolution: {integrity: sha512-Y0+JT8Mi1mmW08K6HieG315XNRu4L0rkfCpA364HtytjgiqYnMYRdFPcxRl+BQQqNXzecL2S9nii+RUpO93XIA==}
-    dev: false
-
   /@rolldown/pluginutils@1.0.0-rc.9:
     resolution: {integrity: sha512-w6oiRWgEBl04QkFZgmW+jnU1EC9b57Oihi2ot3HNWIQRqgHp5PnYDia5iZ5FF7rpa4EQdiqMDXjlqKGXBhsoXw==}
-    dev: true
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -21028,7 +21068,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0-rc.6
+      '@rolldown/pluginutils': 1.0.0-rc.9
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)
