@@ -5431,19 +5431,19 @@ nav.table-of-contents .table-of-contents__link--active,
 }
 
 /* Light mode global scrollbar */
-[data-theme="light"] * {
+[data-theme="light"] *:not(.tableOfContents) {
   scrollbar-color: rgba(16, 185, 129, 0.4) rgba(229, 231, 235, 0.5);
 }
 
-[data-theme="light"] *::-webkit-scrollbar-thumb {
+[data-theme="light"] *:not(.tableOfContents)::-webkit-scrollbar-thumb {
   background-color: rgba(16, 185, 129, 0.4);
 }
 
-[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+[data-theme="light"] *:not(.tableOfContents)::-webkit-scrollbar-thumb:hover {
   background-color: rgba(16, 185, 129, 0.6);
 }
 
-[data-theme="light"] *::-webkit-scrollbar-track {
+[data-theme="light"] *:not(.tableOfContents)::-webkit-scrollbar-track {
   background: rgba(229, 231, 235, 0.5);
 }
 
