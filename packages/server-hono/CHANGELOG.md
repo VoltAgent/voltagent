@@ -1,5 +1,16 @@
 # @voltagent/server-hono
 
+## 2.0.8
+
+### Patch Changes
+
+- [`b523a60`](https://github.com/VoltAgent/voltagent/commit/b523a601b29a8522261393a3228ca1c9e6c53379) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: publish the latest Hono server workflow route updates
+
+  ### What's Changed
+  - expose the latest workflow execution endpoints in the Hono server package
+  - include OpenAPI route definitions for attaching to active workflow streams and replaying workflow executions
+  - publish the current `@voltagent/server-hono` route surface so dev-server installs match the latest repo behavior
+
 ## 2.0.7
 
 ### Patch Changes
