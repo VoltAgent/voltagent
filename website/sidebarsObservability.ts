@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
         },
         "setup",
         "mental-model",
+        "mcp",
       ],
     },
     {
