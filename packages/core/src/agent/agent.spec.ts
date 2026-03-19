@@ -801,6 +801,8 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should throw a descriptive error when structured output is missing", async () => {
+      const onEnd = vi.fn();
+      const onError = vi.fn();
       const tool = new Tool({
         name: "echo_tool",
         description: "Echo tool",
@@ -814,6 +816,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
         tools: [tool],
         maxRetries: 0,
+        hooks: { onEnd, onError },
       });
 
       const toolCall = {
@@ -851,6 +854,14 @@ Use pandas and summarize findings.`.split("\n"),
           modelId: "test-model",
           timestamp: new Date(),
           messages: [],
+        },
+        providerMetadata: {
+          openrouter: {
+            usage: {
+              cost: 0.0012,
+              isByok: true,
+            },
+          },
         },
         steps: [
           {
@@ -906,6 +917,33 @@ Use pandas and summarize findings.`.split("\n"),
         stage: "response_parsing",
         code: "STRUCTURED_OUTPUT_NOT_GENERATED",
       });
+      expect(onEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            code: "STRUCTURED_OUTPUT_NOT_GENERATED",
+            stage: "response_parsing",
+            metadata: expect.objectContaining({
+              finishReason: "tool-calls",
+              usage: expect.objectContaining({
+                inputTokens: 12,
+                outputTokens: 6,
+                totalTokens: 18,
+              }),
+              providerMetadata: expect.objectContaining({
+                openrouter: expect.any(Object),
+              }),
+            }),
+          }),
+        }),
+      );
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            code: "STRUCTURED_OUTPUT_NOT_GENERATED",
+            stage: "response_parsing",
+          }),
+        }),
+      );
     });
   });
 

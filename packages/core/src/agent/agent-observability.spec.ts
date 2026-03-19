@@ -1,8 +1,10 @@
+import * as ai from "ai";
 import { MockLanguageModelV3, mockId, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
+import { Tool } from "../tool";
 import { Agent } from "./agent";
 import { createOutputGuardrail } from "./guardrail";
 
@@ -261,6 +263,80 @@ describe("Agent with Observability", () => {
       expect(rootSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
       expect(rootSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
       expect(rootSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
+
+      unsubscribe();
+    });
+
+    it("should preserve provider cost when structured output generation fails after a successful model call", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      const tool = new Tool({
+        name: "echo_tool",
+        description: "Echo tool",
+        parameters: z.object({ value: z.string() }),
+      });
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("tool-calls"),
+        usage: makeProviderUsage(10, 20),
+        content: [],
+        toolCalls: [
+          {
+            toolCallId: mockId(),
+            toolName: "echo_tool",
+            args: { value: "hello" },
+          },
+        ],
+        warnings: [],
+        logprobs: undefined,
+        providerMetadata: makeOpenRouterProviderMetadata(),
+      });
+
+      const agent = new Agent({
+        name: "cost-agent-structured-output-error",
+        purpose: "Testing provider cost observability on structured output failures",
+        instructions: "You are a cost test agent",
+        model: mockModel as any,
+        observability,
+        maxRetries: 0,
+        tools: [tool],
+      });
+
+      await expect(
+        agent.generateText("Track cost", {
+          output: ai.Output.object({
+            schema: z.object({
+              message: z.string(),
+            }),
+          }),
+        }),
+      ).rejects.toThrow("Structured output was requested but no final output was generated");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const llmSpan = endSpans.find(
+        (span) =>
+          span.attributes["span.type"] === "llm" &&
+          span.attributes["llm.operation"] === "generateText",
+      );
+      expect(llmSpan).toBeDefined();
+      expect(llmSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(llmSpan.attributes["usage.cost"]).toBe(0.0012);
+
+      const rootSpan = endSpans.find(
+        (span) =>
+          span.name === "cost-agent-structured-output-error" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
+      );
+      expect(rootSpan).toBeDefined();
+      expect(rootSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
 
       unsubscribe();
     });
