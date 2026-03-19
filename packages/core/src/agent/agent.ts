@@ -336,6 +336,40 @@ const extractOpenRouterUsageCost = (providerMetadata: unknown): OpenRouterUsageC
   return Object.values(result).some((value) => value !== undefined) ? result : undefined;
 };
 
+type GenerationErrorDetails = {
+  usage?: LanguageModelUsage;
+  providerMetadata?: unknown;
+  finishReason?: string;
+};
+
+const toLanguageModelUsage = (value: unknown): LanguageModelUsage | undefined =>
+  isPlainObject(value) ? (value as LanguageModelUsage) : undefined;
+
+const extractGenerationErrorDetails = (error: unknown): GenerationErrorDetails => {
+  const metadata = isRecord(error) && isPlainObject(error.metadata) ? error.metadata : undefined;
+  const originalError = isRecord(error) ? error.originalError : undefined;
+
+  const usage = firstDefined(
+    isRecord(error) ? toLanguageModelUsage(error.usage) : undefined,
+    metadata ? toLanguageModelUsage(metadata.usage) : undefined,
+    isRecord(originalError) ? toLanguageModelUsage(originalError.usage) : undefined,
+  );
+
+  const providerMetadata = firstDefined(
+    metadata?.providerMetadata,
+    isRecord(error) ? error.providerMetadata : undefined,
+    isRecord(originalError) ? originalError.providerMetadata : undefined,
+  );
+
+  const finishReason = firstNonBlank(
+    isRecord(error) ? error.finishReason : undefined,
+    metadata?.finishReason,
+    isRecord(originalError) ? originalError.finishReason : undefined,
+  );
+
+  return { usage, providerMetadata, finishReason };
+};
+
 const isAssistantContentPart = (value: unknown): boolean => {
   if (!isRecord(value)) {
     return false;
@@ -1268,7 +1302,7 @@ export class Agent {
                     }),
                   );
 
-                  this.ensureStructuredOutputGenerated({
+                  await this.ensureStructuredOutputGenerated({
                     result: response,
                     output,
                     tools,
@@ -1286,7 +1320,13 @@ export class Agent {
 
                   return response;
                 } catch (error) {
-                  finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+                  const errorDetails = extractGenerationErrorDetails(error);
+                  finalizeLLMSpan(SpanStatusCode.ERROR, {
+                    message: (error as Error).message,
+                    usage: errorDetails.usage,
+                    finishReason: errorDetails.finishReason,
+                    providerMetadata: errorDetails.providerMetadata,
+                  });
                   throw error;
                 }
               },
@@ -3541,7 +3581,7 @@ export class Agent {
     };
   }
 
-  private ensureStructuredOutputGenerated<
+  private async ensureStructuredOutputGenerated<
     TOOLS extends ToolSet,
     OUTPUT extends OutputSpec,
   >(params: {
@@ -3549,7 +3589,7 @@ export class Agent {
     output: OUTPUT | undefined;
     tools: Record<string, any>;
     maxSteps: number;
-  }): void {
+  }): Promise<void> {
     const { result, output, tools, maxSteps } = params;
     if (!output) {
       return;
@@ -3571,6 +3611,13 @@ export class Agent {
       const stepCount = result.steps?.length ?? 0;
       const finishReason = result.finishReason ?? "unknown";
       const reachedMaxSteps = stepCount >= maxSteps;
+      const providerMetadata = (result as { providerMetadata?: unknown }).providerMetadata;
+      const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
+      const usageForFinish = resolveFinishUsage({
+        providerMetadata,
+        usage: providerUsage,
+        totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+      });
 
       const guidance =
         configuredToolCount > 0 || toolCalls.length > 0
@@ -3593,6 +3640,11 @@ export class Agent {
             maxSteps,
             configuredToolCount,
             toolCallCount: toolCalls.length,
+            usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
+            providerMetadata:
+              providerMetadata !== undefined
+                ? JSON.parse(safeStringify(providerMetadata))
+                : undefined,
           },
         },
       );
@@ -7412,7 +7464,19 @@ export class Agent {
       throw oc.cancellationError;
     }
 
-    const voltagentError = createVoltAgentError(error);
+    const voltagentError = isVoltAgentError(error) ? error : createVoltAgentError(error);
+    const errorDetails = extractGenerationErrorDetails(voltagentError);
+
+    if (errorDetails.usage || errorDetails.providerMetadata !== undefined) {
+      this.recordRootSpanUsageAndProviderCost(
+        oc.traceContext,
+        errorDetails.usage,
+        errorDetails.providerMetadata,
+      );
+    }
+    if (errorDetails.finishReason) {
+      oc.traceContext.setFinishReason(errorDetails.finishReason);
+    }
 
     oc.traceContext.end("error", error);
 
