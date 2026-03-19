@@ -17,7 +17,7 @@
     "@tsconfig/node24": "^24.0.1",
     "@types/yargs": "^17.0.33",
     "dotenv": "^16.4.5",
-    "tsx": "^4.19.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "viteval": "^0.5.3"
   },
