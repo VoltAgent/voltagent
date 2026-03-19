@@ -3589,7 +3589,7 @@ export class Agent {
     output: OUTPUT | undefined;
     tools: Record<string, any>;
     maxSteps: number;
-  }): void {
+  }): Promise<void> {
     const { result, output, tools, maxSteps } = params;
     if (!output) {
       return;
