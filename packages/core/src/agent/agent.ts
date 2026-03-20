@@ -109,6 +109,10 @@ import {
 import type { AgentHooks, OnToolEndHookResult, OnToolErrorHookResult } from "./hooks";
 import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
+import {
+  estimatePromptContextUsage,
+  promptContextUsageEstimateToAttributes,
+} from "./prompt-context-usage";
 import type {
   BaseMessage,
   BaseTool,
@@ -4101,7 +4105,16 @@ export class Agent {
     },
   ): Span {
     const { label, ...spanParams } = params;
-    const attributes = this.buildLLMSpanAttributes(spanParams);
+    const promptContextUsageEstimate = estimatePromptContextUsage({
+      messages: params.messages,
+      tools: params.tools,
+    });
+    const attributes = {
+      ...this.buildLLMSpanAttributes(spanParams),
+      ...(promptContextUsageEstimate
+        ? promptContextUsageEstimateToAttributes(promptContextUsageEstimate)
+        : {}),
+    };
     const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
       kind: SpanKind.CLIENT,
       label,
@@ -4240,7 +4253,8 @@ export class Agent {
       return;
     }
 
-    const { promptTokens, completionTokens, totalTokens } = normalizedUsage;
+    const { promptTokens, completionTokens, totalTokens, cachedInputTokens, reasoningTokens } =
+      normalizedUsage;
 
     if (promptTokens !== undefined) {
       span.setAttribute("llm.usage.prompt_tokens", promptTokens);
@@ -4250,6 +4264,12 @@ export class Agent {
     }
     if (totalTokens !== undefined) {
       span.setAttribute("llm.usage.total_tokens", totalTokens);
+    }
+    if (cachedInputTokens !== undefined) {
+      span.setAttribute("llm.usage.cached_tokens", cachedInputTokens);
+    }
+    if (reasoningTokens !== undefined) {
+      span.setAttribute("llm.usage.reasoning_tokens", reasoningTokens);
     }
   }
 
