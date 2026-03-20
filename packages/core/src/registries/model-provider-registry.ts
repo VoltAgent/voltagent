@@ -144,16 +144,40 @@ const EXTRA_PROVIDER_REGISTRY: ModelProviderRegistryEntry[] = [
     npm: "ollama-ai-provider-v2",
     doc: "https://ollama.com",
   },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    npm: "@ai-sdk/openai-compatible",
+    api: "https://api.minimax.io/v1",
+    env: ["MINIMAX_API_KEY"],
+    doc: "https://platform.minimax.io/docs/guides/quickstart",
+  },
+  {
+    id: "minimax-cn",
+    name: "MiniMax (China)",
+    npm: "@ai-sdk/openai-compatible",
+    api: "https://api.minimaxi.com/v1",
+    env: ["MINIMAX_API_KEY"],
+    doc: "https://platform.minimaxi.com/docs/guides/quickstart",
+  },
 ];
 
+// EXTRA entries first so they take precedence over auto-generated entries
+// (registerProviderConfig skips IDs that are already registered)
 const STATIC_PROVIDER_REGISTRY = [
-  ...Object.values(MODEL_PROVIDER_REGISTRY),
   ...EXTRA_PROVIDER_REGISTRY,
+  ...Object.values(MODEL_PROVIDER_REGISTRY),
 ];
 
-const STATIC_PROVIDER_MAP = new Map(
-  STATIC_PROVIDER_REGISTRY.map((entry) => [normalizeProviderId(entry.id), entry]),
-);
+// For Map lookups, auto-generated entries go first so EXTRA entries override them
+const STATIC_PROVIDER_MAP = new Map([
+  ...Object.values(MODEL_PROVIDER_REGISTRY).map(
+    (entry) => [normalizeProviderId(entry.id), entry] as const,
+  ),
+  ...EXTRA_PROVIDER_REGISTRY.map(
+    (entry) => [normalizeProviderId(entry.id), entry] as const,
+  ),
+]);
 
 declare global {
   // eslint-disable-next-line no-var
