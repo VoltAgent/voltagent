@@ -151,7 +151,7 @@ Once connected, prompts like these work well:
 2. Use `voltops_search_traces` to find suspicious runs.
 3. Open one trace with `voltops_get_trace`.
 4. Use `voltops_get_trace_logs` or `voltops_search_logs` to inspect the runtime evidence.
-5. Compare what the assistant sees with the UI in [Tracing Overview](tracing/overview) and [Trace Logs](tracing/logs).
+5. Compare what the assistant sees with the UI in [Tracing Overview](./tracing/overview.md) and [Trace Logs](./tracing/logs.md).
 
 ## Security Notes
 
