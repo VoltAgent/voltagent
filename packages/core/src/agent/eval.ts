@@ -56,6 +56,21 @@ interface ScoreMetrics {
   datasetMetadata?: ReturnType<typeof extractDatasetMetadataFromCombinedMetadata>;
 }
 
+interface JudgeTelemetry {
+  modelName?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  providerCost?: {
+    cost?: number;
+    upstreamInferenceCost?: number;
+    upstreamInferenceInputCost?: number;
+    upstreamInferenceOutputCost?: number;
+  };
+}
+
 async function resolveScorerDescriptors(
   config: AgentEvalConfig,
   host: AgentEvalHost,
@@ -167,6 +182,46 @@ function createScorerSpanAttributes(
   }
   if (metrics.datasetMetadata?.datasetItemHash) {
     attributes["eval.dataset.item_hash"] = metrics.datasetMetadata.datasetItemHash;
+  }
+  const judgeTelemetry = extractJudgeTelemetry(metrics.combinedMetadata);
+  if (judgeTelemetry?.modelName) {
+    attributes["ai.model.name"] = judgeTelemetry.modelName;
+    const provider = judgeTelemetry.modelName.includes("/")
+      ? judgeTelemetry.modelName.split("/")[0]
+      : undefined;
+    if (provider) {
+      attributes["ai.model.provider"] = provider;
+    }
+  }
+  if (judgeTelemetry?.promptTokens !== undefined) {
+    attributes["usage.prompt_tokens"] = judgeTelemetry.promptTokens;
+  }
+  if (judgeTelemetry?.completionTokens !== undefined) {
+    attributes["usage.completion_tokens"] = judgeTelemetry.completionTokens;
+  }
+  if (judgeTelemetry?.totalTokens !== undefined) {
+    attributes["usage.total_tokens"] = judgeTelemetry.totalTokens;
+  }
+  if (judgeTelemetry?.cachedTokens !== undefined) {
+    attributes["usage.cached_tokens"] = judgeTelemetry.cachedTokens;
+  }
+  if (judgeTelemetry?.reasoningTokens !== undefined) {
+    attributes["usage.reasoning_tokens"] = judgeTelemetry.reasoningTokens;
+  }
+  if (judgeTelemetry?.providerCost?.cost !== undefined) {
+    attributes["usage.cost"] = judgeTelemetry.providerCost.cost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceCost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceInputCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_input_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceInputCost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceOutputCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_output_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceOutputCost;
   }
   if (storagePayload.userId) {
     attributes["user.id"] = storagePayload.userId;
@@ -1351,6 +1406,89 @@ function extractErrorMessage(error: unknown): string {
   } catch {
     return String(error);
   }
+}
+
+function extractJudgeTelemetry(
+  metadata: Record<string, unknown> | null | undefined,
+): JudgeTelemetry | undefined {
+  const record = isPlainRecord(metadata) ? (metadata as Record<string, unknown>) : undefined;
+  if (!record) {
+    return undefined;
+  }
+
+  const sources: Array<Record<string, unknown> | undefined> = [];
+  if (isPlainRecord(record.voltAgent)) {
+    sources.push(record.voltAgent as Record<string, unknown>);
+  }
+  if (isPlainRecord(record.scorer)) {
+    sources.push(record.scorer as Record<string, unknown>);
+  }
+  if (isPlainRecord(record.payload)) {
+    sources.push(record.payload as Record<string, unknown>);
+  }
+
+  for (const source of sources) {
+    const judge = isPlainRecord(source?.judge)
+      ? (source?.judge as Record<string, unknown>)
+      : undefined;
+    if (!judge) {
+      continue;
+    }
+
+    const usage = isPlainRecord(judge.usage) ? (judge.usage as Record<string, unknown>) : undefined;
+    const providerCost = isPlainRecord(judge.providerCost)
+      ? (judge.providerCost as Record<string, unknown>)
+      : undefined;
+
+    const telemetry: JudgeTelemetry = {
+      modelName: readString(judge.model),
+      promptTokens: readNumber(usage?.promptTokens),
+      completionTokens: readNumber(usage?.completionTokens),
+      totalTokens: readNumber(usage?.totalTokens),
+      cachedTokens: readNumber(usage?.cachedInputTokens ?? usage?.cachedTokens),
+      reasoningTokens: readNumber(usage?.reasoningTokens),
+      providerCost: providerCost
+        ? {
+            cost: readNumber(providerCost.cost),
+            upstreamInferenceCost: readNumber(providerCost.upstreamInferenceCost),
+            upstreamInferenceInputCost: readNumber(providerCost.upstreamInferenceInputCost),
+            upstreamInferenceOutputCost: readNumber(providerCost.upstreamInferenceOutputCost),
+          }
+        : undefined,
+    };
+
+    if (
+      telemetry.modelName ||
+      telemetry.promptTokens !== undefined ||
+      telemetry.completionTokens !== undefined ||
+      telemetry.totalTokens !== undefined ||
+      telemetry.cachedTokens !== undefined ||
+      telemetry.reasoningTokens !== undefined ||
+      telemetry.providerCost?.cost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceCost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceInputCost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceOutputCost !== undefined
+    ) {
+      return telemetry;
+    }
+  }
+
+  return undefined;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
 }
 
 async function invokeEvalResultCallback(
