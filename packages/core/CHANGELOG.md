@@ -1,5 +1,26 @@
 # @voltagent/core
 
+## 2.6.11
+
+### Patch Changes
+
+- [#1168](https://github.com/VoltAgent/voltagent/pull/1168) [`2075bd9`](https://github.com/VoltAgent/voltagent/commit/2075bd9884b5a7f59ca04cd1aaa213b0852aafc7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: emit LLM judge token and provider cost telemetry on eval scorer spans
+
+  VoltAgent now records LLM judge model, token usage, cached tokens, reasoning tokens,
+  and provider-reported cost details on live eval scorer spans.
+
+  This makes scorer-side usage visible in observability backends and enables downstream
+  cost aggregation to distinguish agent costs from eval scorer costs.
+
+- [#1163](https://github.com/VoltAgent/voltagent/pull/1163) [`6f14c4d`](https://github.com/VoltAgent/voltagent/commit/6f14c4d0dcabe35feba7352e8a7b67d5280a61b9) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve usage and provider cost metadata on structured output failures
+
+  When `generateText` receives a successful model response but structured output is not produced,
+  VoltAgent now keeps the resolved usage, finish reason, and provider metadata on the resulting
+  error path.
+
+  This preserves provider-reported cost data for observability spans and makes the same metadata
+  available to error hooks through `VoltAgentError.metadata`.
+
 ## 2.6.10
 
 ### Patch Changes
