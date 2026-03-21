@@ -111,7 +111,7 @@ function serializePromptMessage(message: PromptMessage): string {
   return `${role}:\n${content}`;
 }
 
-function serializePromptValue(value: unknown): string {
+function serializePromptValue(value: unknown, seen = new Set<object>()): string {
   if (typeof value === "string") {
     return value;
   }
@@ -121,10 +121,19 @@ function serializePromptValue(value: unknown): string {
   }
 
   if (Array.isArray(value)) {
-    return value
-      .map((entry) => serializePromptValue(entry))
-      .filter((entry) => entry.trim().length > 0)
-      .join("\n");
+    if (seen.has(value)) {
+      return CIRCULAR_REFERENCE_PLACEHOLDER;
+    }
+
+    seen.add(value);
+    try {
+      return value
+        .map((entry) => serializePromptValue(entry, seen))
+        .filter((entry) => entry.trim().length > 0)
+        .join("\n");
+    } finally {
+      seen.delete(value);
+    }
   }
 
   if (!value || typeof value !== "object") {
@@ -132,36 +141,45 @@ function serializePromptValue(value: unknown): string {
   }
 
   const record = value as Record<string, unknown>;
+  if (seen.has(record)) {
+    return CIRCULAR_REFERENCE_PLACEHOLDER;
+  }
+
+  seen.add(record);
   const type = typeof record.type === "string" ? record.type : undefined;
 
-  if (typeof record.text === "string") {
-    return record.text;
-  }
-
-  if (type && BINARY_PART_TYPES.has(type)) {
-    return `[${type}]`;
-  }
-
-  if (type === "tool-call") {
-    const toolName = typeof record.toolName === "string" ? record.toolName : "tool";
-    const input = serializePromptValue(record.input);
-    return input ? `tool-call ${toolName}: ${input}` : `tool-call ${toolName}`;
-  }
-
-  if (type === "tool-result") {
-    const toolName = typeof record.toolName === "string" ? record.toolName : "tool";
-    const output = serializePromptValue(record.output);
-    return output ? `tool-result ${toolName}: ${output}` : `tool-result ${toolName}`;
-  }
-
-  if ("content" in record) {
-    const nestedContent = serializePromptValue(record.content);
-    if (nestedContent) {
-      return nestedContent;
+  try {
+    if (typeof record.text === "string") {
+      return record.text;
     }
-  }
 
-  return safeStringify(sanitizeRecord(record));
+    if (type && BINARY_PART_TYPES.has(type)) {
+      return `[${type}]`;
+    }
+
+    if (type === "tool-call") {
+      const toolName = typeof record.toolName === "string" ? record.toolName : "tool";
+      const input = serializePromptValue(record.input, seen);
+      return input ? `tool-call ${toolName}: ${input}` : `tool-call ${toolName}`;
+    }
+
+    if (type === "tool-result") {
+      const toolName = typeof record.toolName === "string" ? record.toolName : "tool";
+      const output = serializePromptValue(record.output, seen);
+      return output ? `tool-result ${toolName}: ${output}` : `tool-result ${toolName}`;
+    }
+
+    if ("content" in record) {
+      const nestedContent = serializePromptValue(record.content, seen);
+      if (nestedContent) {
+        return nestedContent;
+      }
+    }
+
+    return safeStringify(sanitizeRecord(record));
+  } finally {
+    seen.delete(record);
+  }
 }
 
 function sanitizeRecord(record: Record<string, unknown>): Record<string, unknown> {

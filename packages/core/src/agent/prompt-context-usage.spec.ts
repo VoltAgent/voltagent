@@ -128,6 +128,25 @@ describe("prompt context usage estimation", () => {
     expect(toolAEstimate?.toolTokensEstimated).toBe(toolBEstimate?.toolTokensEstimated);
   });
 
+  it("handles circular nested message content", () => {
+    const contentA: Record<string, unknown> = {};
+    const contentB: Record<string, unknown> = {};
+    contentA.content = contentB;
+    contentB.content = contentA;
+
+    const estimate = estimatePromptContextUsage({
+      messages: [
+        {
+          role: "user",
+          content: contentA,
+        },
+      ],
+    });
+
+    expect(estimate?.messageTokensEstimated).toBeGreaterThan(0);
+    expect(estimate?.totalTokensEstimated).toBe(estimate?.messageTokensEstimated);
+  });
+
   it("ignores non-plain args values when estimating tool tokens", () => {
     const withArrayArgs = estimatePromptContextUsage({
       tools: {
