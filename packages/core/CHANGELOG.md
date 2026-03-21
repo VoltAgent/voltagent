@@ -1,5 +1,14 @@
 # @voltagent/core
 
+## 2.6.12
+
+### Patch Changes
+
+- [#1169](https://github.com/VoltAgent/voltagent/pull/1169) [`25b21d0`](https://github.com/VoltAgent/voltagent/commit/25b21d00fc74663a414eefabe35f7b4058ec9e71) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add estimated prompt context telemetry for observability
+  - record estimated prompt-context breakdown for system instructions, conversation messages, and tool schemas on LLM spans
+  - expose cached and reasoning token usage on LLM spans for observability consumers
+  - add tests for prompt-context estimation helpers
+
 ## 2.6.11
 
 ### Patch Changes
