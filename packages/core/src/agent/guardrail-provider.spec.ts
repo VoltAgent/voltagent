@@ -265,6 +265,72 @@ describe("createGuardrailsFromProvider", () => {
     });
   });
 
+  describe("malformed modify decisions (fail-closed)", () => {
+    it("blocks input when action is modify but modifiedContent is missing", async () => {
+      const evaluateInput = vi.fn().mockResolvedValue({
+        pass: true,
+        action: "modify",
+        // no modifiedContent
+        message: "tried to modify",
+      });
+      const provider: GuardrailProvider = { name: "BadModify", evaluateInput };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
+      expect(result.pass).toBe(false);
+      expect(result.action).toBe("block");
+      expect(result.message).toBe("tried to modify");
+    });
+
+    it("blocks output when action is modify but modifiedContent is missing", async () => {
+      const evaluateOutput = vi.fn().mockResolvedValue({
+        pass: true,
+        action: "modify",
+        // no modifiedContent
+      });
+      const provider: GuardrailProvider = { name: "BadModifyOut", evaluateOutput };
+      const { outputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await outputGuardrails[0].handler(makeOutputArgs("response"));
+      expect(result.pass).toBe(false);
+      expect(result.action).toBe("block");
+    });
+
+    it("provides a default message when modify lacks both modifiedContent and message", async () => {
+      const evaluateInput = vi.fn().mockResolvedValue({
+        pass: true,
+        action: "modify",
+      });
+      const provider: GuardrailProvider = { name: "NoMsg", evaluateInput };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
+      expect(result.pass).toBe(false);
+      expect(result.message).toContain("NoMsg");
+      expect(result.message).toContain("modify");
+    });
+  });
+
+  describe("collision-safe IDs", () => {
+    it("generates a fallback ID when provider name produces an empty slug", () => {
+      const provider: GuardrailProvider = {
+        name: "---",
+        evaluateInput: () => ({ pass: true }),
+      };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const guardrail = inputGuardrails[0] as any;
+      expect(guardrail.id).toBeTruthy();
+      expect(guardrail.id).not.toBe("-input");
+    });
+
+    it("uses explicit id option over generated slug", () => {
+      const provider: GuardrailProvider = {
+        name: "Some Provider",
+        evaluateInput: () => ({ pass: true }),
+      };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider, { id: "explicit" });
+      const guardrail = inputGuardrails[0] as any;
+      expect(guardrail.id).toBe("explicit-input");
+    });
+  });
+
   describe("multiple providers", () => {
     it("can combine guardrails from multiple providers", () => {
       const providerA: GuardrailProvider = {

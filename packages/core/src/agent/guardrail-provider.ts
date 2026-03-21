@@ -107,7 +107,7 @@ export interface GuardrailProvider {
   evaluateInput?(
     content: string,
     context: GuardrailProviderContext,
-  ): Promise<GuardrailProviderDecision> | GuardrailProviderDecision;
+  ): Promise<GuardrailProviderDecision | undefined> | GuardrailProviderDecision | undefined;
 
   /**
    * Evaluate output content before it is returned to the caller.
@@ -116,7 +116,7 @@ export interface GuardrailProvider {
   evaluateOutput?(
     content: string,
     context: GuardrailProviderContext,
-  ): Promise<GuardrailProviderDecision> | GuardrailProviderDecision;
+  ): Promise<GuardrailProviderDecision | undefined> | GuardrailProviderDecision | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -168,7 +168,8 @@ export function createGuardrailsFromProvider(
   inputGuardrails: InputGuardrail[];
   outputGuardrails: OutputGuardrail[];
 } {
-  const id = options?.id ?? slugify(provider.name);
+  const baseSlug = slugify(provider.name);
+  const id = options?.id ?? (baseSlug || `provider-${nextProviderId()}`);
   const severity = options?.severity ?? provider.severity;
   const tags = mergeTags(provider.tags, options?.tags);
 
@@ -195,13 +196,23 @@ export function createGuardrailsFromProvider(
 
         if (!decision || decision.pass !== false) {
           const resolvedAction = decision?.action ?? "allow";
-          if (resolvedAction === "modify" && decision?.modifiedContent !== undefined) {
+          if (resolvedAction === "modify") {
+            if (decision?.modifiedContent !== undefined) {
+              return {
+                pass: true,
+                action: "modify",
+                message: decision?.message,
+                metadata: decision?.metadata,
+                modifiedInput: decision.modifiedContent as InputGuardrailResult["modifiedInput"],
+              };
+            }
+            // Malformed: action is "modify" but no modifiedContent provided.
+            // Fail closed to prevent bypassing guardrail transformations.
             return {
-              pass: true,
-              action: "modify",
-              message: decision?.message,
+              pass: false,
+              action: "block",
+              message: decision?.message ?? `Provider "${provider.name}" returned action "modify" without modifiedContent`,
               metadata: decision?.metadata,
-              modifiedInput: decision.modifiedContent as InputGuardrailResult["modifiedInput"],
             };
           }
           return {
@@ -245,13 +256,23 @@ export function createGuardrailsFromProvider(
 
         if (!decision || decision.pass !== false) {
           const resolvedAction = decision?.action ?? "allow";
-          if (resolvedAction === "modify" && decision?.modifiedContent !== undefined) {
+          if (resolvedAction === "modify") {
+            if (decision?.modifiedContent !== undefined) {
+              return {
+                pass: true,
+                action: "modify",
+                message: decision?.message,
+                metadata: decision?.metadata,
+                modifiedOutput: decision.modifiedContent,
+              };
+            }
+            // Malformed: action is "modify" but no modifiedContent provided.
+            // Fail closed to prevent bypassing guardrail transformations.
             return {
-              pass: true,
-              action: "modify",
-              message: decision?.message,
+              pass: false,
+              action: "block",
+              message: decision?.message ?? `Provider "${provider.name}" returned action "modify" without modifiedContent`,
               metadata: decision?.metadata,
-              modifiedOutput: decision.modifiedContent,
             };
           }
           return {
@@ -280,6 +301,11 @@ export function createGuardrailsFromProvider(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+let _providerIdCounter = 0;
+function nextProviderId(): string {
+  return String(++_providerIdCounter);
+}
 
 function slugify(name: string): string {
   return name
