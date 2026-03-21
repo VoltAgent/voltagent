@@ -212,6 +212,53 @@ describe("Agent with Observability", () => {
       unsubscribe();
     });
 
+    it("should not emit zero cached or reasoning usage on llm spans", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
+        content: [{ type: "text", text: "No extra usage" }],
+        warnings: [],
+        logprobs: undefined,
+        providerDetails: undefined,
+      });
+
+      const agent = new Agent({
+        name: "usage-agent",
+        purpose: "Testing llm usage emission",
+        instructions: "You are a usage test agent",
+        model: mockModel as any,
+        observability,
+      });
+
+      const result = await agent.generateText("Track usage");
+
+      expect(result.text).toBe("No extra usage");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const llmSpan = endSpans.find(
+        (span) =>
+          span.attributes["span.type"] === "llm" &&
+          span.attributes["llm.operation"] === "generateText",
+      );
+
+      expect(llmSpan).toBeDefined();
+      expect(llmSpan.attributes["llm.usage.prompt_tokens"]).toBe(10);
+      expect(llmSpan.attributes["llm.usage.completion_tokens"]).toBe(20);
+      expect(llmSpan.attributes["llm.usage.total_tokens"]).toBe(30);
+      expect(llmSpan.attributes["llm.usage.cached_tokens"]).toBeUndefined();
+      expect(llmSpan.attributes["llm.usage.reasoning_tokens"]).toBeUndefined();
+
+      unsubscribe();
+    });
+
     it("should preserve root span provider cost when post-processing fails after a successful model call", async () => {
       const events: any[] = [];
       const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
