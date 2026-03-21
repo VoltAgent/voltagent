@@ -87,6 +87,13 @@ export {
   createDefaultSafetyGuardrails,
 } from "./agent/guardrails/defaults";
 export { createInputGuardrail, createOutputGuardrail } from "./agent/guardrail";
+export { createGuardrailsFromProvider } from "./agent/guardrail-provider";
+export type {
+  GuardrailProvider,
+  GuardrailProviderContext,
+  GuardrailProviderDecision,
+  CreateGuardrailsFromProviderOptions,
+} from "./agent/guardrail-provider";
 export { createInputMiddleware, createOutputMiddleware } from "./agent/middleware";
 export type {
   CreateInputGuardrailOptions,
