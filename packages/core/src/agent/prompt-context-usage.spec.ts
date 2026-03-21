@@ -68,4 +68,86 @@ describe("prompt context usage estimation", () => {
       "usage.prompt_context.tool_count": 2,
     });
   });
+
+  it("sanitizes nested binary args recursively and ignores provider-only metadata", () => {
+    const circularArgsA: Record<string, unknown> = {
+      content: {
+        metadata: {
+          data: "x".repeat(8_000),
+        },
+      },
+      attachments: [{ image: "y".repeat(8_000) }],
+    };
+    circularArgsA.self = circularArgsA;
+
+    const circularArgsB: Record<string, unknown> = {
+      content: {
+        metadata: {
+          data: "short",
+        },
+      },
+      attachments: [{ image: "tiny" }],
+    };
+    circularArgsB.self = circularArgsB;
+
+    const toolAEstimate = estimatePromptContextUsage({
+      tools: {
+        searchDocs: {
+          description: "Search the documentation",
+          inputSchema: z.object({ query: z.string() }),
+          outputSchema: z.object({ answer: z.string() }),
+          providerOptions: {
+            openai: {
+              metadata: "provider-only".repeat(2_000),
+            },
+          },
+          needsApproval: true,
+          args: circularArgsA,
+        },
+      },
+    });
+
+    const toolBEstimate = estimatePromptContextUsage({
+      tools: {
+        searchDocs: {
+          description: "Search the documentation",
+          inputSchema: z.object({ query: z.string() }),
+          outputSchema: z.object({ answer: z.string() }),
+          providerOptions: {
+            openai: {
+              metadata: "ignored",
+            },
+          },
+          needsApproval: false,
+          args: circularArgsB,
+        },
+      },
+    });
+
+    expect(toolAEstimate?.toolTokensEstimated).toBeGreaterThan(0);
+    expect(toolAEstimate?.toolTokensEstimated).toBe(toolBEstimate?.toolTokensEstimated);
+  });
+
+  it("ignores non-plain args values when estimating tool tokens", () => {
+    const withArrayArgs = estimatePromptContextUsage({
+      tools: {
+        searchDocs: {
+          description: "Search the documentation",
+          inputSchema: z.object({ query: z.string() }),
+          args: ["x".repeat(10_000)],
+        },
+      },
+    });
+
+    const withoutArgs = estimatePromptContextUsage({
+      tools: {
+        searchDocs: {
+          description: "Search the documentation",
+          inputSchema: z.object({ query: z.string() }),
+        },
+      },
+    });
+
+    expect(withArrayArgs?.toolTokensEstimated).toBe(withoutArgs?.toolTokensEstimated);
+  });
 });

@@ -4265,10 +4265,10 @@ export class Agent {
     if (totalTokens !== undefined) {
       span.setAttribute("llm.usage.total_tokens", totalTokens);
     }
-    if (cachedInputTokens !== undefined) {
+    if (cachedInputTokens !== undefined && cachedInputTokens > 0) {
       span.setAttribute("llm.usage.cached_tokens", cachedInputTokens);
     }
-    if (reasoningTokens !== undefined) {
+    if (reasoningTokens !== undefined && reasoningTokens > 0) {
       span.setAttribute("llm.usage.reasoning_tokens", reasoningTokens);
     }
   }

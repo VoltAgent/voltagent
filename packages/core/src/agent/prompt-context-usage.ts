@@ -12,6 +12,7 @@ const BINARY_PART_TYPES = new Set([
   "media",
 ]);
 const LARGE_BINARY_KEYS = new Set(["audio", "base64", "bytes", "data", "image"]);
+const CIRCULAR_REFERENCE_PLACEHOLDER = "[circular]";
 
 type PromptMessage = {
   role?: string;
@@ -164,12 +165,25 @@ function serializePromptValue(value: unknown): string {
 }
 
 function sanitizeRecord(record: Record<string, unknown>): Record<string, unknown> {
+  return sanitizeRecordValue(record, new Set<object>());
+}
+
+function sanitizeRecordValue(
+  record: Record<string, unknown>,
+  seen: Set<object>,
+): Record<string, unknown> {
+  if (seen.has(record)) {
+    return { circular: CIRCULAR_REFERENCE_PLACEHOLDER };
+  }
+
+  seen.add(record);
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(record)) {
-    sanitized[key] = LARGE_BINARY_KEYS.has(key) ? "[omitted]" : value;
+    sanitized[key] = LARGE_BINARY_KEYS.has(key) ? "[omitted]" : sanitizeValue(value, seen);
   }
 
+  seen.delete(record);
   return sanitized;
 }
 
@@ -200,9 +214,7 @@ function serializeToolDefinition(name: string, tool: unknown): Record<string, un
           outputSchema: normalizeSchema(candidate.outputSchema ?? candidate.output_schema),
         }
       : {}),
-    ...(candidate.providerOptions ? { providerOptions: candidate.providerOptions } : {}),
-    ...(candidate.args ? { args: sanitizeRecord(candidate.args as Record<string, unknown>) } : {}),
-    ...(candidate.needsApproval !== undefined ? { needsApproval: candidate.needsApproval } : {}),
+    ...(isPlainObject(candidate.args) ? { args: sanitizeRecord(candidate.args) } : {}),
   };
 }
 
@@ -220,4 +232,44 @@ function normalizeSchema(schema: unknown): unknown {
   }
 
   return schema;
+}
+
+function sanitizeValue(value: unknown, seen: Set<object>): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value !== "object") {
+    return value;
+  }
+
+  if (value instanceof Date || value instanceof RegExp) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    if (seen.has(value)) {
+      return [CIRCULAR_REFERENCE_PLACEHOLDER];
+    }
+
+    seen.add(value);
+    const sanitized = value.map((entry) => sanitizeValue(entry, seen));
+    seen.delete(value);
+    return sanitized;
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  return sanitizeRecordValue(value, seen);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
