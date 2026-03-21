@@ -194,38 +194,61 @@ export function createGuardrailsFromProvider(
 
         const decision = await evaluate(args.inputText, context);
 
-        if (!decision || decision.pass !== false) {
-          const resolvedAction = decision?.action ?? "allow";
-          if (resolvedAction === "modify") {
-            if (decision?.modifiedContent !== undefined) {
-              return {
-                pass: true,
-                action: "modify",
-                message: decision?.message,
-                metadata: decision?.metadata,
-                modifiedInput: decision.modifiedContent as InputGuardrailResult["modifiedInput"],
-              };
-            }
-            // Malformed: action is "modify" but no modifiedContent provided.
-            // Fail closed to prevent bypassing guardrail transformations.
+        // No decision — allow by default.
+        if (!decision) {
+          return { pass: true, action: "allow" };
+        }
+
+        // Explicit action is authoritative when present.
+        if (decision.action !== undefined) {
+          if (decision.action === "block") {
             return {
               pass: false,
               action: "block",
-              message: decision?.message ?? `Provider "${provider.name}" returned action "modify" without modifiedContent`,
-              metadata: decision?.metadata,
+              message: decision.message,
+              metadata: decision.metadata,
             };
           }
+          if (decision.action === "modify") {
+            if (decision.modifiedContent === undefined) {
+              // Modify without content — fail closed.
+              return {
+                pass: false,
+                action: "block",
+                message: `Provider "${provider.name}" returned action "modify" without modifiedContent — blocking as a safety precaution.`,
+                metadata: decision.metadata,
+              };
+            }
+            return {
+              pass: true,
+              action: "modify",
+              message: decision.message,
+              metadata: decision.metadata,
+              modifiedInput: decision.modifiedContent as InputGuardrailResult["modifiedInput"],
+            };
+          }
+          // action === "allow" — trust the provider.
           return {
             pass: true,
             action: "allow",
-            message: decision?.message,
-            metadata: decision?.metadata,
+            message: decision.message,
+            metadata: decision.metadata,
+          };
+        }
+
+        // No explicit action — fall back to pass boolean.
+        if (decision.pass === false) {
+          return {
+            pass: false,
+            action: "block",
+            message: decision.message,
+            metadata: decision.metadata,
           };
         }
 
         return {
-          pass: false,
-          action: decision.action ?? "block",
+          pass: true,
+          action: "allow",
           message: decision.message,
           metadata: decision.metadata,
         };
@@ -254,38 +277,61 @@ export function createGuardrailsFromProvider(
 
         const decision = await evaluate(outputText, context);
 
-        if (!decision || decision.pass !== false) {
-          const resolvedAction = decision?.action ?? "allow";
-          if (resolvedAction === "modify") {
-            if (decision?.modifiedContent !== undefined) {
-              return {
-                pass: true,
-                action: "modify",
-                message: decision?.message,
-                metadata: decision?.metadata,
-                modifiedOutput: decision.modifiedContent,
-              };
-            }
-            // Malformed: action is "modify" but no modifiedContent provided.
-            // Fail closed to prevent bypassing guardrail transformations.
+        // No decision — allow by default.
+        if (!decision) {
+          return { pass: true, action: "allow" };
+        }
+
+        // Explicit action is authoritative when present.
+        if (decision.action !== undefined) {
+          if (decision.action === "block") {
             return {
               pass: false,
               action: "block",
-              message: decision?.message ?? `Provider "${provider.name}" returned action "modify" without modifiedContent`,
-              metadata: decision?.metadata,
+              message: decision.message,
+              metadata: decision.metadata,
             };
           }
+          if (decision.action === "modify") {
+            if (decision.modifiedContent === undefined) {
+              // Modify without content — fail closed.
+              return {
+                pass: false,
+                action: "block",
+                message: `Provider "${provider.name}" returned action "modify" without modifiedContent — blocking as a safety precaution.`,
+                metadata: decision.metadata,
+              };
+            }
+            return {
+              pass: true,
+              action: "modify",
+              message: decision.message,
+              metadata: decision.metadata,
+              modifiedOutput: decision.modifiedContent,
+            };
+          }
+          // action === "allow" — trust the provider.
           return {
             pass: true,
             action: "allow",
-            message: decision?.message,
-            metadata: decision?.metadata,
+            message: decision.message,
+            metadata: decision.metadata,
+          };
+        }
+
+        // No explicit action — fall back to pass boolean.
+        if (decision.pass === false) {
+          return {
+            pass: false,
+            action: "block",
+            message: decision.message,
+            metadata: decision.metadata,
           };
         }
 
         return {
-          pass: false,
-          action: decision.action ?? "block",
+          pass: true,
+          action: "allow",
           message: decision.message,
           metadata: decision.metadata,
         };

@@ -278,7 +278,8 @@ describe("createGuardrailsFromProvider", () => {
       const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
       expect(result.pass).toBe(false);
       expect(result.action).toBe("block");
-      expect(result.message).toBe("tried to modify");
+      expect(result.message).toContain("BadModify");
+      expect(result.message).toContain("modifiedContent");
     });
 
     it("blocks output when action is modify but modifiedContent is missing", async () => {
@@ -292,6 +293,60 @@ describe("createGuardrailsFromProvider", () => {
       const result = await outputGuardrails[0].handler(makeOutputArgs("response"));
       expect(result.pass).toBe(false);
       expect(result.action).toBe("block");
+      expect(result.message).toContain("BadModifyOut");
+    });
+
+    it("blocks when provider returns explicit action: block even with pass: true (input)", async () => {
+      const evaluateInput = vi.fn().mockResolvedValue({
+        pass: true,
+        action: "block",
+        message: "Explicit block overrides pass",
+      });
+      const provider: GuardrailProvider = { name: "AuthBlock", evaluateInput };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
+      expect(result.pass).toBe(false);
+      expect(result.action).toBe("block");
+      expect(result.message).toBe("Explicit block overrides pass");
+    });
+
+    it("blocks when provider returns action: block without pass field (input)", async () => {
+      const evaluateInput = vi.fn().mockResolvedValue({
+        action: "block",
+        message: "No pass field",
+      });
+      const provider: GuardrailProvider = { name: "NoPassBlock", evaluateInput };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
+      expect(result.pass).toBe(false);
+      expect(result.action).toBe("block");
+    });
+
+    it("allows when provider returns explicit action: allow with pass: false (action authoritative)", async () => {
+      const evaluateInput = vi.fn().mockResolvedValue({
+        pass: false,
+        action: "allow",
+        message: "Explicit allow overrides pass",
+      });
+      const provider: GuardrailProvider = { name: "AuthAllow", evaluateInput };
+      const { inputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await inputGuardrails[0].handler(makeInputArgs("hello"));
+      expect(result.pass).toBe(true);
+      expect(result.action).toBe("allow");
+    });
+
+    it("blocks when provider returns explicit action: block even with pass: true (output)", async () => {
+      const evaluateOutput = vi.fn().mockResolvedValue({
+        pass: true,
+        action: "block",
+        message: "Explicit block on output",
+      });
+      const provider: GuardrailProvider = { name: "AuthBlockOut", evaluateOutput };
+      const { outputGuardrails } = createGuardrailsFromProvider(provider);
+      const result = await outputGuardrails[0].handler(makeOutputArgs("response"));
+      expect(result.pass).toBe(false);
+      expect(result.action).toBe("block");
+      expect(result.message).toBe("Explicit block on output");
     });
 
     it("provides a default message when modify lacks both modifiedContent and message", async () => {
