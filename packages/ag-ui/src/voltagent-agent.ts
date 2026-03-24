@@ -1,7 +1,5 @@
 import { AbstractAgent } from "@ag-ui/client";
 import type {
-  ActivityDeltaEvent,
-  ActivitySnapshotEvent as AGUIActivitySnapshotEvent,
   AssistantMessage,
   BaseEvent,
   CustomEvent,
@@ -28,6 +26,29 @@ import type { StreamTextOptions, VoltAgentTextStreamPart } from "@voltagent/core
 import type { Agent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { Observable } from "rxjs";
+
+// ---------------------------------------------------------------------------
+// Activity event types – not yet available in @ag-ui/core v0.0.37, so we
+// define them locally until the upstream package adds them.
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_SNAPSHOT_EVENT_TYPE = "ACTIVITY_SNAPSHOT" as const;
+const ACTIVITY_DELTA_EVENT_TYPE = "ACTIVITY_DELTA" as const;
+
+type ActivitySnapshotEvent = {
+  type: typeof ACTIVITY_SNAPSHOT_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  content: Record<string, unknown>;
+  replace: boolean;
+};
+
+type ActivityDeltaEvent = {
+  type: typeof ACTIVITY_DELTA_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  patch: unknown[];
+};
 
 type AGUIContextValue = {
   state?: Record<string, unknown>;
@@ -97,7 +118,7 @@ export class VoltAgentAGUI extends AbstractAgent {
             for (const event of events) {
               debugLog("emit event", { type: event.type, messageId: (event as any).messageId });
 
-              subscriber.next(event);
+              subscriber.next(event as BaseEvent);
               if (
                 (event.type === EventType.TEXT_MESSAGE_START ||
                   event.type === EventType.TEXT_MESSAGE_CHUNK ||
@@ -357,9 +378,11 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
       parts: [
         {
           type: "text",
-          text: prefix + (typeof activityContent === "string"
-            ? activityContent
-            : safeStringify(activityContent ?? "")),
+          text:
+            prefix +
+            (typeof activityContent === "string"
+              ? activityContent
+              : safeStringify(activityContent ?? "")),
         },
       ],
     });
@@ -406,7 +429,7 @@ type StreamConversionResult =
   | ToolCallEndEvent
   | ToolCallArgsEvent
   | ToolCallResultEvent
-  | AGUIActivitySnapshotEvent
+  | ActivitySnapshotEvent
   | ActivityDeltaEvent;
 
 function convertVoltStreamPartToEvents(
@@ -518,45 +541,6 @@ function convertVoltStreamPartToEvents(
       };
       return [resultEvent];
     }
-    // VoltAgent tools or custom stream parts can emit activity events directly.
-    // These stream part types are not part of the standard AI SDK but can be
-    // injected by VoltAgent hooks or custom tool implementations.
-    case "activity-snapshot" as string: {
-      const messageId =
-        (part as { messageId?: string }).messageId ?? fallbackMessageId;
-      const activityType =
-        (payload as { activityType?: string }).activityType ?? "activity";
-      const content =
-        ((payload as { content?: Record<string, unknown> }).content as Record<string, unknown>) ??
-        {};
-      const replace =
-        (payload as { replace?: boolean }).replace ?? true;
-
-      const event: AGUIActivitySnapshotEvent = {
-        type: EventType.ACTIVITY_SNAPSHOT,
-        messageId,
-        activityType,
-        content,
-        replace,
-      };
-      return [event];
-    }
-    case "activity-delta" as string: {
-      const messageId =
-        (part as { messageId?: string }).messageId ?? fallbackMessageId;
-      const activityType =
-        (payload as { activityType?: string }).activityType ?? "activity";
-      const patch =
-        (payload as { patch?: unknown[] }).patch ?? [];
-
-      const event: ActivityDeltaEvent = {
-        type: EventType.ACTIVITY_DELTA,
-        messageId,
-        activityType,
-        patch,
-      };
-      return [event];
-    }
     case "error": {
       const errorEvent: TextMessageChunkEvent = {
         type: EventType.TEXT_MESSAGE_CHUNK,
@@ -566,8 +550,41 @@ function convertVoltStreamPartToEvents(
       };
       return [errorEvent];
     }
-    default:
+    default: {
+      // VoltAgent tools or custom stream parts can emit activity events directly.
+      // These stream part types are not part of the standard AI SDK but can be
+      // injected by VoltAgent hooks or custom tool implementations.
+      const typeStr = partType as string;
+      if (typeStr === "activity-snapshot") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const content =
+          ((payload as { content?: Record<string, unknown> }).content as Record<string, unknown>) ??
+          {};
+        const replace = (payload as { replace?: boolean }).replace ?? true;
+        const event: ActivitySnapshotEvent = {
+          type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+          messageId,
+          activityType,
+          content,
+          replace,
+        };
+        return [event];
+      }
+      if (typeStr === "activity-delta") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const patch = (payload as { patch?: unknown[] }).patch ?? [];
+        const event: ActivityDeltaEvent = {
+          type: ACTIVITY_DELTA_EVENT_TYPE,
+          messageId,
+          activityType,
+          patch,
+        };
+        return [event];
+      }
       return null;
+    }
   }
 }
 
@@ -590,19 +607,28 @@ function convertVoltStreamPartToEvents(
 function tryExtractActivityFromToolResult(
   rawResult: unknown,
   fallbackMessageId: string,
-): (AGUIActivitySnapshotEvent | ActivityDeltaEvent)[] | null {
+): (ActivitySnapshotEvent | ActivityDeltaEvent)[] | null {
   if (!rawResult || typeof rawResult !== "object") return null;
 
   // Single activity object
   if (!Array.isArray(rawResult)) {
     const obj = rawResult as Record<string, unknown>;
     if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
-      const event: AGUIActivitySnapshotEvent = {
-        type: EventType.ACTIVITY_SNAPSHOT,
-        messageId: (obj.messageId as string) ?? generateId(),
+      const event: ActivitySnapshotEvent = {
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
         activityType: obj.activityType as string,
         content: obj.content as Record<string, unknown>,
         replace: (obj.replace as boolean) ?? true,
+      };
+      return [event];
+    }
+    if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
+      const event: ActivityDeltaEvent = {
+        type: ACTIVITY_DELTA_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        patch: obj.patch as unknown[],
       };
       return [event];
     }
@@ -610,14 +636,14 @@ function tryExtractActivityFromToolResult(
   }
 
   // Array of activity objects
-  const events: (AGUIActivitySnapshotEvent | ActivityDeltaEvent)[] = [];
+  const events: (ActivitySnapshotEvent | ActivityDeltaEvent)[] = [];
   for (const item of rawResult) {
     if (!item || typeof item !== "object") continue;
     const obj = item as Record<string, unknown>;
 
     if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
       events.push({
-        type: EventType.ACTIVITY_SNAPSHOT,
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
         messageId: (obj.messageId as string) ?? fallbackMessageId,
         activityType: obj.activityType as string,
         content: obj.content as Record<string, unknown>,
@@ -625,7 +651,7 @@ function tryExtractActivityFromToolResult(
       });
     } else if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
       events.push({
-        type: EventType.ACTIVITY_DELTA,
+        type: ACTIVITY_DELTA_EVENT_TYPE,
         messageId: (obj.messageId as string) ?? fallbackMessageId,
         activityType: obj.activityType as string,
         patch: obj.patch as unknown[],
