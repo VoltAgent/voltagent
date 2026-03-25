@@ -1,5 +1,11 @@
 # @voltagent/ag-ui
 
+## 1.0.7
+
+### Patch Changes
+
+- [#1137](https://github.com/VoltAgent/voltagent/pull/1137) [`bb6e9b1`](https://github.com/VoltAgent/voltagent/commit/bb6e9b1e3d81e21dd885a24dc0863b67d249f3b6) Thanks [@corners99](https://github.com/corners99)! - feat(ag-ui): add ACTIVITY_SNAPSHOT and ACTIVITY_DELTA event support
+
 ## 1.0.6
 
 ### Patch Changes

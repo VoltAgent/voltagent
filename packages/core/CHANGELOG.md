@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 2.6.13
+
+### Patch Changes
+
+- [#1172](https://github.com/VoltAgent/voltagent/pull/1172) [`8cb2aa5`](https://github.com/VoltAgent/voltagent/commit/8cb2aa59016641deba0947adcb5a2e4d4970ce08) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tighten prompt-context usage telemetry
+  - redact nested large binary fields when estimating prompt context usage
+  - preserve circular-reference detection when serializing nested prompt message content
+  - exclude runtime-only tool metadata from tool schema token estimates
+  - avoid emitting cached and reasoning token span attributes when their values are zero
+
 ## 2.6.12
 
 ### Patch Changes
