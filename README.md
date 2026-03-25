@@ -32,7 +32,7 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 [![npm downloads](https://img.shields.io/npm/dm/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
-[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
+[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://x.com/voltagent_dev)
 
 </div>
 
