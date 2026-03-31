@@ -187,55 +187,6 @@
       "is_blue_verified": true
     }
   },
-  "1950536117549486550": {
-    "__typename": "Tweet",
-    "id_str": "1950536117549486550",
-    "text": "@tomhacks if you're building in typescript, you need to see voltagent.  \n\ntheir state and memory features are solid. \n\njust built a sales pipeline for a client with it, and it runs smoothly.  huge win for complex systems.\n\nhttps://t.co/ZuCR9qgqcj",
-    "created_at": "2025-07-30T12:37:04.000Z",
-    "lang": "en",
-    "display_text_range": [
-      10,
-      246
-    ],
-    "entities": {
-      "hashtags": [],
-      "urls": [
-        {
-          "indices": [
-            223,
-            246
-          ],
-          "url": "https://t.co/ZuCR9qgqcj",
-          "display_url": "voltagent.dev/docs/agents/me…",
-          "expanded_url": "https://voltagent.dev/docs/agents/memory/overview/"
-        }
-      ],
-      "user_mentions": [
-        {
-          "indices": [
-            0,
-            9
-          ],
-          "id_str": "19107253",
-          "name": "",
-          "screen_name": "tomhacks"
-        }
-      ],
-      "symbols": [],
-      "media": []
-    },
-    "user": {
-      "id_str": "791392986",
-      "name": "Siim Haugas",
-      "screen_name": "siimh",
-      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1949718040532090880/DosiN28C_normal.jpg",
-      "profile_image_shape": "Circle",
-      "verified": false,
-      "is_blue_verified": true
-    },
-    "in_reply_to_screen_name": "tomhacks",
-    "in_reply_to_status_id_str": "1950494081458811022"
-  },
   "1927072927213596780": {
     "__typename": "Tweet",
     "id_str": "1927072927213596780",

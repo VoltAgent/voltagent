@@ -1,9 +1,12 @@
+import * as ai from "ai";
 import { MockLanguageModelV3, mockId, simulateReadableStream } from "ai/test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
+import { Tool } from "../tool";
 import { Agent } from "./agent";
+import { createOutputGuardrail } from "./guardrail";
 
 const makeFinishReason = (
   unified: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other",
@@ -36,6 +39,20 @@ const makeExpectedUsage = (
   totalTokens,
   inputTokenDetails: { noCacheTokens: inputTokens, cacheReadTokens: 0, cacheWriteTokens: 0 },
   outputTokenDetails: { textTokens: outputTokens, reasoningTokens: 0 },
+});
+
+const makeOpenRouterProviderMetadata = () => ({
+  openrouter: {
+    usage: {
+      cost: 0.0012,
+      isByok: true,
+      costDetails: {
+        upstreamInferenceCost: 0.001,
+        upstreamInferenceInputCost: 0.0006,
+        upstreamInferenceOutputCost: 0.0004,
+      },
+    },
+  },
 });
 
 describe("Agent with Observability", () => {
@@ -132,6 +149,241 @@ describe("Agent with Observability", () => {
 
       // Check that events were generated (tool calls would generate events if tools were configured)
       expect(events.length).toBeGreaterThan(0);
+
+      unsubscribe();
+    });
+
+    it("should record OpenRouter provider cost on llm and root spans", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
+        content: [{ type: "text", text: "Cost tracked" }],
+        warnings: [],
+        logprobs: undefined,
+        providerMetadata: makeOpenRouterProviderMetadata(),
+      });
+
+      const agent = new Agent({
+        name: "cost-agent",
+        purpose: "Testing provider cost observability",
+        instructions: "You are a cost test agent",
+        model: mockModel as any,
+        observability,
+      });
+
+      const result = await agent.generateText("Track cost");
+
+      expect(result.text).toBe("Cost tracked");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const llmSpan = endSpans.find(
+        (span) =>
+          span.attributes["span.type"] === "llm" &&
+          span.attributes["llm.operation"] === "generateText",
+      );
+      expect(llmSpan).toBeDefined();
+      expect(llmSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(llmSpan.attributes["usage.is_byok"]).toBe(true);
+      expect(llmSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
+      expect(llmSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
+      expect(llmSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
+
+      const rootSpan = endSpans.find(
+        (span) =>
+          span.name === "cost-agent" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
+      );
+      expect(rootSpan).toBeDefined();
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
+
+      unsubscribe();
+    });
+
+    it("should not emit zero cached or reasoning usage on llm spans", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
+        content: [{ type: "text", text: "No extra usage" }],
+        warnings: [],
+        logprobs: undefined,
+        providerDetails: undefined,
+      });
+
+      const agent = new Agent({
+        name: "usage-agent",
+        purpose: "Testing llm usage emission",
+        instructions: "You are a usage test agent",
+        model: mockModel as any,
+        observability,
+      });
+
+      const result = await agent.generateText("Track usage");
+
+      expect(result.text).toBe("No extra usage");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const llmSpan = endSpans.find(
+        (span) =>
+          span.attributes["span.type"] === "llm" &&
+          span.attributes["llm.operation"] === "generateText",
+      );
+
+      expect(llmSpan).toBeDefined();
+      expect(llmSpan.attributes["llm.usage.prompt_tokens"]).toBe(10);
+      expect(llmSpan.attributes["llm.usage.completion_tokens"]).toBe(20);
+      expect(llmSpan.attributes["llm.usage.total_tokens"]).toBe(30);
+      expect(llmSpan.attributes["llm.usage.cached_tokens"]).toBeUndefined();
+      expect(llmSpan.attributes["llm.usage.reasoning_tokens"]).toBeUndefined();
+
+      unsubscribe();
+    });
+
+    it("should preserve root span provider cost when post-processing fails after a successful model call", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
+        content: [{ type: "text", text: "Cost tracked" }],
+        warnings: [],
+        logprobs: undefined,
+        providerMetadata: makeOpenRouterProviderMetadata(),
+      });
+
+      const explodingGuardrail = createOutputGuardrail({
+        id: "explode-after-llm",
+        name: "Explode After LLM",
+        handler: vi.fn(async () => {
+          throw new Error("Output guardrail failed");
+        }),
+      });
+
+      const agent = new Agent({
+        name: "cost-agent-postprocess-error",
+        purpose: "Testing provider cost observability on post-processing failures",
+        instructions: "You are a cost test agent",
+        model: mockModel as any,
+        observability,
+        outputGuardrails: [explodingGuardrail],
+      });
+
+      await expect(agent.generateText("Track cost")).rejects.toThrow("Output guardrail failed");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const rootSpan = endSpans.find(
+        (span) =>
+          span.name === "cost-agent-postprocess-error" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
+      );
+      expect(rootSpan).toBeDefined();
+      expect(rootSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_cost"]).toBe(0.001);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_input_cost"]).toBe(0.0006);
+      expect(rootSpan.attributes["usage.cost_details.upstream_inference_output_cost"]).toBe(0.0004);
+
+      unsubscribe();
+    });
+
+    it("should preserve provider cost when structured output generation fails after a successful model call", async () => {
+      const events: any[] = [];
+      const unsubscribe = WebSocketEventEmitter.getInstance().onWebSocketEvent((event) => {
+        events.push(event);
+      });
+
+      const tool = new Tool({
+        name: "echo_tool",
+        description: "Echo tool",
+        parameters: z.object({ value: z.string() }),
+      });
+      mockModel.doGenerate = async () => ({
+        finishReason: makeFinishReason("tool-calls"),
+        usage: makeProviderUsage(10, 20),
+        content: [],
+        toolCalls: [
+          {
+            toolCallId: mockId(),
+            toolName: "echo_tool",
+            args: { value: "hello" },
+          },
+        ],
+        warnings: [],
+        logprobs: undefined,
+        providerMetadata: makeOpenRouterProviderMetadata(),
+      });
+
+      const agent = new Agent({
+        name: "cost-agent-structured-output-error",
+        purpose: "Testing provider cost observability on structured output failures",
+        instructions: "You are a cost test agent",
+        model: mockModel as any,
+        observability,
+        maxRetries: 0,
+        tools: [tool],
+      });
+
+      await expect(
+        agent.generateText("Track cost", {
+          output: ai.Output.object({
+            schema: z.object({
+              message: z.string(),
+            }),
+          }),
+        }),
+      ).rejects.toThrow("Structured output was requested but no final output was generated");
+
+      const endSpans = events
+        .filter((event) => event.type === "span:end")
+        .map((event) => event.span);
+
+      const llmSpan = endSpans.find(
+        (span) =>
+          span.attributes["span.type"] === "llm" &&
+          span.attributes["llm.operation"] === "generateText",
+      );
+      expect(llmSpan).toBeDefined();
+      expect(llmSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(llmSpan.attributes["usage.cost"]).toBe(0.0012);
+
+      const rootSpan = endSpans.find(
+        (span) =>
+          span.name === "cost-agent-structured-output-error" &&
+          span.attributes["entity.type"] === "agent" &&
+          span.attributes["span.type"] !== "llm",
+      );
+      expect(rootSpan).toBeDefined();
+      expect(rootSpan.status.code).toBe(SpanStatusCode.ERROR);
+      expect(rootSpan.attributes["usage.cost"]).toBe(0.0012);
+      expect(rootSpan.attributes["usage.is_byok"]).toBe(true);
 
       unsubscribe();
     });

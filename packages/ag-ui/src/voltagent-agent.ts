@@ -27,6 +27,29 @@ import type { Agent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { Observable } from "rxjs";
 
+// ---------------------------------------------------------------------------
+// Activity event types – not yet available in @ag-ui/core v0.0.37, so we
+// define them locally until the upstream package adds them.
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_SNAPSHOT_EVENT_TYPE = "ACTIVITY_SNAPSHOT" as const;
+const ACTIVITY_DELTA_EVENT_TYPE = "ACTIVITY_DELTA" as const;
+
+type ActivitySnapshotEvent = {
+  type: typeof ACTIVITY_SNAPSHOT_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  content: Record<string, unknown>;
+  replace: boolean;
+};
+
+type ActivityDeltaEvent = {
+  type: typeof ACTIVITY_DELTA_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  patch: unknown[];
+};
+
 type AGUIContextValue = {
   state?: Record<string, unknown>;
   context?: RunAgentInput["context"];
@@ -95,7 +118,7 @@ export class VoltAgentAGUI extends AbstractAgent {
             for (const event of events) {
               debugLog("emit event", { type: event.type, messageId: (event as any).messageId });
 
-              subscriber.next(event);
+              subscriber.next(event as BaseEvent);
               if (
                 (event.type === EventType.TEXT_MESSAGE_START ||
                   event.type === EventType.TEXT_MESSAGE_CHUNK ||
@@ -276,7 +299,7 @@ const isToolMessage = (message: Message): message is ToolMessage => message.role
 
 type VoltUIPart =
   | { type: "text"; text: string }
-  | { type: "tool-call"; toolCallId: string; toolName: string; args?: unknown }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input?: unknown }
   | { type: "tool-result"; toolCallId?: string; toolName?: string; output?: unknown };
 
 type VoltUIMessage = {
@@ -311,13 +334,13 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
       }
 
       for (const call of msg.toolCalls ?? []) {
-        const args = safelyParseJson(call.function.arguments);
+        const input = safelyParseJson(call.function.arguments);
         toolNameById.set(call.id, call.function.name);
         parts.push({
           type: "tool-call",
           toolCallId: call.id,
           toolName: call.function.name,
-          args,
+          input,
         });
       }
 
@@ -355,11 +378,24 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
       continue;
     }
 
-    // activity or any other custom role -> fold into assistant text
+    // Activity messages carry structured content from previous agent turns.
+    // Fold into assistant text so the model can see prior activity context.
+    const activityContent = (msg as { content?: unknown }).content;
+    const activityType = (msg as { activityType?: string }).activityType;
+    const prefix = activityType ? `[Activity: ${activityType}] ` : "";
     convertedMessages.push({
       id: messageId,
       role: "assistant",
-      parts: [{ type: "text", text: safeStringify((msg as any).content ?? "") }],
+      parts: [
+        {
+          type: "text",
+          text:
+            prefix +
+            (typeof activityContent === "string"
+              ? activityContent
+              : safeStringify(activityContent ?? "")),
+        },
+      ],
     });
   }
 
@@ -403,7 +439,9 @@ type StreamConversionResult =
   | ToolCallStartEvent
   | ToolCallEndEvent
   | ToolCallArgsEvent
-  | ToolCallResultEvent;
+  | ToolCallResultEvent
+  | ActivitySnapshotEvent
+  | ActivityDeltaEvent;
 
 function convertVoltStreamPartToEvents(
   part: VoltAgentTextStreamPart,
@@ -487,6 +525,24 @@ function convertVoltStreamPartToEvents(
         (payload as { output?: unknown }).output ??
         (payload as { data?: unknown }).data ??
         payload;
+
+      // Check if the tool result is an activity message.
+      // Tools can return { activityType: string, content: Record<string, any> }
+      // to emit an ACTIVITY_SNAPSHOT event instead of a plain TOOL_CALL_RESULT.
+      const activityEvents = tryExtractActivityFromToolResult(rawResult, fallbackMessageId);
+      if (activityEvents) {
+        // Emit both the activity event(s) AND the original tool result so that
+        // the model's tool call is properly resolved.
+        const resultEvent: ToolCallResultEvent = {
+          type: EventType.TOOL_CALL_RESULT,
+          toolCallId: (payload as { toolCallId?: string }).toolCallId ?? generateId(),
+          content: safeStringify(rawResult ?? {}),
+          messageId: generateId(),
+          role: "tool",
+        };
+        return [...activityEvents, resultEvent];
+      }
+
       const resultEvent: ToolCallResultEvent = {
         type: EventType.TOOL_CALL_RESULT,
         toolCallId: (payload as { toolCallId?: string }).toolCallId ?? generateId(),
@@ -505,9 +561,116 @@ function convertVoltStreamPartToEvents(
       };
       return [errorEvent];
     }
-    default:
+    default: {
+      // VoltAgent tools or custom stream parts can emit activity events directly.
+      // These stream part types are not part of the standard AI SDK but can be
+      // injected by VoltAgent hooks or custom tool implementations.
+      const typeStr = partType as string;
+      if (typeStr === "activity-snapshot") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const content =
+          ((payload as { content?: Record<string, unknown> }).content as Record<string, unknown>) ??
+          {};
+        const replace = (payload as { replace?: boolean }).replace ?? true;
+        const event: ActivitySnapshotEvent = {
+          type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+          messageId,
+          activityType,
+          content,
+          replace,
+        };
+        return [event];
+      }
+      if (typeStr === "activity-delta") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const patch = (payload as { patch?: unknown[] }).patch ?? [];
+        const event: ActivityDeltaEvent = {
+          type: ACTIVITY_DELTA_EVENT_TYPE,
+          messageId,
+          activityType,
+          patch,
+        };
+        return [event];
+      }
       return null;
+    }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Activity extraction from tool results
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks whether a tool result represents an activity message.
+ *
+ * A tool can signal that its result should be surfaced as an AG-UI activity
+ * event by returning an object (or array of objects) with these fields:
+ *
+ *   { activityType: string, content: Record<string, any>, replace?: boolean }
+ *
+ * When detected, the adapter emits ACTIVITY_SNAPSHOT events so that
+ * frontends (CopilotKit, A2UI, etc.) can render rich, interactive UI
+ * instead of showing raw tool JSON.
+ */
+function tryExtractActivityFromToolResult(
+  rawResult: unknown,
+  fallbackMessageId: string,
+): (ActivitySnapshotEvent | ActivityDeltaEvent)[] | null {
+  if (!rawResult || typeof rawResult !== "object") return null;
+
+  // Single activity object
+  if (!Array.isArray(rawResult)) {
+    const obj = rawResult as Record<string, unknown>;
+    if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
+      const event: ActivitySnapshotEvent = {
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        content: obj.content as Record<string, unknown>,
+        replace: (obj.replace as boolean) ?? true,
+      };
+      return [event];
+    }
+    if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
+      const event: ActivityDeltaEvent = {
+        type: ACTIVITY_DELTA_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        patch: obj.patch as unknown[],
+      };
+      return [event];
+    }
+    return null;
+  }
+
+  // Array of activity objects
+  const events: (ActivitySnapshotEvent | ActivityDeltaEvent)[] = [];
+  for (const item of rawResult) {
+    if (!item || typeof item !== "object") continue;
+    const obj = item as Record<string, unknown>;
+
+    if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
+      events.push({
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        content: obj.content as Record<string, unknown>,
+        replace: (obj.replace as boolean) ?? true,
+      });
+    } else if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
+      events.push({
+        type: ACTIVITY_DELTA_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        patch: obj.patch as unknown[],
+      });
+    }
+  }
+
+  return events.length > 0 ? events : null;
 }
 
 export function createVoltAgentAGUI(config: VoltAgentAGUIConfig): VoltAgentAGUI {

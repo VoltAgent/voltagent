@@ -109,6 +109,10 @@ import {
 import type { AgentHooks, OnToolEndHookResult, OnToolErrorHookResult } from "./hooks";
 import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
+import {
+  estimatePromptContextUsage,
+  promptContextUsageEstimateToAttributes,
+} from "./prompt-context-usage";
 import type {
   BaseMessage,
   BaseTool,
@@ -239,6 +243,9 @@ type ResponseMessage = AssistantModelMessage | ToolModelMessage;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  isRecord(value) && !Array.isArray(value);
+
 const hasNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
@@ -258,6 +265,113 @@ const firstDefined = <T>(...values: Array<T | null | undefined>): T | undefined 
     }
   }
   return undefined;
+};
+
+type OpenRouterUsageCost = {
+  cost?: number;
+  isByok?: boolean;
+  upstreamInferenceCost?: number;
+  upstreamInferenceInputCost?: number;
+  upstreamInferenceOutputCost?: number;
+};
+
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const toBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return undefined;
+};
+
+const extractOpenRouterUsageCost = (providerMetadata: unknown): OpenRouterUsageCost | undefined => {
+  if (!isPlainObject(providerMetadata)) {
+    return undefined;
+  }
+
+  const openRouterMetadata = isPlainObject(providerMetadata.openrouter)
+    ? providerMetadata.openrouter
+    : undefined;
+  const usage =
+    openRouterMetadata && isPlainObject(openRouterMetadata.usage)
+      ? openRouterMetadata.usage
+      : undefined;
+
+  if (!usage) {
+    return undefined;
+  }
+
+  const costDetails = firstDefined(
+    isPlainObject(usage.costDetails) ? usage.costDetails : undefined,
+    isPlainObject(usage.cost_details) ? usage.cost_details : undefined,
+  );
+
+  const result: OpenRouterUsageCost = {
+    cost: toFiniteNumber(usage.cost),
+    isByok: firstDefined(toBoolean(usage.isByok), toBoolean(usage.is_byok)),
+    upstreamInferenceCost: firstDefined(
+      toFiniteNumber(costDetails?.upstreamInferenceCost),
+      toFiniteNumber(costDetails?.upstream_inference_cost),
+    ),
+    upstreamInferenceInputCost: firstDefined(
+      toFiniteNumber(costDetails?.upstreamInferenceInputCost),
+      toFiniteNumber(costDetails?.upstream_inference_input_cost),
+    ),
+    upstreamInferenceOutputCost: firstDefined(
+      toFiniteNumber(costDetails?.upstreamInferenceOutputCost),
+      toFiniteNumber(costDetails?.upstream_inference_output_cost),
+    ),
+  };
+
+  return Object.values(result).some((value) => value !== undefined) ? result : undefined;
+};
+
+type GenerationErrorDetails = {
+  usage?: LanguageModelUsage;
+  providerMetadata?: unknown;
+  finishReason?: string;
+};
+
+const toLanguageModelUsage = (value: unknown): LanguageModelUsage | undefined =>
+  isPlainObject(value) ? (value as LanguageModelUsage) : undefined;
+
+const extractGenerationErrorDetails = (error: unknown): GenerationErrorDetails => {
+  const metadata = isRecord(error) && isPlainObject(error.metadata) ? error.metadata : undefined;
+  const originalError = isRecord(error) ? error.originalError : undefined;
+
+  const usage = firstDefined(
+    isRecord(error) ? toLanguageModelUsage(error.usage) : undefined,
+    metadata ? toLanguageModelUsage(metadata.usage) : undefined,
+    isRecord(originalError) ? toLanguageModelUsage(originalError.usage) : undefined,
+  );
+
+  const providerMetadata = firstDefined(
+    metadata?.providerMetadata,
+    isRecord(error) ? error.providerMetadata : undefined,
+    isRecord(originalError) ? originalError.providerMetadata : undefined,
+  );
+
+  const finishReason = firstNonBlank(
+    isRecord(error) ? error.finishReason : undefined,
+    metadata?.finishReason,
+    isRecord(originalError) ? originalError.finishReason : undefined,
+  );
+
+  return { usage, providerMetadata, finishReason };
 };
 
 const isAssistantContentPart = (value: unknown): boolean => {
@@ -1192,7 +1306,7 @@ export class Agent {
                     }),
                   );
 
-                  this.ensureStructuredOutputGenerated({
+                  await this.ensureStructuredOutputGenerated({
                     result: response,
                     output,
                     tools,
@@ -1205,11 +1319,18 @@ export class Agent {
                   finalizeLLMSpan(SpanStatusCode.OK, {
                     usage: resolvedProviderUsage,
                     finishReason: response.finishReason,
+                    providerMetadata: (response as { providerMetadata?: unknown }).providerMetadata,
                   });
 
                   return response;
                 } catch (error) {
-                  finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+                  const errorDetails = extractGenerationErrorDetails(error);
+                  finalizeLLMSpan(SpanStatusCode.ERROR, {
+                    message: (error as Error).message,
+                    usage: errorDetails.usage,
+                    finishReason: errorDetails.finishReason,
+                    providerMetadata: errorDetails.providerMetadata,
+                  });
                   throw error;
                 }
               },
@@ -1229,6 +1350,11 @@ export class Agent {
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
+            this.recordRootSpanUsageAndProviderCost(
+              oc.traceContext,
+              usageForFinish,
+              (result as { providerMetadata?: unknown }).providerMetadata,
+            );
             const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
               this.collectToolDataFromResult(result);
 
@@ -1301,8 +1427,6 @@ export class Agent {
               },
             );
 
-            // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, usageForFinish);
             oc.traceContext.setOutput(finalText);
             oc.traceContext.setFinishReason(result.finishReason);
 
@@ -1897,9 +2021,15 @@ export class Agent {
                   usage: providerUsage,
                   totalUsage: finalResult.totalUsage,
                 });
+                this.recordRootSpanUsageAndProviderCost(
+                  oc.traceContext,
+                  usageForFinish,
+                  finalResult.providerMetadata,
+                );
                 finalizeLLMSpan(SpanStatusCode.OK, {
                   usage: providerUsage,
                   finishReason: finalResult.finishReason,
+                  providerMetadata: finalResult.providerMetadata,
                 });
 
                 if (!shouldDeferPersist && shouldPersistMemory) {
@@ -1909,9 +2039,6 @@ export class Agent {
                 // History update removed - using OpenTelemetry only
 
                 // Event tracking now handled by OpenTelemetry spans
-
-                // Add usage to span
-                this.setTraceContextUsage(oc.traceContext, usageForFinish);
 
                 const usage = convertUsage(usageForFinish);
                 let finalText: string;
@@ -2041,6 +2168,7 @@ export class Agent {
                 finalizeLLMSpan(SpanStatusCode.OK, {
                   usage: usageForFinish,
                   finishReason: finalResult.finishReason,
+                  providerMetadata: finalResult.providerMetadata,
                 });
 
                 oc.traceContext.end("completed");
@@ -2641,6 +2769,11 @@ export class Agent {
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
+            this.recordRootSpanUsageAndProviderCost(
+              oc.traceContext,
+              usageForFinish,
+              (result as { providerMetadata?: unknown }).providerMetadata,
+            );
             const usageInfo = convertUsage(usageForFinish);
             const middlewareObject = await runOutputMiddlewares<z.infer<T>>(
               result.object,
@@ -2700,8 +2833,6 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, usageForFinish);
             oc.traceContext.setOutput(finalObject);
 
             // Set output in operation context
@@ -3093,6 +3224,11 @@ export class Agent {
                     usage: providerUsage,
                     totalUsage: (finalResult as { totalUsage?: LanguageModelUsage }).totalUsage,
                   });
+                  this.recordRootSpanUsageAndProviderCost(
+                    oc.traceContext,
+                    usageForFinish,
+                    finalResult.providerMetadata,
+                  );
                   const usageInfo = convertUsage(usageForFinish);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
@@ -3135,8 +3271,6 @@ export class Agent {
                     this.addStepToHistory(step, oc);
                   }
 
-                  // Add usage to span
-                  this.setTraceContextUsage(oc.traceContext, usageForFinish);
                   oc.traceContext.setOutput(finalObject);
 
                   // Set output in operation context
@@ -3451,7 +3585,7 @@ export class Agent {
     };
   }
 
-  private ensureStructuredOutputGenerated<
+  private async ensureStructuredOutputGenerated<
     TOOLS extends ToolSet,
     OUTPUT extends OutputSpec,
   >(params: {
@@ -3459,7 +3593,7 @@ export class Agent {
     output: OUTPUT | undefined;
     tools: Record<string, any>;
     maxSteps: number;
-  }): void {
+  }): Promise<void> {
     const { result, output, tools, maxSteps } = params;
     if (!output) {
       return;
@@ -3481,6 +3615,13 @@ export class Agent {
       const stepCount = result.steps?.length ?? 0;
       const finishReason = result.finishReason ?? "unknown";
       const reachedMaxSteps = stepCount >= maxSteps;
+      const providerMetadata = (result as { providerMetadata?: unknown }).providerMetadata;
+      const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
+      const usageForFinish = resolveFinishUsage({
+        providerMetadata,
+        usage: providerUsage,
+        totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+      });
 
       const guidance =
         configuredToolCount > 0 || toolCalls.length > 0
@@ -3503,6 +3644,11 @@ export class Agent {
             maxSteps,
             configuredToolCount,
             toolCallCount: toolCalls.length,
+            usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
+            providerMetadata:
+              providerMetadata !== undefined
+                ? JSON.parse(safeStringify(providerMetadata))
+                : undefined,
           },
         },
       );
@@ -3959,7 +4105,16 @@ export class Agent {
     },
   ): Span {
     const { label, ...spanParams } = params;
-    const attributes = this.buildLLMSpanAttributes(spanParams);
+    const promptContextUsageEstimate = estimatePromptContextUsage({
+      messages: params.messages,
+      tools: params.tools,
+    });
+    const attributes = {
+      ...this.buildLLMSpanAttributes(spanParams),
+      ...(promptContextUsageEstimate
+        ? promptContextUsageEstimateToAttributes(promptContextUsageEstimate)
+        : {}),
+    };
     const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
       kind: SpanKind.CLIENT,
       label,
@@ -3976,6 +4131,7 @@ export class Agent {
         message?: string;
         usage?: LanguageModelUsage | UsageInfo | null;
         finishReason?: FinishReason | string | null;
+        providerMetadata?: unknown;
       },
     ) => {
       if (ended) {
@@ -3983,6 +4139,9 @@ export class Agent {
       }
       if (details?.usage) {
         this.recordLLMUsage(span, details.usage);
+      }
+      if (details?.providerMetadata !== undefined) {
+        this.recordProviderCost(span, details.providerMetadata);
       }
       if (details?.finishReason) {
         span.setAttribute("llm.finish_reason", String(details.finishReason));
@@ -4094,7 +4253,8 @@ export class Agent {
       return;
     }
 
-    const { promptTokens, completionTokens, totalTokens } = normalizedUsage;
+    const { promptTokens, completionTokens, totalTokens, cachedInputTokens, reasoningTokens } =
+      normalizedUsage;
 
     if (promptTokens !== undefined) {
       span.setAttribute("llm.usage.prompt_tokens", promptTokens);
@@ -4104,6 +4264,44 @@ export class Agent {
     }
     if (totalTokens !== undefined) {
       span.setAttribute("llm.usage.total_tokens", totalTokens);
+    }
+    if (cachedInputTokens !== undefined && cachedInputTokens > 0) {
+      span.setAttribute("llm.usage.cached_tokens", cachedInputTokens);
+    }
+    if (reasoningTokens !== undefined && reasoningTokens > 0) {
+      span.setAttribute("llm.usage.reasoning_tokens", reasoningTokens);
+    }
+  }
+
+  private recordProviderCost(span: Span, providerMetadata?: unknown): void {
+    const openRouterUsageCost = extractOpenRouterUsageCost(providerMetadata);
+    if (!openRouterUsageCost) {
+      return;
+    }
+
+    if (openRouterUsageCost.cost !== undefined) {
+      span.setAttribute("usage.cost", openRouterUsageCost.cost);
+    }
+    if (openRouterUsageCost.isByok !== undefined) {
+      span.setAttribute("usage.is_byok", openRouterUsageCost.isByok);
+    }
+    if (openRouterUsageCost.upstreamInferenceCost !== undefined) {
+      span.setAttribute(
+        "usage.cost_details.upstream_inference_cost",
+        openRouterUsageCost.upstreamInferenceCost,
+      );
+    }
+    if (openRouterUsageCost.upstreamInferenceInputCost !== undefined) {
+      span.setAttribute(
+        "usage.cost_details.upstream_inference_input_cost",
+        openRouterUsageCost.upstreamInferenceInputCost,
+      );
+    }
+    if (openRouterUsageCost.upstreamInferenceOutputCost !== undefined) {
+      span.setAttribute(
+        "usage.cost_details.upstream_inference_output_cost",
+        openRouterUsageCost.upstreamInferenceOutputCost,
+      );
     }
   }
 
@@ -4370,6 +4568,7 @@ export class Agent {
           finalizeLLMSpan(SpanStatusCode.OK, {
             usage: resolvedUsage,
             finishReason: result.finishReason,
+            providerMetadata: (result as { providerMetadata?: unknown }).providerMetadata,
           });
 
           return title || null;
@@ -6732,6 +6931,7 @@ export class Agent {
       finalizeLLMSpan(SpanStatusCode.OK, {
         usage: resolvedUsage,
         finishReason: response.finishReason,
+        providerMetadata: (response as { providerMetadata?: unknown }).providerMetadata,
       });
 
       return response;
@@ -7284,7 +7484,19 @@ export class Agent {
       throw oc.cancellationError;
     }
 
-    const voltagentError = createVoltAgentError(error);
+    const voltagentError = isVoltAgentError(error) ? error : createVoltAgentError(error);
+    const errorDetails = extractGenerationErrorDetails(voltagentError);
+
+    if (errorDetails.usage || errorDetails.providerMetadata !== undefined) {
+      this.recordRootSpanUsageAndProviderCost(
+        oc.traceContext,
+        errorDetails.usage,
+        errorDetails.providerMetadata,
+      );
+    }
+    if (errorDetails.finishReason) {
+      oc.traceContext.setFinishReason(errorDetails.finishReason);
+    }
 
     oc.traceContext.end("error", error);
 
@@ -8053,6 +8265,15 @@ export class Agent {
       cachedTokens: resolvedUsage.cachedInputTokens,
       reasoningTokens: resolvedUsage.reasoningTokens,
     });
+  }
+
+  private recordRootSpanUsageAndProviderCost(
+    traceContext: AgentTraceContext,
+    usage?: LanguageModelUsage,
+    providerMetadata?: unknown,
+  ): void {
+    this.setTraceContextUsage(traceContext, usage);
+    this.recordProviderCost(traceContext.getRootSpan(), providerMetadata);
   }
 
   /**

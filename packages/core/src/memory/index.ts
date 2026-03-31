@@ -44,6 +44,8 @@ const isEmbeddingAdapter = (value: EmbeddingAdapterInput): value is EmbeddingAda
 const isEmbeddingAdapterConfig = (value: EmbeddingAdapterInput): value is EmbeddingAdapterConfig =>
   typeof value === "object" && value !== null && "model" in value && !isEmbeddingAdapter(value);
 
+const VECTOR_CLEAR_CONVERSATION_PAGE_SIZE = 200;
+
 const resolveEmbeddingAdapter = (
   embedding?: EmbeddingAdapterInput,
 ): EmbeddingAdapter | undefined => {
@@ -170,6 +172,20 @@ export class Memory {
     conversationId?: string,
     context?: OperationContext,
   ): Promise<void> {
+    if (this.vector) {
+      try {
+        const vectorIds = await this.getMessageVectorIdsForClear(userId, conversationId);
+        if (vectorIds.length > 0) {
+          await this.vector.deleteBatch(vectorIds);
+        }
+      } catch (error) {
+        console.warn(
+          `Failed to delete vectors while clearing messages for user ${userId}${conversationId ? ` conversation ${conversationId}` : ""}:`,
+          error,
+        );
+      }
+    }
+
     return this.storage.clearMessages(userId, conversationId, context);
   }
 
@@ -374,6 +390,47 @@ export class Memory {
       .map((id) => byId.get(id))
       .filter((m): m is UIMessage<{ createdAt: Date }> => Boolean(m));
     return ordered;
+  }
+
+  private async getMessageVectorIdsForClear(
+    userId: string,
+    conversationId?: string,
+  ): Promise<string[]> {
+    const vectorIds = new Set<string>();
+
+    if (conversationId) {
+      const messages = await this.storage.getMessages(userId, conversationId);
+      for (const message of messages) {
+        vectorIds.add(`msg_${conversationId}_${message.id}`);
+      }
+      return Array.from(vectorIds);
+    }
+
+    const totalConversations = await this.storage.countConversations({ userId });
+    let offset = 0;
+
+    while (offset < totalConversations) {
+      const conversations = await this.storage.queryConversations({
+        userId,
+        limit: VECTOR_CLEAR_CONVERSATION_PAGE_SIZE,
+        offset,
+      });
+
+      for (const conversation of conversations) {
+        const messages = await this.storage.getMessages(userId, conversation.id);
+        for (const message of messages) {
+          vectorIds.add(`msg_${conversation.id}_${message.id}`);
+        }
+      }
+
+      if (conversations.length === 0) {
+        break;
+      }
+
+      offset += conversations.length;
+    }
+
+    return Array.from(vectorIds);
   }
 
   /**

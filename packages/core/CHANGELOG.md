@@ -1,5 +1,76 @@
 # @voltagent/core
 
+## 2.6.13
+
+### Patch Changes
+
+- [#1172](https://github.com/VoltAgent/voltagent/pull/1172) [`8cb2aa5`](https://github.com/VoltAgent/voltagent/commit/8cb2aa59016641deba0947adcb5a2e4d4970ce08) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tighten prompt-context usage telemetry
+  - redact nested large binary fields when estimating prompt context usage
+  - preserve circular-reference detection when serializing nested prompt message content
+  - exclude runtime-only tool metadata from tool schema token estimates
+  - avoid emitting cached and reasoning token span attributes when their values are zero
+
+## 2.6.12
+
+### Patch Changes
+
+- [#1169](https://github.com/VoltAgent/voltagent/pull/1169) [`25b21d0`](https://github.com/VoltAgent/voltagent/commit/25b21d00fc74663a414eefabe35f7b4058ec9e71) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add estimated prompt context telemetry for observability
+  - record estimated prompt-context breakdown for system instructions, conversation messages, and tool schemas on LLM spans
+  - expose cached and reasoning token usage on LLM spans for observability consumers
+  - add tests for prompt-context estimation helpers
+
+## 2.6.11
+
+### Patch Changes
+
+- [#1168](https://github.com/VoltAgent/voltagent/pull/1168) [`2075bd9`](https://github.com/VoltAgent/voltagent/commit/2075bd9884b5a7f59ca04cd1aaa213b0852aafc7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: emit LLM judge token and provider cost telemetry on eval scorer spans
+
+  VoltAgent now records LLM judge model, token usage, cached tokens, reasoning tokens,
+  and provider-reported cost details on live eval scorer spans.
+
+  This makes scorer-side usage visible in observability backends and enables downstream
+  cost aggregation to distinguish agent costs from eval scorer costs.
+
+- [#1163](https://github.com/VoltAgent/voltagent/pull/1163) [`6f14c4d`](https://github.com/VoltAgent/voltagent/commit/6f14c4d0dcabe35feba7352e8a7b67d5280a61b9) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve usage and provider cost metadata on structured output failures
+
+  When `generateText` receives a successful model response but structured output is not produced,
+  VoltAgent now keeps the resolved usage, finish reason, and provider metadata on the resulting
+  error path.
+
+  This preserves provider-reported cost data for observability spans and makes the same metadata
+  available to error hooks through `VoltAgentError.metadata`.
+
+## 2.6.10
+
+### Patch Changes
+
+- [#1155](https://github.com/VoltAgent/voltagent/pull/1155) [`52bda94`](https://github.com/VoltAgent/voltagent/commit/52bda94d948c9f42eb4d88db388bd4f44a59b3be) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: capture provider-reported OpenRouter costs in observability spans
+
+  ### What's Changed
+  - Forward OpenRouter provider-reported cost metadata to both LLM spans and root agent spans.
+  - Record `usage.cost` and `usage.cost_details.upstream_inference_*` attributes for downstream cost consumers.
+  - Document OpenRouter usage accounting and custom `onEnd` hook-based cost reporting in the observability docs.
+
+## 2.6.9
+
+### Patch Changes
+
+- [#1152](https://github.com/VoltAgent/voltagent/pull/1152) [`aa5c4d7`](https://github.com/VoltAgent/voltagent/commit/aa5c4d7e82a5d68bd3efa23b527d9b52b0ec3e83) Thanks [@omeraplak](https://github.com/omeraplak)! - Fix stale semantic-search results after `Memory.clearMessages()`.
+
+  Previously, `clearMessages()` removed conversation messages from storage but left vector
+  embeddings behind when a vector adapter was configured. This meant semantic search could
+  still return hits for cleared conversations even though the message history had been removed.
+
+  ## What Changed
+  - `Memory.clearMessages(userId, conversationId)` now deletes vector entries for that
+    conversation before clearing storage
+  - `Memory.clearMessages(userId)` now also deletes vector entries across all of the user's
+    conversations
+
+  ## Impact
+  - Cleared conversations no longer appear in semantic search results
+  - Message storage and vector storage stay in sync after cleanup
+
 ## 2.6.8
 
 ### Patch Changes
