@@ -174,9 +174,7 @@ const STATIC_PROVIDER_MAP = new Map([
   ...Object.values(MODEL_PROVIDER_REGISTRY).map(
     (entry) => [normalizeProviderId(entry.id), entry] as const,
   ),
-  ...EXTRA_PROVIDER_REGISTRY.map(
-    (entry) => [normalizeProviderId(entry.id), entry] as const,
-  ),
+  ...EXTRA_PROVIDER_REGISTRY.map((entry) => [normalizeProviderId(entry.id), entry] as const),
 ]);
 
 declare global {
