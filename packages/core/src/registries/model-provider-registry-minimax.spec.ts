@@ -101,7 +101,10 @@ describe("MiniMax provider registry", () => {
       return config.name === "minimax-cn";
     });
     expect(cnCall).toBeDefined();
-    const config = cnCall![0] as Record<string, unknown>;
+    if (!cnCall) {
+      throw new Error("Expected minimax-cn provider call to be recorded");
+    }
+    const config = cnCall[0] as Record<string, unknown>;
     expect(config.baseURL).toBe("https://api.minimaxi.com/v1");
     expect(config.apiKey).toBe("test-key-minimax-cn");
   });
@@ -119,12 +122,17 @@ describe("MiniMax provider registry", () => {
       return config.name === "minimax";
     });
     expect(minimaxCall).toBeDefined();
-    const config = minimaxCall![0] as Record<string, unknown>;
+    if (!minimaxCall) {
+      throw new Error("Expected minimax provider call to be recorded");
+    }
+    const config = minimaxCall[0] as Record<string, unknown>;
     expect(config.baseURL).toBe("https://custom.minimax.io/v1");
   });
 
   it("should throw if MINIMAX_API_KEY is not set", async () => {
-    delete process.env.MINIMAX_API_KEY;
+    process.env = Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => key !== "MINIMAX_API_KEY"),
+    );
 
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
