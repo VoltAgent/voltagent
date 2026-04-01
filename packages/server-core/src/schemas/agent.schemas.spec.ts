@@ -56,6 +56,10 @@ describe("GenerateOptionsSchema", () => {
         options: {
           contextLimit: 12,
           readOnly: true,
+          messageMetadataPersistence: {
+            usage: true,
+            finishReason: true,
+          },
           semanticMemory: {
             enabled: true,
             semanticLimit: 4,
@@ -77,6 +81,10 @@ describe("GenerateOptionsSchema", () => {
     expect(result.memory?.conversationId).toBe("conv-1");
     expect(result.memory?.options?.contextLimit).toBe(12);
     expect(result.memory?.options?.readOnly).toBe(true);
+    expect(result.memory?.options?.messageMetadataPersistence).toEqual({
+      usage: true,
+      finishReason: true,
+    });
     expect(result.memory?.options?.semanticMemory?.enabled).toBe(true);
     expect(result.memory?.options?.semanticMemory?.semanticLimit).toBe(4);
     expect(result.memory?.options?.semanticMemory?.semanticThreshold).toBe(0.8);
@@ -97,6 +105,7 @@ describe("GenerateOptionsSchema", () => {
       conversationPersistence: {
         mode: "finish",
       },
+      messageMetadataPersistence: true,
     };
 
     expect(() => GenerateOptionsSchema.parse(payload)).not.toThrow();

@@ -258,6 +258,37 @@ curl -X POST http://localhost:3141/agents/assistant/text \
   }'
 ```
 
+**Persisting Assistant Metadata to Memory:**
+
+If you want `usage` and `finishReason` to be visible later in memory-backed
+`UIMessage.metadata`, enable `memory.options.messageMetadataPersistence`:
+
+```bash
+curl -X POST http://localhost:3141/agents/assistant/text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Hello",
+    "options": {
+      "memory": {
+        "userId": "user-1",
+        "conversationId": "conv-1",
+        "options": {
+          "messageMetadataPersistence": {
+            "usage": true,
+            "finishReason": true
+          }
+        }
+      }
+    }
+  }'
+```
+
+Then retrieve the saved messages:
+
+```bash
+curl "http://localhost:3141/api/memory/conversations/conv-1/messages?agentId=assistant&userId=user-1"
+```
+
 ### Using output for Structured Generation
 
 The `/text`, `/stream`, and `/chat` endpoints support structured output generation using the `output` option. Unlike the `/object` endpoint, this allows you to get structured data **while maintaining full tool calling capabilities**.

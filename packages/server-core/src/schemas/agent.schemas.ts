@@ -210,6 +210,23 @@ const ConversationPersistenceOptionsSchema = z
   })
   .passthrough();
 
+const MessageMetadataPersistenceOptionsSchema = z
+  .object({
+    usage: z
+      .boolean()
+      .optional()
+      .describe("Persist resolved token usage under message.metadata.usage"),
+    finishReason: z
+      .boolean()
+      .optional()
+      .describe("Persist the final finish reason under message.metadata.finishReason"),
+  })
+  .passthrough();
+
+const MessageMetadataPersistenceConfigSchema = z
+  .union([z.boolean(), MessageMetadataPersistenceOptionsSchema])
+  .describe("Controls which assistant message metadata fields are persisted to memory");
+
 const RuntimeMemoryBehaviorOptionsSchema = z
   .object({
     contextLimit: z
@@ -227,6 +244,9 @@ const RuntimeMemoryBehaviorOptionsSchema = z
     ),
     conversationPersistence: ConversationPersistenceOptionsSchema.optional().describe(
       "Per-call conversation persistence behavior",
+    ),
+    messageMetadataPersistence: MessageMetadataPersistenceConfigSchema.optional().describe(
+      "Per-call persisted assistant message metadata behavior",
     ),
   })
   .passthrough();
@@ -265,6 +285,9 @@ export const GenerateOptionsSchema = z
     ),
     conversationPersistence: ConversationPersistenceOptionsSchema.optional().describe(
       "Deprecated: use options.memory.options.conversationPersistence",
+    ),
+    messageMetadataPersistence: MessageMetadataPersistenceConfigSchema.optional().describe(
+      "Deprecated: use options.memory.options.messageMetadataPersistence",
     ),
     maxSteps: z
       .number()
