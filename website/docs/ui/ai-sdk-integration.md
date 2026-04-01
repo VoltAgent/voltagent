@@ -350,24 +350,28 @@ export function ChatInterface() {
 
 ### VoltAgent Specific
 
-| Option                                                     | Type    | Description                                                                    |
-| ---------------------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `memory`                                                   | object  | Runtime memory envelope (preferred)                                            |
-| `memory.userId`                                            | string  | User identifier for memory persistence                                         |
-| `memory.conversationId`                                    | string  | Conversation thread ID                                                         |
-| `context`                                                  | object  | Dynamic context (converted to Map internally)                                  |
-| `memory.options.contextLimit`                              | number  | Number of previous messages to include from memory                             |
-| `memory.options.readOnly`                                  | boolean | Read memory context but skip all memory writes for this call                   |
-| `memory.options.conversationPersistence.mode`              | string  | `"step"` (default) or `"finish"`                                               |
-| `memory.options.conversationPersistence.debounceMs`        | number  | Debounce window in milliseconds (default: `200`)                               |
-| `memory.options.conversationPersistence.flushOnToolResult` | boolean | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
-| `userId`                                                   | string  | Deprecated: use `memory.userId`                                                |
-| `conversationId`                                           | string  | Deprecated: use `memory.conversationId`                                        |
-| `contextLimit`                                             | number  | Deprecated: use `memory.options.contextLimit`                                  |
-| `semanticMemory`                                           | object  | Deprecated: use `memory.options.semanticMemory`                                |
-| `conversationPersistence.mode`                             | string  | Deprecated: use `memory.options.conversationPersistence.mode`                  |
-| `conversationPersistence.debounceMs`                       | number  | Deprecated: use `memory.options.conversationPersistence.debounceMs`            |
-| `conversationPersistence.flushOnToolResult`                | boolean | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult`     |
+| Option                                                     | Type              | Description                                                                    |
+| ---------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
+| `memory`                                                   | object            | Runtime memory envelope (preferred)                                            |
+| `memory.userId`                                            | string            | User identifier for memory persistence                                         |
+| `memory.conversationId`                                    | string            | Conversation thread ID                                                         |
+| `context`                                                  | object            | Dynamic context (converted to Map internally)                                  |
+| `memory.options.contextLimit`                              | number            | Number of previous messages to include from memory                             |
+| `memory.options.readOnly`                                  | boolean           | Read memory context but skip all memory writes for this call                   |
+| `memory.options.conversationPersistence.mode`              | string            | `"step"` (default) or `"finish"`                                               |
+| `memory.options.conversationPersistence.debounceMs`        | number            | Debounce window in milliseconds (default: `200`)                               |
+| `memory.options.conversationPersistence.flushOnToolResult` | boolean           | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
+| `memory.options.messageMetadataPersistence`                | boolean \| object | Persist assistant `message.metadata` fields such as usage and finish reason    |
+| `memory.options.messageMetadataPersistence.usage`          | boolean           | Persist token usage under `message.metadata.usage`                             |
+| `memory.options.messageMetadataPersistence.finishReason`   | boolean           | Persist the model finish reason under `message.metadata.finishReason`          |
+| `userId`                                                   | string            | Deprecated: use `memory.userId`                                                |
+| `conversationId`                                           | string            | Deprecated: use `memory.conversationId`                                        |
+| `contextLimit`                                             | number            | Deprecated: use `memory.options.contextLimit`                                  |
+| `semanticMemory`                                           | object            | Deprecated: use `memory.options.semanticMemory`                                |
+| `conversationPersistence.mode`                             | string            | Deprecated: use `memory.options.conversationPersistence.mode`                  |
+| `conversationPersistence.debounceMs`                       | number            | Deprecated: use `memory.options.conversationPersistence.debounceMs`            |
+| `conversationPersistence.flushOnToolResult`                | boolean           | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult`     |
+| `messageMetadataPersistence`                               | boolean \| object | Deprecated: use `memory.options.messageMetadataPersistence`                    |
 
 Example:
 
@@ -378,6 +382,10 @@ options: {
     conversationId,
     options: {
       readOnly: false,
+      messageMetadataPersistence: {
+        usage: true,
+        finishReason: true,
+      },
       conversationPersistence: {
         mode: "step",
         debounceMs: 200,
@@ -391,6 +399,8 @@ options: {
 When both top-level legacy memory fields and `memory` envelope fields are provided, `memory` values are used.
 
 Set `memory.options.readOnly: true` to load memory context without persisting new messages for that request.
+
+Set `memory.options.messageMetadataPersistence` to persist selected assistant metadata into memory-backed `UIMessage.metadata`. For example, enabling `usage` and `finishReason` makes those fields visible when you later fetch messages from memory, not just in the live UI stream.
 
 ### AI SDK Core Options
 

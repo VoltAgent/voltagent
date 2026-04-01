@@ -1877,6 +1877,36 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("Memory Integration", () => {
+    const persistedUsage = {
+      promptTokens: 10,
+      completionTokens: 5,
+      totalTokens: 15,
+      cachedInputTokens: 0,
+      reasoningTokens: 0,
+    };
+
+    const providerUsage = {
+      inputTokens: 10,
+      outputTokens: 5,
+      totalTokens: 15,
+    };
+
+    const createAssistantResponseMessages = (text: string): ModelMessage[] => [
+      {
+        role: "assistant",
+        content: [{ type: "text", text }],
+      },
+    ];
+
+    const getLastAssistantMessage = async (
+      memory: Memory,
+      userId: string,
+      conversationId: string,
+    ) => {
+      const messages = await memory.getMessages(userId, conversationId);
+      return [...messages].reverse().find((message) => message.role === "assistant");
+    };
+
     it("should initialize with memory", () => {
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),
@@ -1955,6 +1985,166 @@ Use pandas and summarize findings.`.split("\n"),
       expect(agent).toBeDefined();
       // We can't directly test the internal memory operations
       // as they're handled by the MemoryManager class
+    });
+
+    it("should persist usage and finish reason in assistant message metadata for generateText", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Persisted response",
+        content: [{ type: "text", text: "Persisted response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: providerUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: createAssistantResponseMessages("Persisted response"),
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Hello", {
+        memory: {
+          userId: "user-metadata",
+          conversationId: "conv-metadata",
+          options: {
+            messageMetadataPersistence: true,
+          },
+        },
+      });
+
+      const assistantMessage = await getLastAssistantMessage(
+        memory,
+        "user-metadata",
+        "conv-metadata",
+      );
+
+      expect(assistantMessage).toBeDefined();
+      expect(assistantMessage?.metadata).toEqual(
+        expect.objectContaining({
+          operationId: expect.any(String),
+          usage: persistedUsage,
+          finishReason: "stop",
+        }),
+      );
+    });
+
+    it("should persist usage and finish reason in assistant message metadata for streamText", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+
+      vi.mocked(ai.streamText).mockImplementation((args: any) => {
+        const finalResult = {
+          text: "Persisted stream response",
+          finishReason: "stop",
+          usage: providerUsage,
+          totalUsage: providerUsage,
+          warnings: [],
+          response: {
+            id: "stream-response",
+            modelId: "test-model",
+            timestamp: new Date(),
+            messages: createAssistantResponseMessages("Persisted stream response"),
+          },
+          steps: [],
+          providerMetadata: undefined,
+        };
+
+        const fullStream = (async function* () {
+          try {
+            yield {
+              type: "start" as const,
+            };
+            yield {
+              type: "text-delta" as const,
+              id: "text-1",
+              delta: "Persisted stream response",
+              text: "Persisted stream response",
+            };
+            yield {
+              type: "finish" as const,
+              finishReason: "stop",
+              totalUsage: providerUsage,
+            };
+          } finally {
+            await args.onFinish?.(finalResult);
+          }
+        })();
+
+        return {
+          text: Promise.resolve("Persisted stream response"),
+          textStream: (async function* () {
+            yield "Persisted stream response";
+          })(),
+          fullStream,
+          usage: Promise.resolve(providerUsage),
+          finishReason: Promise.resolve("stop"),
+          warnings: [],
+          toUIMessageStream: vi.fn(),
+          toUIMessageStreamResponse: vi.fn(),
+          pipeUIMessageStreamToResponse: vi.fn(),
+          pipeTextStreamToResponse: vi.fn(),
+          toTextStreamResponse: vi.fn(),
+          partialOutputStream: undefined,
+        } as any;
+      });
+
+      const result = await agent.streamText("Hello", {
+        memory: {
+          userId: "user-stream-metadata",
+          conversationId: "conv-stream-metadata",
+          options: {
+            messageMetadataPersistence: {
+              usage: true,
+              finishReason: true,
+            },
+          },
+        },
+      });
+
+      for await (const _part of result.fullStream) {
+        // Consume stream to trigger mocked onFinish.
+      }
+
+      const assistantMessage = await getLastAssistantMessage(
+        memory,
+        "user-stream-metadata",
+        "conv-stream-metadata",
+      );
+
+      expect(assistantMessage).toBeDefined();
+      expect(assistantMessage?.metadata).toEqual(
+        expect.objectContaining({
+          operationId: expect.any(String),
+          usage: persistedUsage,
+          finishReason: "stop",
+        }),
+      );
     });
 
     it("should read memory but skip persistence when memory.options.readOnly is true", async () => {
@@ -2248,6 +2438,7 @@ Use pandas and summarize findings.`.split("\n"),
         conversationPersistence: {
           mode: "finish",
         },
+        messageMetadataPersistence: false,
         memory: {
           userId: "memory-user",
           conversationId: "memory-conv",
@@ -2261,6 +2452,9 @@ Use pandas and summarize findings.`.split("\n"),
             conversationPersistence: {
               mode: "step",
               debounceMs: 120,
+            },
+            messageMetadataPersistence: {
+              usage: true,
             },
           },
         },
@@ -2280,6 +2474,10 @@ Use pandas and summarize findings.`.split("\n"),
         conversationPersistence: {
           mode: "step",
           debounceMs: 120,
+        },
+        messageMetadataPersistence: {
+          usage: true,
+          finishReason: false,
         },
       });
     });
@@ -2305,6 +2503,9 @@ Use pandas and summarize findings.`.split("\n"),
             conversationPersistence: {
               mode: "finish",
             },
+            messageMetadataPersistence: {
+              finishReason: true,
+            },
           },
         },
       });
@@ -2324,6 +2525,10 @@ Use pandas and summarize findings.`.split("\n"),
         },
         conversationPersistence: {
           mode: "finish",
+        },
+        messageMetadataPersistence: {
+          usage: false,
+          finishReason: true,
         },
       });
     });

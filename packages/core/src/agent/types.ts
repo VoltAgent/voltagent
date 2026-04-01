@@ -635,6 +635,21 @@ export type AgentConversationPersistenceOptions = {
   flushOnToolResult?: boolean;
 };
 
+export type AgentMessageMetadataPersistenceOptions = {
+  /**
+   * Persist resolved usage info under `message.metadata.usage`.
+   */
+  usage?: boolean;
+  /**
+   * Persist the final finish reason under `message.metadata.finishReason`.
+   */
+  finishReason?: boolean;
+};
+
+export type AgentMessageMetadataPersistenceConfig =
+  | boolean
+  | AgentMessageMetadataPersistenceOptions;
+
 /**
  * Agent configuration options
  */
@@ -667,6 +682,7 @@ export type AgentOptions = {
   memory?: Memory | false;
   summarization?: AgentSummarizationOptions | false;
   conversationPersistence?: AgentConversationPersistenceOptions;
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
 
   // Retriever/RAG
   retriever?: BaseRetriever;
@@ -954,6 +970,7 @@ export interface CommonRuntimeMemoryBehaviorOptions {
   contextLimit?: number;
   semanticMemory?: CommonSemanticMemoryOptions;
   conversationPersistence?: AgentConversationPersistenceOptions;
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
   /**
    * When true, memory is read-only for the current call.
    * Existing memory context can be loaded, but no writes are persisted.
@@ -977,6 +994,7 @@ export interface CommonResolvedRuntimeMemoryOptions {
   contextLimit?: number;
   semanticMemory?: CommonSemanticMemoryOptions;
   conversationPersistence?: AgentConversationPersistenceOptions;
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceOptions;
   readOnly?: boolean;
 }
 
@@ -1010,6 +1028,11 @@ export interface CommonGenerateOptions {
    */
   // Semantic memory runtime overrides
   semanticMemory?: CommonSemanticMemoryOptions;
+
+  /**
+   * @deprecated Use `memory.options.messageMetadataPersistence` instead.
+   */
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
 
   /**
    * @deprecated Use `memory.options.conversationPersistence` instead.

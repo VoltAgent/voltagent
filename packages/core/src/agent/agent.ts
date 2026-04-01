@@ -187,6 +187,8 @@ import type {
   AgentFullState,
   AgentGuardrailState,
   AgentMarkFeedbackProvidedInput,
+  AgentMessageMetadataPersistenceConfig,
+  AgentMessageMetadataPersistenceOptions,
   AgentModelConfig,
   AgentModelValue,
   AgentOptions,
@@ -236,6 +238,16 @@ const DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS: ResolvedConversationPersistenceO
   mode: "step",
   debounceMs: 200,
   flushOnToolResult: true,
+};
+
+type ResolvedMessageMetadataPersistenceOptions = {
+  usage: boolean;
+  finishReason: boolean;
+};
+
+const DEFAULT_MESSAGE_METADATA_PERSISTENCE_OPTIONS: ResolvedMessageMetadataPersistenceOptions = {
+  usage: false,
+  finishReason: false,
 };
 
 type ResponseMessage = AssistantModelMessage | ToolModelMessage;
@@ -856,6 +868,10 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
    * @deprecated Use `memory.options.conversationPersistence` instead.
    */
   conversationPersistence?: AgentConversationPersistenceOptions;
+  /**
+   * @deprecated Use `memory.options.messageMetadataPersistence` instead.
+   */
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
 
   // Steps control
   maxSteps?: number;
@@ -961,6 +977,7 @@ export class Agent {
   private readonly memoryConfigured: boolean;
   private readonly summarization?: AgentSummarizationOptions | false;
   private conversationPersistence: ResolvedConversationPersistenceOptions;
+  private readonly messageMetadataPersistence: ResolvedMessageMetadataPersistenceOptions;
   private conversationPersistenceConfigured: boolean;
   private readonly workspace?: Workspace;
   private defaultObservability?: VoltAgentObservability;
@@ -1056,6 +1073,9 @@ export class Agent {
     this.conversationPersistenceConfigured = options.conversationPersistence !== undefined;
     this.conversationPersistence = this.normalizeConversationPersistenceOptions(
       options.conversationPersistence,
+    );
+    this.messageMetadataPersistence = this.normalizeMessageMetadataPersistenceOptions(
+      options.messageMetadataPersistence,
     );
     // workspace resolved above to set default maxSteps
 
@@ -1239,6 +1259,7 @@ export class Agent {
               contextLimit: _contextLimit,
               semanticMemory: _semanticMemory,
               conversationPersistence: _conversationPersistence,
+              messageMetadataPersistence: _messageMetadataPersistence,
               output,
               providerOptions,
               ...aiSDKOptions
@@ -1359,6 +1380,17 @@ export class Agent {
               this.collectToolDataFromResult(result);
 
             const usageInfo = convertUsage(usageForFinish);
+            const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
+              oc,
+              usage: usageInfo,
+              finishReason: result.finishReason ?? null,
+            });
+            const responseMessages = filterResponseMessages(result.response?.messages);
+            this.applyMetadataToLastAssistantMessage({
+              buffer,
+              metadata: persistedAssistantMetadata,
+              responseMessages,
+            });
             const middlewareText = await runOutputMiddlewares<string>(
               result.text,
               oc,
@@ -1841,6 +1873,7 @@ export class Agent {
           contextLimit: _contextLimit,
           semanticMemory: _semanticMemory,
           conversationPersistence: _conversationPersistence,
+          messageMetadataPersistence: _messageMetadataPersistence,
           output,
           providerOptions,
           ...aiSDKOptions
@@ -2032,6 +2065,18 @@ export class Agent {
                   providerMetadata: finalResult.providerMetadata,
                 });
 
+                const usage = convertUsage(usageForFinish);
+                const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
+                  oc,
+                  usage,
+                  finishReason: finalResult.finishReason ?? null,
+                });
+                this.applyMetadataToLastAssistantMessage({
+                  buffer,
+                  metadata: persistedAssistantMetadata,
+                  responseMessages: latestResponseMessages,
+                });
+
                 if (!shouldDeferPersist && shouldPersistMemory) {
                   await persistQueue.flush(buffer, oc);
                 }
@@ -2039,8 +2084,6 @@ export class Agent {
                 // History update removed - using OpenTelemetry only
 
                 // Event tracking now handled by OpenTelemetry spans
-
-                const usage = convertUsage(usageForFinish);
                 let finalText: string;
 
                 // Check if we aborted due to subagent bail (early termination)
@@ -2727,6 +2770,7 @@ export class Agent {
               contextLimit: _contextLimit,
               semanticMemory: _semanticMemory,
               conversationPersistence: _conversationPersistence,
+              messageMetadataPersistence: _messageMetadataPersistence,
               output: _output,
               providerOptions,
               ...aiSDKOptions
@@ -2804,16 +2848,23 @@ export class Agent {
             // Save the object response to memory
             if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
               // Create UIMessage from the object response
-              const message: UIMessage = {
-                id: randomUUID(),
-                role: "assistant",
-                parts: [
-                  {
-                    type: "text",
-                    text: safeStringify(finalObject),
-                  },
-                ],
-              };
+              const message: UIMessage = this.applyMetadataToMessage(
+                {
+                  id: randomUUID(),
+                  role: "assistant",
+                  parts: [
+                    {
+                      type: "text",
+                      text: safeStringify(finalObject),
+                    },
+                  ],
+                },
+                this.buildPersistedAssistantMessageMetadata({
+                  oc,
+                  usage: usageInfo,
+                  finishReason: result.finishReason ?? null,
+                }),
+              );
 
               // Save the message to memory
               await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
@@ -3093,6 +3144,7 @@ export class Agent {
           contextLimit: _contextLimit,
           semanticMemory: _semanticMemory,
           conversationPersistence: _conversationPersistence,
+          messageMetadataPersistence: _messageMetadataPersistence,
           output: _output,
           providerOptions,
           ...aiSDKOptions
@@ -3248,16 +3300,23 @@ export class Agent {
                   }
 
                   if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
-                    const message: UIMessage = {
-                      id: randomUUID(),
-                      role: "assistant",
-                      parts: [
-                        {
-                          type: "text",
-                          text: safeStringify(finalObject),
-                        },
-                      ],
-                    };
+                    const message: UIMessage = this.applyMetadataToMessage(
+                      {
+                        id: randomUUID(),
+                        role: "assistant",
+                        parts: [
+                          {
+                            type: "text",
+                            text: safeStringify(finalObject),
+                          },
+                        ],
+                      },
+                      this.buildPersistedAssistantMessageMetadata({
+                        oc,
+                        usage: usageInfo,
+                        finishReason: finalResult.finishReason ?? null,
+                      }),
+                    );
 
                     await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
 
@@ -3679,6 +3738,30 @@ export class Agent {
     };
   }
 
+  private normalizeMessageMetadataPersistenceOptions(
+    options?: AgentMessageMetadataPersistenceConfig | AgentMessageMetadataPersistenceOptions,
+    defaults: ResolvedMessageMetadataPersistenceOptions = DEFAULT_MESSAGE_METADATA_PERSISTENCE_OPTIONS,
+  ): ResolvedMessageMetadataPersistenceOptions {
+    if (options === true) {
+      return {
+        usage: true,
+        finishReason: true,
+      };
+    }
+
+    if (options === false) {
+      return {
+        usage: false,
+        finishReason: false,
+      };
+    }
+
+    return {
+      usage: options?.usage ?? defaults.usage,
+      finishReason: options?.finishReason ?? defaults.finishReason,
+    };
+  }
+
   private resolveConversationPersistenceOptions(
     options?: BaseGenerationOptions,
   ): ResolvedConversationPersistenceOptions {
@@ -3738,6 +3821,14 @@ export class Agent {
         memoryOptions?.conversationPersistence ??
         options?.conversationPersistence ??
         parentResolvedMemory?.conversationPersistence,
+      messageMetadataPersistence:
+        contextResolvedMemory?.messageMetadataPersistence ??
+        this.normalizeMessageMetadataPersistenceOptions(
+          memoryOptions?.messageMetadataPersistence ??
+            options?.messageMetadataPersistence ??
+            parentResolvedMemory?.messageMetadataPersistence,
+          this.messageMetadataPersistence,
+        ),
       readOnly: firstDefined(
         contextResolvedMemory?.readOnly,
         memoryOptions?.readOnly,
@@ -3760,6 +3851,78 @@ export class Agent {
     const resolved = { ...this.conversationPersistence };
     oc.systemContext.set(CONVERSATION_PERSISTENCE_OPTIONS_KEY, resolved);
     return resolved;
+  }
+
+  private getMessageMetadataPersistenceOptionsForContext(
+    oc: OperationContext,
+  ): ResolvedMessageMetadataPersistenceOptions {
+    return this.normalizeMessageMetadataPersistenceOptions(
+      oc.resolvedMemory?.messageMetadataPersistence,
+      this.messageMetadataPersistence,
+    );
+  }
+
+  private buildPersistedAssistantMessageMetadata(params: {
+    oc: OperationContext;
+    usage?: UsageInfo;
+    finishReason?: string | null;
+  }): Record<string, unknown> | undefined {
+    const persistence = this.getMessageMetadataPersistenceOptionsForContext(params.oc);
+    const metadata: Record<string, unknown> = {};
+
+    if (persistence.usage && params.usage) {
+      metadata.usage = params.usage;
+    }
+
+    if (persistence.finishReason) {
+      metadata.finishReason = params.finishReason ?? null;
+    }
+
+    return Object.keys(metadata).length > 0 ? metadata : undefined;
+  }
+
+  private applyMetadataToLastAssistantMessage(params: {
+    buffer: ConversationBuffer;
+    metadata?: Record<string, unknown>;
+    responseMessages?: ModelMessage[];
+  }): boolean {
+    const { buffer, metadata, responseMessages } = params;
+    if (!metadata || Object.keys(metadata).length === 0) {
+      return false;
+    }
+
+    const metadataApplied = buffer.addMetadataToLastAssistantMessage(metadata, {
+      requirePending: true,
+    });
+    if (metadataApplied) {
+      return true;
+    }
+
+    if (responseMessages?.length) {
+      buffer.addModelMessages(responseMessages, "response");
+      return buffer.addMetadataToLastAssistantMessage(metadata, {
+        requirePending: true,
+      });
+    }
+
+    return false;
+  }
+
+  private applyMetadataToMessage(
+    message: UIMessage,
+    metadata?: Record<string, unknown>,
+  ): UIMessage {
+    if (!metadata || Object.keys(metadata).length === 0) {
+      return message;
+    }
+
+    return {
+      ...message,
+      metadata: {
+        ...((message.metadata as Record<string, unknown> | undefined) ?? {}),
+        ...metadata,
+      },
+    };
   }
 
   /**
@@ -8207,6 +8370,9 @@ export class Agent {
                 : {}),
               ...(resolvedMemory.conversationPersistence !== undefined
                 ? { conversationPersistence: resolvedMemory.conversationPersistence }
+                : {}),
+              ...(resolvedMemory.messageMetadataPersistence !== undefined
+                ? { messageMetadataPersistence: resolvedMemory.messageMetadataPersistence }
                 : {}),
               ...(resolvedMemory.readOnly !== undefined
                 ? { readOnly: resolvedMemory.readOnly }
