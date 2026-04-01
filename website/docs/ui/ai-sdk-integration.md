@@ -402,6 +402,34 @@ Set `memory.options.readOnly: true` to load memory context without persisting ne
 
 Set `memory.options.messageMetadataPersistence` to persist selected assistant metadata into memory-backed `UIMessage.metadata`. For example, enabling `usage` and `finishReason` makes those fields visible when you later fetch messages from memory, not just in the live UI stream.
 
+REST API example:
+
+```bash
+curl -X POST http://localhost:3141/agents/assistant/text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Hello",
+    "options": {
+      "memory": {
+        "userId": "user-1",
+        "conversationId": "conv-1",
+        "options": {
+          "messageMetadataPersistence": {
+            "usage": true,
+            "finishReason": true
+          }
+        }
+      }
+    }
+  }'
+```
+
+Then fetch the saved messages:
+
+```bash
+curl "http://localhost:3141/api/memory/conversations/conv-1/messages?agentId=assistant&userId=user-1"
+```
+
 ### AI SDK Core Options
 
 | Option             | Type     | Default | Description                            |
