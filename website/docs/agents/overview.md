@@ -9,7 +9,7 @@ An agent in VoltAgent wraps a language model with instructions, tools, memory, a
 
 There are two ways to use agents in VoltAgent:
 
-1. **Direct method calls** - Call agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) from your application code
+1. **Direct method calls** - Call agent methods (`generateText`, `streamText`) from your application code
 2. **REST API** - Use VoltAgent's HTTP server to expose agents as REST endpoints
 
 This document covers both approaches, starting with the basics.
@@ -20,20 +20,32 @@ An agent requires three properties: a name, instructions, and a model.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
-The `instructions` property defines the agent's behavior. The `model` comes from [ai-sdk](https://sdk.vercel.ai) and can be any supported provider (OpenAI, Anthropic, Google, etc.).
+You can also use a model string instead of importing a provider:
+
+```ts
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Answer questions clearly and concisely.",
+  model: "openai/gpt-4o",
+});
+```
+
+The `instructions` property defines the agent's behavior. The `model` can be an ai-sdk `LanguageModel` or a `provider/model` string resolved by VoltAgent. See [Model Router & Registry](/docs/getting-started/model-router) for details.
+
+To configure fallback lists and per-model retries, see [Retries and Fallbacks](/docs/agents/retries-fallback).
+To run pre-guardrail input/output handlers, see [Middleware](/docs/agents/middleware).
 
 ## Using Agents: Direct Method Calls
 
-Agents have four core methods for generating responses:
+Agents have two core methods for generating responses:
 
 ### Text Generation
 
@@ -58,7 +70,7 @@ for await (const chunk of stream.textStream) {
 
 ### Streaming Features
 
-When using `streamText` or `streamObject`, you can access detailed events and final values.
+When using `streamText`, you can access detailed events and final values.
 
 #### fullStream for Detailed Events
 
@@ -69,8 +81,17 @@ const response = await agent.streamText("Write a story");
 
 for await (const chunk of response.fullStream) {
   switch (chunk.type) {
+    case "reasoning-start":
+      console.log("\nReasoning started");
+      break;
+    case "reasoning-delta":
+      process.stdout.write(chunk.delta ?? chunk.text ?? "");
+      break;
+    case "reasoning-end":
+      console.log("\nReasoning completed");
+      break;
     case "text-delta":
-      process.stdout.write(chunk.textDelta);
+      process.stdout.write(chunk.delta ?? chunk.text ?? "");
       break;
     case "tool-call":
       console.log(`\nUsing tool: ${chunk.toolName}`);
@@ -109,45 +130,63 @@ const [fullText, usage, finishReason] = await Promise.all([
 console.log(`\nTotal: ${fullText.length} chars, ${usage?.totalTokens} tokens`);
 ```
 
-### Structured Data Generation
+### Feedback (optional)
 
-There are two approaches for getting structured data from agents:
-
-#### Option 1: generateObject / streamObject (Schema-Only)
-
-These methods validate output against a schema but **do not support tool calling**. Use these for simple data extraction without tools.
-
-**generateObject** - Returns a complete validated object.
+If you have VoltOps API keys configured, you can enable feedback per agent or per call. VoltAgent creates a short-lived feedback token and attaches it to the assistant message metadata and the result object.
 
 ```ts
-import { z } from "zod";
-
-const schema = z.object({
-  name: z.string(),
-  age: z.number(),
-  skills: z.array(z.string()),
+const result = await agent.generateText("Summarize this trace", {
+  feedback: {
+    key: "satisfaction",
+    feedbackConfig: {
+      type: "categorical",
+      categories: [
+        { value: 1, label: "Satisfied" },
+        { value: 0, label: "Unsatisfied" },
+      ],
+    },
+  },
 });
 
-const result = await agent.generateObject("Create a developer profile for Alex", schema);
-console.log(result.object); // { name: "Alex", age: 28, skills: [...] }
+console.log(result.feedback?.url);
 ```
 
-**streamObject** - Streams partial objects as they're built.
+`result.feedback` may also include `provided`, `providedAt`, and `feedbackId` so UI clients can hide feedback controls once submitted.
+
+If the feedback key is already registered, you can pass only `key` and let the stored config populate the token.
 
 ```ts
-const stream = await agent.streamObject("Create a profile for Jamie", schema);
+const result = await agent.generateText("Quick rating?", {
+  feedback: { key: "satisfaction" },
+});
+```
 
-for await (const partial of stream.partialObjectStream) {
-  console.log(partial); // { name: "Jamie" } -> { name: "Jamie", age: 25 } -> ...
+To persist "already submitted" state across memory reloads, you can use the result helper:
+
+```ts
+const feedbackId = "feedback-id-from-ingestion-response"; // returned by your feedback ingestion API response
+
+if (result.feedback && !result.feedback.isProvided()) {
+  await result.feedback.markFeedbackProvided({
+    feedbackId, // optional
+  });
 }
 ```
 
-#### Option 2: experimental_output (Schema + Agent Features)
+You can still call `agent.markFeedbackProvided(...)` directly if you prefer explicit control.
 
-Use `experimental_output` with `generateText`/`streamText` to get structured data **while still using tools, memory, and all agent capabilities**.
+These helpers require memory-backed conversations (`userId` and `conversationId`) and are typically called from your backend after feedback ingestion succeeds.
+
+For end-to-end examples (SDK, API, and useChat), see [Feedback](/observability-docs/feedback).
+
+### Structured Data Generation
+
+Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.
+`generateObject` and `streamObject` are deprecated in VoltAgent 2.x.
 
 ```ts
 import { Output } from "ai";
+import { z } from "zod";
 
 const recipeSchema = z.object({
   name: z.string(),
@@ -156,35 +195,64 @@ const recipeSchema = z.object({
   prepTime: z.number(),
 });
 
-// With generateText - supports tool calling and memory
+// With generateText - supports tool calling
 const result = await agent.generateText("Create a pasta recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
-console.log(result.experimental_output); // { name: "...", ingredients: [...], ... }
+console.log(result.output); // { name: "...", ingredients: [...], ... }
 
 // With streamText - stream partial objects while using tools
 const stream = await agent.streamText("Create a detailed recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
 
-for await (const partial of stream.experimental_partialOutputStream ?? []) {
+for await (const partial of stream.partialOutputStream ?? []) {
   console.log(partial); // Incrementally built object
 }
 
 // Constrained text generation
 const haiku = await agent.generateText("Write a haiku about coding", {
-  experimental_output: Output.text({
-    maxLength: 100,
-    description: "A traditional haiku poem",
-  }),
+  output: Output.text(),
 });
-console.log(haiku.experimental_output);
+console.log(haiku.output);
 ```
 
-**When to use which:**
+### Summarization
 
-- Use `generateObject`/`streamObject` for simple schema validation without tool calling
-- Use `experimental_output` when you need structured output **and** tool calling
+Summarization inserts a system summary and keeps the last N non-system messages before each model call. Configure it with the `summarization` option on the agent. See [Summarization](./summarization.md) for configuration and storage details.
+
+### Conversation Persistence
+
+VoltAgent persists conversation messages and step records while a run is executing. By default, it uses step-level checkpoints, which is safer for long multi-step tool chains.
+
+```ts
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Help users reliably.",
+  model: "openai/gpt-4o-mini",
+  conversationPersistence: {
+    mode: "step", // "step" (default) or "finish"
+    debounceMs: 200, // default
+    flushOnToolResult: true, // default
+  },
+});
+```
+
+You can also override this per call:
+
+```ts
+await agent.generateText("Run the workflow", {
+  memory: {
+    options: {
+      conversationPersistence: {
+        mode: "finish",
+      },
+    },
+  },
+});
+```
+
+`mode: "step"` schedules persistence during execution and flushes immediately on tool completion by default. `mode: "finish"` keeps the legacy behavior of persisting only at operation completion.
 
 ### Input Types
 
@@ -209,12 +277,11 @@ Create a `VoltAgent` instance with a server provider:
 ```ts
 import { VoltAgent, Agent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "assistant",
   instructions: "Answer questions clearly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 new VoltAgent({
@@ -233,6 +300,8 @@ The server exposes the following REST endpoints:
 - `POST /agents/:id/stream` - Stream raw fullStream events (SSE)
 - `POST /agents/:id/chat` - Stream UI messages for useChat hook (SSE)
 
+If you need clients to reconnect after refresh and continue the same response, enable resumable streaming. See [Resumable Streaming](/docs/agents/resumable-streaming/).
+
 #### Structured Data
 
 - `POST /agents/:id/object` - Generate structured object (synchronous)
@@ -240,13 +309,45 @@ The server exposes the following REST endpoints:
 
 **Endpoint comparison:**
 
-| Endpoint         | Method | Response Type | Use Case                                                       |
-| ---------------- | ------ | ------------- | -------------------------------------------------------------- |
-| `/text`          | POST   | JSON          | Complete text response at once                                 |
-| `/stream`        | POST   | SSE           | Raw stream events (text-delta, tool-call, tool-result, finish) |
-| `/chat`          | POST   | SSE           | UI message stream for ai-sdk's useChat hook                    |
-| `/object`        | POST   | JSON          | Complete structured object at once                             |
-| `/stream-object` | POST   | SSE           | Streaming partial objects                                      |
+| Endpoint         | Method | Response Type | Use Case                                                |
+| ---------------- | ------ | ------------- | ------------------------------------------------------- |
+| `/text`          | POST   | JSON          | Complete text response at once                          |
+| `/stream`        | POST   | SSE           | Raw stream events (text/reasoning/tool/lifecycle parts) |
+| `/chat`          | POST   | SSE           | UI message stream for ai-sdk's useChat hook             |
+| `/object`        | POST   | JSON          | Complete structured object at once                      |
+| `/stream-object` | POST   | SSE           | Streaming partial objects                               |
+
+### Structured Output via HTTP
+
+You can use `output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `output` field to the `options` object in your request:
+
+```typescript
+const response = await fetch("http://localhost:3141/agents/assistant/text", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    input: "Create a recipe",
+    options: {
+      output: {
+        type: "object",
+        schema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            ingredients: { type: "array", items: { type: "string" } },
+          },
+          required: ["name"],
+        },
+      },
+    },
+  }),
+});
+
+const data = await response.json();
+console.log(data.data.output); // Structured object
+```
+
+For detailed API reference and examples, see [Agent Endpoints - output](../api/endpoints/agents.md#using-output-for-structured-generation).
 
 ### Calling from Next.js API Route
 
@@ -260,8 +361,10 @@ export async function POST(req: Request) {
   const { messages, conversationId, userId } = await req.json();
 
   const result = await agent.streamText(messages, {
-    conversationId,
-    userId,
+    memory: {
+      conversationId,
+      userId,
+    },
   });
 
   return result.toUIMessageStreamResponse();
@@ -294,13 +397,13 @@ const agent = new Agent({
   // Required
   name: "MyAgent", // Agent identifier
   instructions: "You are a helpful assistant", // Behavior guidelines
-  model: openai("gpt-4o"), // AI model to use (ai-sdk)
+  model: "openai/gpt-4o", // Model string or ai-sdk LanguageModel
 
   // Optional
   id: "custom-id", // Unique ID (auto-generated if not provided)
   purpose: "Customer support agent", // Agent purpose for supervisor context
   tools: [weatherTool, searchTool], // Available tools
-  memory: memoryStorage, // Memory instance (or false to disable)
+  memory: memoryStorage, // Memory instance (omit -> built-in in-memory, false -> disable)
   context: new Map([
     // Default context for all operations
     ["environment", "production"],
@@ -335,7 +438,7 @@ Agents support additional capabilities through configuration options. Each featu
 
 ### Memory
 
-Memory stores conversation history so agents can reference past messages. By default, agents use in-memory storage (non-persistent). You can configure persistent storage adapters.
+Memory stores conversation history so agents can reference past messages. If `memory` is omitted, agents use built-in in-memory storage. Use `memory: false` for stateless behavior, or configure a persistent adapter for long-term storage.
 
 ```ts
 import { Memory } from "@voltagent/core";
@@ -347,7 +450,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Agent with Memory",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   memory,
 });
 ```
@@ -377,7 +480,7 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "Answer weather questions using the get_weather tool.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [weatherTool],
 });
 ```
@@ -392,19 +495,19 @@ Agents can be converted to tools and used by other agents:
 const writerAgent = new Agent({
   id: "writer",
   purpose: "Writes blog posts",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const editorAgent = new Agent({
   id: "editor",
   purpose: "Edits content",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 // Coordinator uses them as tools
 const coordinator = new Agent({
   tools: [writerAgent.toTool(), editorAgent.toTool()],
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -416,12 +519,11 @@ Guardrails run before and after the model call to validate inputs or adjust outp
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Guarded Assistant",
   instructions: "Answer briefly.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   inputGuardrails: [
     {
       id: "reject-empty",
@@ -465,19 +567,19 @@ Sub-agents let you delegate tasks to specialized agents. The parent agent can ca
 const researchAgent = new Agent({
   name: "Researcher",
   instructions: "Research topics thoroughly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const writerAgent = new Agent({
   name: "Writer",
   instructions: "Write clear, concise content.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const coordinator = new Agent({
   name: "Coordinator",
   instructions: "Delegate research to Researcher and writing to Writer.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [researchAgent, writerAgent],
 });
 ```
@@ -492,11 +594,23 @@ When streaming with sub-agents, by default only `tool-call` and `tool-result` ev
 const coordinator = new Agent({
   name: "Coordinator",
   instructions: "Coordinate between agents.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [researchAgent, writerAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
+      types: [
+        "tool-call",
+        "tool-result",
+        "text-start",
+        "text-delta",
+        "text-end",
+        "reasoning-start",
+        "reasoning-delta",
+        "reasoning-end",
+        "source",
+        "error",
+        "finish",
+      ],
     },
   },
 });
@@ -505,7 +619,7 @@ const coordinator = new Agent({
 const response = await coordinator.streamText("Research and write about AI");
 for await (const chunk of response.fullStream) {
   if (chunk.subAgentId && chunk.subAgentName) {
-    console.log(`[${chunk.subAgentName}] ${chunk.type}`);
+    console.log(`[${chunk.agentPath?.join(" > ") ?? chunk.subAgentName}] ${chunk.type}`);
   }
 }
 ```
@@ -535,7 +649,7 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Agent",
   instructions: "Answer questions.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks,
 });
 ```
@@ -551,7 +665,7 @@ Instructions can be static strings, dynamic functions, or managed remotely via V
 const agent1 = new Agent({
   name: "Assistant",
   instructions: "Answer questions.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 // Dynamic instructions
@@ -561,7 +675,7 @@ const agent2 = new Agent({
     const tier = context.get("tier") || "free";
     return tier === "premium" ? "Provide detailed answers." : "Provide concise answers.";
   },
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
@@ -580,7 +694,7 @@ const agent = new Agent({
   },
   model: ({ context }) => {
     const tier = context.get("tier");
-    return tier === "premium" ? openai("gpt-4o") : openai("gpt-4o-mini");
+    return tier === "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini";
   },
 });
 
@@ -632,7 +746,7 @@ class SimpleRetriever extends BaseRetriever {
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer using retrieved context.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   retriever: new SimpleRetriever(),
 });
 ```
@@ -641,21 +755,18 @@ const agent = new Agent({
 
 ### Models and Providers
 
-VoltAgent uses [ai-sdk](https://sdk.vercel.ai) models directly. Switch providers by changing the model import.
+VoltAgent can use [ai-sdk](https://sdk.vercel.ai) models directly, but model strings are the default. Switch providers by changing the model string (or import another provider).
 
 ```ts
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-
 const agent1 = new Agent({
   name: "OpenAI Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "Answer questions.",
 });
 
 const agent2 = new Agent({
   name: "Anthropic Agent",
-  model: anthropic("claude-3-5-sonnet"),
+  model: "anthropic/claude-3-5-sonnet",
   instructions: "Answer questions.",
 });
 ```
@@ -689,7 +800,7 @@ Enable automatic markdown formatting in text responses by setting `markdown: tru
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   markdown: true,
 });
 
@@ -705,7 +816,7 @@ const result = await agent.generateText("Explain how to make tea.");
 // Set maxSteps at agent level
 const agent = new Agent({
   name: "Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   maxSteps: 5, // Default for all operations
 });
 
@@ -755,7 +866,7 @@ const mcpTools = await mcpConfig.getTools();
 
 const agent = new Agent({
   name: "Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: mcpTools,
 });
 ```
@@ -777,7 +888,7 @@ const voice = new OpenAIVoiceProvider({
 
 const agent = new Agent({
   name: "Voice Assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   voice,
 });
 

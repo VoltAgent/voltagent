@@ -18,7 +18,6 @@ npm install @voltagent/libsql
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 // Local SQLite
 const memory = new Memory({
@@ -37,7 +36,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -99,13 +98,12 @@ See [Working Memory](./working-memory.md) for configuration details.
 Use `LibSQLVectorAdapter` for persistent vector storage:
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
 });
 ```
@@ -134,11 +132,10 @@ For production-ready zero-setup hosting, see [Managed Memory](./managed-memory.m
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Dev Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/dev-memory.db",
@@ -152,11 +149,10 @@ const agent = new Agent({
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: process.env.LIBSQL_DATABASE_URL!,

@@ -113,6 +113,8 @@ You'll see:
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev
@@ -338,7 +340,6 @@ export const retriever = new QdrantRetriever();
 Now create agents using different retrieval patterns in `src/index.ts`:
 
 ```typescript
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -350,7 +351,7 @@ const agentWithRetriever = new Agent({
   name: "Assistant with Retriever",
   instructions:
     "A helpful assistant that can retrieve information from the Qdrant knowledge base using semantic search to provide better answers. I automatically search for relevant information when needed.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   retriever: retriever,
 });
 
@@ -359,7 +360,7 @@ const agentWithTools = new Agent({
   name: "Assistant with Tools",
   instructions:
     "A helpful assistant that can search the Qdrant knowledge base using tools. The agent will decide when to search for information based on user questions.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [retriever.tool],
 });
 

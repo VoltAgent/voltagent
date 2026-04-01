@@ -8,6 +8,14 @@ export {
   andAll,
   andRace,
   andTap,
+  andGuardrail,
+  andSleep,
+  andSleepUntil,
+  andForEach,
+  andBranch,
+  andDoWhile,
+  andDoUntil,
+  andMap,
   andWorkflow,
 } from "./workflow";
 export type {
@@ -17,7 +25,17 @@ export type {
 export type {
   Workflow,
   WorkflowConfig,
+  WorkflowHookContext,
+  WorkflowHookStatus,
+  WorkflowHooks,
+  WorkflowRestartAllResult,
+  WorkflowRestartCheckpoint,
   WorkflowStats,
+  WorkflowStartAsyncResult,
+  WorkflowStateStore,
+  WorkflowStateUpdater,
+  WorkflowStepData,
+  WorkflowStepStatus,
   WorkflowTimelineEvent,
   RegisteredWorkflow,
 } from "./workflow";
@@ -25,11 +43,18 @@ export type {
 export {
   Agent,
   type BaseGenerationOptions,
+  type OutputSpec,
   type GenerateTextOptions,
   type StreamTextOptions,
   type GenerateObjectOptions,
   type StreamObjectOptions,
+  type GenerateTextResultWithContext,
+  type StreamTextResultWithContext,
+  type GenerateObjectResultWithContext,
+  type StreamObjectResultWithContext,
 } from "./agent/agent";
+export * from "./planagent";
+export * from "./workspace";
 export * from "./agent/hooks";
 export { createSubagent } from "./agent/subagent/types";
 export type {
@@ -62,10 +87,15 @@ export {
   createDefaultSafetyGuardrails,
 } from "./agent/guardrails/defaults";
 export { createInputGuardrail, createOutputGuardrail } from "./agent/guardrail";
+export { createInputMiddleware, createOutputMiddleware } from "./agent/middleware";
 export type {
   CreateInputGuardrailOptions,
   CreateOutputGuardrailOptions,
 } from "./agent/guardrail";
+export type {
+  CreateInputMiddlewareOptions,
+  CreateOutputMiddlewareOptions,
+} from "./agent/middleware";
 
 // Observability exports
 export { VoltAgentObservability } from "./observability";
@@ -96,6 +126,9 @@ export {
   trace,
   context,
 } from "./observability";
+export { TRIGGER_CONTEXT_KEY } from "./observability/context-keys";
+export { SERVERLESS_ENV_CONTEXT_KEY } from "./context-keys";
+export { createTriggers } from "./triggers/dsl";
 
 // Memory V2 - Export with aliases to avoid conflicts
 export {
@@ -135,15 +168,43 @@ export type {
 export { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 export { InMemoryVectorAdapter } from "./memory/adapters/vector/in-memory";
 export { AiSdkEmbeddingAdapter } from "./memory/adapters/embedding/ai-sdk";
+export type { EmbeddingModelReference } from "./memory/adapters/embedding/types";
 export type {
   WorkingMemoryScope,
   WorkingMemoryConfig,
 } from "./memory/types";
 
 export * from "./agent/providers";
+export {
+  ModelProviderRegistry,
+  type EmbeddingModelFactory,
+  type LanguageModelFactory,
+  type ModelProvider,
+  type ModelProviderEntry,
+  type ModelProviderLoader,
+} from "./registries/model-provider-registry";
+export type {
+  ModelForProvider,
+  ModelRouterModelId,
+  ProviderId,
+  ProviderModelsMap,
+} from "./registries/model-provider-types.generated";
+export type { EmbeddingRouterModelId } from "./registries/embedding-model-router-types";
 export * from "./events/types";
 export type {
   AgentOptions,
+  AgentConversationPersistenceMode,
+  AgentConversationPersistenceOptions,
+  AgentSummarizationOptions,
+  AgentModelReference,
+  AgentModelConfig,
+  AgentModelValue,
+  AgentFeedbackOptions,
+  AgentFeedbackHandle,
+  AgentFeedbackMarkProvidedInput,
+  AgentFeedbackMetadata,
+  AgentMarkFeedbackProvidedInput,
+  WorkspaceToolkitOptions,
   AgentResponse,
   AgentFullState,
   ApiToolInfo,
@@ -164,9 +225,14 @@ export type {
   AgentEvalScorerFactory,
   AgentEvalScorerReference,
   AgentEvalResult,
+  AgentEvalResultCallbackArgs,
+  AgentEvalFeedbackHelper,
+  AgentEvalFeedbackSaveInput,
   AgentEvalSamplingPolicy,
   AgentEvalOperationType,
   AgentEvalPayload,
+  AgentEvalToolCall,
+  AgentEvalToolResult,
   AgentEvalContext,
   GuardrailAction,
   GuardrailSeverity,
@@ -179,10 +245,25 @@ export type {
   InputGuardrailResult,
   OutputGuardrailArgs,
   OutputGuardrailResult,
+  InputMiddleware,
+  OutputMiddleware,
+  InputMiddlewareArgs,
+  OutputMiddlewareArgs,
+  InputMiddlewareResult,
+  OutputMiddlewareResult,
+  MiddlewareFunction,
+  MiddlewareDefinition,
+  MiddlewareDirection,
+  MiddlewareContext,
 } from "./agent/types";
-export type { VoltAgentError, AbortError } from "./agent/errors";
+export type {
+  VoltAgentError,
+  AbortError,
+  MiddlewareAbortError,
+  MiddlewareAbortOptions,
+} from "./agent/errors";
 export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
-export { isAbortError, isVoltAgentError } from "./agent/errors";
+export { isAbortError, isMiddlewareAbortError, isVoltAgentError } from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";
@@ -197,8 +278,18 @@ export * from "./utils/update";
 export * from "./voice";
 // TelemetryExporter removed - migrated to OpenTelemetry
 export * from "./voltops";
+export * from "./triggers/types";
+export { TriggerRegistry } from "./triggers/registry";
+export {
+  VoltOpsTriggerDefinitions,
+  VoltOpsTriggerNames,
+  type VoltOpsTriggerGroupMap,
+  type VoltOpsTriggerName,
+  getVoltOpsTriggerDefinition,
+} from "./triggers/catalog";
 export * from "./eval/runtime";
-export type { UsageInfo, StreamPart } from "./agent/providers";
+export type { UsageInfo, StreamPart, MessageRole } from "./agent/providers";
+export type { ConversationStepRecord, GetConversationStepsOptions } from "./memory/types";
 export type {
   VoltAgentOptions,
   IServerProvider,
@@ -239,9 +330,11 @@ export type {
   ManagedMemoryAddMessagesInput,
   ManagedMemoryGetMessagesInput,
   ManagedMemoryClearMessagesInput,
+  ManagedMemoryDeleteMessagesInput,
   ManagedMemoryUpdateConversationInput,
   ManagedMemoryWorkingMemoryInput,
   ManagedMemorySetWorkingMemoryInput,
+  ManagedMemoryQueryWorkflowRunsInput,
   ManagedMemoryWorkflowStateUpdateInput,
   ManagedMemoryMessagesClient,
   ManagedMemoryConversationsClient,

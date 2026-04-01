@@ -119,6 +119,37 @@ const agent = new Agent({
 
 ## Integration Examples
 
+### VoltAgent Knowledge Base (Recommended)
+
+The fastest way to add RAG to your agent. Fully managed - just upload documents and start searching.
+
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/rag-demo.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+```typescript
+import { Agent, VoltAgentRagRetriever } from "@voltagent/core";
+
+const retriever = new VoltAgentRagRetriever({
+  knowledgeBaseName: "my-docs",
+  topK: 8,
+  includeSources: true,
+});
+
+const agent = new Agent({
+  name: "Support Bot",
+  retriever, // Automatic context injection
+});
+```
+
+- No infrastructure to manage
+- Built-in document processing & chunking
+- Search analytics in Console
+
+[**→ VoltAgent Knowledge Base Guide**](/docs/rag/voltagent)
+
 ### Build Your Own Retriever
 
 Connect to your own database, API, or files with a custom retriever.
@@ -181,13 +212,27 @@ npm create voltagent-app@latest -- --example with-qdrant
 
 [**→ Full Qdrant Guide**](/docs/rag/qdrant)
 
+### LanceDB Vector Database
+
+Developer-friendly, serverless vector database that runs locally or in the cloud. Great for getting started without credentials.
+
+```bash
+npm create voltagent-app@latest -- --example with-lancedb
+```
+
+[**→ Full LanceDB Guide**](/docs/rag/lancedb)
+
 ## Choose Your Path
+
+**I want the fastest setup** → [VoltAgent Knowledge Base](/docs/rag/voltagent) (5 mins)
 
 **I want to try locally** → [Chroma Tutorial](/docs/rag/chroma) (10 mins)
 
 **I want production-ready** → [Pinecone Tutorial](/docs/rag/pinecone) (15 mins)
 
 **I want open-source and production-ready** → [Qdrant Tutorial](/docs/rag/qdrant) (10 mins)
+
+**I want embedded/serverless (No API Key)** → [LanceDB Tutorial](/docs/rag/lancedb) (5 mins)
 
 **I want to build custom** → [Build Your Own Retriever](/docs/rag/custom-retrievers)
 

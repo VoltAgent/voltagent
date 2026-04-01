@@ -116,6 +116,12 @@ export {
   type ContextRelevancyParams,
   type ContextRelevancyMetadata,
 } from "./llm/context-relevancy";
+export {
+  createToolCallAccuracyScorerCode,
+  type ToolCallAccuracyScorerCodeOptions,
+  type ToolCallAccuracyPayload,
+  type ToolCallAccuracyParams,
+} from "./tool-call-accuracy";
 
 export interface AgentScorerAdapterOptions<
   Payload extends Record<string, unknown>,

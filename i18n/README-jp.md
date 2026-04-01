@@ -1,10 +1,12 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9259e833-0f5c-4eb6-8cc7-4e6930cc27e1" />
+<img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/d9ad69bd-b905-42a3-81af-99a0581348c0" />
 </a>
 
-<br/>
-<br/>
+<h3 align="center">
+AIエージェントエンジニアリングプラットフォーム
+</h3>
+
 <div align="center">
 <a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | <a href="README-cn-bsc.md">简体中文</a> | 日本語 | <a href="README-kr.md">한국어</a>
 </div>
@@ -12,7 +14,7 @@
 <br/>
 
 <div align="center">
-    <a href="https://voltagent.dev">ホーム</a> |
+    <a href="https://voltagent.dev">ホームページ</a> |
     <a href="https://voltagent.dev/docs/">ドキュメント</a> |
     <a href="https://github.com/voltagent/voltagent/tree/main/examples">サンプル</a>
 </div>
@@ -22,7 +24,6 @@
 
 <div align="center">
 
-[![GitHub stars](https://img.shields.io/github/stars/voltagent/voltagent?style=social)](https://github.com/voltagent/voltagent)
 [![GitHub issues](https://img.shields.io/github/issues/voltagent/voltagent)](https://github.com/voltagent/voltagent/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/voltagent/voltagent)](https://github.com/voltagent/voltagent/pulls)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -35,25 +36,20 @@
 
 </div>
 
-<br/>
+<h3 align="center">
+⭐ 気に入ったらスターをください ⬆️
+</h3>
 
-**VoltAgent**は、AIエージェントを構築し、オーケストレーションするためのオープンソースTypeScriptフレームワークです。
-メモリ、ワークフロー、ツール、組み込みのLLM可観測性を備えた本番環境対応のエージェントを構築できます。
+VoltAgentは、2つの主要な部分で構成されるエンドツーエンドのAIエージェントエンジニアリングプラットフォームです：
 
-## なぜVoltAgentなのか？
+- **[オープンソースTypeScriptフレームワーク](#core-framework)** – メモリ、RAG、ガードレール、ツール、MCP、音声、ワークフローなど。
+- **[VoltOpsコンソール](#voltops-console)** `クラウド` `セルフホスト` – 可観測性、自動化、デプロイ、評価、ガードレール、プロンプトなど。
 
-- **初日から本番環境対応**: インフラをゼロから構築する代わりに、組み込みのメモリ、ワークフロー、可観測性を備えたエージェントをデプロイします。
-- **自信を持ってコーディング**: エージェントシステム全体で型安全なツール、自動推論、コンパイル時の安全性を備えた完全なTypeScriptサポート。
-- **プロのようにデバッグ**: 組み込みのVoltOps可観測性により、すべての決定を追跡し、パフォーマンスを監視し、外部ツールなしでリアルタイムでワークフローを最適化します。
-- **複雑なシステムをシンプルに構築**: プロトタイプから本番環境までスケールする、スーパーバイザーの調整、宣言的ワークフロー、モジュラーアーキテクチャでマルチエージェントチームをオーケストレーションします。
+完全なコード制御でエージェントを構築し、本番環境対応の可視性とオペレーションでリリースできます。
 
-## エージェント開発プラットフォーム
+<h2 id="core-framework">コアTypeScriptフレームワーク</h2>
 
-VoltAgentは、2つの補完的なツールを通じてAIエージェントを開発および監視するための完全なプラットフォームを提供します。
-
-### コアフレームワーク
-
-コアフレームワークを使用すると、任意のAIプロバイダーに接続しながら、メモリ、ツール、複数ステップのワークフローを備えたインテリジェントなエージェントを構築できます。専門化されたエージェントがスーパーバイザーの調整下で連携する洗練されたマルチエージェントシステムを作成します。
+オープンソースフレームワークを使用すると、任意のAIプロバイダーに接続しながら、メモリ、ツール、複数ステップのワークフローを備えたインテリジェントなエージェントを構築できます。専門化されたエージェントがスーパーバイザーの調整下で連携する洗練されたマルチエージェントシステムを作成します。
 
 - **[コアランタイム](https://voltagent.dev/docs/agents/overview/) (`@voltagent/core`)**: 型付きの役割、ツール、メモリ、モデルプロバイダーを1か所で定義し、すべてを整理された状態に保ちます。
 - **[ワークフローエンジン](https://voltagent.dev/docs/workflows/overview/)**: カスタム制御フローをつなぎ合わせる代わりに、複数ステップの自動化を宣言的に記述します。
@@ -62,11 +58,10 @@ VoltAgentは、2つの補完的なツールを通じてAIエージェントを�
 - **[LLM互換性](https://voltagent.dev/docs/getting-started/providers-models/)**: エージェントロジックを書き直さずに、設定を変更するだけでOpenAI、Anthropic、Googleなどのプロバイダー間を切り替えます。
 - **[メモリ](https://voltagent.dev/docs/agents/memory/overview/)**: 永続的なメモリアダプターを接続して、エージェントが実行間で重要なコンテキストを記憶できるようにします。
 - **[検索とRAG](https://voltagent.dev/docs/rag/overview/)**: データソースから事実を取得し、モデルが回答する前に応答を根拠づける（RAG）レトリーバーエージェントをプラグインします。
-- **[評価](https://voltagent.dev/docs/evals/overview/)**: ワークフローと並行してエージェント評価スイートを実行し、ガードレールをより速く提供します。
-
-### VoltOps LLM可観測性プラットフォーム
-
-VoltAgentには、詳細な実行トレース、パフォーマンスメトリクス、ビジュアルダッシュボードでエージェントをリアルタイムで監視およびデバッグするための組み込みの[VoltOps](#voltopsによる組み込みllm可観測性) LLM可観測性が付属しています。エージェントが行うすべての決定を検査し、ツールの使用を追跡し、組み込みのOpenTelemetryベースの可観測性でワークフローを最適化します。
+- **[VoltAgentナレッジベース](https://voltagent.dev/docs/rag/voltagent/)**: ドキュメントの取り込み、チャンク化、埋め込み、検索のためのマネージドRAGサービスを使用します。
+- **[音声](https://voltagent.dev/docs/agents/voice/)**: OpenAI、ElevenLabs、またはカスタム音声プロバイダーでテキスト読み上げと音声認識機能を追加します。
+- **[ガードレール](https://voltagent.dev/docs/guardrails/overview/)**: 実行時にエージェントの入力または出力を傍受して検証し、コンテンツポリシーと安全ルールを適用します。
+- **[評価](https://voltagent.dev/docs/evals/overview/)**: ワークフローと並行してエージェント評価スイートを実行し、エージェントの動作を測定および改善します。
 
 #### MCPサーバー (@voltagent/mcp-docs-server)
 
@@ -154,7 +149,7 @@ Test your agents with VoltOps Console: https://console.voltagent.dev
 4. チャットを開始：エージェント詳細ページで、右下のチャットアイコンをクリックしてチャットウィンドウを開きます。
 5. メッセージを送信：「こんにちは」のようなメッセージを入力してEnterキーを押します。
 
-![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+[![VoltAgent Demo](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)
 
 ### 最初のワークフローの実行
 
@@ -235,7 +230,7 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 
 VoltOpsコンソールから直接、事前構築された`expenseApprovalWorkflow`をテストできます：
 
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+[![expense-approval](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)
 
 1.  **ワークフローページに移動**：サーバーを起動した後、[ワークフローページ](https://console.voltagent.dev/workflows)に直接移動します。
 2.  **プロジェクトを選択**：プロジェクトセレクターを使用してプロジェクトを選択します（例：「my-agent-app」）。
@@ -251,9 +246,22 @@ VoltOpsコンソールから直接、事前構築された`expenseApprovalWorkfl
     ```
 5.  **結果を表示**：実行後、各ステップの詳細なログを検査し、コンソールで直接最終出力を確認できます。
 
-## VoltOpsによる組み込みLLM可観測性
+## サンプル
 
-VoltAgentには、エージェントをリアルタイムで監視、デバッグ、最適化するのに役立つ組み込みのLLM可観測性プラットフォームであるVoltOpsが付属しています。
+より多くのサンプルについては、[サンプルリポジトリ](https://github.com/VoltAgent/voltagent/tree/main/examples)をご覧ください。
+
+- **[Airtableエージェント](https://voltagent.dev/examples/guides/airtable-agent)** - 新しいレコードに反応し、VoltOpsアクションでAirtableに更新を書き戻します。
+- **[Slackエージェント](https://voltagent.dev/examples/guides/slack-agent)** - チャンネルメッセージに応答し、VoltOps Slackアクションで返信します。
+- **[ChatGPTアプリとVoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - VoltAgentをMCP経由でデプロイし、ChatGPTアプリに接続します。
+- **[WhatsApp注文エージェント](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 自然な会話で食品注文を処理するWhatsAppチャットボットを構築します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)）
+- **[YouTubeからブログエージェント](https://voltagent.dev/examples/agents/youtube-blog-agent)** - MCPツールを使用したスーパーバイザーエージェントでYouTube動画をMarkdownブログ投稿に変換します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)）
+- **[AI広告生成エージェント](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)** - BrowserBase StagehandとGoogle Gemini AIを使用してInstagram広告を生成します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)）
+- **[AIレシピ生成エージェント](https://voltagent.dev/examples/agents/recipe-generator)** - 材料と好みに基づいてパーソナライズされた料理提案を作成します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator) | [ビデオ](https://youtu.be/KjV1c6AhlfY)）
+- **[AI研究アシスタントエージェント](https://voltagent.dev/examples/agents/research-assistant)** - 包括的なレポートを生成するマルチエージェント研究ワークフロー。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant) | [ビデオ](https://youtu.be/j6KAUaoZMy4)）
+
+<h2 id="voltops-console">VoltOpsコンソール：LLM可観測性 - 自動化 - デプロイ</h2>
+
+VoltOpsコンソールは、VoltAgentのプラットフォーム側であり、可観測性、自動化、デプロイを提供し、リアルタイムの実行トレース、パフォーマンスメトリクス、ビジュアルダッシュボードで本番環境のエージェントを監視およびデバッグできます。
 
 🎬 [ライブデモを試す](https://console.voltagent.dev/demo)
 
@@ -265,22 +273,17 @@ VoltAgentには、エージェントをリアルタイムで監視、デバッ�
 
 詳細なトレースとパフォーマンスメトリクスでエージェントの実行フローを深く掘り下げます。
 
-<br/>
-
-![VoltOps Observability Overview](https://cdn.voltagent.dev/console/observability.png)
+<img alt="1" src="https://github.com/user-attachments/assets/21c6d05d-f333-4c61-9218-8862d16110fd" />
 
 ### ダッシュボード
 
 すべてのエージェント、ワークフロー、システムパフォーマンスメトリクスの包括的な概要を取得します。
 
-<br/>
-
-![VoltOps Dashboard](https://cdn.voltagent.dev/console/dashboard.png)
+<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### ログ
 
 すべてのエージェントインタラクションとワークフローステップの詳細な実行ログを追跡します。
-<br/>
 
 ![VoltOps Logs](https://cdn.voltagent.dev/console/logs.png)
 
@@ -288,15 +291,11 @@ VoltAgentには、エージェントをリアルタイムで監視、デバッ�
 
 エージェントのメモリ、コンテキスト、会話履歴を検査および管理します。
 
-<br/>
-
 ![VoltOps Memory Overview](https://cdn.voltagent.dev/console/memory.png)
 
 ### トレース
 
 エージェントの動作を理解し、パフォーマンスを最適化するために完全な実行トレースを分析します。
-
-<br/>
 
 ![VoltOps Traces](https://cdn.voltagent.dev/console/traces.png)
 
@@ -304,116 +303,51 @@ VoltAgentには、エージェントをリアルタイムで監視、デバッ�
 
 コンソールで直接プロンプトを設計、テスト、改良します。
 
-<br/>
+<img alt="prompts" src="https://github.com/user-attachments/assets/fb6d71eb-8f81-4443-a494-08c33ec9bcc4" />
 
-![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
+### デプロイ
 
-## 例
+ワンクリックのGitHub統合とマネージドインフラストラクチャでエージェントを本番環境にデプロイします。
 
-完全なソースコードとビデオチュートリアルを備えたVoltAgentの実世界の実装を探索します。
+<img alt="deployment" src="https://github.com/user-attachments/assets/e329ab4b-7464-435a-96cc-90214e8a3cfa" />
 
-より多くの例とユースケースについては、[例のリポジトリ](https://github.com/VoltAgent/voltagent/tree/main/examples)をご覧ください。
+📖 [VoltOpsデプロイドキュメント](https://voltagent.dev/docs/deployment/voltops/)
 
-### WhatsApp注文エージェント
+### トリガーとアクション
 
-自然な会話を通じて食品注文を処理し、データベースからメニュー項目を管理し、完全な会話コンテキストで注文を処理するWhatsAppチャットボットを構築します。
+ウェブフック、スケジュール、カスタムトリガーでエージェントワークフローを自動化し、外部イベントに反応します。
 
-<br/>
+<img width="1277" alt="triggers" src="https://github.com/user-attachments/assets/67e36934-2eb5-4cf1-94f8-3057d805ef65" />
 
-<img width="1111" height="347" alt="whatsapp" src="https://github.com/user-attachments/assets/dc9c4986-3e68-42f8-a450-ecd79b4dbd99" />
+### モニタリング
 
-<br/>
-<br/>
+システム全体のエージェントの健全性、パフォーマンスメトリクス、リソース使用量を監視します。
 
-- 📖 [チュートリアル](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
-- 💻 [ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
+<img alt="monitoring" src="https://github.com/user-attachments/assets/1fd1151f-5ee4-4c7c-8ec7-29874e37c48f" />
 
-### YouTube to ブログエージェント
+### ガードレール
 
-MCPツール、共有ワーキングメモリ、VoltOps可観測性を備えたサブエージェントを調整するスーパーバイザーエージェントを使用して、YouTube動画をMarkdownブログ投稿に変換します。
+エージェントが定義されたパラメーター内で動作するように、安全境界とコンテンツフィルターを設定します。
 
-<br/>
+<img alt="guardrails" src="https://github.com/user-attachments/assets/52bd51f0-944e-4202-9f54-7bb2e0e2d1f6" />
 
-<img width="1113" height="363" alt="youtube" src="https://github.com/user-attachments/assets/f9c944cf-8a9a-4ac5-a5f9-860ce08f058b" />
+### 評価
 
-<br/>
-<br/>
+ベンチマークに対してエージェントの動作、精度、パフォーマンスをテストする評価スイートを実行します。
 
-- 📖 [チュートリアル](https://voltagent.dev/examples/agents/youtube-blog-agent)
-- 💻 [ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
+<img alt="evals" src="https://github.com/user-attachments/assets/510cc180-2661-4973-a48f-074d4703d90b" />
 
-### AI広告生成エージェント
+### RAG（ナレッジベース）
 
-BrowserBase Stagehandを使用してランディングページを分析し、ブランドデータを抽出し、Google Gemini AIを通じてビジュアルを生成するInstagram広告ジェネレーターを実装します。
+組み込みの検索拡張生成機能でエージェントをナレッジソースに接続します。
 
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator">
-<img width="1115" height="363" alt="instagram" src="https://github.com/user-attachments/assets/973e79c7-34ec-4f8e-8a41-9273d44234c6" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [チュートリアル](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
-- 💻 [ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
-
-### AIレシピ生成エージェント
-
-利用可能な材料、食事の好み、時間制約に基づいてパーソナライズされた料理提案を作成するインテリジェントなレシピ推奨システムを構築します。
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator">
-<img width="1111" height="363" alt="cook" src="https://github.com/user-attachments/assets/dde6ce2f-c963-4075-9825-f216bc6e3467" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [チュートリアル](https://voltagent.dev/examples/agents/recipe-generator)
-- 📹 [ビデオを見る](https://youtu.be/KjV1c6AhlfY)
-- 💻 [ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
-
-### AI研究アシスタントエージェント
-
-型安全なデータフローでトピックを研究し、包括的なレポートを生成するために、さまざまなAIエージェントが協力するマルチエージェント研究ワークフローを作成します。
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant">
-<img width="2228" height="678" alt="research" src="https://github.com/user-attachments/assets/8f459748-132e-4ff3-9afe-0561fa5075c2" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [チュートリアル](https://voltagent.dev/examples/agents/research-assistant)
-- 📹 [ビデオを見る](https://youtu.be/j6KAUaoZMy4)
-- 💻 [ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
-
-## ユースケース
-
-さまざまな業界の実際のビジネスニーズに対応するAIエージェントを構築します：
-
-- **[HRエージェント](https://voltagent.dev/use-cases/hr-agent/)** - 採用、従業員のオンボーディング、HRサポートタスクを自動化します。
-- **[カスタマーサポートエージェント](https://voltagent.dev/use-cases/customer-support-agent/)** - 顧客の質問や問題を処理するサポートエージェントを構築します。
-- **[営業チーム](https://voltagent.dev/use-cases/sales-teams/)** - リードを検証し、顧客データを収集し、営業アウトリーチをパーソナライズします。
-- **[財務エージェント](https://voltagent.dev/use-cases/finance-agent/)** - 請求書を管理し、経費を追跡し、財務報告書を生成します。
-- **[開発エージェント](https://voltagent.dev/use-cases/development-agent/)** - コードをレビューし、デプロイを管理し、開発チームを支援します。
-- **[マーケティングエージェント](https://voltagent.dev/use-cases/marketing-agent/)** - キャンペーンを計画し、コンテンツを作成し、マーケティングパフォーマンスを分析します。
-- **[法務エージェント](https://voltagent.dev/use-cases/legal-agent/)** - 契約をレビューし、コンプライアンスを確認し、法的タスクを処理します。
-- **[保険エージェント](https://voltagent.dev/use-cases/insurance-agent/)** - 請求を処理し、リスクを評価し、ポリシーを管理します。
-- **[産業エージェント](https://voltagent.dev/use-cases/industrial-agent/)** - 機器を監視し、メンテナンスニーズを予測し、安全性を確保します。
-- **[教育エージェント](https://voltagent.dev/use-cases/education-agent/)** - パーソナライズされた指導を提供し、学生の進捗を追跡し、学習をサポートします。
-- **[政府エージェント](https://voltagent.dev/use-cases/government-agent/)** - 許可申請を処理し、給付金を処理し、市民にサービスを提供します。
-- **[ドキュメントエージェント](https://voltagent.dev/use-cases/documentation-agent/)** - APIドキュメントを作成し、変更ログを書き、コードからチュートリアルを生成します。
+<img alt="rag" src="https://github.com/user-attachments/assets/a6c2f668-7ad1-4fb6-b67f-654335285f1e" />
 
 ## VoltAgentを学ぶ
 
-- 📖 **[インタラクティブチュートリアルから始める](https://voltagent.dev/tutorial/introduction/)**ことで、AIエージェント構築の基礎を学びます。
+- **[インタラクティブチュートリアルから始める](https://voltagent.dev/tutorial/introduction/)** ことで、AIエージェント構築の基礎を学びます。
 - **[ドキュメント](https://voltagent.dev/docs/)**: ガイド、概念、チュートリアルを深く掘り下げます。
-- **[例](https://github.com/voltagent/voltagent/tree/main/examples)**: 実用的な実装を探索します。
+- **[サンプル](https://github.com/voltagent/voltagent/tree/main/examples)**: 実用的な実装を探索します。
 - **[ブログ](https://voltagent.dev/blog/)**: 技術的な洞察とベストプラクティスについて詳しく読みます。
 
 ## 貢献
@@ -426,10 +360,8 @@ BrowserBase Stagehandを使用してランディングページを分析し、�
 
 VoltAgentはコミュニティの努力であり、あなたのような人々のおかげで継続的に改善されています。
 
-![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=100)
-
-あなたのスターは、より多くの開発者にリーチするのに役立ちます！VoltAgentが役立つと思ったら、プロジェクトをサポートし、他の人が発見できるようにGitHubでスターを付けることを検討してください。
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=500&columns=20&anon=1)
 
 ## ライセンス
 
-MITライセンスの下でライセンスされています、Copyright © 2025-present VoltAgent.
+MITライセンスの下でライセンスされています、Copyright © 2026-present VoltAgent.

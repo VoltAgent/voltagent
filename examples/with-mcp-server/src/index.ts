@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { MCPServer } from "@voltagent/mcp-server";
@@ -81,14 +80,14 @@ const storyWriter = new Agent({
   name: "StoryWriterAgent",
   purpose: "Craft imaginative short stories on request.",
   instructions: "You are a creative story writer.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const translatorAgent = new Agent({
   name: "TranslatorAgent",
   purpose: "Translate content between languages while keeping tone and intent.",
   instructions: "You are a skilled translator.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const supervisorAgent = new Agent({
@@ -96,7 +95,7 @@ const supervisorAgent = new Agent({
   purpose: "Decide whether a task should be written or translated and delegate accordingly.",
   instructions:
     "You are a supervisor agent that delegates tasks to specialized agents. Use the `StoryWriterAgent` agent for creative writing tasks and the `TranslatorAgent` agent for translation tasks. Always choose the most appropriate agent for the given task.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   subAgents: [storyWriter, translatorAgent],
 });
 
@@ -105,7 +104,7 @@ const assistant = new Agent({
   purpose: "Answer general questions and call helper tools such as current time or approval.",
   instructions:
     "You are a helpful assistant. Use the `current_time` tool when the user wants to know the time.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [currentTimeTool, approvalTool],
 });
 

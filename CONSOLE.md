@@ -208,7 +208,7 @@ const agent = await trace.addAgent({
 });
 
 // Add tools, memory operations, retrievers as needed
-const tool = await agent.addTool({
+const tool = await agent.addStandaloneTool({
   name: "knowledge-base-search",
   input: { query: "password reset procedure" },
 });

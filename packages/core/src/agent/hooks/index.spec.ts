@@ -1,5 +1,6 @@
 import { type AgentHooks, createHooks } from ".";
 import type { Tool } from "../../tool";
+import { createVoltAgentError } from "../errors";
 import { createMockLanguageModel, createMockTool, createTestAgent } from "../test-utils";
 import type { OperationContext } from "../types";
 
@@ -333,6 +334,66 @@ describe("Agent Hooks Functionality", () => {
           tool,
           output: undefined,
           error: toolError,
+          context: mockContext,
+        }),
+      );
+    });
+
+    it("should call onToolError when tool fails", async () => {
+      const onToolErrorSpy = vi.fn().mockResolvedValue({
+        output: {
+          error: true,
+          message: "normalized",
+        },
+      });
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onToolError: onToolErrorSpy }),
+      });
+
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
+
+      const originalError = new Error("Tool execution failed");
+      const toolError = createVoltAgentError(originalError, {
+        stage: "tool_execution",
+      });
+
+      await agent.hooks.onToolError?.({
+        agent: agent as any,
+        tool,
+        args: { query: "test" },
+        error: toolError,
+        originalError,
+        context: mockContext,
+      });
+
+      expect(onToolErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          tool,
+          args: { query: "test" },
+          error: toolError,
+          originalError,
           context: mockContext,
         }),
       );

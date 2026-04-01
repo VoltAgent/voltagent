@@ -1,5 +1,3 @@
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -26,25 +24,6 @@ const weatherTool = createTool({
   },
 });
 
-// Configure Amazon Bedrock provider
-// Using AWS SDK Credentials Chain (recommended)
-// This automatically checks for credentials in the following order:
-// 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-// 2. AWS profiles (via AWS_PROFILE environment variable)
-// 3. Instance profiles, ECS roles, EKS Service Accounts, etc.
-const bedrock = createAmazonBedrock({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentialProvider: fromNodeProviderChain(),
-});
-
-// Alternative: Direct credentials (not recommended for production)
-// const bedrock = createAmazonBedrock({
-//   region: process.env.AWS_REGION || "us-east-1",
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-//   sessionToken: process.env.AWS_SESSION_TOKEN,
-// });
-
 // Create logger
 const logger = createPinoLogger({
   name: "with-amazon-bedrock",
@@ -61,7 +40,9 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "bedrock-assistant",
   instructions: "An AI assistant powered by Amazon Bedrock",
-  model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
+  // Credentials are resolved from AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION,
+  // and optionally AWS_SESSION_TOKEN.
+  model: "amazon-bedrock/anthropic.claude-opus-4-1-20250805-v1:0",
   tools: [weatherTool],
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

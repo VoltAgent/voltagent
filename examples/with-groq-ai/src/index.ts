@@ -1,4 +1,3 @@
-import { groq } from "@ai-sdk/groq";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -13,7 +12,7 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant that answers questions",
-  model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+  model: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

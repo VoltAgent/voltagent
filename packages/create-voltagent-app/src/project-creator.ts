@@ -5,7 +5,6 @@ import fs from "fs-extra";
 import type { ProjectOptions } from "./types";
 import { AI_PROVIDER_CONFIG } from "./types";
 import { createSpinner } from "./utils/animation";
-import { installProviderDependency } from "./utils/dependency-installer";
 import fileManager from "./utils/file-manager";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
 import { getAllTemplates } from "./utils/templates";
@@ -211,17 +210,6 @@ dist
     }
 
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
-
-    // Install provider-specific dependency
-    if (options.aiProvider) {
-      const providerConfig = AI_PROVIDER_CONFIG[options.aiProvider];
-      await installProviderDependency(
-        targetDir,
-        providerConfig.package,
-        providerConfig.packageVersion,
-        providerConfig.extraPackages || [],
-      );
-    }
 
     // Initialize git repository
     const gitSpinner = createSpinner("Initializing git repository...");

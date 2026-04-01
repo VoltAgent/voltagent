@@ -14,5 +14,10 @@ export type StreamEvent = TextStreamPart<any> & {
   // Additional metadata for subagent event forwarding
   subAgentId?: string;
   subAgentName?: string;
+  executingAgentId?: string;
+  executingAgentName?: string;
+  parentAgentId?: string;
+  parentAgentName?: string;
+  agentPath?: string[];
   timestamp?: string;
 };

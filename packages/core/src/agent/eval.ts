@@ -16,13 +16,20 @@ import {
 } from "../eval/runtime";
 import type { VoltAgentObservability } from "../observability";
 import { randomUUID } from "../utils/id";
+import type { VoltOpsClient } from "../voltops/client";
+import type { StepWithContent } from "./providers/base/types";
 import type {
   AgentEvalConfig,
   AgentEvalContext,
+  AgentEvalFeedbackHelper,
+  AgentEvalFeedbackSaveInput,
   AgentEvalOperationType,
   AgentEvalPayload,
   AgentEvalResult,
+  AgentEvalResultCallbackArgs,
   AgentEvalScorerConfig,
+  AgentEvalToolCall,
+  AgentEvalToolResult,
   OperationContext,
 } from "./types";
 
@@ -47,6 +54,21 @@ interface ScoreMetrics {
   thresholdValue?: number;
   thresholdPassed: boolean | null;
   datasetMetadata?: ReturnType<typeof extractDatasetMetadataFromCombinedMetadata>;
+}
+
+interface JudgeTelemetry {
+  modelName?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  providerCost?: {
+    cost?: number;
+    upstreamInferenceCost?: number;
+    upstreamInferenceInputCost?: number;
+    upstreamInferenceOutputCost?: number;
+  };
 }
 
 async function resolveScorerDescriptors(
@@ -161,11 +183,80 @@ function createScorerSpanAttributes(
   if (metrics.datasetMetadata?.datasetItemHash) {
     attributes["eval.dataset.item_hash"] = metrics.datasetMetadata.datasetItemHash;
   }
+  const judgeTelemetry = extractJudgeTelemetry(metrics.combinedMetadata);
+  if (judgeTelemetry?.modelName) {
+    attributes["ai.model.name"] = judgeTelemetry.modelName;
+    const provider = judgeTelemetry.modelName.includes("/")
+      ? judgeTelemetry.modelName.split("/")[0]
+      : undefined;
+    if (provider) {
+      attributes["ai.model.provider"] = provider;
+    }
+  }
+  if (judgeTelemetry?.promptTokens !== undefined) {
+    attributes["usage.prompt_tokens"] = judgeTelemetry.promptTokens;
+  }
+  if (judgeTelemetry?.completionTokens !== undefined) {
+    attributes["usage.completion_tokens"] = judgeTelemetry.completionTokens;
+  }
+  if (judgeTelemetry?.totalTokens !== undefined) {
+    attributes["usage.total_tokens"] = judgeTelemetry.totalTokens;
+  }
+  if (judgeTelemetry?.cachedTokens !== undefined) {
+    attributes["usage.cached_tokens"] = judgeTelemetry.cachedTokens;
+  }
+  if (judgeTelemetry?.reasoningTokens !== undefined) {
+    attributes["usage.reasoning_tokens"] = judgeTelemetry.reasoningTokens;
+  }
+  if (judgeTelemetry?.providerCost?.cost !== undefined) {
+    attributes["usage.cost"] = judgeTelemetry.providerCost.cost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceCost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceInputCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_input_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceInputCost;
+  }
+  if (judgeTelemetry?.providerCost?.upstreamInferenceOutputCost !== undefined) {
+    attributes["usage.cost_details.upstream_inference_output_cost"] =
+      judgeTelemetry.providerCost.upstreamInferenceOutputCost;
+  }
   if (storagePayload.userId) {
     attributes["user.id"] = storagePayload.userId;
   }
   if (storagePayload.conversationId) {
     attributes["conversation.id"] = storagePayload.conversationId;
+  }
+  if (storagePayload.input) {
+    attributes["eval.input"] = storagePayload.input;
+  }
+  if (storagePayload.output) {
+    attributes["eval.output"] = storagePayload.output;
+  }
+  if (Array.isArray(storagePayload.messages) && storagePayload.messages.length > 0) {
+    attributes["eval.messages.count"] = storagePayload.messages.length;
+  }
+  if (Array.isArray(storagePayload.toolCalls) && storagePayload.toolCalls.length > 0) {
+    attributes["eval.tool_calls.count"] = storagePayload.toolCalls.length;
+  }
+  if (Array.isArray(storagePayload.toolResults) && storagePayload.toolResults.length > 0) {
+    attributes["eval.tool_results.count"] = storagePayload.toolResults.length;
+  }
+  // Expected is often in metadata or payload, let's check storagePayload.metadata
+  // But wait, storagePayload doesn't have expected field directly usually, it's in metadata or derived.
+  // Let's check AgentEvalPayload definition.
+  // It has input/output/rawInput/rawOutput.
+  // Expected is usually passed via scorer payload/params.
+  // Let's check if we can get it from metrics or result.
+  // metrics has combinedMetadata.
+  // Let's check if combinedMetadata has expected.
+
+  const expected = metrics.combinedMetadata?.expected;
+  if (expected) {
+    attributes["eval.expected"] =
+      typeof expected === "string" ? expected : JSON.stringify(expected);
   }
 
   return attributes;
@@ -234,6 +325,7 @@ export interface AgentEvalHost {
   readonly logger: Logger;
   readonly evalConfig?: AgentEvalConfig;
   getObservability(): VoltAgentObservability;
+  getVoltOpsClient?: () => VoltOpsClient | undefined;
 }
 
 export interface EnqueueEvalScoringArgs {
@@ -378,36 +470,32 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
         `eval.scorer.${definition.id}`,
         {
           kind: SpanKind.INTERNAL,
-          attributes: { "span.type": "scorer" },
+          attributes: {
+            "span.type": "scorer",
+            "voltagent.label": definition.name ?? descriptor.key ?? definition.id,
+            "entity.id": host.id,
+            "entity.type": "agent",
+            "entity.name": host.name,
+            "eval.scorer.id": definition.id,
+            "eval.scorer.key": descriptor.key,
+            "eval.scorer.name": definition.name ?? definition.id,
+            "eval.scorer.kind": "live",
+            "eval.scorer.status": "running",
+            "eval.operation.id": storagePayload.operationId,
+            "eval.operation.type": storagePayload.operationType,
+            "eval.trace.id": storagePayload.traceId,
+            "eval.source.span_id": storagePayload.spanId,
+            "eval.trigger_source": config.triggerSource ?? "live",
+            "eval.environment": config.environment,
+            ...(storagePayload.userId ? { "user.id": storagePayload.userId } : {}),
+            ...(storagePayload.conversationId
+              ? { "conversation.id": storagePayload.conversationId }
+              : {}),
+          },
           links,
         },
         parentContext,
       );
-
-      span.setAttributes({
-        "voltagent.label": definition.name ?? descriptor.key ?? definition.id,
-        "entity.id": host.id,
-        "entity.type": "agent",
-        "entity.name": host.name,
-        "eval.scorer.id": definition.id,
-        "eval.scorer.key": descriptor.key,
-        "eval.scorer.name": definition.name ?? definition.id,
-        "eval.scorer.kind": "live",
-        "eval.scorer.status": "running",
-        "eval.operation.id": storagePayload.operationId,
-        "eval.operation.type": storagePayload.operationType,
-        "eval.trace.id": storagePayload.traceId,
-        "eval.source.span_id": storagePayload.spanId,
-        "eval.trigger_source": config.triggerSource ?? "live",
-        "eval.environment": config.environment,
-      });
-
-      if (storagePayload.userId) {
-        span.setAttribute("user.id", storagePayload.userId);
-      }
-      if (storagePayload.conversationId) {
-        span.setAttribute("conversation.id", storagePayload.conversationId);
-      }
 
       span.addEvent("eval.scorer.started");
       const spanContext = trace.setSpan(parentContext, span);
@@ -674,7 +762,247 @@ function ensureScorerText(value: unknown): string {
   return String(value);
 }
 
-function buildEvalPayload(
+function normalizeMessageRole(role: unknown): StepWithContent["role"] {
+  if (role === "user" || role === "assistant" || role === "system" || role === "tool") {
+    return role;
+  }
+  return "assistant";
+}
+
+function normalizeMessageContent(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  try {
+    return safeStringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function normalizeMessageChainSource(source: unknown): StepWithContent[] {
+  if (typeof source === "string") {
+    return [
+      {
+        id: randomUUID(),
+        type: "text",
+        role: "user",
+        content: source,
+      },
+    ];
+  }
+
+  if (!Array.isArray(source) || source.length === 0) {
+    return [];
+  }
+
+  const normalized: StepWithContent[] = [];
+
+  for (const item of source) {
+    if (typeof item === "string") {
+      normalized.push({
+        id: randomUUID(),
+        type: "text",
+        role: "user",
+        content: item,
+      });
+      continue;
+    }
+
+    if (!isPlainRecord(item)) {
+      continue;
+    }
+
+    const role = normalizeMessageRole(item.role);
+    const rawType = item.type;
+    const messageType: StepWithContent["type"] =
+      rawType === "text" || rawType === "tool_call" || rawType === "tool_result"
+        ? rawType
+        : role === "tool"
+          ? "tool_result"
+          : "text";
+    const contentSource =
+      "parts" in item && Array.isArray(item.parts)
+        ? item.parts
+        : "content" in item
+          ? item.content
+          : item;
+    const content = normalizeMessageContent(contentSource);
+
+    const step: StepWithContent = {
+      id: typeof item.id === "string" ? item.id : randomUUID(),
+      type: messageType,
+      role,
+      content,
+    };
+
+    if (typeof item.name === "string") {
+      step.name = item.name;
+    } else if (typeof item.toolName === "string") {
+      step.name = item.toolName;
+    }
+
+    if (messageType === "tool_call") {
+      if (isPlainRecord(item.arguments)) {
+        step.arguments = item.arguments;
+      } else if (isPlainRecord(item.input)) {
+        step.arguments = item.input;
+      }
+    }
+
+    if (messageType === "tool_result" || role === "tool") {
+      if ("result" in item) {
+        step.result = item.result;
+      } else if ("output" in item) {
+        step.result = item.output;
+      } else if ("content" in item) {
+        step.result = item.content;
+      }
+    }
+
+    normalized.push(step);
+  }
+
+  return normalized;
+}
+
+function normalizeConversationSteps(steps: unknown): StepWithContent[] {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return [];
+  }
+
+  const normalized: StepWithContent[] = [];
+
+  for (const step of steps) {
+    if (!isPlainRecord(step)) {
+      continue;
+    }
+
+    const role = normalizeMessageRole(step.role);
+    const rawType = step.type;
+    const type: StepWithContent["type"] =
+      rawType === "text" || rawType === "tool_call" || rawType === "tool_result"
+        ? rawType
+        : role === "tool"
+          ? "tool_result"
+          : "text";
+
+    const normalizedStep: StepWithContent = {
+      id: typeof step.id === "string" ? step.id : randomUUID(),
+      type,
+      role,
+      content: normalizeMessageContent(step.content),
+      ...(typeof step.name === "string" ? { name: step.name } : {}),
+      ...(isPlainRecord(step.arguments) ? { arguments: step.arguments } : {}),
+      ...("result" in step ? { result: step.result } : {}),
+      ...(isPlainRecord(step.usage) ? { usage: step.usage as StepWithContent["usage"] } : {}),
+      ...(typeof step.subAgentId === "string" ? { subAgentId: step.subAgentId } : {}),
+      ...(typeof step.subAgentName === "string" ? { subAgentName: step.subAgentName } : {}),
+    };
+
+    normalized.push(normalizedStep);
+  }
+
+  return normalized;
+}
+
+function buildEvalMessageChain(
+  oc: OperationContext,
+  output: unknown,
+): StepWithContent[] | undefined {
+  const inputChain = normalizeMessageChainSource(oc.input);
+  const stepChain = normalizeConversationSteps(oc.conversationSteps);
+  const merged = [...inputChain, ...stepChain];
+
+  if (merged.length === 0) {
+    const fallbackOutput = normalizeEvalString(output);
+    if (fallbackOutput) {
+      merged.push({
+        id: randomUUID(),
+        type: "text",
+        role: "assistant",
+        content: fallbackOutput,
+      });
+    }
+  }
+
+  return merged.length > 0 ? merged : undefined;
+}
+
+function cloneUnknownArray<T>(value: unknown): T[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(safeStringify(value)) as T[];
+  } catch {
+    return [...value] as T[];
+  }
+}
+
+function extractToolCallsFromMessages(
+  messages: StepWithContent[] | undefined,
+): AgentEvalToolCall[] | undefined {
+  if (!messages || messages.length === 0) {
+    return undefined;
+  }
+
+  const toolCalls: AgentEvalToolCall[] = [];
+
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_call") {
+      continue;
+    }
+
+    toolCalls.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      arguments: message.arguments ?? null,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
+
+  return toolCalls.length > 0 ? toolCalls : undefined;
+}
+
+function extractToolResultsFromMessages(
+  messages: StepWithContent[] | undefined,
+): AgentEvalToolResult[] | undefined {
+  if (!messages || messages.length === 0) {
+    return undefined;
+  }
+
+  const toolResults: AgentEvalToolResult[] = [];
+
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_result") {
+      continue;
+    }
+
+    toolResults.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      result: message.result ?? message.content,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
+
+  return toolResults.length > 0 ? toolResults : undefined;
+}
+
+export function buildEvalPayload(
   oc: OperationContext,
   output: unknown,
   operation: AgentEvalOperationType,
@@ -686,6 +1014,17 @@ function buildEvalPayload(
     return undefined;
   }
 
+  const metadataRecord = isPlainRecord(metadata) ? metadata : undefined;
+  const metadataMessages = normalizeMessageChainSource(metadataRecord?.messages);
+  const messages =
+    metadataMessages.length > 0 ? metadataMessages : buildEvalMessageChain(oc, output);
+  const toolCalls =
+    cloneUnknownArray<AgentEvalToolCall>(metadataRecord?.toolCalls) ??
+    extractToolCallsFromMessages(messages);
+  const toolResults =
+    cloneUnknownArray<AgentEvalToolResult>(metadataRecord?.toolResults) ??
+    extractToolResultsFromMessages(messages);
+
   return {
     operationId: oc.operationId,
     operationType: operation,
@@ -693,6 +1032,9 @@ function buildEvalPayload(
     output: normalizeEvalString(output),
     rawInput: oc.input,
     rawOutput: output,
+    messages,
+    toolCalls,
+    toolResults,
     userId: oc.userId,
     conversationId: oc.conversationId,
     traceId: spanContext.traceId,
@@ -986,6 +1328,15 @@ function resolveThresholdFromMetadata(
   metadata: Record<string, unknown> | null | undefined,
 ): number | undefined {
   const record = isPlainRecord(metadata) ? (metadata as Record<string, unknown>) : undefined;
+
+  // Check if threshold is directly in scorer metadata
+  if (record?.scorer && isPlainRecord(record.scorer)) {
+    const scorerMetadata = record.scorer as Record<string, unknown>;
+    if (typeof scorerMetadata.threshold === "number") {
+      return scorerMetadata.threshold;
+    }
+  }
+
   const voltAgent = collectVoltAgentMetadataFromSources(record);
   if (!voltAgent) {
     return undefined;
@@ -998,6 +1349,15 @@ function resolveThresholdPassedFromMetadata(
   metadata: Record<string, unknown> | null | undefined,
 ): boolean | null {
   const record = isPlainRecord(metadata) ? (metadata as Record<string, unknown>) : undefined;
+
+  // Check if thresholdPassed is directly in scorer metadata
+  if (record?.scorer && isPlainRecord(record.scorer)) {
+    const scorerMetadata = record.scorer as Record<string, unknown>;
+    if (typeof scorerMetadata.thresholdPassed === "boolean") {
+      return scorerMetadata.thresholdPassed;
+    }
+  }
+
   const voltAgent = collectVoltAgentMetadataFromSources(record);
   if (!voltAgent) {
     return null;
@@ -1048,6 +1408,89 @@ function extractErrorMessage(error: unknown): string {
   }
 }
 
+function extractJudgeTelemetry(
+  metadata: Record<string, unknown> | null | undefined,
+): JudgeTelemetry | undefined {
+  const record = isPlainRecord(metadata) ? (metadata as Record<string, unknown>) : undefined;
+  if (!record) {
+    return undefined;
+  }
+
+  const sources: Array<Record<string, unknown> | undefined> = [];
+  if (isPlainRecord(record.voltAgent)) {
+    sources.push(record.voltAgent as Record<string, unknown>);
+  }
+  if (isPlainRecord(record.scorer)) {
+    sources.push(record.scorer as Record<string, unknown>);
+  }
+  if (isPlainRecord(record.payload)) {
+    sources.push(record.payload as Record<string, unknown>);
+  }
+
+  for (const source of sources) {
+    const judge = isPlainRecord(source?.judge)
+      ? (source?.judge as Record<string, unknown>)
+      : undefined;
+    if (!judge) {
+      continue;
+    }
+
+    const usage = isPlainRecord(judge.usage) ? (judge.usage as Record<string, unknown>) : undefined;
+    const providerCost = isPlainRecord(judge.providerCost)
+      ? (judge.providerCost as Record<string, unknown>)
+      : undefined;
+
+    const telemetry: JudgeTelemetry = {
+      modelName: readString(judge.model),
+      promptTokens: readNumber(usage?.promptTokens),
+      completionTokens: readNumber(usage?.completionTokens),
+      totalTokens: readNumber(usage?.totalTokens),
+      cachedTokens: readNumber(usage?.cachedInputTokens ?? usage?.cachedTokens),
+      reasoningTokens: readNumber(usage?.reasoningTokens),
+      providerCost: providerCost
+        ? {
+            cost: readNumber(providerCost.cost),
+            upstreamInferenceCost: readNumber(providerCost.upstreamInferenceCost),
+            upstreamInferenceInputCost: readNumber(providerCost.upstreamInferenceInputCost),
+            upstreamInferenceOutputCost: readNumber(providerCost.upstreamInferenceOutputCost),
+          }
+        : undefined,
+    };
+
+    if (
+      telemetry.modelName ||
+      telemetry.promptTokens !== undefined ||
+      telemetry.completionTokens !== undefined ||
+      telemetry.totalTokens !== undefined ||
+      telemetry.cachedTokens !== undefined ||
+      telemetry.reasoningTokens !== undefined ||
+      telemetry.providerCost?.cost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceCost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceInputCost !== undefined ||
+      telemetry.providerCost?.upstreamInferenceOutputCost !== undefined
+    ) {
+      return telemetry;
+    }
+  }
+
+  return undefined;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
 async function invokeEvalResultCallback(
   host: AgentEvalHost,
   config: AgentEvalScorerConfig,
@@ -1058,11 +1501,76 @@ async function invokeEvalResultCallback(
   }
 
   try {
-    await config.onResult(result);
+    const feedback = createEvalFeedbackHelper(host, result);
+    const payload: AgentEvalResultCallbackArgs = {
+      ...result,
+      result,
+      feedback,
+    };
+    await config.onResult(payload);
   } catch (error) {
     host.logger.warn(`[Agent:${host.name}] Eval scorer onResult callback failed`, {
       error: error instanceof Error ? error.message : error,
       scorerId: result.scorerId,
     });
   }
+}
+
+function createEvalFeedbackHelper(
+  host: AgentEvalHost,
+  result: AgentEvalResult,
+): AgentEvalFeedbackHelper {
+  return {
+    save: async (input: AgentEvalFeedbackSaveInput) => {
+      const rawKey = typeof input.key === "string" ? input.key.trim() : "";
+      if (!rawKey) {
+        throw new Error("feedback key is required");
+      }
+
+      const traceId = input.traceId ?? result.payload.traceId;
+      if (!traceId) {
+        throw new Error("feedback traceId is required");
+      }
+
+      const client = resolveEvalFeedbackClient(host);
+      if (!client) {
+        host.logger.debug("Eval feedback save skipped: VoltOps client unavailable", {
+          scorerId: result.scorerId,
+          traceId,
+        });
+        return null;
+      }
+
+      return await client.createFeedback({
+        traceId,
+        key: rawKey,
+        id: input.id,
+        score: input.score,
+        value: input.value,
+        correction: input.correction,
+        comment: input.comment,
+        feedbackConfig: input.feedbackConfig,
+        feedbackSource: input.feedbackSource,
+        feedbackSourceType: input.feedbackSourceType,
+        createdAt: input.createdAt,
+      });
+    },
+  };
+}
+
+function resolveEvalFeedbackClient(host: AgentEvalHost): VoltOpsClient | undefined {
+  if (!host.getVoltOpsClient) {
+    return undefined;
+  }
+
+  const client = host.getVoltOpsClient();
+  if (!client) {
+    return undefined;
+  }
+
+  if (typeof client.hasValidKeys === "function" && !client.hasValidKeys()) {
+    return undefined;
+  }
+
+  return client;
 }

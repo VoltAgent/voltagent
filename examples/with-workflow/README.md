@@ -42,6 +42,9 @@ Escape the limitations of no-code builders and the complexity of starting from s
 
 </div>
 
+> [!TIP]
+> Looking for the **chaining API**? See the [with-workflow-chain](../with-workflow-chain) example which uses `createWorkflowChain` for a fluent, method-chaining approach.
+
 ## VoltAgent: Build AI Agents Fast and Flexibly
 
 VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.

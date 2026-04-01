@@ -4,66 +4,42 @@ title: Overview
 
 # VoltOps Tracing
 
-Tracing is the process of recording and visualizing the complete execution path of your AI applications in real-time. It shows you exactly what your AI agents are doing, which tools they're using, and how data flows through your system from start to finish.
+Tracing shows how a single user request runs from start to finish. As a developer, you use it to answer:
 
-![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
+- Why did the agent respond this way?
+- Which step failed?
+- Where did latency or cost spike?
 
-## Why Tracing Matters for LLM Applications
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
-<details>
-<summary>
-Understanding Complex AI Workflows
-</summary>
+  <source src="https://cdn.voltagent.dev/docs/voltop-docs/voltops-observability.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
 
-Large Language Model applications often involve complex, multi-step processes that can be difficult to debug and optimize. Unlike traditional applications with predictable execution paths, LLM apps feature:
+<br/>
+<br/>
 
-- **Dynamic decision-making**: AI agents make context-dependent choices that vary between runs
-- **Multi-step reasoning**: Complex tasks are broken down into multiple sequential or parallel operations
-- **Tool integration**: AI agents interact with external APIs, databases, and services
-- **Non-deterministic behavior**: The same input can produce different execution paths
+When you select a trace from the list, you can open the [Waterfall view](https://voltagent.dev/observability-docs/tracing/waterfall/) or the [Node-Based view](https://voltagent.dev/observability-docs/tracing/node-based/) and then dig into [Logs](https://voltagent.dev/observability-docs/tracing/logs/) and [Feedback](https://voltagent.dev/observability-docs/tracing/feedback/).
 
-</details>
+## Trace Filters
 
-<details>
-<summary>
-Key Benefits of Tracing
-</summary>
+Filters help you find the right trace fast.
 
-**Debug with Confidence**
+:::tip
+For example use:
 
-- Identify exactly where errors occur in your AI workflow
-- Understand why certain decisions were made by your AI agents
-- Track the flow of data through complex processing chains
-- Pinpoint performance bottlenecks in real-time
+- Status + Duration to see where a failure started,
+- Token usage + Cost to catch expensive runs, and
+- User ID + Conversation ID to inspect a specific user flow.
+:::
 
-**Monitor Performance**
+![Trace filters overview](https://cdn.voltagent.dev/docs/observability/tracing/overview-trace-filters.gif)
 
-- Track response times for each component of your AI system
-- Monitor token usage and costs across different LLM calls
-- Identify slow operations that impact user experience
+<br/>
 
-**Optimize Your AI Applications**
-
-- Analyze which tools and prompts perform best
-- Identify redundant or inefficient processing steps
-- Optimize prompt engineering based on actual execution data
-- Fine-tune your AI workflows for better performance
-
-**Collaborate Effectively**
-
-- Share detailed traces with team members for debugging
-- Document AI behavior patterns for future reference
-- Enable non-technical stakeholders to understand AI decision-making
-- Create reproducible test cases from real execution traces
-
-</details>
-
-### Common Use Cases
-
-- **Agent Debugging**: When your AI agent produces unexpected results, tracing shows exactly what happened
-- **Performance Optimization**: Identify which LLM calls or tool executions are taking too long
-- **Cost Analysis**: Track token usage and API costs across your entire application
-- **Quality Assurance**: Verify that your AI workflows behave consistently across different scenarios
-- **Compliance**: Maintain audit trails of AI decision-making for regulatory requirements
-
-Tracing transforms the black box of AI applications into a transparent, observable system that you can understand, debug, and optimize with confidence.
+- **Status**: isolate failed or retry-heavy runs.
+- **Agent ID / Entity type**: narrow down which agent or step is involved.
+- **Token usage / Cost**: find expensive or abnormal runs.
+- **Duration**: spot slow traces and latency outliers.
+- **Feedback source / key**: review feedback by source.
+- **User ID / Conversation ID**: drill into one user journey.

@@ -1,5 +1,4 @@
-import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { ManagedMemoryAdapter, ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
@@ -22,11 +21,11 @@ const agent = new Agent({
   name: "Managed Memory Agent",
   instructions:
     "A helpful assistant that stores conversations in VoltAgent Managed Memory via VoltOps.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: managedMemory,
     vector: managedVector,
-    embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+    embedding: "openai/text-embedding-3-small",
   }),
 });
 

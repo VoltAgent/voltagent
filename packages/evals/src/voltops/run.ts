@@ -4,8 +4,8 @@ import type {
   CompleteEvalRunRequest,
   CreateEvalRunRequest,
   FailEvalRunRequest,
+  ResolveExperimentIdOptions,
   ResolveExperimentIdResult,
-  VoltOpsRestClient,
 } from "@voltagent/sdk";
 
 import type {
@@ -15,11 +15,21 @@ import type {
   ExperimentSummary,
 } from "../experiment/types.js";
 
-type VoltOpsClientLike = Pick<
-  VoltOpsRestClient,
-  "createEvalRun" | "appendEvalResults" | "completeEvalRun" | "failEvalRun"
-> &
-  Partial<Pick<VoltOpsRestClient, "resolveExperimentId">>;
+interface VoltOpsRunsApi {
+  create(payload?: CreateEvalRunRequest): Promise<any>;
+  appendResults(runId: string, payload: AppendEvalRunResultsRequest): Promise<any>;
+  complete(runId: string, payload: CompleteEvalRunRequest): Promise<any>;
+  fail(runId: string, payload: FailEvalRunRequest): Promise<any>;
+}
+
+type VoltOpsClientLike = {
+  evals: {
+    runs: VoltOpsRunsApi;
+  };
+  resolveExperimentId?: (
+    options: ResolveExperimentIdOptions,
+  ) => Promise<ResolveExperimentIdResult | null>;
+};
 
 export interface VoltOpsRunManagerOptions<
   _ItemResult extends ExperimentItemResult = ExperimentItemResult,
@@ -105,7 +115,7 @@ export class VoltOpsRunManager<ItemResult extends ExperimentItemResult = Experim
       results: [payload],
     };
 
-    await this.#client.appendEvalResults(this.#runId, request);
+    await this.#client.evals.runs.appendResults(this.#runId, request);
   }
 
   async complete(context: CompleteRunContext): Promise<void> {
@@ -120,7 +130,7 @@ export class VoltOpsRunManager<ItemResult extends ExperimentItemResult = Experim
       summary: mapSummary(summary),
     };
 
-    await this.#client.completeEvalRun(this.#runId, request);
+    await this.#client.evals.runs.complete(this.#runId, request);
   }
 
   async fail(error: unknown): Promise<void> {
@@ -132,7 +142,7 @@ export class VoltOpsRunManager<ItemResult extends ExperimentItemResult = Experim
       error: serializeError(error),
     };
 
-    await this.#client.failEvalRun(this.#runId, request);
+    await this.#client.evals.runs.fail(this.#runId, request);
   }
 
   getMetadata(): Record<string, unknown> | undefined {
@@ -182,21 +192,17 @@ export class VoltOpsRunManager<ItemResult extends ExperimentItemResult = Experim
 
   async #createRun(): Promise<void> {
     const dataset = this.#dataset;
-    if (!dataset?.versionId) {
-      this.#disabled = true;
-      return;
-    }
 
     await this.#ensureExperimentResolved();
 
     const payload: CreateEvalRunRequest = {
-      datasetVersionId: dataset.versionId,
+      datasetVersionId: dataset?.versionId,
       experimentId: this.#experimentId,
       triggerSource: this.#config.voltOps?.triggerSource ?? DEFAULT_TRIGGER_SOURCE,
     };
 
     try {
-      const summary = await this.#client.createEvalRun(payload);
+      const summary = await this.#client.evals.runs.create(payload);
       this.#runId = summary.id;
     } catch (error) {
       this.#disabled = true;
@@ -298,7 +304,7 @@ export class VoltOpsRunManager<ItemResult extends ExperimentItemResult = Experim
       return false;
     }
 
-    return Boolean(this.#dataset?.versionId);
+    return true;
   }
 }
 
@@ -322,12 +328,15 @@ function isVoltOpsClient(value: unknown): value is VoltOpsClientLike {
     return false;
   }
 
-  const record = value as Record<string, unknown>;
-  return (
-    typeof record.createEvalRun === "function" &&
-    typeof record.appendEvalResults === "function" &&
-    typeof record.completeEvalRun === "function" &&
-    typeof record.failEvalRun === "function"
+  const evals = (value as VoltOpsClientLike).evals;
+  const runs = evals?.runs;
+
+  return Boolean(
+    runs &&
+      typeof runs.create === "function" &&
+      typeof runs.appendResults === "function" &&
+      typeof runs.complete === "function" &&
+      typeof runs.fail === "function",
   );
 }
 
@@ -387,9 +396,10 @@ function createAppendPayload(
   }));
 
   const metadata = createResultMetadata(item);
+  const datasetItemId = normalizeDatasetItemId(item.itemId);
 
   return {
-    datasetItemId: item.itemId ?? null,
+    datasetItemId,
     datasetItemHash: String(item.itemId ?? item.index),
     datasetId: item.datasetId ?? null,
     datasetVersionId: item.datasetVersionId ?? null,
@@ -404,6 +414,19 @@ function createAppendPayload(
     scores,
     traceIds: item.runner.traceIds ?? null,
   };
+}
+
+function normalizeDatasetItemId(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  // eval_results.dataset_item_id is a UUID foreign key in the API schema.
+  return isUuid(value) ? value : null;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function createResultMetadata(item: ExperimentItemResult): Record<string, unknown> | null {

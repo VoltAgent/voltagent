@@ -1,7 +1,13 @@
 import { LoggerProxy } from "../logger";
 import { SimpleEventEmitter } from "../utils/simple-event-emitter";
 import { serializeWorkflowStep } from "./core";
-import type { Workflow, WorkflowExecutionResult, WorkflowSuspendController } from "./types";
+import type {
+  Workflow,
+  WorkflowExecutionResult,
+  WorkflowRestartAllResult,
+  WorkflowRunOptions,
+  WorkflowSuspendController,
+} from "./types";
 
 /**
  * Workflow registration information
@@ -14,6 +20,7 @@ export interface RegisteredWorkflow {
   inputSchema?: any; // Store the input schema for API access
   suspendSchema?: any; // Store the suspend schema for API access
   resumeSchema?: any; // Store the resume schema for API access
+  resultSchema?: any; // Store the result schema for API access
 }
 
 /**
@@ -56,6 +63,14 @@ export class WorkflowRegistry extends SimpleEventEmitter {
   }
 
   /**
+   * Clears registry state. Primarily used by tests for deterministic isolation.
+   */
+  public reset(): void {
+    this.workflows.clear();
+    this.activeExecutions.clear();
+  }
+
+  /**
    * Register a workflow with the registry
    */
   public registerWorkflow(workflow: Workflow<any, any>): void {
@@ -66,6 +81,7 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       inputSchema: workflow.inputSchema,
       suspendSchema: workflow.suspendSchema,
       resumeSchema: workflow.resumeSchema,
+      resultSchema: workflow.resultSchema,
     };
 
     this.workflows.set(workflow.id, registeredWorkflow);
@@ -187,8 +203,8 @@ export class WorkflowRegistry extends SimpleEventEmitter {
     // Run the workflow with resume options
     const resumeOptions: any = {
       executionId,
-      userId: workflowState.metadata?.userId,
-      conversationId: workflowState.metadata?.conversationId,
+      userId: workflowState.userId ?? workflowState.metadata?.userId,
+      conversationId: workflowState.conversationId ?? workflowState.metadata?.conversationId,
       suspendController: suspendController,
       resumeFrom: {
         executionId,
@@ -217,8 +233,12 @@ export class WorkflowRegistry extends SimpleEventEmitter {
     this.logger.debug(`Resuming workflow from step ${resumeOptions.resumeFrom.resumeStepIndex}`);
 
     try {
-      // Always use original workflow input - resumeData is passed through resumeOptions
-      const inputToUse = workflowState.input;
+      // Prefer persisted workflow input; fall back to the workflow-start event payload.
+      // This keeps resume compatible with adapters that don't store input in a dedicated column.
+      const workflowStartEventInput = workflowState.events?.find(
+        (event) => event.type === "workflow-start",
+      )?.input;
+      const inputToUse = workflowState.input ?? workflowStartEventInput;
 
       // Add resumeData to resumeOptions if provided
       if (resumeData !== undefined) {
@@ -241,6 +261,63 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       this.logger.error(`Resumed workflow execution ${executionId} failed:`, { error });
       throw error;
     }
+  }
+
+  /**
+   * Restart a running workflow execution from persisted checkpoint state
+   */
+  public async restartWorkflowExecution(
+    workflowId: string,
+    executionId: string,
+    options?: WorkflowRunOptions,
+  ): Promise<WorkflowExecutionResult<any, any>> {
+    this.logger.debug(`Attempting to restart workflow ${workflowId} execution ${executionId}`);
+
+    const registeredWorkflow = this.getWorkflow(workflowId);
+    if (!registeredWorkflow) {
+      this.logger.error(`Workflow not found: ${workflowId}`);
+      throw new Error(`Workflow not found: ${workflowId}`);
+    }
+
+    return registeredWorkflow.workflow.restart(executionId, options);
+  }
+
+  /**
+   * Restart all active (running) workflow executions
+   */
+  public async restartAllActiveWorkflowRuns(options?: {
+    workflowId?: string;
+  }): Promise<WorkflowRestartAllResult> {
+    const targetWorkflowId = options?.workflowId;
+
+    if (targetWorkflowId) {
+      const registeredWorkflow = this.getWorkflow(targetWorkflowId);
+      if (!registeredWorkflow) {
+        throw new Error(`Workflow not found: ${targetWorkflowId}`);
+      }
+      return registeredWorkflow.workflow.restartAllActive();
+    }
+
+    const aggregate: WorkflowRestartAllResult = {
+      restarted: [],
+      failed: [],
+    };
+
+    for (const [workflowId, registeredWorkflow] of this.workflows.entries()) {
+      try {
+        const result = await registeredWorkflow.workflow.restartAllActive();
+        aggregate.restarted.push(...result.restarted);
+        aggregate.failed.push(...result.failed);
+      } catch (error) {
+        aggregate.failed.push({
+          workflowId,
+          error: error instanceof Error ? error.message : String(error),
+          isWorkflowFailure: true,
+        });
+      }
+    }
+
+    return aggregate;
   }
 
   /**
@@ -341,6 +418,10 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       stepsCount: workflow.steps.length,
       status: "idle" as const,
       steps: workflow.steps.map((step, index) => serializeWorkflowStep(step, index)),
+      inputSchema: registeredWorkflow.inputSchema,
+      resultSchema: registeredWorkflow.resultSchema,
+      suspendSchema: registeredWorkflow.suspendSchema,
+      resumeSchema: registeredWorkflow.resumeSchema,
     };
   }
 }

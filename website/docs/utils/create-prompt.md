@@ -42,7 +42,6 @@ Define a template with default variables.
 
 ```typescript
 import { createPrompt, Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Define the prompt template and default variables
 const basicPrompt = createPrompt({
@@ -66,7 +65,7 @@ const agent = new Agent({
   // highlight-next-line
   instructions: prompt1,
   // VoltAgent integrates directly with ai-sdk - just provide a model
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 

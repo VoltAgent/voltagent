@@ -1,6 +1,5 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import { join } from "node:path";
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -18,7 +17,7 @@ const voiceProvider = new ElevenLabsVoiceProvider({
   apiKey: process.env.ELEVENLABS_API_KEY || "",
   voice: "Adam", // Default voice, you can change to any available voice
   ttsModel: "eleven_multilingual_v2",
-  speechModel: "scribe_v1",
+  speechModel: "scribe_v2",
   options: {
     stability: 0.5,
     similarityBoost: 0.75,
@@ -31,7 +30,7 @@ const voiceProvider = new ElevenLabsVoiceProvider({
 const agent = new Agent({
   name: "ElevenLabs Voice Assistant",
   instructions: "A helpful assistant that can speak and listen using ElevenLabs' voice API",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   voice: voiceProvider,
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

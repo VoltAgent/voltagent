@@ -3,7 +3,11 @@
  * Tests all functionality using mocked Supabase client
  */
 
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  type ConversationStepRecord,
+} from "@voltagent/core";
 import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseMock, dbError, notFound, ok } from "./__testutils__/supabase-mock";
@@ -317,18 +321,18 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
     it("should get messages from a conversation", async () => {
       const dbRows = [
         {
-          message_id: "msg-1",
-          user_id: "user-1",
-          role: "user",
-          parts: [{ type: "text", text: "Hello" }],
-          metadata: {},
-          created_at: new Date().toISOString(),
-        },
-        {
           message_id: "msg-2",
           user_id: "user-1",
           role: "assistant",
           parts: [{ type: "text", text: "Hi!" }],
+          metadata: {},
+          created_at: new Date().toISOString(),
+        },
+        {
+          message_id: "msg-1",
+          user_id: "user-1",
+          role: "user",
+          parts: [{ type: "text", text: "Hello" }],
           metadata: {},
           created_at: new Date().toISOString(),
         },
@@ -351,6 +355,60 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       supabaseMock.queue("voltagent_memory_messages", ok(null));
 
       await expect(adapter.clearMessages("user-1")).resolves.not.toThrow();
+    });
+  });
+
+  // ============================================================================
+  // Conversation Step Tests
+  // ============================================================================
+
+  describe("Conversation Step Operations", () => {
+    it("should deduplicate step ids before upsert and keep last row", async () => {
+      const steps: ConversationStepRecord[] = [
+        {
+          id: "tool-call-1",
+          conversationId: "conv-1",
+          userId: "user-1",
+          agentId: "agent-1",
+          agentName: "Agent 1",
+          operationId: "op-1",
+          stepIndex: 4,
+          type: "tool_call",
+          role: "assistant",
+          arguments: { city: "Istanbul" },
+          createdAt: "2024-01-01T00:00:00.000Z",
+        },
+        {
+          id: "tool-call-1",
+          conversationId: "conv-1",
+          userId: "user-1",
+          agentId: "agent-1",
+          agentName: "Agent 1",
+          operationId: "op-1",
+          stepIndex: 4,
+          type: "tool_result",
+          role: "assistant",
+          result: { forecast: "sunny" },
+          createdAt: "2024-01-01T00:00:01.000Z",
+        },
+      ];
+
+      supabaseMock.queue("voltagent_memory_steps", ok(null));
+
+      await expect(adapter.saveConversationSteps(steps)).resolves.not.toThrow();
+
+      const builder = supabaseMock.getLast("voltagent_memory_steps");
+      expect(builder.upsert).toHaveBeenCalledTimes(1);
+      const [rows, options] = builder.upsert.mock.calls[0];
+
+      expect(options).toEqual({ onConflict: "id", ignoreDuplicates: false });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        id: "tool-call-1",
+        type: "tool_result",
+        result: { forecast: "sunny" },
+        created_at: "2024-01-01T00:00:01.000Z",
+      });
     });
   });
 
@@ -446,6 +504,9 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         workflowId: "workflow-1",
         workflowName: "Test Workflow",
         status: "running" as const,
+        input: { requestId: "req-1" },
+        context: [["tenantId", "acme"]] as Array<[string, unknown]>,
+        workflowState: { phase: "started" },
         metadata: {},
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -454,6 +515,14 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       supabaseMock.queue("voltagent_memory_workflow_states", ok(null));
 
       await expect(adapter.setWorkflowState("wf-1", state)).resolves.not.toThrow();
+      const builder = supabaseMock.getLast("voltagent_memory_workflow_states");
+      expect(builder.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: state.input,
+          context: state.context,
+          workflow_state: state.workflowState,
+        }),
+      );
     });
 
     it("should get workflow state", async () => {
@@ -462,8 +531,12 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         workflow_id: "workflow-1",
         workflow_name: "Test Workflow",
         status: "running",
+        input: { requestId: "req-1" },
+        context: [["tenantId", "acme"]],
+        workflow_state: { phase: "started" },
         metadata: {},
         suspension: null,
+        events: [{ id: "e-1", type: "workflow-start", startTime: new Date().toISOString() }],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -476,6 +549,10 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       expect(result?.id).toBe("wf-1");
       expect(result?.workflowId).toBe("workflow-1");
       expect(result?.status).toBe("running");
+      expect(result?.input).toEqual(dbRow.input);
+      expect(result?.context).toEqual(dbRow.context);
+      expect(result?.workflowState).toEqual(dbRow.workflow_state);
+      expect(result?.events).toEqual(dbRow.events);
     });
 
     it("should update workflow state", async () => {
@@ -484,6 +561,9 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         workflow_id: "workflow-1",
         workflow_name: "Test Workflow",
         status: "running",
+        input: { requestId: "req-1" },
+        context: [["tenantId", "acme"]],
+        workflow_state: { phase: "started" },
         metadata: {},
         suspension: null,
         created_at: new Date().toISOString(),
@@ -508,10 +588,16 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
           workflow_id: "workflow-1",
           workflow_name: "Test Workflow",
           status: "suspended",
+          input: { requestId: "req-1" },
+          context: [["tenantId", "acme"]],
+          workflow_state: { phase: "waiting" },
           suspension: {
             suspendedAt: new Date().toISOString(),
             stepIndex: 1,
           },
+          events: [{ id: "e-1", type: "step-start", startTime: new Date().toISOString() }],
+          output: { partial: true },
+          cancellation: { cancelledAt: new Date().toISOString(), reason: "manual" },
           metadata: {},
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -524,6 +610,55 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe("suspended");
+      expect(result[0].input).toEqual(dbRows[0].input);
+      expect(result[0].context).toEqual(dbRows[0].context);
+      expect(result[0].workflowState).toEqual(dbRows[0].workflow_state);
+      expect(result[0].events).toEqual(dbRows[0].events);
+      expect(result[0].output).toEqual(dbRows[0].output);
+      expect(result[0].cancellation).toEqual(dbRows[0].cancellation);
+    });
+
+    it("should query workflow runs with filters and pagination", async () => {
+      const dbRows = [
+        {
+          id: "wf-2",
+          workflow_id: "workflow-1",
+          workflow_name: "Test Workflow",
+          status: "completed",
+          input: { requestId: "req-2" },
+          context: [["locale", "en-US"]],
+          workflow_state: { currentStep: "done" },
+          created_at: new Date("2024-01-02T00:00:00Z").toISOString(),
+          updated_at: new Date("2024-01-02T00:00:00Z").toISOString(),
+        },
+      ];
+
+      supabaseMock.queue("voltagent_memory_workflow_states", ok(dbRows));
+
+      const result = await adapter.queryWorkflowRuns({
+        workflowId: "workflow-1",
+        status: "completed",
+        from: new Date("2024-01-01T00:00:00Z"),
+        to: new Date("2024-01-03T00:00:00Z"),
+        userId: "user-1",
+        metadata: { tenantId: "acme" },
+        limit: 10,
+        offset: 5,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].input).toEqual(dbRows[0].input);
+      expect(result[0].context).toEqual(dbRows[0].context);
+      expect(result[0].workflowState).toEqual(dbRows[0].workflow_state);
+      const builder = supabaseMock.getLast("voltagent_memory_workflow_states");
+      expect(builder.eq).toHaveBeenCalledWith("workflow_id", "workflow-1");
+      expect(builder.eq).toHaveBeenCalledWith("status", "completed");
+      expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(builder.gte).toHaveBeenCalledWith("created_at", "2024-01-01T00:00:00.000Z");
+      expect(builder.lte).toHaveBeenCalledWith("created_at", "2024-01-03T00:00:00.000Z");
+      expect(builder.contains).toHaveBeenCalledWith("metadata", { tenantId: "acme" });
+      expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: false });
+      expect(builder.range).toHaveBeenCalledWith(5, 14);
     });
   });
 
@@ -574,7 +709,7 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       expect(builder.in).toHaveBeenCalledWith("role", roles as any);
       expect(builder.lt).toHaveBeenCalledWith("created_at", before.toISOString());
       expect(builder.gt).toHaveBeenCalledWith("created_at", after.toISOString());
-      expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: true });
+      expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: false });
       expect(builder.limit).toHaveBeenCalledWith(5);
     });
 

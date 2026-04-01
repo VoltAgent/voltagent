@@ -1,0 +1,158 @@
+.va-new-year-overlay {
+  --va-modal-surface: #ffffff;
+  --va-modal-ink: #0f172a;
+  --va-modal-muted: #475569;
+  --va-modal-accent: #10b981;
+  --va-modal-border: rgba(15, 23, 42, 0.12);
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(6px);
+  animation: va-new-year-overlay-in 160ms ease-out;
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .va-new-year-overlay {
+  --va-modal-surface: #0b121c;
+  --va-modal-ink: #f8fafc;
+  --va-modal-muted: #cbd5e1;
+  --va-modal-border: rgba(148, 163, 184, 0.2);
+  background: rgba(2, 6, 23, 0.8);
+}
+
+.va-new-year-modal {
+  position: relative;
+  z-index: 1;
+  width: min(860px, 100%);
+  border-radius: 18px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid var(--va-modal-border);
+  border-top: 3px solid var(--va-modal-accent);
+  background: var(--va-modal-surface);
+  color: var(--va-modal-ink);
+  font-family: "IBM Plex Sans", "Inter", sans-serif;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.28);
+  animation: va-new-year-modal-in 200ms ease-out;
+}
+
+.va-new-year-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.va-new-year-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.va-new-year-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+
+.va-new-year-message {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--va-modal-muted);
+  max-width: 60ch;
+}
+
+.va-new-year-submessage {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--va-modal-accent);
+}
+
+.va-new-year-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.25);
+}
+
+.va-new-year-video iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+.va-new-year-close {
+  border: 1px solid var(--va-modal-border);
+  background: transparent;
+  color: var(--va-modal-ink);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-family: "IBM Plex Mono", "IBM Plex Sans", "Inter", sans-serif;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.va-new-year-close:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.va-new-year-close:focus-visible {
+  outline: 2px solid rgba(16, 185, 129, 0.6);
+  outline-offset: 2px;
+}
+
+@keyframes va-new-year-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes va-new-year-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .va-new-year-overlay {
+    padding: 16px;
+  }
+
+  .va-new-year-modal {
+    padding: 22px;
+    border-radius: 16px;
+    gap: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .va-new-year-overlay,
+  .va-new-year-modal {
+    animation: none;
+  }
+}

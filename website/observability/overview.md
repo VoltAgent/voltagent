@@ -5,39 +5,28 @@ slug: /
 
 # VoltOps LLM Observability Platform
 
-Voltops is a **framework-agnostic** platform designed to help you monitor, debug, and improve AI agents across any framework or technology stack.
+VoltOps helps you monitor and debug VoltAgent applications by turning executions into visual traces. You can inspect model calls, tool usage, multi-agent hops, logs, and latency from one place.
 
-Unlike traditional text-based logging tools, VoltOps visualizes your agent workflows as interactive flowcharts, making it easy to understand complex multi-agent interactions, tool usage patterns, and decision flows at a glance.
+This Getting Started section is for developers who want to go from setup to the first debuggable trace quickly.
 
 Experience VoltOps in action with [**Live Demo**](https://console.voltagent.dev/demo).
 
-![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
-:::tip More integrations coming soon
-VoltOps is framework-agnostic, it can be used with or without Voltagent.
+  <source src="https://cdn.voltagent.dev/docs/voltop-docs/voltops-observability.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
 
-**Supported Framework Integrations:**
+## Why It Matters for AI Agent Builders
 
-- [VoltAgent](voltagent-framework)
-- [Vercel AI SDK](vercel-ai)
+- AI agents are non-deterministic; the same prompt can produce different paths. VoltOps helps you see what actually happened in each run.
+- Multi-step flows break in subtle places (model choice, tool inputs, retries, sub-agent delegation). VoltOps shows the exact failing step instead of forcing guesswork.
+- As agent complexity grows, debugging with plain logs becomes slow. Visual traces make root-cause analysis faster and safer in production.
+- Observability also improves iteration speed: you can compare runs, track behavior changes, and validate improvements before broad rollout.
 
-**Available SDKs:**
+## Start Here
 
-- [JavaScript/TypeScript SDK](js-ts-sdk)
-- [Python SDK](python-sdk)
-  :::
-
-## Next Steps
-
-### Getting Started
-
-- [**Understanding Concepts**](concept) - Learn the core concepts behind VoltOps observability
-- [**Why Observability Matters**](why) - Understand why observability is crucial for AI applications
-- [**Tracing Overview**](tracing/overview) - Deep dive into tracing your AI workflows
-
-### Integration Guides
-
-- [**VoltAgent Framework**](voltagent-framework) - Zero-config integration for VoltAgent users
-- [**Vercel AI SDK**](vercel-ai) - Add observability to your Vercel AI applications
-- [**JavaScript/TypeScript SDK**](js-ts-sdk) - Universal SDK for any JS/TS application
-- [**Python SDK**](python-sdk) - Universal SDK for Python applications
+1. [**Setup**](setup) - Connect your VoltAgent app to VoltOps in a few minutes.
+2. [**Mental Model**](mental-model) - Learn how traces, spans, and context map to the UI.
+3. [**MCP**](mcp) - Let AI coding agents inspect traces and logs through a read-only MCP server.
+4. [**Tracing Overview**](tracing/overview) - Continue with full tracing features.

@@ -338,13 +338,6 @@ export const FlowVersion = ({ isVisible }: FlowVersionProps) => {
   const [__, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // In VSCode, this may be shown as `suppressions/unused`,
-  // but running the biome command directly works fine.
-  // This happens because, when opening the `voltagent` directory in VSCode,
-  // the LSP uses the biome config from the project root directory.
-  // This is likely because the `website` directory is not a pnpm monorepo,
-  // so it doesn't have its own biome config.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: invalidate when setEdges is called
   const startAnimation = useCallback(() => {
     setIsAnimating(true);
     setAnimationStep(0);

@@ -1,20 +1,35 @@
-import { type EmbeddingModel, embed, embedMany } from "ai";
-import type { EmbeddingAdapter, EmbeddingOptions } from "./types";
+import { embed, embedMany } from "ai";
+import type { EmbeddingModel } from "ai";
+import { ModelProviderRegistry } from "../../../registries/model-provider-registry";
+import type { EmbeddingAdapter, EmbeddingModelReference, EmbeddingOptions } from "./types";
+
+const BARE_MODEL_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+const isValidBareModelName = (value: string): boolean => BARE_MODEL_NAME_REGEX.test(value);
 
 /**
  * AI SDK Embedding Adapter
  * Wraps Vercel AI SDK embedding models for use with Memory V2
  */
 export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
-  private model: EmbeddingModel<string>;
+  private model: EmbeddingModel;
   private dimensions: number;
   private modelName: string;
   private options: EmbeddingOptions;
+  private modelResolvePromise?: Promise<EmbeddingModel>;
 
-  constructor(model: EmbeddingModel<string>, options: EmbeddingOptions = {}) {
-    this.model = model;
-    // EmbeddingModel can be either a string or an object with modelId
-    this.modelName = typeof model === "string" ? model : model.modelId;
+  constructor(model: EmbeddingModelReference, options: EmbeddingOptions = {}) {
+    if (typeof model === "string") {
+      const trimmed = model.trim();
+      if (!trimmed) {
+        throw new Error("Embedding model is required.");
+      }
+      this.model = trimmed;
+      this.modelName = trimmed;
+    } else {
+      this.model = model;
+      this.modelName = model.modelId;
+    }
     this.dimensions = 0; // Will be set after first embedding
     this.options = {
       maxBatchSize: options.maxBatchSize ?? 100,
@@ -23,10 +38,48 @@ export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
     };
   }
 
+  private async resolveModel(): Promise<EmbeddingModel> {
+    if (typeof this.model !== "string") {
+      return this.model;
+    }
+    if (this.modelResolvePromise) {
+      return this.modelResolvePromise;
+    }
+
+    const trimmed = this.model.trim();
+    if (!trimmed) {
+      throw new Error("Embedding model is required.");
+    }
+
+    const hasProviderPrefix = trimmed.includes("/") || trimmed.includes(":");
+    if (!hasProviderPrefix) {
+      if (!isValidBareModelName(trimmed)) {
+        throw new Error(`Invalid embedding model id "${trimmed}".`);
+      }
+      this.model = trimmed;
+      this.modelName = trimmed;
+      return trimmed;
+    }
+
+    this.modelResolvePromise = ModelProviderRegistry.getInstance()
+      .resolveEmbeddingModel(trimmed)
+      .then((resolved) => {
+        this.model = resolved;
+        this.modelName = trimmed;
+        return resolved;
+      })
+      .finally(() => {
+        this.modelResolvePromise = undefined;
+      });
+
+    return this.modelResolvePromise;
+  }
+
   async embed(text: string): Promise<number[]> {
     try {
+      const model = await this.resolveModel();
       const result = await embed({
-        model: this.model,
+        model,
         value: text,
       });
 
@@ -55,6 +108,7 @@ export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
       return [];
     }
 
+    const model = await this.resolveModel();
     const maxBatchSize = this.options.maxBatchSize ?? 100;
     const embeddings: number[][] = [];
 
@@ -64,7 +118,7 @@ export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
 
       try {
         const result = await embedMany({
-          model: this.model,
+          model,
           values: batch,
         });
 

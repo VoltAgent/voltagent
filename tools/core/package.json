@@ -9,5 +9,10 @@
     "@nx/devkit": "20.4.6",
     "tslib": "^2.3.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "tools/core"
+  },
   "generators": "./generators.json"
 }

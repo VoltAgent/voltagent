@@ -9,9 +9,12 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@volt
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
@@ -186,9 +189,19 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         .select("user_id, resource_id")
         .limit(1);
 
-      // If either query fails, migration is needed
-      // If both succeed, migration has already been done
-      return !!messagesError || !!conversationsError;
+      // Try to select workflow state columns (for full state persistence)
+      const { error: workflowStateError } = await this.client
+        .from(`${this.baseTableName}_workflow_states`)
+        .select("input, context, workflow_state, events, output, cancellation")
+        .limit(1);
+
+      const { error: stepsTableError } = await this.client
+        .from(`${this.baseTableName}_steps`)
+        .select("id")
+        .limit(1);
+
+      // If any query fails, migration is needed
+      return !!messagesError || !!conversationsError || !!workflowStateError || !!stepsTableError;
     } catch {
       return true;
     }
@@ -204,6 +217,7 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
     const messagesTable = `${this.baseTableName}_messages`;
     const usersTable = `${this.baseTableName}_users`;
     const workflowStatesTable = `${this.baseTableName}_workflow_states`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     // Check if this is a fresh installation
     const isFreshInstall = await this.checkFreshInstallation();
@@ -255,7 +269,13 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_id TEXT NOT NULL,
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
+  input JSONB,
+  context JSONB,
+  workflow_state JSONB,
   suspension JSONB,
+  events JSONB,
+  output JSONB,
+  cancellation JSONB,
   user_id TEXT,
   conversation_id TEXT,
   metadata JSONB,
@@ -281,6 +301,32 @@ ON ${workflowStatesTable}(workflow_id);
 
 CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status 
 ON ${workflowStatesTable}(status);
+
+-- Create conversation steps table
+CREATE TABLE IF NOT EXISTS ${stepsTable} (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  agent_name TEXT,
+  operation_id TEXT,
+  step_index INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT,
+  arguments JSONB,
+  result JSONB,
+  usage JSONB,
+  sub_agent_id TEXT,
+  sub_agent_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_conversation 
+ON ${stepsTable}(conversation_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_operation 
+ON ${stepsTable}(conversation_id, operation_id);
 
 ========================================
 END OF SQL
@@ -310,6 +356,7 @@ END OF SQL
     const conversationsTable = `${this.baseTableName}_conversations`;
     const usersTable = `${this.baseTableName}_users`;
     const workflowStatesTable = `${this.baseTableName}_workflow_states`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     console.log(`
 ========================================
@@ -349,13 +396,38 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_id TEXT NOT NULL,
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
+  input JSONB,
+  context JSONB,
+  workflow_state JSONB,
   suspension JSONB,
+  events JSONB,
+  output JSONB,
+  cancellation JSONB,
   user_id TEXT,
   conversation_id TEXT,
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+-- Step 5b: Add workflow state columns for existing tables (migration)
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS input JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS context JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS workflow_state JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS events JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS output JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS cancellation JSONB;
 
 -- Step 6: Migrate null user IDs to actual user IDs
 -- IMPORTANT: This updates messages with NULL user_id to use their conversation's user_id
@@ -366,8 +438,33 @@ WHERE m.conversation_id = c.id
   AND m.user_id IS NULL
   AND c.user_id IS NOT NULL;
 
+-- Step 7: Create conversation steps table
+CREATE TABLE IF NOT EXISTS ${stepsTable} (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  agent_name TEXT,
+  operation_id TEXT,
+  step_index INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT,
+  arguments JSONB,
+  result JSONB,
+  usage JSONB,
+  sub_agent_id TEXT,
+  sub_agent_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
 
--- Step 6: Create indexes for all tables
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_conversation 
+ON ${stepsTable}(conversation_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_operation 
+ON ${stepsTable}(conversation_id, operation_id);
+
+-- Step 8: Create indexes for base tables
 CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id 
 ON ${conversationsTable}(user_id);
 
@@ -403,6 +500,7 @@ END OF MIGRATION SQL
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
+    const messageId = message.id || this.generateId();
 
     // Ensure conversation exists
     const conversation = await this.getConversation(conversationId);
@@ -411,16 +509,18 @@ END OF MIGRATION SQL
     }
 
     // Insert message
-    const { error } = await this.client.from(messagesTable).insert({
-      conversation_id: conversationId,
-      message_id: message.id || this.generateId(),
-      user_id: userId,
-      role: message.role,
-      parts: message.parts,
-      metadata: message.metadata || null,
-      format_version: 2,
-      created_at: new Date().toISOString(),
-    });
+    const { error } = await this.client.from(messagesTable).upsert(
+      {
+        conversation_id: conversationId,
+        message_id: messageId,
+        user_id: userId,
+        role: message.role,
+        parts: message.parts,
+        metadata: message.metadata || null,
+        format_version: 2,
+      },
+      { onConflict: "conversation_id,message_id" },
+    );
 
     if (error) {
       throw new Error(`Failed to add message: ${error.message}`);
@@ -443,8 +543,6 @@ END OF MIGRATION SQL
       throw new ConversationNotFoundError(conversationId);
     }
 
-    const now = new Date().toISOString();
-
     // Prepare messages for batch insert
     const messagesToInsert = messages.map((message) => ({
       conversation_id: conversationId,
@@ -454,17 +552,66 @@ END OF MIGRATION SQL
       parts: message.parts,
       metadata: message.metadata || null,
       format_version: 2,
-      created_at: now,
     }));
 
     // Insert all messages
-    const { error } = await this.client.from(messagesTable).insert(messagesToInsert);
+    const { error } = await this.client
+      .from(messagesTable)
+      .upsert(messagesToInsert, { onConflict: "conversation_id,message_id" });
 
     if (error) {
       throw new Error(`Failed to add messages: ${error.message}`);
     }
 
     this.log(`Added ${messages.length} messages to conversation ${conversationId}`);
+  }
+
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (steps.length === 0) {
+      return;
+    }
+
+    await this.initialize();
+
+    const stepsTable = `${this.baseTableName}_steps`;
+    const rows = steps.map((step) => ({
+      id: step.id,
+      conversation_id: step.conversationId,
+      user_id: step.userId,
+      agent_id: step.agentId,
+      agent_name: step.agentName ?? null,
+      operation_id: step.operationId ?? null,
+      step_index: step.stepIndex,
+      type: step.type,
+      role: step.role,
+      content: step.content ?? null,
+      arguments: step.arguments ?? null,
+      result: step.result ?? null,
+      usage: step.usage ?? null,
+      sub_agent_id: step.subAgentId ?? null,
+      sub_agent_name: step.subAgentName ?? null,
+      created_at: step.createdAt ?? new Date().toISOString(),
+    }));
+
+    // Supabase/Postgres can error when the same PK appears multiple times in one upsert payload.
+    // Keep the last row for a given id to match existing "last write wins" adapter behavior.
+    const deduplicatedRows = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      deduplicatedRows.set(row.id, row);
+    }
+    const rowsForUpsert = Array.from(deduplicatedRows.values());
+
+    if (rowsForUpsert.length !== rows.length) {
+      this.log("Deduplicated conversation steps before upsert", rows.length - rowsForUpsert.length);
+    }
+
+    const { error } = await this.client
+      .from(stepsTable)
+      .upsert(rowsForUpsert, { onConflict: "id", ignoreDuplicates: false });
+
+    if (error) {
+      throw new Error(`Failed to save conversation steps: ${error.message}`);
+    }
   }
 
   /**
@@ -474,7 +621,7 @@ END OF MIGRATION SQL
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
@@ -502,7 +649,7 @@ END OF MIGRATION SQL
     }
 
     // Order by creation time and apply limit
-    query = query.order("created_at", { ascending: true });
+    query = query.order("created_at", { ascending: false });
     if (limit && limit > 0) {
       query = query.limit(limit);
     }
@@ -514,22 +661,41 @@ END OF MIGRATION SQL
     }
 
     // Convert to UIMessages with on-the-fly migration for old format
-    return (data || []).map((row) => {
+    return (data || []).reverse().map((row) => {
       // Determine parts based on whether we have new format (parts) or old format (content)
       let parts: any;
 
       // Check for new format first (parts column exists and has value)
       if (row.parts !== undefined && row.parts !== null) {
-        // New format - use parts directly
-        parts = row.parts;
+        // IMPORTANT: Supabase returns JSONB as string, PostgreSQL pg library returns as object
+        if (typeof row.parts === "string") {
+          try {
+            parts = JSON.parse(row.parts);
+          } catch (e) {
+            console.error(`Failed to parse parts for message ${row.message_id}:`, e);
+            parts = [];
+          }
+        } else {
+          parts = row.parts;
+        }
       }
       // Check for old format (content column exists and has value)
       else if (row.content !== undefined && row.content !== null) {
         // Old format - convert content to parts
+        // Handle string serialization for old format too
+        let content = row.content;
+        if (typeof content === "string") {
+          try {
+            content = JSON.parse(content);
+          } catch (_e) {
+            // Keep as string if parsing fails
+          }
+        }
+
         if (row.type === "image") {
-          parts = [{ type: "image", image: row.content }];
+          parts = [{ type: "image", image: content }];
         } else {
-          parts = [{ type: "text", text: row.content }];
+          parts = [{ type: "text", text: content }];
         }
       } else {
         // No content at all
@@ -540,9 +706,61 @@ END OF MIGRATION SQL
         id: row.message_id,
         role: row.role as "system" | "user" | "assistant",
         parts,
-        metadata: row.metadata || {},
+        metadata: {
+          ...(row.metadata || {}),
+          createdAt: row.created_at ? new Date(row.created_at) : undefined,
+        },
       };
     });
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    await this.initialize();
+
+    const stepsTable = `${this.baseTableName}_steps`;
+    let query = this.client
+      .from(stepsTable)
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .order("step_index", { ascending: true });
+
+    if (options?.operationId) {
+      query = query.eq("operation_id", options.operationId);
+    }
+
+    if (options?.limit && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch conversation steps: ${error.message}`);
+    }
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      conversationId: row.conversation_id,
+      userId: row.user_id,
+      agentId: row.agent_id,
+      agentName: row.agent_name ?? undefined,
+      operationId: row.operation_id ?? undefined,
+      stepIndex: row.step_index ?? 0,
+      type: row.type,
+      role: row.role,
+      content: row.content ?? undefined,
+      arguments: row.arguments ?? undefined,
+      result: row.result ?? undefined,
+      usage: row.usage ?? undefined,
+      subAgentId: row.sub_agent_id ?? undefined,
+      subAgentName: row.sub_agent_name ?? undefined,
+      createdAt: row.created_at ?? new Date().toISOString(),
+    }));
   }
 
   /**
@@ -552,6 +770,7 @@ END OF MIGRATION SQL
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     if (conversationId) {
       // Clear messages for specific conversation
@@ -563,6 +782,16 @@ END OF MIGRATION SQL
 
       if (error) {
         throw new Error(`Failed to clear messages: ${error.message}`);
+      }
+
+      const { error: stepsError } = await this.client
+        .from(stepsTable)
+        .delete()
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
+
+      if (stepsError) {
+        throw new Error(`Failed to clear conversation steps: ${stepsError.message}`);
       }
     } else {
       // Clear all messages for the user
@@ -589,10 +818,46 @@ END OF MIGRATION SQL
         if (error) {
           throw new Error(`Failed to clear messages: ${error.message}`);
         }
+
+        const { error: stepsError } = await this.client
+          .from(stepsTable)
+          .delete()
+          .in("conversation_id", conversationIds);
+
+        if (stepsError) {
+          throw new Error(`Failed to clear conversation steps: ${stepsError.message}`);
+        }
       }
     }
 
     this.log(`Cleared messages for user ${userId}`);
+  }
+
+  /**
+   * Delete specific messages by ID for a conversation
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.initialize();
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const messagesTable = `${this.baseTableName}_messages`;
+    const { error } = await this.client
+      .from(messagesTable)
+      .delete()
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .in("message_id", messageIds);
+
+    if (error) {
+      throw new Error(`Failed to delete messages: ${error.message}`);
+    }
   }
 
   // ============================================================================
@@ -767,6 +1032,32 @@ END OF MIGRATION SQL
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));
+  }
+
+  /**
+   * Count conversations with filters
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.initialize();
+
+    const conversationsTable = `${this.baseTableName}_conversations`;
+    let query = this.client.from(conversationsTable).select("id", { count: "exact", head: true });
+
+    if (options.userId) {
+      query = query.eq("user_id", options.userId);
+    }
+
+    if (options.resourceId) {
+      query = query.eq("resource_id", options.resourceId);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to count conversations: ${error.message}`);
+    }
+
+    return count ?? 0;
   }
 
   /**
@@ -1031,13 +1322,90 @@ END OF MIGRATION SQL
       workflowId: data.workflow_id,
       workflowName: data.workflow_name,
       status: data.status,
-      suspension: data.suspension || undefined,
-      userId: data.user_id || undefined,
-      conversationId: data.conversation_id || undefined,
-      metadata: data.metadata || undefined,
+      input: data.input ?? undefined,
+      context: data.context ?? undefined,
+      workflowState: data.workflow_state ?? undefined,
+      suspension: data.suspension ?? undefined,
+      events: data.events ?? undefined,
+      output: data.output ?? undefined,
+      cancellation: data.cancellation ?? undefined,
+      userId: data.user_id ?? undefined,
+      conversationId: data.conversation_id ?? undefined,
+      metadata: data.metadata ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     };
+  }
+
+  /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    await this.initialize();
+
+    const workflowStatesTable = `${this.baseTableName}_workflow_states`;
+    let queryBuilder = this.client.from(workflowStatesTable).select("*");
+
+    if (query.workflowId) {
+      queryBuilder = queryBuilder.eq("workflow_id", query.workflowId);
+    }
+
+    if (query.status) {
+      queryBuilder = queryBuilder.eq("status", query.status);
+    }
+
+    if (query.from) {
+      queryBuilder = queryBuilder.gte("created_at", query.from.toISOString());
+    }
+
+    if (query.to) {
+      queryBuilder = queryBuilder.lte("created_at", query.to.toISOString());
+    }
+
+    if (query.userId) {
+      queryBuilder = queryBuilder.eq("user_id", query.userId);
+    }
+
+    if (query.metadata && Object.keys(query.metadata).length > 0) {
+      queryBuilder = (queryBuilder as any).contains("metadata", query.metadata);
+    }
+
+    queryBuilder = queryBuilder.order("created_at", { ascending: false });
+
+    if (query.limit !== undefined) {
+      const offset = query.offset ?? 0;
+      const toIndex = offset + query.limit - 1;
+      queryBuilder = queryBuilder.range(offset, toIndex);
+    } else if (query.offset !== undefined) {
+      // Supabase doesn't support offset without limit; set a large limit
+      const offset = query.offset;
+      queryBuilder = queryBuilder.range(offset, offset + 999);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      throw new Error(`Failed to get workflow states: ${error.message}`);
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      workflowId: row.workflow_id,
+      workflowName: row.workflow_name,
+      status: row.status as WorkflowStateEntry["status"],
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
   }
 
   /**
@@ -1053,10 +1421,16 @@ END OF MIGRATION SQL
       workflow_id: state.workflowId,
       workflow_name: state.workflowName,
       status: state.status,
-      suspension: state.suspension || null,
+      input: state.input !== undefined ? state.input : null,
+      context: state.context !== undefined ? state.context : null,
+      workflow_state: state.workflowState !== undefined ? state.workflowState : null,
+      suspension: state.suspension !== undefined ? state.suspension : null,
+      events: state.events !== undefined ? state.events : null,
+      output: state.output !== undefined ? state.output : null,
+      cancellation: state.cancellation !== undefined ? state.cancellation : null,
       user_id: state.userId || null,
       conversation_id: state.conversationId || null,
-      metadata: state.metadata || null,
+      metadata: state.metadata !== undefined ? state.metadata : null,
       created_at: state.createdAt.toISOString(),
       updated_at: state.updatedAt.toISOString(),
     });
@@ -1112,10 +1486,16 @@ END OF MIGRATION SQL
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: "suspended" as const,
-      suspension: row.suspension || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));

@@ -1,3 +1,4 @@
+import { Output } from "ai";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { Agent } from "../agent/agent";
@@ -437,6 +438,69 @@ describe("workflow chain - type inference", () => {
               keywords: string[];
             }>();
             return { analysis: `${data.sentiment}: ${data.keywords.join(", ")}` };
+          },
+        });
+
+      expectTypeOf(workflow).not.toBeNever();
+    });
+
+    it("should infer andAgent output from output specs", () => {
+      const workflow = createWorkflowChain({
+        id: "test-agent-output",
+        name: "Test Agent Output",
+        input: z.object({ prompt: z.string() }),
+        result: z.array(z.string()),
+      })
+        .andAgent(async ({ data }) => `List: ${data.prompt}`, mockAgent, {
+          schema: Output.array({ element: z.string() }),
+        })
+        .andThen({
+          id: "ensure-array",
+          execute: async ({ data }) => {
+            expectTypeOf(data).toEqualTypeOf<string[]>();
+            return data;
+          },
+        });
+
+      expectTypeOf(workflow).not.toBeNever();
+    });
+
+    it("should allow mapping andAgent output into existing data", () => {
+      const workflow = createWorkflowChain({
+        id: "test-agent-map",
+        name: "Test Agent Map",
+        input: z.object({ email: z.string() }),
+        result: z.object({
+          email: z.string(),
+          emailType: z.enum(["support", "sales", "spam"]),
+        }),
+      })
+        .andAgent(
+          async ({ data }) => `Classify: ${data.email}`,
+          mockAgent,
+          {
+            schema: z.object({
+              type: z.enum(["support", "sales", "spam"]),
+              priority: z.enum(["low", "medium", "high"]),
+            }),
+          },
+          (output, { data }) => {
+            expectTypeOf(output).toEqualTypeOf<{
+              type: "support" | "sales" | "spam";
+              priority: "low" | "medium" | "high";
+            }>();
+            expectTypeOf(data).toEqualTypeOf<{ email: string }>();
+            return { ...data, emailType: output.type };
+          },
+        )
+        .andThen({
+          id: "finish",
+          execute: async ({ data }) => {
+            expectTypeOf(data).toEqualTypeOf<{
+              email: string;
+              emailType: "support" | "sales" | "spam";
+            }>();
+            return data;
           },
         });
 

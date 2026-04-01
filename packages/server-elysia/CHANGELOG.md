@@ -1,0 +1,270 @@
+# @voltagent/server-elysia
+
+## 2.0.6
+
+### Patch Changes
+
+- [#1084](https://github.com/VoltAgent/voltagent/pull/1084) [`95ad610`](https://github.com/VoltAgent/voltagent/commit/95ad61091f0f42961b2546457d858e590fd4dfa3) Thanks [@omeraplak](https://github.com/omeraplak)! - Add stream attach support for in-progress workflow executions.
+  - Add `GET /workflows/:id/executions/:executionId/stream` to attach to an active workflow SSE stream.
+  - Add replay support for missed SSE events via `fromSequence` and `Last-Event-ID`.
+  - Keep `POST /workflows/:id/stream` behavior unchanged for starting new executions.
+  - Ensure streamed workflow resume uses a fresh suspend controller so attach clients continue receiving events after resume.
+
+- Updated dependencies [[`f275daf`](https://github.com/VoltAgent/voltagent/commit/f275dafffa16e80deba391ce015fba6f6d6cd876), [`95ad610`](https://github.com/VoltAgent/voltagent/commit/95ad61091f0f42961b2546457d858e590fd4dfa3)]:
+  - @voltagent/core@2.4.4
+  - @voltagent/server-core@2.1.7
+
+## 2.0.5
+
+### Patch Changes
+
+- [#1040](https://github.com/VoltAgent/voltagent/pull/1040) [`5e54d3b`](https://github.com/VoltAgent/voltagent/commit/5e54d3b54e2823479788617ce0a1bb5211260f9b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add multi-tenant filters to workflow execution listing (`/workflows/executions`)
+
+  You can now filter workflow execution history by `userId` and metadata fields in addition to
+  existing filters (`workflowId`, `status`, `from`, `to`, `limit`, `offset`).
+
+  ### What's New
+  - Added `userId` filter support for workflow run queries.
+  - Added metadata filtering support:
+    - `metadata` as URL-encoded JSON object
+    - `metadata.<key>` query params (for example: `metadata.tenantId=acme`)
+  - Added status aliases for compatibility:
+    - `success` -> `completed`
+    - `pending` -> `running`
+  - Implemented consistently across storage adapters:
+    - In-memory
+    - PostgreSQL
+    - LibSQL
+    - Supabase
+    - Cloudflare D1
+    - Managed Memory (`@voltagent/voltagent-memory`)
+  - Updated server docs and route descriptions to include new filters.
+
+  ### TypeScript Example
+
+  ```ts
+  const params = new URLSearchParams({
+    workflowId: "order-approval",
+    status: "completed",
+    userId: "user-123",
+    "metadata.tenantId": "acme",
+    "metadata.region": "eu",
+    limit: "20",
+    offset: "0",
+  });
+
+  const response = await fetch(`http://localhost:3141/workflows/executions?${params.toString()}`);
+  const data = await response.json();
+  ```
+
+  ### cURL Examples
+
+  ```bash
+  # Filter by workflow + user + metadata key
+  curl "http://localhost:3141/workflows/executions?workflowId=order-approval&userId=user-123&metadata.tenantId=acme&status=completed&limit=20&offset=0"
+  ```
+
+  ```bash
+  # Filter by metadata JSON object (URL-encoded)
+  curl "http://localhost:3141/workflows/executions?metadata=%7B%22tenantId%22%3A%22acme%22%2C%22region%22%3A%22eu%22%7D"
+  ```
+
+- Updated dependencies [[`5e54d3b`](https://github.com/VoltAgent/voltagent/commit/5e54d3b54e2823479788617ce0a1bb5211260f9b)]:
+  - @voltagent/server-core@2.1.5
+  - @voltagent/core@2.3.7
+
+## 2.0.4
+
+### Patch Changes
+
+- [#1030](https://github.com/VoltAgent/voltagent/pull/1030) [`eb99a01`](https://github.com/VoltAgent/voltagent/commit/eb99a0174129853fa07f30b9a95935c8733f8b91) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add workflow cancel support in serverless-hono and align Elysia suspend/cancel routes to the canonical `/workflows/:id/executions/:executionId` paths
+
+## 2.0.3
+
+### Patch Changes
+
+- [#1025](https://github.com/VoltAgent/voltagent/pull/1025) [`c783943`](https://github.com/VoltAgent/voltagent/commit/c783943fa165734fcadabbd0c6ce12212b3a5969) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce experimental Workspace support with filesystem, sandbox execution, search indexing, and skill discovery; add global workspace defaults and optional sandbox providers (E2B/Daytona). - #1008
+
+  Example:
+
+  ```ts
+  import { Agent, Workspace, LocalSandbox, NodeFilesystemBackend } from "@voltagent/core";
+
+  const workspace = new Workspace({
+    id: "support-workspace",
+    operationTimeoutMs: 30_000,
+    filesystem: {
+      backend: new NodeFilesystemBackend({
+        rootDir: "./.workspace",
+      }),
+    },
+    sandbox: new LocalSandbox({
+      rootDir: "./.sandbox",
+      isolation: { provider: "detect" },
+      cleanupOnDestroy: true,
+    }),
+    search: {
+      autoIndexPaths: ["/notes", "/tickets"],
+    },
+    skills: {
+      rootPaths: ["/skills"],
+    },
+  });
+
+  const agent = new Agent({
+    name: "support-agent",
+    model,
+    instructions: "Use workspace tools to review tickets and summarize findings.",
+    workspace,
+    workspaceToolkits: {
+      filesystem: {
+        toolPolicies: {
+          tools: { write_file: { needsApproval: true } },
+        },
+      },
+    },
+  });
+
+  const { text } = await agent.generateText(
+    [
+      "Scan /tickets and /notes.",
+      "Use workspace_search to find urgent issues from the last week.",
+      "Summarize the top 3 risks and include file paths as citations.",
+    ].join("\n"),
+    { maxSteps: 40 }
+  );
+  ```
+
+- Updated dependencies [[`c783943`](https://github.com/VoltAgent/voltagent/commit/c783943fa165734fcadabbd0c6ce12212b3a5969)]:
+  - @voltagent/server-core@2.1.4
+  - @voltagent/core@2.3.5
+
+## 2.0.2
+
+### Patch Changes
+
+- [#993](https://github.com/VoltAgent/voltagent/pull/993) [`48cc93f`](https://github.com/VoltAgent/voltagent/commit/48cc93f005684b48e882be78742e4d5c59d1665f) Thanks [@Artist-MOBAI](https://github.com/Artist-MOBAI)! - fix(server-elysia): Add Node.js compatibility and VoltOps Console support
+
+## 2.0.1
+
+### Patch Changes
+
+- [#974](https://github.com/VoltAgent/voltagent/pull/974) [`a5bc28d`](https://github.com/VoltAgent/voltagent/commit/a5bc28deed4f4a92c020d3f1dace8422a5c66111) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory HTTP endpoints for conversations, messages, working memory, and search across server-core, Hono, Elysia, and serverless runtimes.
+
+  ### Endpoints
+  - `GET /api/memory/conversations`
+  - `POST /api/memory/conversations`
+  - `GET /api/memory/conversations/:conversationId`
+  - `PATCH /api/memory/conversations/:conversationId`
+  - `DELETE /api/memory/conversations/:conversationId`
+  - `POST /api/memory/conversations/:conversationId/clone`
+  - `GET /api/memory/conversations/:conversationId/messages`
+  - `GET /api/memory/conversations/:conversationId/working-memory`
+  - `POST /api/memory/conversations/:conversationId/working-memory`
+  - `POST /api/memory/save-messages`
+  - `POST /api/memory/messages/delete`
+  - `GET /api/memory/search`
+
+  Note: include `agentId` (query/body) when multiple agents are registered or no global memory is configured.
+
+  ### Examples
+
+  Create a conversation:
+
+  ```bash
+  curl -X POST http://localhost:3141/api/memory/conversations \
+    -H "Content-Type: application/json" \
+    -d '{
+      "userId": "user-123",
+      "resourceId": "assistant",
+      "title": "Support Chat",
+      "metadata": { "channel": "web" }
+    }'
+  ```
+
+  Save messages into the conversation:
+
+  ```bash
+  curl -X POST http://localhost:3141/api/memory/save-messages \
+    -H "Content-Type: application/json" \
+    -d '{
+      "userId": "user-123",
+      "conversationId": "conv-001",
+      "messages": [
+        { "role": "user", "content": "Hi there" },
+        { "role": "assistant", "content": "Hello!" }
+      ]
+    }'
+  ```
+
+  Update working memory (append mode):
+
+  ```bash
+  curl -X POST http://localhost:3141/api/memory/conversations/conv-001/working-memory \
+    -H "Content-Type: application/json" \
+    -d '{
+      "content": "Customer prefers email follow-ups.",
+      "mode": "append"
+    }'
+  ```
+
+  Search memory (requires embedding + vector adapters):
+
+  ```bash
+  curl "http://localhost:3141/api/memory/search?searchQuery=refund%20policy&limit=5"
+  ```
+
+- Updated dependencies [[`9221498`](https://github.com/VoltAgent/voltagent/commit/9221498c71eb77759380d17e50521abfd213a64c), [`a5bc28d`](https://github.com/VoltAgent/voltagent/commit/a5bc28deed4f4a92c020d3f1dace8422a5c66111)]:
+  - @voltagent/core@2.1.6
+  - @voltagent/server-core@2.1.3
+
+## 2.0.0
+
+### Major Changes
+
+- [#898](https://github.com/VoltAgent/voltagent/pull/898) [`b322cf4`](https://github.com/VoltAgent/voltagent/commit/b322cf4c511c64872c178e51f9ddccb869385dee) Thanks [@MGrin](https://github.com/MGrin)! - feat: Initial release of @voltagent/server-elysia
+
+  # @voltagent/server-elysia
+
+  ## 1.0.0
+
+  ### Major Changes
+  - Initial release of Elysia server implementation for VoltAgent
+  - Full feature parity with server-hono including:
+    - Agent execution endpoints (text, stream, chat, object)
+    - Workflow execution and lifecycle management
+    - Tool execution and discovery
+    - MCP (Model Context Protocol) support
+    - A2A (Agent-to-Agent) communication
+    - Observability and tracing
+    - Logging endpoints
+    - Authentication with authNext support
+    - Custom endpoint configuration
+    - CORS configuration
+    - WebSocket support
+
+  ### Features
+  - **High Performance**: Built on Elysia, optimized for speed and low latency
+  - **Type Safety**: Full TypeScript support with strict typing
+  - **Flexible Configuration**: Support for both `configureApp` and `configureFullApp` patterns
+  - **Auth Support**: JWT authentication with public route configuration via `authNext`
+  - **Extensible**: Easy to add custom routes, middleware, and plugins
+  - **OpenAPI/Swagger**: Built-in API documentation via @elysiajs/swagger
+  - **MCP Support**: Full Model Context Protocol implementation with SSE streaming
+  - **WebSocket Support**: Real-time updates and streaming capabilities
+
+  ### Dependencies
+  - `@voltagent/core`: ^1.5.1
+  - `@voltagent/server-core`: ^1.0.36
+  - `@voltagent/mcp-server`: ^1.0.3
+  - `@voltagent/a2a-server`: ^1.0.2
+  - `elysia`: ^1.1.29
+
+  ### Peer Dependencies
+  - `@voltagent/core`: ^1.x
+  - `elysia`: ^1.x
+
+### Patch Changes
+
+- Updated dependencies [[`b322cf4`](https://github.com/VoltAgent/voltagent/commit/b322cf4c511c64872c178e51f9ddccb869385dee)]:
+  - @voltagent/server-core@2.1.0

@@ -1,3 +1,7 @@
+import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
+import type { XaiProviderOptions, XaiResponsesProviderOptions } from "@ai-sdk/xai";
 import type { Span } from "@opentelemetry/api";
 import type { z } from "zod";
 import type {
@@ -12,13 +16,18 @@ import type { StopWhen } from "../ai-types";
 import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit, VercelTool } from "../tool";
+import type { ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
+import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
 import type { Agent } from "./agent";
 import type { CancellationError, VoltAgentError } from "./errors";
 import type { BaseTool, LLMProvider, StepWithContent } from "./providers";
+import type { CancellationError, MiddlewareAbortOptions, VoltAgentError } from "./errors";
+import type { LLMProvider } from "./providers";
+import type { BaseTool } from "./providers";
+import type { StepWithContent } from "./providers";
 import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig, VoltAgentTextStreamPart } from "./subagent/types";
 
@@ -27,12 +36,26 @@ import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type { AgentRateLimitConfig } from "../rate-limit/types";
+import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type {
   DynamicValue,
   DynamicValueOptions,
   PromptContent,
   PromptHelper,
+  VoltOpsFeedback,
+  VoltOpsFeedbackConfig,
+  VoltOpsFeedbackCreateInput,
+  VoltOpsFeedbackExpiresIn,
 } from "../voltops/types";
+import type {
+  Workspace,
+  WorkspaceConfig,
+  WorkspaceFilesystemToolkitOptions,
+  WorkspaceSandboxToolkitOptions,
+  WorkspaceSearchToolkitOptions,
+  WorkspaceSkillsPromptOptions,
+  WorkspaceSkillsToolkitOptions,
+} from "../workspace";
 import type { ContextInput } from "./agent";
 import type { AgentHooks } from "./hooks";
 import type { AgentTraceContext } from "./open-telemetry/trace-context";
@@ -49,12 +72,70 @@ export interface ApiToolInfo {
   parameters?: any;
 }
 
+export interface AgentToolRoutingState {
+  search?: ApiToolInfo;
+  call?: ApiToolInfo;
+  expose?: ApiToolInfo[];
+  pool?: ApiToolInfo[];
+  enforceSearchBeforeCall?: boolean;
+  topK?: number;
+}
+
+export type AgentFeedbackOptions = {
+  key?: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+  expiresAt?: Date | string;
+  expiresIn?: VoltOpsFeedbackExpiresIn;
+};
+
+export type AgentFeedbackMetadata = {
+  traceId: string;
+  key: string;
+  url: string;
+  tokenId?: string;
+  expiresAt?: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+  provided?: boolean;
+  providedAt?: string;
+  feedbackId?: string;
+};
+
+export type AgentFeedbackMarkProvidedInput = {
+  userId?: string;
+  conversationId?: string;
+  messageId?: string;
+  providedAt?: Date | string;
+  feedbackId?: string;
+};
+
+export type AgentFeedbackHandle = AgentFeedbackMetadata & {
+  isProvided: () => boolean;
+  markFeedbackProvided: (
+    input?: AgentFeedbackMarkProvidedInput,
+  ) => Promise<AgentFeedbackMetadata | null>;
+};
+
+export type AgentMarkFeedbackProvidedInput = {
+  userId: string;
+  conversationId: string;
+  messageId: string;
+  providedAt?: Date | string;
+  feedbackId?: string;
+};
+
 /**
  * Tool with node_id for agent state
  */
-export interface ToolWithNodeId extends BaseTool {
+export type ToolWithNodeId = (BaseTool | ProviderTool) & {
   node_id: string;
-}
+};
+
+export type WorkspaceToolkitOptions = {
+  filesystem?: WorkspaceFilesystemToolkitOptions | false;
+  sandbox?: WorkspaceSandboxToolkitOptions | false;
+  search?: WorkspaceSearchToolkitOptions | false;
+  skills?: WorkspaceSkillsToolkitOptions | false;
+};
 
 export interface AgentScorerState {
   key: string;
@@ -128,6 +209,7 @@ export interface AgentFullState {
   model: string;
   node_id: string;
   tools: ToolWithNodeId[];
+  toolRouting?: AgentToolRoutingState;
   subAgents: SubAgentStateData[];
   memory: AgentMemoryState;
   scorers?: AgentScorerState[];
@@ -151,6 +233,40 @@ export type InstructionsDynamicValue = string | DynamicValue<string | PromptCont
 export type ModelDynamicValue<T> = T | DynamicValue<T>;
 
 /**
+ * Supported model references for agents (AI SDK models or provider/model strings)
+ */
+export type AgentModelReference = LanguageModel | ModelRouterModelId;
+
+/**
+ * Model fallback configuration for agents.
+ */
+export type AgentModelConfig = {
+  /**
+   * Optional stable identifier for the model entry (useful for logging).
+   */
+  id?: string;
+  /**
+   * Model reference (static or dynamic).
+   */
+  model: ModelDynamicValue<AgentModelReference>;
+  /**
+   * Maximum number of retries for this model before falling back.
+   * Defaults to the agent's maxRetries.
+   */
+  maxRetries?: number;
+  /**
+   * Whether this model is enabled for fallback selection.
+   * @default true
+   */
+  enabled?: boolean;
+};
+
+/**
+ * Agent model value that can be static, dynamic, or a fallback list.
+ */
+export type AgentModelValue = ModelDynamicValue<AgentModelReference> | AgentModelConfig[];
+
+/**
  * Enhanced dynamic value for tools that supports static or dynamic values
  */
 export type ToolsDynamicValue =
@@ -160,7 +276,7 @@ export type ToolsDynamicValue =
 /**
  * Provider options type for LLM configurations
  */
-export type ProviderOptions = {
+type LegacyProviderCallOptions = {
   // Controls randomness (0-1)
   temperature?: number;
   // Maximum tokens to generate
@@ -186,7 +302,16 @@ export type ProviderOptions = {
 
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
+};
 
+export type ProviderOptions = LegacyProviderCallOptions & {
+  // Common provider-specific option buckets with IntelliSense
+  anthropic?: AnthropicProviderOptions & Record<string, unknown>;
+  google?: GoogleGenerativeAIProviderOptions & Record<string, unknown>;
+  openai?: OpenAIResponsesProviderOptions & Record<string, unknown>;
+  xai?: (XaiProviderOptions | XaiResponsesProviderOptions) & Record<string, unknown>;
+
+  // Allow other providers / future options without breaking changes
   [key: string]: unknown;
 };
 
@@ -417,6 +542,101 @@ export type OutputGuardrail<TOutput = unknown> =
   | OutputGuardrailFunction<TOutput>
   | OutputGuardrailDefinition<TOutput>;
 
+// -----------------------------------------------------------------------------
+// Middleware Types
+// -----------------------------------------------------------------------------
+
+export type MiddlewareDirection = "input" | "output";
+
+export type MiddlewareFunctionMetadata = {
+  middlewareId?: string;
+  middlewareName?: string;
+  middlewareDescription?: string;
+  middlewareTags?: string[];
+};
+
+export type MiddlewareFunction<TArgs, TResult> = ((args: TArgs) => TResult | Promise<TResult>) &
+  MiddlewareFunctionMetadata;
+
+export interface MiddlewareDefinition<TArgs, TResult> {
+  id?: string;
+  name?: string;
+  description?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  handler: MiddlewareFunction<TArgs, TResult>;
+}
+
+export interface MiddlewareContext {
+  agent: Agent;
+  context: OperationContext;
+  operation: AgentEvalOperationType;
+  retryCount: number;
+}
+
+export interface InputMiddlewareArgs extends MiddlewareContext {
+  input: string | UIMessage[] | BaseMessage[];
+  originalInput: string | UIMessage[] | BaseMessage[];
+  abort: <TMetadata = unknown>(
+    reason?: string,
+    options?: MiddlewareAbortOptions<TMetadata>,
+  ) => never;
+}
+
+export type InputMiddlewareResult = string | UIMessage[] | BaseMessage[] | undefined;
+
+export interface OutputMiddlewareArgs<TOutput = unknown> extends MiddlewareContext {
+  output: TOutput;
+  originalOutput: TOutput;
+  usage?: UsageInfo;
+  finishReason?: string | null;
+  warnings?: unknown[] | null;
+  abort: <TMetadata = unknown>(
+    reason?: string,
+    options?: MiddlewareAbortOptions<TMetadata>,
+  ) => never;
+}
+
+export type OutputMiddlewareResult<TOutput = unknown> = TOutput | undefined;
+
+export type InputMiddleware =
+  | MiddlewareDefinition<InputMiddlewareArgs, InputMiddlewareResult>
+  | MiddlewareFunction<InputMiddlewareArgs, InputMiddlewareResult>;
+
+export type OutputMiddleware<TOutput = unknown> =
+  | MiddlewareDefinition<OutputMiddlewareArgs<TOutput>, OutputMiddlewareResult<TOutput>>
+  | MiddlewareFunction<OutputMiddlewareArgs<TOutput>, OutputMiddlewareResult<TOutput>>;
+
+export type AgentSummarizationOptions = {
+  enabled?: boolean;
+  triggerTokens?: number;
+  keepMessages?: number;
+  maxOutputTokens?: number;
+  systemPrompt?: string | null;
+  model?: AgentModelValue;
+};
+
+export type AgentConversationPersistenceMode = "finish" | "step";
+
+export type AgentConversationPersistenceOptions = {
+  /**
+   * `finish` persists only at operation completion.
+   * `step` checkpoints after each step (debounced) and flushes on tool completion by default.
+   * @default "step"
+   */
+  mode?: AgentConversationPersistenceMode;
+  /**
+   * Debounce duration (ms) for step-level persistence scheduling.
+   * @default 200
+   */
+  debounceMs?: number;
+  /**
+   * When true in `step` mode, tool-result/tool-error steps trigger an immediate flush.
+   * @default true
+   */
+  flushOnToolResult?: boolean;
+};
+
 /**
  * Agent configuration options
  */
@@ -427,13 +647,28 @@ export type AgentOptions = {
   purpose?: string;
 
   // Core AI
-  model: LanguageModel | DynamicValue<LanguageModel>;
+  model: AgentModelValue;
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory
   tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
+  toolRouting?: ToolRoutingConfig | false;
+  workspace?: Workspace | WorkspaceConfig | false;
+  workspaceToolkits?: WorkspaceToolkitOptions | false;
+  /**
+   * Controls automatic workspace skills prompt injection.
+   *
+   * - `undefined` (default): auto-inject when workspace skills are configured and no custom
+   *   `hooks.onPrepareMessages` is provided.
+   * - `true`: force auto-injection with default prompt options.
+   * - `false`: disable auto-injection.
+   * - object: force auto-injection with custom prompt options.
+   */
+  workspaceSkillsPrompt?: WorkspaceSkillsPromptOptions | boolean;
   memory?: Memory | false;
+  summarization?: AgentSummarizationOptions | false;
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Retriever/RAG
   retriever?: BaseRetriever;
@@ -450,16 +685,36 @@ export type AgentOptions = {
   inputGuardrails?: InputGuardrail[];
   outputGuardrails?: OutputGuardrail<any>[];
 
+  // Middleware
+  inputMiddlewares?: InputMiddleware[];
+  outputMiddlewares?: OutputMiddleware<any>[];
+  /**
+   * Default retry count for middleware-triggered retries.
+   * Per-call maxMiddlewareRetries overrides this value.
+   */
+  maxMiddlewareRetries?: number;
+
   // Configuration
   temperature?: number;
   maxOutputTokens?: number;
   maxSteps?: number;
+  /**
+   * Default retry count for model calls before falling back.
+   * Overridden by per-model maxRetries or per-call maxRetries.
+   */
+  maxRetries?: number;
+  feedback?: AgentFeedbackOptions | boolean;
   /**
    * Default stop condition for step execution (ai-sdk `stopWhen`).
    * Per-call `stopWhen` in method options overrides this.
    */
   stopWhen?: StopWhen;
   markdown?: boolean;
+  /**
+   * When true, use the active VoltAgent span as the parent if parentSpan is not provided.
+   * Defaults to true.
+   */
+  inheritParentSpan?: boolean;
 
   // Voice
   voice?: Voice;
@@ -501,9 +756,35 @@ export type AgentOptions = {
 
 export type AgentEvalOperationType =
   | "generateText"
+  | "generateTitle"
   | "streamText"
   | "generateObject"
-  | "streamObject";
+  | "streamObject"
+  | "workflow";
+
+export interface AgentEvalToolCall extends Record<string, unknown> {
+  toolCallId?: string;
+  toolName?: string;
+  arguments?: Record<string, unknown> | null;
+  content?: string;
+  stepIndex?: number;
+  usage?: UsageInfo | null;
+  subAgentId?: string;
+  subAgentName?: string;
+}
+
+export interface AgentEvalToolResult extends Record<string, unknown> {
+  toolCallId?: string;
+  toolName?: string;
+  result?: unknown;
+  content?: string;
+  stepIndex?: number;
+  usage?: UsageInfo | null;
+  subAgentId?: string;
+  subAgentName?: string;
+  isError?: boolean;
+  error?: unknown;
+}
 
 export interface AgentEvalPayload {
   operationId: string;
@@ -512,6 +793,22 @@ export interface AgentEvalPayload {
   output?: string | null;
   rawInput?: string | UIMessage[] | BaseMessage[];
   rawOutput?: unknown;
+  /**
+   * Full message/step chain available to scorers.
+   * Includes normalized input messages (when available) plus execution steps
+   * such as `text`, `tool_call`, and `tool_result`.
+   */
+  messages?: StepWithContent[];
+  /**
+   * Tool-call events captured during execution.
+   * If provider-native tool call payloads are available they are preserved.
+   */
+  toolCalls?: AgentEvalToolCall[];
+  /**
+   * Tool-result events captured during execution.
+   * If provider-native tool result payloads are available they are preserved.
+   */
+  toolResults?: AgentEvalToolResult[];
   userId?: string;
   conversationId?: string;
   traceId: string;
@@ -551,6 +848,19 @@ export interface AgentEvalResult {
   rawPayload: AgentEvalPayload;
 }
 
+export type AgentEvalFeedbackSaveInput = Omit<VoltOpsFeedbackCreateInput, "traceId"> & {
+  traceId?: string;
+};
+
+export type AgentEvalFeedbackHelper = {
+  save: (input: AgentEvalFeedbackSaveInput) => Promise<VoltOpsFeedback | null>;
+};
+
+export type AgentEvalResultCallbackArgs = AgentEvalResult & {
+  result: AgentEvalResult;
+  feedback: AgentEvalFeedbackHelper;
+};
+
 export interface AgentEvalScorerConfig {
   scorer: AgentEvalScorerReference;
   params?:
@@ -560,7 +870,7 @@ export interface AgentEvalScorerConfig {
       ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>);
   sampling?: AgentEvalSamplingPolicy;
   id?: string;
-  onResult?: (result: AgentEvalResult) => void | Promise<void>;
+  onResult?: (result: AgentEvalResultCallbackArgs) => void | Promise<void>;
   buildPayload?: (
     context: AgentEvalContext,
   ) => Record<string, unknown> | Promise<Record<string, unknown>>;
@@ -591,6 +901,9 @@ export interface SystemMessageResponse {
     version?: number;
     labels?: string[];
     tags?: string[];
+    source?: "local-file" | "online";
+    latest_version?: number;
+    outdated?: boolean;
     config?: {
       model?: string;
       temperature?: number;
@@ -655,24 +968,88 @@ export type ProviderType<T> = T extends { llm: LLMProvider<infer P> } ? P : neve
  * Common generate options - internal version that includes historyEntryId
  * Not exposed directly to users
  */
+export interface CommonSemanticMemoryOptions {
+  enabled?: boolean;
+  semanticLimit?: number;
+  semanticThreshold?: number;
+  mergeStrategy?: "prepend" | "append" | "interleave";
+}
+
+export interface CommonRuntimeMemoryBehaviorOptions {
+  contextLimit?: number;
+  semanticMemory?: CommonSemanticMemoryOptions;
+  conversationPersistence?: AgentConversationPersistenceOptions;
+  /**
+   * When true, memory is read-only for the current call.
+   * Existing memory context can be loaded, but no writes are persisted.
+   */
+  readOnly?: boolean;
+}
+
+export interface CommonRuntimeMemoryEnvelope {
+  conversationId?: string;
+  userId?: string;
+  options?: CommonRuntimeMemoryBehaviorOptions;
+}
+
+export type SemanticMemoryOptions = CommonSemanticMemoryOptions;
+export type RuntimeMemoryBehaviorOptions = CommonRuntimeMemoryBehaviorOptions;
+export type RuntimeMemoryEnvelope = CommonRuntimeMemoryEnvelope;
+
+export interface CommonResolvedRuntimeMemoryOptions {
+  userId?: string;
+  conversationId?: string;
+  contextLimit?: number;
+  semanticMemory?: CommonSemanticMemoryOptions;
+  conversationPersistence?: AgentConversationPersistenceOptions;
+  readOnly?: boolean;
+}
+
 export interface CommonGenerateOptions {
   // Common LLM provider properties
   provider?: ProviderOptions;
 
+  // Preferred runtime memory envelope for per-call memory identity and behavior overrides.
+  memory?: CommonRuntimeMemoryEnvelope;
+
+  /**
+   * @deprecated Use `memory.conversationId` instead.
+   */
   // Conversation ID to maintain context
   conversationId?: string;
 
+  /**
+   * @deprecated Use `memory.userId` instead.
+   */
   // User ID for authentication
   userId?: string;
 
+  /**
+   * @deprecated Use `memory.options.contextLimit` instead.
+   */
   // Context limit for conversation
   contextLimit?: number;
+
+  /**
+   * @deprecated Use `memory.options.semanticMemory` instead.
+   */
+  // Semantic memory runtime overrides
+  semanticMemory?: CommonSemanticMemoryOptions;
+
+  /**
+   * @deprecated Use `memory.options.conversationPersistence` instead.
+   */
+  // Conversation persistence runtime overrides
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Specific tools to use for this generation (overrides agent's tools)
   tools?: BaseTool[];
 
   // Maximum number of steps for this specific request (overrides agent's maxSteps)
   maxSteps?: number;
+
+  // Feedback configuration for trace satisfaction links
+  feedback?: AgentFeedbackOptions | boolean;
 
   // AbortController for cancelling the operation and accessing the signal
   abortController?: AbortController;
@@ -911,6 +1288,12 @@ export type OperationContext = {
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
 
+  /** Resolved runtime memory options (memory envelope preferred, legacy as fallback) */
+  resolvedMemory?: CommonResolvedRuntimeMemoryOptions;
+
+  /** Workspace configured on the executing agent (if any). */
+  workspace?: Workspace;
+
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;
 
@@ -989,6 +1372,9 @@ export interface StreamTextFinishResult {
   /** Token usage information (if available). */
   usage?: UsageInfo;
 
+  /** Feedback metadata for the trace, if enabled. */
+  feedback?: AgentFeedbackMetadata | null;
+
   /** The reason the stream finished (if available, e.g., 'stop', 'length', 'tool-calls'). */
   finishReason?: string;
 
@@ -1048,6 +1434,8 @@ export interface StandardizedTextResult {
   text: string;
   /** Token usage information (if available). */
   usage?: UsageInfo;
+  /** Feedback metadata for the trace, if enabled. */
+  feedback?: AgentFeedbackMetadata | null;
   /** Original provider response (if needed). */
   providerResponse?: unknown;
   /** Finish reason (if available from provider). */

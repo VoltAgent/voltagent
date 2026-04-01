@@ -474,7 +474,6 @@ import "dotenv/config";
 import { VoltAgent, VoltOpsClient, Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { openai } from "@ai-sdk/openai";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 import { listMenuItemsTool, createOrderTool, checkOrderStatusTool } from "./tools";
@@ -538,7 +537,7 @@ Order Flow:
    - Confirm order and clear working memory
 
 Always be friendly and helpful. Start with "Welcome!" greeting.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
   memory,
 });
@@ -622,7 +621,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent...`,
-  model: openai("gpt-4o-mini"), // Fast and cheap
+  model: "openai/gpt-4o-mini", // Fast and cheap
   tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
   memory,
 });

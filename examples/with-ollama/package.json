@@ -1,0 +1,37 @@
+{
+  "name": "voltagent-example-with-ollama",
+  "dependencies": {
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.6.13",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.8",
+    "ai": "^6.0.0",
+    "ollama-ai-provider-v2": "^1.5.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "ollama",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-ollama"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "tsx --env-file=.env ./src/index.ts",
+    "volt": "volt"
+  },
+  "type": "module"
+}

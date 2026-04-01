@@ -92,19 +92,24 @@ const mockExecute = vi.fn();
 VoltAgent is built on top of the `ai` SDK, and uses the `ai/test` package to mock the AI SDK functions for testing.
 
 ```typescript
-import { MockLanguageModelV2 } from "ai/test";
+import { MockLanguageModelV3 } from "ai/test";
 import { Agent } from "./agent";
 
 describe("Agent", () => {
-  let mockModel: MockLanguageModelV2;
+  let mockModel: MockLanguageModelV3;
 
   beforeEach(() => {
-    mockModel = new MockLanguageModelV2({
+    mockModel = new MockLanguageModelV3({
       doGenerate: vi.fn().mockResolvedValue({
-        rawCall: { rawPrompt: null, rawSettings: {} },
         finishReason: "stop",
-        usage: { promptTokens: 10, completionTokens: 20 },
-        text: "Hello, world!",
+        content: [{ type: "text", text: "Hello, world!" }],
+        usage: {
+          inputTokens: 10,
+          outputTokens: 20,
+          totalTokens: 30,
+          inputTokenDetails: { noCacheTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0 },
+          outputTokenDetails: { textTokens: 20, reasoningTokens: 0 },
+        },
       }),
     });
   });

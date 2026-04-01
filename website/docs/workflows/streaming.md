@@ -42,10 +42,13 @@ Workflows emit these event types during execution:
 
 ### Consuming the Stream
 
-VoltAgent provides two methods for workflow execution:
+VoltAgent provides five methods for workflow execution:
 
-- `.run()` - Standard execution without streaming
 - `.stream()` - Real-time execution with event streaming
+- `.run()` - Standard execution without streaming
+- `.startAsync()` - Fire-and-forget execution (returns immediately)
+- `.timeTravel()` - Deterministic replay from a historical execution step
+- `.timeTravelStream()` - Real-time streaming replay from a historical execution step
 
 ```typescript
 // Method 1: Stream execution for real-time events
@@ -75,6 +78,82 @@ console.log("Final result:", result);
 // Method 2: Standard execution without streaming
 const execution = await workflow.run(input);
 console.log("Result:", execution.result);
+
+// Method 3: Fire-and-forget execution
+const started = await workflow.startAsync(input);
+console.log("Started execution:", started.executionId);
+
+// Later, inspect status/output from workflow memory
+const state = await workflow.memory.getWorkflowState(started.executionId);
+console.log("Current status:", state?.status);
+
+// Method 4: Deterministic replay from a historical run (non-streaming)
+const sourceExecution = await workflow.run(input);
+const replayExecution = await workflow.timeTravel({
+  executionId: sourceExecution.executionId,
+  stepId: "step-2",
+});
+console.log("Replay status:", replayExecution.status);
+console.log("Replay result:", replayExecution.result);
+
+// Method 5: Stream a deterministic replay from a historical run
+const replayStream = workflow.timeTravelStream({
+  executionId: sourceExecution.executionId,
+  stepId: "step-2", // Replay starts from this step
+});
+
+for await (const event of replayStream) {
+  console.log("Replay event:", event.type, event.from);
+}
+
+const replayResult = await replayStream.result;
+console.log("Replay result:", replayResult);
+```
+
+### Observer and Watch APIs
+
+`WorkflowStreamResult` also exposes observer-style APIs that do not consume the main async iterator:
+
+- `watch(cb)` - Subscribe with a callback and get an unsubscribe function
+- `watchAsync(cb)` - Async variant of `watch`
+- `observeStream()` - Get `ReadableStream<WorkflowStreamEvent>`
+- `streamLegacy()` - Compatibility surface with `{ stream, getWorkflowState }`
+
+> `watch`, `watchAsync`, `observeStream`, and `streamLegacy` are SDK-only APIs.  
+> REST API clients should use SSE endpoints (`POST /workflows/:id/stream` and `GET /workflows/:id/executions/:executionId/stream`) to observe workflow events.
+
+```typescript
+const stream = workflow.stream({ orderId: "ord_123" });
+
+const unsubscribe = stream.watch((event) => {
+  console.log("[watch]", event.type, event.from);
+});
+
+const unsubscribeAsync = await stream.watchAsync(async (event) => {
+  if (event.type === "workflow-error") {
+    await notifyTeam(event);
+  }
+});
+
+const observerReader = stream.observeStream().getReader();
+const observerTask = (async () => {
+  while (true) {
+    const { done, value } = await observerReader.read();
+    if (done) break;
+    console.log("[observeStream]", value.type);
+  }
+})();
+
+for await (const event of stream) {
+  console.log("[main iterator]", event.type);
+}
+
+unsubscribe();
+unsubscribeAsync();
+await observerTask;
+
+const legacyState = await stream.streamLegacy().getWorkflowState();
+console.log("Final status:", legacyState?.status);
 ```
 
 ## Writer API
@@ -215,6 +294,8 @@ console.log("Workflow completed:", finalResult);
 ### REST API Streaming
 
 VoltAgent also provides REST API endpoints for streaming workflow execution using Server-Sent Events (SSE). However, the behavior differs from the programmatic API due to VoltAgent's **stateless architecture**.
+
+`watch` is not exposed as a separate REST endpoint; SSE streaming is the REST equivalent for event observation.
 
 #### Starting a Stream
 
@@ -729,10 +810,11 @@ interface WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA> {
   workflowId: string;
   startAt: Date;
   endAt: Date;
-  status: "completed" | "suspended" | "error";
+  status: "completed" | "suspended" | "cancelled" | "error";
   result: z.infer<RESULT_SCHEMA> | null;
   usage: UsageInfo;
   suspension?: WorkflowSuspensionMetadata;
+  cancellation?: WorkflowCancellationMetadata;
   error?: unknown;
   resume: (
     input: z.infer<RESUME_SCHEMA>,
@@ -753,28 +835,68 @@ interface WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>
   startAt: Date;
   // Promise-based fields that resolve when execution completes
   endAt: Promise<Date>;
-  status: Promise<"completed" | "suspended" | "error">;
+  status: Promise<"completed" | "suspended" | "cancelled" | "error">;
   result: Promise<z.infer<RESULT_SCHEMA> | null>;
   suspension: Promise<WorkflowSuspensionMetadata | undefined>;
+  cancellation: Promise<WorkflowCancellationMetadata | undefined>;
   error: Promise<unknown | undefined>;
   usage: Promise<UsageInfo>;
   // Resume continues with the same stream
   resume: (
-    input: z.infer<RESUME_SCHEMA>
+    input: z.infer<RESUME_SCHEMA>,
+    options?: { stepId?: string }
   ) => Promise<WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  suspend: (reason?: string) => void;
+  cancel: (reason?: string) => void;
   abort: () => void;
+  watch: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => () => void;
+  watchAsync: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => Promise<() => void>;
+  observeStream: () => ReadableStream<WorkflowStreamEvent>;
+  streamLegacy: () => {
+    stream: ReadableStream<WorkflowStreamEvent>;
+    getWorkflowState: () => Promise<any>;
+  };
 }
 ```
 
+### WorkflowStartAsyncResult
+
+Returned by `.startAsync()` method - starts in the background and returns immediately:
+
+```typescript
+interface WorkflowStartAsyncResult {
+  executionId: string;
+  workflowId: string;
+  startAt: Date;
+}
+```
+
+### WorkflowTimeTravelOptions
+
+Used by `.timeTravel()` and `.timeTravelStream()` to replay a historical execution:
+
+```typescript
+interface WorkflowTimeTravelOptions {
+  executionId: string; // Source execution ID
+  stepId: string; // Step to replay from
+  inputData?: unknown; // Optional selected-step input override
+  resumeData?: unknown; // Optional resume payload override
+  workflowStateOverride?: Record<string, unknown>; // Optional shared workflow state override
+}
+```
+
+`.timeTravelStream()` returns `WorkflowStreamResult`, just like `.stream()`, but uses historical state as its starting point.
+
 ### Key Differences
 
-| Feature          | `.run()`                  | `.stream()`            |
-| ---------------- | ------------------------- | ---------------------- |
-| Returns          | `WorkflowExecutionResult` | `WorkflowStreamResult` |
-| Event streaming  | No                        | Yes (AsyncIterable)    |
-| Field resolution | Immediate                 | Promise-based          |
-| Use case         | Simple execution          | Real-time monitoring   |
-| Resume behavior  | New execution             | Same stream continues  |
+| Feature          | `.run()`                  | `.startAsync()`            | `.stream()`            |
+| ---------------- | ------------------------- | -------------------------- | ---------------------- |
+| Returns          | `WorkflowExecutionResult` | `WorkflowStartAsyncResult` | `WorkflowStreamResult` |
+| Waits for finish | Yes                       | No                         | No                     |
+| Event streaming  | No                        | No                         | Yes (AsyncIterable)    |
+| Field resolution | Immediate                 | Immediate metadata         | Promise-based          |
+| Use case         | Simple execution          | Background trigger         | Real-time monitoring   |
+| Resume behavior  | New execution             | Via stored execution state | Same stream continues  |
 
 ### UsageInfo
 

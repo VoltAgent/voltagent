@@ -30,7 +30,15 @@ pnpm install
 pnpm dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+4. Start the VoltAgent built-in server in a separate terminal:
+
+```bash
+pnpm voltagent:run
+```
+
+5. Open [http://localhost:3000](http://localhost:3000)
+
+To inspect runs, open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.
 
 ### How It Works
 

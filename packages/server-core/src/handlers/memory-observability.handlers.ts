@@ -3,8 +3,10 @@ import type { Agent, Memory } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import type {
   MemoryConversationMessagesResult,
+  MemoryConversationStepsResult,
   MemoryConversationSummary,
   MemoryGetMessagesQuery,
+  MemoryGetStepsQuery,
   MemoryListConversationsQuery,
   MemoryListUsersQuery,
   MemoryUserSummary,
@@ -308,6 +310,81 @@ export async function getConversationMessagesHandler(
       return {
         success: true,
         data: result,
+      };
+    }
+
+    return {
+      success: false,
+      error: "Conversation not found",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : safeStringify(error),
+    };
+  }
+}
+
+export async function getConversationStepsHandler(
+  deps: ServerProviderDeps,
+  conversationId: string,
+  query: MemoryGetStepsQuery,
+): Promise<ApiResponse<MemoryConversationStepsResult>> {
+  try {
+    const agents = getAgentsWithMemory(deps, query.agentId);
+
+    if (agents.length === 0) {
+      return {
+        success: false,
+        error: "Conversation not found",
+      };
+    }
+
+    for (const { agentId, agentName, memory } of agents) {
+      const conversation = await memory.getConversation(conversationId);
+      if (!conversation) {
+        continue;
+      }
+
+      const memoryWithSteps = memory as Memory & {
+        getConversationSteps?: (
+          userId: string,
+          conversationId: string,
+          options?: MemoryGetStepsQuery,
+        ) => Promise<any>;
+      };
+
+      if (typeof memoryWithSteps.getConversationSteps !== "function") {
+        return {
+          success: false,
+          error: "Conversation steps are not supported by this memory adapter.",
+        };
+      }
+
+      const steps = await memoryWithSteps.getConversationSteps(
+        conversation.userId,
+        conversationId,
+        {
+          limit: query.limit ? clampLimit(query.limit) : undefined,
+          operationId: query.operationId,
+        },
+      );
+
+      return {
+        success: true,
+        data: {
+          conversation: {
+            id: conversation.id,
+            userId: conversation.userId,
+            agentId,
+            agentName,
+            title: conversation.title,
+            createdAt: conversation.createdAt,
+            updatedAt: conversation.updatedAt,
+            metadata: conversation.metadata,
+          },
+          steps,
+        },
       };
     }
 

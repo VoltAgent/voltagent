@@ -21,8 +21,9 @@ function createModelWithResponse(text: string) {
 describe("createModerationScorer", () => {
   it("flags content based on LLM JSON output", async () => {
     const scorer = createModerationScorer({
-      model: createModelWithResponse('{"flagged":true,"scores":{"violence":0.92}}'),
+      model: createModelWithResponse('{"flagged":true,"scores":{"violence":0.92},"reason":null}'),
       threshold: 0.5,
+      categories: ["violence"],
     });
 
     const result = await scorer.scorer({ payload: { output: "violent content" }, params: {} });
@@ -41,10 +42,11 @@ describe("createModerationScorer", () => {
     });
   });
 
-  it("derives flagged status from scores when flag field is missing", async () => {
+  it("tracks threshold metadata for flagged content", async () => {
     const scorer = createModerationScorer({
-      model: createModelWithResponse('{"scores":{"violence":0.61}}'),
+      model: createModelWithResponse('{"flagged":true,"scores":{"violence":0.61},"reason":null}'),
       threshold: 0.6,
+      categories: ["violence"],
     });
 
     const result = await scorer.scorer({ payload: { output: "threatening" }, params: {} });
@@ -59,8 +61,9 @@ describe("createModerationScorer", () => {
 
   it("returns passing score when content is clean", async () => {
     const scorer = createModerationScorer({
-      model: createModelWithResponse('{"flagged":false,"scores":{},"reason":null}'),
+      model: createModelWithResponse('{"flagged":false,"scores":{"hate":0},"reason":null}'),
       threshold: 0.4,
+      categories: ["hate"],
     });
 
     const result = await scorer.scorer({ payload: { output: "hello" }, params: {} });
@@ -75,8 +78,11 @@ describe("createModerationScorer", () => {
 
   it("propagates reason from moderation output", async () => {
     const scorer = createModerationScorer({
-      model: createModelWithResponse('{"scores":{"hate":0.7},"reason":"Contains hate speech."}'),
+      model: createModelWithResponse(
+        '{"flagged":true,"scores":{"hate":0.7},"reason":"Contains hate speech."}',
+      ),
       threshold: 0.6,
+      categories: ["hate"],
     });
 
     const result = await scorer.scorer({ payload: { output: "hate" }, params: {} });

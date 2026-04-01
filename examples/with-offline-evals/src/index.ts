@@ -1,3 +1,4 @@
+import { VoltOpsClient } from "@voltagent/core";
 import { runExperiment } from "@voltagent/evals";
 import experiment from "./experiments/offline.experiment.js";
 
@@ -8,6 +9,7 @@ async function main() {
         const label = total !== undefined ? `${completed}/${total}` : `${completed}`;
         console.log(`[with-offline-evals] processed ${label} items`);
       },
+      voltOpsClient: new VoltOpsClient({}),
     });
 
     console.log(

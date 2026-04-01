@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
 
 export interface QuestionAnsweringInput {
@@ -23,5 +22,5 @@ Return your response in the following JSON format:
   "answer": "your answer here",
   "confidence": 0.95
 }`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });

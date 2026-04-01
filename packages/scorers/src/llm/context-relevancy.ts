@@ -1,11 +1,11 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 const CONTEXT_RELEVANCY_PROMPT = `Analyze the provided context and identify which parts are relevant to answering the given question. For each context sentence or passage, determine its relevance level.
@@ -89,7 +89,7 @@ export interface ContextRelevancyScorerOptions<
 > {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   options?: ContextRelevancyOptions;
   metadata?: Record<string, unknown> | null;
   buildPayload?: (context: ContextRelevancyBuilderContext<Payload, Params>) => {

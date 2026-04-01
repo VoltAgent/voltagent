@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Agent } from "../agent";
+import { AGENT_METADATA_CONTEXT_KEY } from "../memory-persist-queue";
 import { SubAgentManager } from "./index";
 import {
   createMockAgent,
@@ -158,6 +159,22 @@ describe("SubAgentManager", () => {
       expect(message).toContain("Writing Agent");
       expect(message).toContain("You are a math expert");
       expect(message).toContain("You are a writing expert");
+    });
+
+    it("should prefer purpose over instructions when listing specialized agents", () => {
+      subAgentManager.addSubAgent(
+        createMockAgentWithStubs({
+          id: "agent-purpose",
+          name: "Purpose Agent",
+          purpose: "Summarize support tickets",
+          instructions: "This verbose instruction should not be shown",
+        }),
+      );
+
+      const message = subAgentManager.generateSupervisorSystemMessage("Base instructions", "");
+
+      expect(message).toContain("Summarize support tickets");
+      expect(message).not.toContain("This verbose instruction should not be shown");
     });
 
     it("should use custom system message when provided", () => {
@@ -406,16 +423,16 @@ describe("SubAgentManager", () => {
         context: { problem: "simple math" },
       });
 
+      // Always returns array for consistent API
       expect(Array.isArray(result)).toBe(true);
-      if (Array.isArray(result)) {
-        expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(
-          expect.objectContaining({
-            agentName: "Math Agent",
-            response: expect.stringContaining("Math Agent"),
-          }),
-        );
-      }
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          agentName: "Math Agent",
+          response: expect.stringContaining("Math Agent"),
+          usage: expect.any(Object),
+        }),
+      );
     });
 
     it("should return error when no valid agents found", async () => {
@@ -534,6 +551,54 @@ describe("SubAgentManager", () => {
 
       // Verify the stream was processed with filters
       expect(mockMerge).toHaveBeenCalled();
+    });
+
+    it("should forward executing sub-agent metadata to the parent fullStream", async () => {
+      const forwarded: any[] = [];
+      const fullStreamWriter = {
+        write: vi.fn(async (chunk: any) => {
+          forwarded.push(chunk);
+        }),
+      };
+
+      const parentOperationContext = {
+        systemContext: new Map([
+          ["fullStreamWriter", fullStreamWriter],
+          [AGENT_METADATA_CONTEXT_KEY, { agentId: "parent-agent", agentName: "Parent Agent" }],
+        ]),
+      } as any;
+
+      const subAgent = createMockAgent({ id: "sub-agent-a", name: "Sub-Agent A" });
+      const mockStream = createMockStream([
+        mockStreamEvents.toolCall("call-1", "toolA", { foo: "bar" }),
+        mockStreamEvents.toolResult("call-1", "toolA", { ok: true }),
+      ]);
+
+      vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        fullStream: mockStream,
+        toUIMessageStream: vi.fn(),
+        text: Promise.resolve("done"),
+        usage: Promise.resolve({}),
+      } as any);
+
+      await subAgentManager.handoffTask({
+        task: "Test task",
+        targetAgent: subAgent,
+        parentOperationContext,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(forwarded.length).toBeGreaterThanOrEqual(2);
+      const toolCallPart = forwarded[0];
+
+      expect(toolCallPart.subAgentId).toBe("sub-agent-a");
+      expect(toolCallPart.subAgentName).toBe("Sub-Agent A");
+      expect(toolCallPart.executingAgentId).toBe("sub-agent-a");
+      expect(toolCallPart.executingAgentName).toBe("Sub-Agent A");
+      expect(toolCallPart.parentAgentId).toBe("parent-agent");
+      expect(toolCallPart.parentAgentName).toBe("Parent Agent");
+      expect(toolCallPart.agentPath).toEqual(["Parent Agent", "Sub-Agent A"]);
     });
   });
 

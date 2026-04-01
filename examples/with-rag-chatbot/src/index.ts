@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, type BaseMessage, BaseRetriever, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -63,7 +62,7 @@ const knowledgeRetriever = new KnowledgeBaseRetriever();
 const ragAgent = new Agent({
   name: "RAG Chatbot",
   instructions: "A chatbot that answers questions based on its internal knowledge base.",
-  model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
+  model: "openai/gpt-4o-mini", // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
   memory: new Memory({

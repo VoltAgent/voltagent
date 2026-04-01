@@ -42,7 +42,7 @@ describe("LLM choice-based scorers", () => {
         doGenerate: {
           rawPrompt: null,
           rawSettings: {},
-          content: [{ type: "text", text: '{"choice":"B"}' }],
+          content: [{ type: "text", text: '{"choice":"B","reason":null}' }],
           finishReason: "stop",
           usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
           warnings: [],
@@ -65,7 +65,7 @@ describe("LLM choice-based scorers", () => {
         doGenerate: {
           rawPrompt: null,
           rawSettings: {},
-          content: [{ type: "text", text: '{"choice":"Y"}' }],
+          content: [{ type: "text", text: '{"choice":"Y","reason":null}' }],
           finishReason: "stop",
           usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
           warnings: [],

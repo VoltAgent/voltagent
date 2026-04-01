@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import {
   Agent,
   MCPConfiguration,
@@ -47,7 +46,7 @@ IMPORTANT:
 - DO NOT format the transcript into articles
 - DO NOT add any additional content or commentary
 - Just extract and return the transcript as-is`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: youtubeTools,
     memory,
   });
@@ -62,7 +61,7 @@ IMPORTANT:
 - Key points and takeaways
 - A compelling conclusion
 Format the output in Markdown.`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     memory,
   });
 
@@ -93,7 +92,7 @@ CRITICAL RULES:
 - Complete Step 1 entirely before starting Step 2
 - You are ONLY a coordinator - BlogWriter creates the blog post, NOT you
 - Your final response should be ONLY the blog post content from BlogWriter`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     memory,
     subAgents: [transcriptFetcherAgent, blogWriterAgent],
     supervisorConfig: {

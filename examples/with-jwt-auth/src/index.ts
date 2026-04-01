@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer, jwtAuth } from "@voltagent/server-hono";
@@ -17,7 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 const agent = new Agent({
   name: "agent",
   instructions: "You are a helpful assistant that knows who is talking to you.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // Hooks to access user context
   hooks: {
     onStart: async ({ context }) => {

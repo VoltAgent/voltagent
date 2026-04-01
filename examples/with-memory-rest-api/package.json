@@ -3,19 +3,23 @@
   "description": "Example showing how to access VoltAgent memory via REST API with PostgreSQL storage",
   "version": "1.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/cli": "^0.1.14",
-    "@voltagent/core": "^1.1.36",
-    "@voltagent/logger": "^1.0.4",
-    "@voltagent/postgres": "^1.0.10",
-    "@voltagent/server-hono": "^1.2.2"
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.6.13",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/postgres": "^2.1.2",
+    "@voltagent/server-hono": "^2.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "tsx": "^4.19.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-memory-rest-api"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",

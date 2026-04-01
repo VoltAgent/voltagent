@@ -1,4 +1,4 @@
-import { agent } from "@/lib/agent";
+import { agent } from "@/voltagent";
 
 export async function POST(req: Request) {
   try {

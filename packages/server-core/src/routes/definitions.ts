@@ -155,6 +155,37 @@ export const AGENT_ROUTES = {
       },
     },
   },
+  resumeChatStream: {
+    method: "get" as const,
+    path: "/agents/:id/chat/:conversationId/stream",
+    summary: "Resume chat stream",
+    description:
+      "Resume an in-progress UI message stream for a chat conversation. Requires userId query parameter. Returns 204 if no active stream is found.",
+    tags: ["Agent Generation"],
+    operationId: "resumeChatStream",
+    responses: {
+      200: {
+        description: "Successfully resumed SSE stream for chat generation",
+        contentType: "text/event-stream",
+      },
+      400: {
+        description: "Missing or invalid userId",
+        contentType: "application/json",
+      },
+      204: {
+        description: "No active stream found for the conversation",
+        contentType: "text/plain",
+      },
+      404: {
+        description: "Resumable streams not configured",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to resume chat stream due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   generateObject: {
     method: "post" as const,
     path: "/agents/:id/object",
@@ -231,6 +262,125 @@ export const AGENT_ROUTES = {
       },
     },
   },
+  getWorkspace: {
+    method: "get" as const,
+    path: "/agents/:id/workspace",
+    summary: "Get agent workspace info",
+    description:
+      "Retrieve workspace configuration metadata for an agent, including capabilities (filesystem, sandbox, search, skills).",
+    tags: ["Agent Workspace"],
+    operationId: "getAgentWorkspace",
+    responses: {
+      200: {
+        description: "Successfully retrieved workspace info",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workspace info due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listWorkspaceFiles: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/ls",
+    summary: "List workspace files",
+    description: "List files and directories under a workspace path.",
+    tags: ["Agent Workspace"],
+    operationId: "listWorkspaceFiles",
+    responses: {
+      200: {
+        description: "Successfully listed workspace files",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list workspace files due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  readWorkspaceFile: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/read",
+    summary: "Read workspace file",
+    description: "Read a file from the workspace filesystem.",
+    tags: ["Agent Workspace"],
+    operationId: "readWorkspaceFile",
+    responses: {
+      200: {
+        description: "Successfully read workspace file",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to read workspace file due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listWorkspaceSkills: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/skills",
+    summary: "List workspace skills",
+    description: "List available workspace skills for an agent.",
+    tags: ["Agent Workspace"],
+    operationId: "listWorkspaceSkills",
+    responses: {
+      200: {
+        description: "Successfully listed workspace skills",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent, workspace, or skills not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list workspace skills due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getWorkspaceSkill: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/skills/:skillId",
+    summary: "Get workspace skill",
+    description: "Retrieve a specific workspace skill including its instructions.",
+    tags: ["Agent Workspace"],
+    operationId: "getWorkspaceSkill",
+    responses: {
+      200: {
+        description: "Successfully retrieved workspace skill",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent, workspace, or skill not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workspace skill due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
 } as const;
 
 /**
@@ -274,6 +424,33 @@ export const WORKFLOW_ROUTES = {
       },
       500: {
         description: "Failed to retrieve workflow due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listWorkflowRuns: {
+    method: "get" as const,
+    path: "/workflows/executions",
+    summary: "List workflow executions (query-driven)",
+    description:
+      "Retrieve workflow executions using query params (workflowId, status, from, to, limit, offset, userId) without path parameters. You can also filter metadata with `metadata` (JSON object) or key-based params such as `metadata.tenantId=acme`.",
+    tags: ["Workflow Management"],
+    operationId: "listWorkflowRuns",
+    responses: {
+      200: {
+        description: "Successfully retrieved workflow executions",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workflow executions due to server error",
         contentType: "application/json",
       },
     },
@@ -328,6 +505,33 @@ export const WORKFLOW_ROUTES = {
       },
       500: {
         description: "Failed to stream workflow due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  attachWorkflowStream: {
+    method: "get" as const,
+    path: "/workflows/:id/executions/:executionId/stream",
+    summary: "Attach to workflow execution stream",
+    description:
+      "Attach to an in-progress workflow execution stream and receive real-time events via Server-Sent Events (SSE). Use Last-Event-ID header or `fromSequence` query parameter to replay missed events on reconnect.",
+    tags: ["Workflow Management"],
+    operationId: "attachWorkflowStream",
+    responses: {
+      200: {
+        description: "Successfully attached to workflow SSE stream",
+        contentType: "text/event-stream",
+      },
+      404: {
+        description: "Workflow or execution not found",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Workflow execution is not streamable in current state",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to attach workflow stream due to server error",
         contentType: "application/json",
       },
     },
@@ -409,6 +613,33 @@ export const WORKFLOW_ROUTES = {
       },
       500: {
         description: "Failed to resume workflow due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  replayWorkflow: {
+    method: "post" as const,
+    path: "/workflows/:id/executions/:executionId/replay",
+    summary: "Replay workflow execution from a step",
+    description:
+      "Create a deterministic replay execution from a historical workflow run and selected step. Replay creates a new execution ID and preserves the original run history.",
+    tags: ["Workflow Management"],
+    operationId: "replayWorkflow",
+    responses: {
+      200: {
+        description: "Successfully replayed workflow execution",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid replay parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow or source execution not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to replay workflow due to server error",
         contentType: "application/json",
       },
     },
@@ -740,7 +971,7 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
     description:
       "Retrieve conversations stored in memory with optional filtering by agent or user. Results are paginated and sorted by last update by default.",
     tags: ["Observability", "Memory"],
-    operationId: "listMemoryConversations",
+    operationId: "listObservabilityMemoryConversations",
     responses: {
       200: {
         description: "Successfully retrieved conversations",
@@ -775,6 +1006,28 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
       },
     },
   },
+  getConversationSteps: {
+    method: "get" as const,
+    path: "/observability/memory/conversations/:conversationId/steps",
+    summary: "Get conversation steps",
+    description: "Fetch the recorded agent steps for a specific conversation stored in memory.",
+    tags: ["Observability", "Memory"],
+    operationId: "getConversationSteps",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation steps",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation steps due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   getWorkingMemory: {
     method: "get" as const,
     path: "/observability/memory/working-memory",
@@ -801,13 +1054,354 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
 } as const;
 
 /**
+ * Tool route definitions
+ */
+export const TOOL_ROUTES = {
+  listTools: {
+    method: "get" as const,
+    path: "/tools",
+    summary: "List all tools",
+    description:
+      "Retrieve a list of all tools registered across agents. Includes name, description, parameters, and owning agent metadata.",
+    tags: ["Tools"],
+    operationId: "listTools",
+    responses: {
+      200: {
+        description: "Successfully retrieved list of tools",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve tools due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  executeTool: {
+    method: "post" as const,
+    path: "/tools/:name/execute",
+    summary: "Execute a tool directly",
+    description:
+      "Execute a registered tool directly via HTTP without going through the agent chat flow. Accepts tool input and optional context metadata.",
+    tags: ["Tools"],
+    operationId: "executeTool",
+    responses: {
+      200: {
+        description: "Successfully executed tool",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request or tool input",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Tool not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to execute tool due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
+ * Memory route definitions
+ */
+export const MEMORY_ROUTES = {
+  listConversations: {
+    method: "get" as const,
+    path: "/api/memory/conversations",
+    summary: "List memory conversations",
+    description:
+      "Retrieve conversations stored in memory with optional filtering by resource or user.",
+    tags: ["Memory"],
+    operationId: "listMemoryConversations",
+    responses: {
+      200: {
+        description: "Successfully retrieved memory conversations",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list memory conversations",
+        contentType: "application/json",
+      },
+    },
+  },
+  getConversation: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Get conversation by ID",
+    description: "Retrieve a single conversation by ID from memory storage.",
+    tags: ["Memory"],
+    operationId: "getMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  listMessages: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId/messages",
+    summary: "List conversation messages",
+    description: "Retrieve messages for a conversation with optional filtering.",
+    tags: ["Memory"],
+    operationId: "listMemoryConversationMessages",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation messages",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  getMemoryWorkingMemory: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId/working-memory",
+    summary: "Get working memory",
+    description: "Retrieve working memory content for a conversation.",
+    tags: ["Memory"],
+    operationId: "getMemoryWorkingMemory",
+    responses: {
+      200: {
+        description: "Successfully retrieved working memory",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Working memory not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve working memory",
+        contentType: "application/json",
+      },
+    },
+  },
+  saveMessages: {
+    method: "post" as const,
+    path: "/api/memory/save-messages",
+    summary: "Save messages",
+    description: "Persist new messages into memory storage.",
+    tags: ["Memory"],
+    operationId: "saveMemoryMessages",
+    responses: {
+      200: {
+        description: "Successfully saved messages",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to save messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  createConversation: {
+    method: "post" as const,
+    path: "/api/memory/conversations",
+    summary: "Create conversation",
+    description: "Create a new conversation in memory storage.",
+    tags: ["Memory"],
+    operationId: "createMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully created conversation",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Conversation already exists",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to create conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  updateConversation: {
+    method: "patch" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Update conversation",
+    description: "Update an existing conversation in memory storage.",
+    tags: ["Memory"],
+    operationId: "updateMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully updated conversation",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  deleteConversation: {
+    method: "delete" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Delete conversation",
+    description: "Delete a conversation and its messages from memory storage.",
+    tags: ["Memory"],
+    operationId: "deleteMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully deleted conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to delete conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  cloneConversation: {
+    method: "post" as const,
+    path: "/api/memory/conversations/:conversationId/clone",
+    summary: "Clone conversation",
+    description: "Create a copy of a conversation, optionally including messages.",
+    tags: ["Memory"],
+    operationId: "cloneMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully cloned conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Conversation already exists",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to clone conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  updateWorkingMemory: {
+    method: "post" as const,
+    path: "/api/memory/conversations/:conversationId/working-memory",
+    summary: "Update working memory",
+    description: "Update working memory content for a conversation.",
+    tags: ["Memory"],
+    operationId: "updateMemoryWorkingMemory",
+    responses: {
+      200: {
+        description: "Successfully updated working memory",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update working memory",
+        contentType: "application/json",
+      },
+    },
+  },
+  deleteMessages: {
+    method: "post" as const,
+    path: "/api/memory/messages/delete",
+    summary: "Delete messages",
+    description: "Delete specific messages from memory storage.",
+    tags: ["Memory"],
+    operationId: "deleteMemoryMessages",
+    responses: {
+      200: {
+        description: "Successfully deleted messages",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to delete messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  searchMemory: {
+    method: "get" as const,
+    path: "/api/memory/search",
+    summary: "Search memory",
+    description: "Search memory using semantic search when available.",
+    tags: ["Memory"],
+    operationId: "searchMemory",
+    responses: {
+      200: {
+        description: "Successfully searched memory",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to search memory",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
  * All route definitions combined
  */
 export const ALL_ROUTES = {
   ...AGENT_ROUTES,
   ...WORKFLOW_ROUTES,
+  ...TOOL_ROUTES,
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
+  ...MEMORY_ROUTES,
   ...OBSERVABILITY_ROUTES,
   ...OBSERVABILITY_MEMORY_ROUTES,
 } as const;

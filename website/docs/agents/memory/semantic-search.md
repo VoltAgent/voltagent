@@ -10,27 +10,42 @@ Semantic search retrieves past messages by similarity rather than recency. It re
 ## Configuration
 
 ```ts
-import { Agent, Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { Agent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }), // or InMemoryVectorAdapter() for dev
   enableCache: true, // optional embedding cache
 });
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
+});
+```
+
+You can pass an embedding config object to set adapter options:
+
+```ts
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: {
+    model: "openai/text-embedding-3-small",
+    normalize: true,
+  },
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
 });
 ```
 
 ### Available Adapters
 
 **Embedding:**
+
+Memory accepts an embedding adapter or a provider-qualified model string such as
+`"openai/text-embedding-3-small"`.
 
 - `AiSdkEmbeddingAdapter` - Wraps any AI SDK embedding model
 
@@ -47,13 +62,17 @@ Enable semantic search per generation call:
 
 ```ts
 const result = await agent.generateText("What pricing model did we discuss?", {
-  userId: "user-123",
-  conversationId: "thread-abc",
-  semanticMemory: {
-    enabled: true, // default: auto-enabled when vector support is present
-    semanticLimit: 5, // number of similar messages to retrieve
-    semanticThreshold: 0.7, // minimum similarity score (0-1)
-    mergeStrategy: "append", // "prepend" | "append" | "interleave"
+  memory: {
+    userId: "user-123",
+    conversationId: "thread-abc",
+    options: {
+      semanticMemory: {
+        enabled: true, // default: auto-enabled when vector support is present
+        semanticLimit: 5, // number of similar messages to retrieve
+        semanticThreshold: 0.7, // minimum similarity score (0-1)
+        mergeStrategy: "append", // "prepend" | "append" | "interleave"
+      },
+    },
   },
 });
 ```
@@ -62,7 +81,7 @@ const result = await agent.generateText("What pricing model did we discuss?", {
 
 When `embedding` and `vector` adapters are configured:
 
-- Semantic search auto-enables for calls with `userId` and `conversationId`
+- Semantic search auto-enables for calls with `memory.userId` and `memory.conversationId`
 - Default `semanticLimit`: 5 messages
 - Default `semanticThreshold`: 0.7
 - Default `mergeStrategy`: `"append"` (recent messages first, then similar messages)
@@ -122,7 +141,7 @@ Enable caching to avoid re-embedding identical text:
 ```ts
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
   enableCache: true, // enable cache
   cacheSize: 1000, // max entries (default: 1000)
@@ -185,13 +204,12 @@ const vector = new ManagedMemoryVectorAdapter({
 ## Example: Full Semantic Search Setup
 
 ```ts
-import { Agent, Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
   enableCache: true,
 });
@@ -199,7 +217,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Research Assistant",
   instructions: "Help users recall past discussions and find relevant information.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 
@@ -207,11 +225,15 @@ const agent = new Agent({
 const result = await agent.generateText(
   "What did we decide about the API authentication approach?",
   {
-    userId: "user-123",
-    conversationId: "project-alpha",
-    semanticMemory: {
-      semanticLimit: 10,
-      semanticThreshold: 0.75,
+    memory: {
+      userId: "user-123",
+      conversationId: "project-alpha",
+      options: {
+        semanticMemory: {
+          semanticLimit: 10,
+          semanticThreshold: 0.75,
+        },
+      },
     },
   }
 );

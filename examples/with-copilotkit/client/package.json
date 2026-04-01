@@ -1,0 +1,30 @@
+{
+  "name": "voltagent-copilotkit-client",
+  "version": "0.0.1",
+  "dependencies": {
+    "@copilotkit/react-core": "^1.50.0",
+    "@copilotkit/react-ui": "^1.50.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.2",
+    "typescript": "^5.8.2",
+    "vite": "^7.2.7"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-copilotkit/client"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "echo \"no lint configured\"",
+    "preview": "vite preview"
+  },
+  "type": "module"
+}

@@ -1,4 +1,8 @@
-import type { A2AServerRegistry, ServerProviderDeps } from "@voltagent/core";
+import {
+  type A2AServerRegistry,
+  SERVERLESS_ENV_CONTEXT_KEY,
+  type ServerProviderDeps,
+} from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal";
 import {
@@ -22,30 +26,59 @@ import {
   type A2ARequestContext,
   A2A_ROUTES,
   AGENT_ROUTES,
+  MEMORY_ROUTES,
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
+  TOOL_ROUTES,
+  type TriggerHttpRequestContext,
   UPDATE_ROUTES,
   WORKFLOW_ROUTES,
   executeA2ARequest,
+  executeTriggerHandler,
   getConversationMessagesHandler,
+  getConversationStepsHandler,
+  handleAttachWorkflowStream,
+  handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
+  handleCloneMemoryConversation,
+  handleCreateMemoryConversation,
+  handleDeleteMemoryConversation,
+  handleDeleteMemoryMessages,
+  handleExecuteTool,
   handleExecuteWorkflow,
   handleGenerateObject,
   handleGenerateText,
   handleGetAgent,
   handleGetAgentHistory,
+  handleGetAgentWorkspaceInfo,
+  handleGetAgentWorkspaceSkill,
   handleGetAgents,
   handleGetLogs,
+  handleGetMemoryConversation,
+  handleGetMemoryWorkingMemory,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListAgentWorkspaceFiles,
+  handleListAgentWorkspaceSkills,
+  handleListMemoryConversationMessages,
+  handleListMemoryConversations,
+  handleListTools,
+  handleListWorkflowRuns,
+  handleReadAgentWorkspaceFile,
+  handleReplayWorkflow,
+  handleResumeChatStream,
   handleResumeWorkflow,
+  handleSaveMemoryMessages,
+  handleSearchMemory,
   handleStreamObject,
   handleStreamText,
   handleStreamWorkflow,
   handleSuspendWorkflow,
+  handleUpdateMemoryConversation,
+  handleUpdateMemoryWorkingMemory,
   isErrorResponse,
   mapLogResponse,
   parseJsonRpcRequest,
@@ -69,6 +102,123 @@ async function readJsonBody<T>(c: any, logger: Logger): Promise<T | undefined> {
     logger.warn("Invalid JSON body received", { error, path: c.req.path });
     return undefined;
   }
+}
+
+function parseNumber(value?: string): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function parseFloatValue(value?: string): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function parseDate(value?: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
+  getWorkingMemory?: { path: string };
+};
+
+const memoryWorkingMemoryPath =
+  (MEMORY_ROUTES as MemoryRoutesCompat).getMemoryWorkingMemory?.path ??
+  (MEMORY_ROUTES as MemoryRoutesCompat).getWorkingMemory?.path ??
+  "/api/memory/conversations/:conversationId/working-memory";
+
+function extractHeaders(
+  headers: Headers | NodeJS.Dict<string | string[] | undefined>,
+): Record<string, string> {
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  const result: Record<string, string> = {};
+  Object.entries(headers).forEach(([key, value]) => {
+    if (typeof value === "string") {
+      result[key] = value;
+    } else if (Array.isArray(value)) {
+      result[key] = value.join(", ");
+    }
+  });
+  return result;
+}
+
+type ServerlessEnv = Record<string, unknown>;
+
+function getServerlessEnv(c: { env?: unknown }): ServerlessEnv | undefined {
+  const env = c?.env;
+  if (!env || typeof env !== "object" || Array.isArray(env)) {
+    return undefined;
+  }
+  return env as ServerlessEnv;
+}
+
+function mergeContextWithServerlessEnv(
+  context: unknown,
+  env: ServerlessEnv | undefined,
+): Map<string | symbol, unknown> | undefined {
+  if (!env) {
+    return context instanceof Map ? context : undefined;
+  }
+
+  const contextMap =
+    context instanceof Map
+      ? context
+      : context && typeof context === "object" && !Array.isArray(context)
+        ? new Map(Object.entries(context as Record<string, unknown>))
+        : new Map<string | symbol, unknown>();
+
+  if (!contextMap.has(SERVERLESS_ENV_CONTEXT_KEY)) {
+    contextMap.set(SERVERLESS_ENV_CONTEXT_KEY, env);
+  }
+
+  return contextMap;
+}
+
+function withServerlessEnvInOptions(body: any, env: ServerlessEnv | undefined) {
+  if (!env || !body || typeof body !== "object") {
+    return body;
+  }
+
+  const options =
+    body.options && typeof body.options === "object" && !Array.isArray(body.options)
+      ? body.options
+      : {};
+
+  const context = mergeContextWithServerlessEnv(options.context, env);
+
+  return {
+    ...body,
+    options: {
+      ...options,
+      context: context ?? options.context,
+    },
+  };
+}
+
+function withServerlessEnvInContext(body: any, env: ServerlessEnv | undefined) {
+  if (!env || !body || typeof body !== "object") {
+    return body;
+  }
+
+  const context = mergeContextWithServerlessEnv(body.context, env);
+
+  return {
+    ...body,
+    context: context ?? body.context,
+  };
 }
 
 function parseContextCandidate(candidate: unknown): A2ARequestContext | undefined {
@@ -139,7 +289,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleGenerateText(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleGenerateText(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -150,7 +307,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleStreamText(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleStreamText(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return response;
   });
 
@@ -161,7 +325,27 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    return handleChatStream(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    return handleChatStream(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
+  });
+
+  app.get(AGENT_ROUTES.resumeChatStream.path, async (c) => {
+    const agentId = c.req.param("id");
+    const conversationId = c.req.param("conversationId");
+    const userId = c.req.query("userId");
+    if (!agentId || !conversationId) {
+      return c.json({ error: "Missing agent or conversation id parameter" }, 400);
+    }
+    if (!userId) {
+      return c.json({ error: "Missing userId parameter" }, 400);
+    }
+    return handleResumeChatStream(agentId, conversationId, deps, logger, userId);
   });
 
   app.post(AGENT_ROUTES.generateObject.path, async (c) => {
@@ -171,7 +355,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleGenerateObject(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleGenerateObject(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -182,7 +373,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    return handleStreamObject(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    return handleStreamObject(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
   });
 
   app.get(AGENT_ROUTES.getAgentHistory.path, async (c) => {
@@ -191,6 +389,47 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
     const limit = Number.parseInt(c.req.query("limit") || "10", 10);
     const response = await handleGetAgentHistory(agentId, page, limit, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.get(AGENT_ROUTES.getWorkspace.path, async (c) => {
+    const agentId = c.req.param("id");
+    const response = await handleGetAgentWorkspaceInfo(agentId, deps, logger);
+    return c.json(response, response.success ? 200 : response.httpStatus || 500);
+  });
+
+  app.get(AGENT_ROUTES.listWorkspaceFiles.path, async (c) => {
+    const agentId = c.req.param("id");
+    const path = c.req.query("path") || undefined;
+    const response = await handleListAgentWorkspaceFiles(agentId, { path }, deps, logger);
+    return c.json(response, response.success ? 200 : response.httpStatus || 500);
+  });
+
+  app.get(AGENT_ROUTES.readWorkspaceFile.path, async (c) => {
+    const agentId = c.req.param("id");
+    const path = c.req.query("path") || undefined;
+    const offset = c.req.query("offset");
+    const limit = c.req.query("limit");
+    const response = await handleReadAgentWorkspaceFile(
+      agentId,
+      { path, offset, limit },
+      deps,
+      logger,
+    );
+    return c.json(response, response.success ? 200 : response.httpStatus || 500);
+  });
+
+  app.get(AGENT_ROUTES.listWorkspaceSkills.path, async (c) => {
+    const agentId = c.req.param("id");
+    const refresh = c.req.query("refresh");
+    const response = await handleListAgentWorkspaceSkills(agentId, { refresh }, deps, logger);
+    return c.json(response, response.success ? 200 : response.httpStatus || 500);
+  });
+
+  app.get(AGENT_ROUTES.getWorkspaceSkill.path, async (c) => {
+    const agentId = c.req.param("id");
+    const skillId = c.req.param("skillId");
+    const response = await handleGetAgentWorkspaceSkill(agentId, skillId, deps, logger);
+    return c.json(response, response.success ? 200 : response.httpStatus || 500);
   });
 }
 
@@ -212,7 +451,13 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
-    const response = await handleExecuteWorkflow(workflowId, body, deps, logger);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleExecuteWorkflow(
+      workflowId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -223,10 +468,46 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
       return c.json({ error: "Invalid JSON body" }, 400);
     }
 
-    const response = await handleStreamWorkflow(workflowId, body, deps, logger);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleStreamWorkflow(
+      workflowId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+    );
 
     if (isErrorResponse(response)) {
       return c.json(response, 500);
+    }
+
+    return c.body(response, 200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+  });
+
+  app.get(WORKFLOW_ROUTES.attachWorkflowStream.path, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    const query = c.req.query();
+    const lastEventId = c.req.header("last-event-id");
+
+    const response = await handleAttachWorkflowStream(
+      workflowId,
+      executionId,
+      {
+        fromSequence: query.fromSequence,
+        lastEventId,
+      },
+      deps,
+      logger,
+    );
+
+    if (isErrorResponse(response)) {
+      const status: 404 | 409 | 500 =
+        response.httpStatus === 404 || response.httpStatus === 409 ? response.httpStatus : 500;
+      return c.json(response, status);
     }
 
     return c.body(response, 200, {
@@ -243,7 +524,35 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
-    return c.json(response, response.success ? 200 : 500);
+    if (response.success) {
+      return c.json(response, 200);
+    }
+    const errorMessage = response.error || "";
+    const status = errorMessage.includes("not found")
+      ? 404
+      : errorMessage.includes("not supported") || errorMessage.includes("suspendable")
+        ? 400
+        : 500;
+    return c.json(response, status);
+  });
+
+  app.post(WORKFLOW_ROUTES.cancelWorkflow.path, async (c) => {
+    const executionId = c.req.param("executionId");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCancelWorkflow(executionId, body, deps, logger);
+    if (response.success) {
+      return c.json(response, 200);
+    }
+    const errorMessage = response.error || "";
+    const status = errorMessage.includes("not found")
+      ? 404
+      : errorMessage.includes("not cancellable")
+        ? 409
+        : 500;
+    return c.json(response, status);
   });
 
   app.post(WORKFLOW_ROUTES.resumeWorkflow.path, async (c) => {
@@ -257,11 +566,55 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     return c.json(response, response.success ? 200 : 500);
   });
 
+  app.post(WORKFLOW_ROUTES.replayWorkflow.path, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleReplayWorkflow(workflowId, executionId, body, deps, logger);
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(WORKFLOW_ROUTES.listWorkflowRuns.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    const status = response.success ? 200 : response.error?.includes("not found") ? 404 : 500;
+    return c.json(response, status);
+  });
+
   app.get(WORKFLOW_ROUTES.getWorkflowState.path, async (c) => {
     const workflowId = c.req.param("id");
     const executionId = c.req.param("executionId");
     const response = await handleGetWorkflowState(workflowId, executionId, deps, logger);
     const status = response.success ? 200 : response.error?.includes("not found") ? 404 : 500;
+    return c.json(response, status);
+  });
+}
+
+export function registerToolRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  app.get(TOOL_ROUTES.listTools.path, async (c) => {
+    const response = await handleListTools(deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  app.post(TOOL_ROUTES.executeTool.path, async (c) => {
+    const toolName = c.req.param("name");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleExecuteTool(
+      toolName,
+      withServerlessEnvInContext(body, runtimeEnv),
+      deps,
+      logger,
+    );
+    const status = response.success ? 200 : response.httpStatus || 500;
     return c.json(response, status);
   });
 }
@@ -300,6 +653,159 @@ export function registerUpdateRoutes(app: Hono, deps: ServerProviderDeps, logger
     const body = (await readJsonBody<{ packageName?: string }>(c, logger)) ?? {};
     const response = await handleInstallUpdates(body.packageName, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+}
+
+export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  app.get(MEMORY_ROUTES.listConversations.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleListMemoryConversations(deps, {
+      agentId: query.agentId,
+      resourceId: query.resourceId,
+      userId: query.userId,
+      limit: parseNumber(query.limit),
+      offset: parseNumber(query.offset),
+      orderBy: query.orderBy as "created_at" | "updated_at" | "title" | undefined,
+      orderDirection: query.orderDirection as "ASC" | "DESC" | undefined,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.getConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleGetMemoryConversation(deps, conversationId, {
+      agentId: query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.listMessages.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleListMemoryConversationMessages(deps, conversationId, {
+      agentId: query.agentId,
+      limit: parseNumber(query.limit),
+      before: parseDate(query.before),
+      after: parseDate(query.after),
+      roles: query.roles ? query.roles.split(",") : undefined,
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(memoryWorkingMemoryPath, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleGetMemoryWorkingMemory(deps, conversationId, {
+      agentId: query.agentId,
+      scope: query.scope === "user" ? "user" : "conversation",
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.saveMessages.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleSaveMemoryMessages(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.createConversation.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCreateMemoryConversation(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.patch(MEMORY_ROUTES.updateConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleUpdateMemoryConversation(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.delete(MEMORY_ROUTES.deleteConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleDeleteMemoryConversation(deps, conversationId, {
+      agentId: query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.cloneConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCloneMemoryConversation(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.updateWorkingMemory.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleUpdateMemoryWorkingMemory(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.deleteMessages.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleDeleteMemoryMessages(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.searchMemory.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleSearchMemory(deps, {
+      agentId: query.agentId,
+      searchQuery: query.searchQuery,
+      limit: parseNumber(query.limit),
+      threshold: parseFloatValue(query.threshold),
+      conversationId: query.conversationId,
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 }
 
@@ -416,6 +922,26 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
     return c.json(result, 200);
   });
 
+  app.get(OBSERVABILITY_MEMORY_ROUTES.getConversationSteps.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    logger.debug(`[serverless] GET /observability/memory/conversations/${conversationId}/steps`, {
+      query,
+    });
+
+    const result = await getConversationStepsHandler(deps, conversationId, {
+      agentId: query.agentId,
+      limit: query.limit ? Number.parseInt(query.limit, 10) : undefined,
+      operationId: query.operationId,
+    });
+
+    if (!result.success) {
+      return c.json(result, result.error === "Conversation not found" ? 404 : 500);
+    }
+
+    return c.json(result, 200);
+  });
+
   app.get(OBSERVABILITY_MEMORY_ROUTES.getWorkingMemory.path, async (c) => {
     const query = c.req.query();
     logger.debug("[serverless] GET /observability/memory/working-memory", { query });
@@ -442,6 +968,53 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
     }
 
     return c.json(result, 200);
+  });
+}
+
+export function registerTriggerRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  const triggers = deps.triggerRegistry.list();
+  triggers.forEach((trigger) => {
+    const method = trigger.method ?? "post";
+    const handler = async (c: any) => {
+      const body = await readJsonBody<unknown>(c, logger);
+      const queryParams = c.req.query();
+      const context: TriggerHttpRequestContext = {
+        body,
+        headers: extractHeaders(c.req.raw?.headers ?? new Headers()),
+        query:
+          queryParams && typeof queryParams === "object"
+            ? { ...queryParams }
+            : ({} as Record<string, string>),
+        raw: c.req.raw,
+      };
+
+      const response = await executeTriggerHandler(trigger, context, deps, logger);
+
+      // Ensure spans are flushed (using waitUntil if available)
+      // This is critical for serverless environments to avoid orphan spans
+      const observability = deps.observability as any;
+      if (observability?.flushOnFinish) {
+        await observability.flushOnFinish();
+      } else if (observability?.forceFlush) {
+        await observability.forceFlush();
+      }
+
+      return c.json(response.body ?? { success: true }, response.status, response.headers);
+    };
+
+    if (typeof (app as any)[method] !== "function") {
+      logger.warn(
+        `Skipping trigger ${trigger.name}: method ${method} is not supported in the serverless adapter`,
+      );
+      return;
+    }
+
+    (app as any)[method](trigger.path, handler);
+    logger.info("[volt] Trigger route registered", {
+      trigger: trigger.name,
+      method: method.toUpperCase(),
+      path: trigger.path,
+    });
   });
 }
 

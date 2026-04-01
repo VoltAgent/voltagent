@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import { describe, expectTypeOf, it } from "vitest";
+import type { OperationContext } from "../agent/types";
 import {
   type Conversation,
   ConversationAlreadyExistsError,
@@ -24,6 +25,7 @@ describe("Memory V2 Type System", () => {
     addMessages: async () => {},
     getMessages: async () => [],
     clearMessages: async () => {},
+    deleteMessages: async () => {},
     createConversation: async () => ({
       id: "test",
       resourceId: "res",
@@ -37,6 +39,7 @@ describe("Memory V2 Type System", () => {
     getConversations: async () => [],
     getConversationsByUserId: async () => [],
     queryConversations: async () => [],
+    countConversations: async () => 0,
     updateConversation: async () => ({
       id: "test",
       resourceId: "res",
@@ -51,6 +54,7 @@ describe("Memory V2 Type System", () => {
     setWorkingMemory: async () => {},
     deleteWorkingMemory: async () => {},
     getWorkflowState: async () => null,
+    queryWorkflowRuns: async () => [],
     setWorkflowState: async () => {},
     updateWorkflowState: async () => {},
     getSuspendedWorkflowStates: async () => [],
@@ -87,6 +91,28 @@ describe("Memory V2 Type System", () => {
       const memory = new Memory({
         storage: mockStorageAdapter,
         embedding: mockEmbeddingAdapter,
+      });
+
+      expectTypeOf(memory).toMatchTypeOf<Memory>();
+    });
+
+    it("should accept embedding model string", () => {
+      const memory = new Memory({
+        storage: mockStorageAdapter,
+        embedding: "openai/text-embedding-3-small",
+      });
+
+      expectTypeOf(memory).toMatchTypeOf<Memory>();
+    });
+
+    it("should accept embedding config object", () => {
+      const memory = new Memory({
+        storage: mockStorageAdapter,
+        embedding: {
+          model: "openai/text-embedding-3-small",
+          normalize: true,
+          maxBatchSize: 50,
+        },
       });
 
       expectTypeOf(memory).toMatchTypeOf<Memory>();
@@ -129,14 +155,18 @@ describe("Memory V2 Type System", () => {
     it("should enforce UIMessage type for addMessage", () => {
       const adapter: StorageAdapter = mockStorageAdapter;
 
-      expectTypeOf(adapter.addMessage).parameters.toMatchTypeOf<[UIMessage, string, string]>();
+      expectTypeOf(adapter.addMessage).parameters.toMatchTypeOf<
+        [UIMessage, string, string, OperationContext?]
+      >();
       expectTypeOf(adapter.addMessage).returns.toMatchTypeOf<Promise<void>>();
     });
 
     it("should enforce UIMessage array for addMessages", () => {
       const adapter: StorageAdapter = mockStorageAdapter;
 
-      expectTypeOf(adapter.addMessages).parameters.toMatchTypeOf<[UIMessage[], string, string]>();
+      expectTypeOf(adapter.addMessages).parameters.toMatchTypeOf<
+        [UIMessage[], string, string, OperationContext?]
+      >();
       expectTypeOf(adapter.addMessages).returns.toMatchTypeOf<Promise<void>>();
     });
 
@@ -144,6 +174,15 @@ describe("Memory V2 Type System", () => {
       const adapter: StorageAdapter = mockStorageAdapter;
 
       expectTypeOf(adapter.getMessages).returns.toMatchTypeOf<Promise<UIMessage[]>>();
+    });
+
+    it("should enforce messageIds for deleteMessages", () => {
+      const adapter: StorageAdapter = mockStorageAdapter;
+
+      expectTypeOf(adapter.deleteMessages).parameters.toMatchTypeOf<
+        [string[], string, string, OperationContext?]
+      >();
+      expectTypeOf(adapter.deleteMessages).returns.toMatchTypeOf<Promise<void>>();
     });
 
     it("should enforce Conversation type for createConversation", () => {
@@ -162,6 +201,15 @@ describe("Memory V2 Type System", () => {
         [ConversationQueryOptions]
       >();
       expectTypeOf(adapter.queryConversations).returns.toMatchTypeOf<Promise<Conversation[]>>();
+    });
+
+    it("should return number from countConversations", () => {
+      const adapter: StorageAdapter = mockStorageAdapter;
+
+      expectTypeOf(adapter.countConversations).parameters.toMatchTypeOf<
+        [ConversationQueryOptions]
+      >();
+      expectTypeOf(adapter.countConversations).returns.toMatchTypeOf<Promise<number>>();
     });
   });
 
@@ -238,6 +286,18 @@ describe("Memory V2 Type System", () => {
       const memory = new Memory({ storage: mockStorageAdapter });
 
       expectTypeOf(memory.clearMessages).returns.toMatchTypeOf<Promise<void>>();
+    });
+
+    it("should return void for deleteMessages", () => {
+      const memory = new Memory({ storage: mockStorageAdapter });
+
+      expectTypeOf(memory.deleteMessages).returns.toMatchTypeOf<Promise<void>>();
+    });
+
+    it("should return number for countConversations", () => {
+      const memory = new Memory({ storage: mockStorageAdapter });
+
+      expectTypeOf(memory.countConversations).returns.toMatchTypeOf<Promise<number>>();
     });
   });
 

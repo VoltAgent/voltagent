@@ -1,4 +1,3 @@
-import type { Conversation } from "@voltagent/core";
 import type { UIMessage } from "ai";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PostgreSQLMemoryAdapter } from "./memory-adapter";
@@ -295,6 +294,10 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
         workflowId: "test-workflow",
         workflowName: "Test Workflow",
         status: "running" as const,
+        input: { requestId: "r-1" },
+        context: [["tenantId", "acme"]] as Array<[string, unknown]>,
+        workflowState: { approved: false },
+        events: [{ id: "e1", type: "workflow-start", startTime: new Date().toISOString() }],
         metadata: { test: true },
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -307,6 +310,10 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
       expect(retrieved?.id).toBe(state.id);
       expect(retrieved?.workflowId).toBe(state.workflowId);
       expect(retrieved?.status).toBe(state.status);
+      expect(retrieved?.input).toEqual(state.input);
+      expect(retrieved?.context).toEqual(state.context);
+      expect(retrieved?.workflowState).toEqual(state.workflowState);
+      expect(retrieved?.events).toEqual(state.events);
     });
 
     it("should update workflow state", async () => {
@@ -341,6 +348,10 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
           workflowId,
           workflowName: "Test Workflow",
           status: "suspended" as const,
+          workflowState: { phase: "waiting" },
+          events: [{ id: "e-s1", type: "step-start", startTime: new Date().toISOString() }],
+          output: { partial: true },
+          cancellation: { cancelledAt: new Date(), reason: "manual" },
           suspension: {
             suspendedAt: new Date(),
             stepIndex: 1,
@@ -379,6 +390,13 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
       // Should only return suspended states
       expect(suspended.length).toBeGreaterThanOrEqual(2);
       expect(suspended.every((s) => s.status === "suspended")).toBe(true);
+      expect(suspended[0]?.events).toEqual(states[0].events);
+      expect(suspended[0]?.output).toEqual(states[0].output);
+      expect(suspended[0]?.cancellation).toEqual({
+        reason: states[0]?.cancellation?.reason,
+        cancelledAt: states[0]?.cancellation?.cancelledAt?.toISOString(),
+      });
+      expect(suspended[0]?.workflowState).toEqual(states[0].workflowState);
     });
   });
 

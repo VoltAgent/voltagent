@@ -25,7 +25,6 @@ Scope options:
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
@@ -49,7 +48,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -99,6 +98,9 @@ When working memory is enabled, the agent:
    - `get_working_memory()` - Retrieve current content
    - `update_working_memory(content)` - Update content (validated against schema if configured)
    - `clear_working_memory()` - Clear content
+
+If you run an operation with `options.memory.options.readOnly: true`, the agent only exposes
+`get_working_memory()` and skips write operations.
 
 The agent manages working memory proactively based on conversation flow.
 
@@ -206,7 +208,6 @@ All official adapters (LibSQL, Postgres, Supabase, Managed Memory) support both 
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const userPreferencesSchema = z.object({
@@ -228,20 +229,24 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Personal Assistant",
   instructions: "Adapt responses based on user preferences stored in working memory.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 
 // First conversation
 await agent.generateText("I prefer casual communication and I'm into AI and music.", {
-  userId: "user-123",
-  conversationId: "conv-1",
+  memory: {
+    userId: "user-123",
+    conversationId: "conv-1",
+  },
 });
 
 // Different conversation - agent remembers user preferences
 await agent.generateText("What should I learn next?", {
-  userId: "user-123",
-  conversationId: "conv-2", // different thread
+  memory: {
+    userId: "user-123",
+    conversationId: "conv-2", // different thread
+  },
 });
 ```
 
@@ -269,19 +274,23 @@ const projectMemory = new Memory({
 const agent = new Agent({
   name: "Project Manager",
   instructions: "Track project context and help with sprint planning.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: projectMemory,
 });
 
 // Each project gets its own working memory
 await agent.generateText("Let's plan the e-commerce project using Next.js.", {
-  userId: "user-123",
-  conversationId: "project-ecommerce",
+  memory: {
+    userId: "user-123",
+    conversationId: "project-ecommerce",
+  },
 });
 
 await agent.generateText("For the analytics dashboard, we'll use React and D3.", {
-  userId: "user-123",
-  conversationId: "project-analytics",
+  memory: {
+    userId: "user-123",
+    conversationId: "project-analytics",
+  },
 });
 ```
 

@@ -12,7 +12,7 @@ import { isActiveSidebarItem } from "@docusaurus/theme-common/internal";
 import type { Props } from "@theme/DocSidebarItem/Link";
 import IconExternalLink from "@theme/Icon/ExternalLink";
 import clsx from "clsx";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import { resolveSidebarBadge } from "../../utils/sidebarBadge";
 import styles from "./styles.module.css";
@@ -29,9 +29,20 @@ export default function DocSidebarItemLink({
   const isActive = isActiveSidebarItem(item, activePath);
   const isInternalLink = isInternalUrl(href);
   const badge = resolveSidebarBadge(customProps?.badge);
+  const linkRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (isActive && linkRef.current) {
+      linkRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [isActive]);
 
   return (
     <li
+      ref={linkRef}
       className={clsx(
         ThemeClassNames.docs.docSidebarItemLink,
         ThemeClassNames.docs.docSidebarItemLinkLevel(level),

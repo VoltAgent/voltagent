@@ -41,7 +41,6 @@ pnpm add @voltagent/postgres
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
-import { openai } from "@ai-sdk/openai";
 
 // Using connection string
 const memory = new Memory({
@@ -67,7 +66,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -132,15 +131,14 @@ See [Working Memory](./working-memory.md) for configuration details.
 Store vector embeddings directly in PostgreSQL for semantic search (no extensions required):
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new PostgreSQLMemoryAdapter({
     connection: process.env.DATABASE_URL!,
   }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new PostgresVectorAdapter({
     connection: process.env.DATABASE_URL!,
   }),
@@ -195,7 +193,6 @@ See [Semantic Search](./semantic-search.md) for detailed configuration and usage
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new PostgreSQLMemoryAdapter({
@@ -213,7 +210,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Production Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```

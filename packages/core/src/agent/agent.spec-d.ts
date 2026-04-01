@@ -1,14 +1,16 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { LanguageModel, UIMessage } from "ai";
-import { MockLanguageModelV2 } from "ai/test";
+import type { FinishReason, LanguageModelUsage, UIMessage } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
+import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
 import { Tool, type Toolkit, createTool } from "../tool";
 import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValue, DynamicValueOptions } from "../voltops/types";
+import type { Workspace } from "../workspace";
 import {
   Agent,
   type AgentHooks,
@@ -19,6 +21,8 @@ import {
 } from "./agent";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
+  AgentModelReference,
+  AgentModelValue,
   AgentOperationOutput,
   AgentOptions,
   InstructionsDynamicValue,
@@ -38,17 +42,19 @@ import type {
 
 describe("Agent Type System", () => {
   // Realistic mocks using AI SDK patterns
-  const mockModel = new MockLanguageModelV2({
+  const finishReason = { unified: "stop", raw: "stop" } as const;
+  const providerUsage = {
+    inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
+    outputTokens: { total: 20, text: 20, reasoning: 0 },
+  };
+  const mockModel = new MockLanguageModelV3({
     doGenerate: async () => ({
-      finishReason: "stop" as const,
-      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      finishReason,
+      usage: providerUsage,
       content: [{ type: "text" as const, text: "test response" }],
       warnings: [],
     }),
-    doStream: async () => ({
-      stream: {} as any,
-      warnings: [],
-    }),
+    doStream: async () => ({ stream: {} as ReadableStream<any> }),
   });
 
   const mockVoltOpsClient = {} as VoltOpsClient;
@@ -66,6 +72,16 @@ describe("Agent Type System", () => {
         name: "Test Agent",
         instructions: "Test instructions",
         model: mockModel,
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should accept provider/model string models", () => {
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: "openai/gpt-4o-mini",
       });
 
       expectTypeOf(agent).toMatchTypeOf<Agent>();
@@ -209,7 +225,7 @@ describe("Agent Type System", () => {
       });
 
       // Dynamic model function
-      const dynamicModelFn: DynamicValue<LanguageModel> = async (options) => {
+      const dynamicModelFn: DynamicValue<AgentModelReference> = async (options) => {
         expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
         return mockModel;
       };
@@ -220,8 +236,18 @@ describe("Agent Type System", () => {
         model: dynamicModelFn,
       });
 
+      const dynamicStringModelFn: DynamicValue<AgentModelReference> = async () =>
+        "openai/gpt-4o-mini";
+
+      const dynamicStringAgent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: dynamicStringModelFn,
+      });
+
       expectTypeOf(staticAgent).toMatchTypeOf<Agent>();
       expectTypeOf(dynamicAgent).toMatchTypeOf<Agent>();
+      expectTypeOf(dynamicStringAgent).toMatchTypeOf<Agent>();
     });
     it("should handle InstructionsDynamicValue", () => {
       // Static string
@@ -245,15 +271,29 @@ describe("Agent Type System", () => {
 
     it("should handle ModelDynamicValue", () => {
       // Static model
-      const staticModel: ModelDynamicValue<string> = "gpt-4o-mini";
-      expectTypeOf(staticModel).toMatchTypeOf<ModelDynamicValue<string>>();
+      const staticModel: ModelDynamicValue<ModelRouterModelId> = "openai/gpt-4o-mini";
+      expectTypeOf(staticModel).toMatchTypeOf<ModelDynamicValue<ModelRouterModelId>>();
 
       // Dynamic model
-      const dynamicModel: ModelDynamicValue<string> = async (options) => {
+      const dynamicModel: ModelDynamicValue<ModelRouterModelId> = async (options) => {
         expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
-        return "gpt-4o-mini";
+        return "openai/gpt-4o-mini";
       };
-      expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<string>>();
+      expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<ModelRouterModelId>>();
+    });
+
+    it("should handle AgentModelValue", () => {
+      const staticModel: AgentModelValue = "openai/gpt-4o-mini";
+      expectTypeOf(staticModel).toMatchTypeOf<AgentModelValue>();
+
+      const dynamicModel: AgentModelValue = async () => mockModel;
+      expectTypeOf(dynamicModel).toMatchTypeOf<AgentModelValue>();
+
+      const fallbackModels: AgentModelValue = [
+        { model: "openai/gpt-4o-mini", maxRetries: 2 },
+        { model: async () => mockModel, enabled: false },
+      ];
+      expectTypeOf(fallbackModels).toMatchTypeOf<AgentModelValue>();
     });
 
     it("should handle ToolsDynamicValue", () => {
@@ -372,12 +412,37 @@ describe("Agent Type System", () => {
   describe("Options Type Tests", () => {
     it("should distinguish PublicGenerateOptions from InternalGenerateOptions", () => {
       const publicOptions: PublicGenerateOptions = {
-        conversationId: "123",
-        userId: "user-123",
-        contextLimit: 1000,
+        memory: {
+          conversationId: "123",
+          userId: "user-123",
+          options: {
+            contextLimit: 1000,
+            readOnly: true,
+            semanticMemory: {
+              enabled: true,
+              semanticLimit: 3,
+            },
+            conversationPersistence: {
+              mode: "step",
+            },
+          },
+        },
         maxSteps: 5,
         signal: new AbortSignal(),
         context: new Map(),
+      };
+
+      const legacyOptions: PublicGenerateOptions = {
+        conversationId: "legacy-conversation",
+        userId: "legacy-user",
+        contextLimit: 250,
+        semanticMemory: {
+          enabled: true,
+          semanticThreshold: 0.75,
+        },
+        conversationPersistence: {
+          mode: "finish",
+        },
       };
 
       const internalOptions: InternalGenerateOptions = {
@@ -392,6 +457,7 @@ describe("Agent Type System", () => {
       publicOptions.operationContext;
 
       expectTypeOf(publicOptions).toMatchTypeOf<PublicGenerateOptions>();
+      expectTypeOf(legacyOptions).toMatchTypeOf<PublicGenerateOptions>();
       expectTypeOf(internalOptions).toMatchTypeOf<InternalGenerateOptions>();
     });
 
@@ -414,9 +480,29 @@ describe("Agent Type System", () => {
         onError: async (error) => {
           expectTypeOf(error).toEqualTypeOf<unknown>();
         },
+        openai: {
+          reasoningEffort: "medium",
+          textVerbosity: "high",
+        },
+        anthropic: {
+          sendReasoning: true,
+          cacheControl: { type: "ephemeral" },
+        },
+        google: {
+          thinkingConfig: {
+            thinkingBudget: 1024,
+          },
+        },
+        xai: {
+          reasoningEffort: "medium",
+        },
       };
 
       expectTypeOf(providerOptions).toMatchTypeOf<ProviderOptions>();
+      expectTypeOf(providerOptions.openai).not.toBeAny();
+      expectTypeOf(providerOptions.anthropic).not.toBeAny();
+      expectTypeOf(providerOptions.google).not.toBeAny();
+      expectTypeOf(providerOptions.xai).not.toBeAny();
     });
 
     it("should validate SupervisorConfig", () => {
@@ -487,6 +573,10 @@ describe("Agent Type System", () => {
       expectTypeOf(context).toEqualTypeOf<UserContext>();
       expectTypeOf(context.get("key")).toEqualTypeOf<unknown>();
     });
+
+    it("should expose optional workspace on OperationContext", () => {
+      expectTypeOf<OperationContext["workspace"]>().toEqualTypeOf<Workspace | undefined>();
+    });
   });
 
   describe("Hook Type Tests", () => {
@@ -512,6 +602,18 @@ describe("Agent Type System", () => {
         onToolEnd: async ({ context, tool: _tool, output: _output, error: _error }) => {
           expectTypeOf(context).toMatchTypeOf<OperationContext>();
           // tool/output/error types are intentionally flexible
+          return { output: "override" };
+        },
+        onToolError: async ({
+          context,
+          tool: _tool,
+          args: _args,
+          error: _error,
+          originalError,
+        }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          expectTypeOf(originalError).toMatchTypeOf<Error>();
+          return { output: { error: true } };
         },
       };
 
@@ -893,8 +995,8 @@ describe("Agent Type System", () => {
     });
 
     it("should reject invalid dynamic value types", () => {
-      // @ts-expect-error - dynamic model must return LanguageModel
-      const _invalidDynamicModel: DynamicValue<LanguageModel> = async () => "not-a-model";
+      // @ts-expect-error - dynamic model must return LanguageModel or provider/model string
+      const _invalidDynamicModel: DynamicValue<AgentModelReference> = async () => 123;
 
       // @ts-expect-error - dynamic instructions must return string or PromptContent
       const _invalidDynamicInstructions: InstructionsDynamicValue = async () => 123;
@@ -1005,16 +1107,8 @@ describe("Agent Type System", () => {
 
       // Should have AI SDK compatible properties
       expectTypeOf(result.text).toEqualTypeOf<string>();
-      expectTypeOf(result.usage).toEqualTypeOf<{
-        inputTokens: number | undefined;
-        outputTokens: number | undefined;
-        totalTokens: number | undefined;
-        reasoningTokens?: number | undefined;
-        cachedInputTokens?: number | undefined;
-      }>();
-      expectTypeOf(result.finishReason).toEqualTypeOf<
-        "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown"
-      >();
+      expectTypeOf(result.usage).toEqualTypeOf<LanguageModelUsage>();
+      expectTypeOf(result.finishReason).toEqualTypeOf<FinishReason>();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 

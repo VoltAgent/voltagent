@@ -5,13 +5,19 @@
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
+import type { OperationContext } from "../agent/types";
+import { AiSdkEmbeddingAdapter } from "./adapters/embedding/ai-sdk";
 import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } from "./errors";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
   Document,
   EmbeddingAdapter,
+  EmbeddingAdapterConfig,
+  EmbeddingAdapterInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   MemoryConfig,
   MemoryStorageMetadata,
@@ -19,12 +25,49 @@ import type {
   SearchResult,
   StorageAdapter,
   VectorAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryConfig,
   WorkingMemorySummary,
   WorkingMemoryUpdateOptions,
 } from "./types";
 import { BatchEmbeddingCache } from "./utils/cache";
+
+const isEmbeddingAdapter = (value: EmbeddingAdapterInput): value is EmbeddingAdapter =>
+  typeof value === "object" &&
+  value !== null &&
+  "embed" in value &&
+  typeof (value as EmbeddingAdapter).embed === "function" &&
+  "embedBatch" in value &&
+  typeof (value as EmbeddingAdapter).embedBatch === "function";
+
+const isEmbeddingAdapterConfig = (value: EmbeddingAdapterInput): value is EmbeddingAdapterConfig =>
+  typeof value === "object" && value !== null && "model" in value && !isEmbeddingAdapter(value);
+
+const VECTOR_CLEAR_CONVERSATION_PAGE_SIZE = 200;
+
+const resolveEmbeddingAdapter = (
+  embedding?: EmbeddingAdapterInput,
+): EmbeddingAdapter | undefined => {
+  if (!embedding) {
+    return undefined;
+  }
+
+  if (isEmbeddingAdapter(embedding)) {
+    return embedding;
+  }
+
+  if (typeof embedding === "string") {
+    return new AiSdkEmbeddingAdapter(embedding);
+  }
+
+  if (isEmbeddingAdapterConfig(embedding)) {
+    const { model, ...options } = embedding;
+    return new AiSdkEmbeddingAdapter(model, options);
+  }
+
+  return new AiSdkEmbeddingAdapter(embedding);
+};
 
 /**
  * Memory Class
@@ -36,6 +79,7 @@ export class Memory {
   private readonly vector?: VectorAdapter;
   private embeddingCache?: BatchEmbeddingCache;
   private readonly workingMemoryConfig?: WorkingMemoryConfig;
+  private readonly titleGenerationConfig?: MemoryConfig["generateTitle"];
 
   // Internal properties for Agent integration
   private resourceId?: string;
@@ -43,9 +87,10 @@ export class Memory {
 
   constructor(options: MemoryConfig) {
     this.storage = options.storage;
-    this.embedding = options.embedding;
+    this.embedding = resolveEmbeddingAdapter(options.embedding);
     this.vector = options.vector;
     this.workingMemoryConfig = options.workingMemory;
+    this.titleGenerationConfig = options.generateTitle;
 
     // Initialize embedding cache if enabled
     if (options.enableCache && this.embedding) {
@@ -67,8 +112,9 @@ export class Memory {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
-    return this.storage.getMessages(userId, conversationId, options);
+    context?: OperationContext,
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
+    return this.storage.getMessages(userId, conversationId, options, context);
   }
 
   /**
@@ -78,35 +124,105 @@ export class Memory {
     await this.addMessage(message, userId, conversationId);
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (this.storage.saveConversationSteps) {
+      await this.storage.saveConversationSteps(steps);
+    }
+  }
+
   /**
    * Add a single message (alias for consistency with existing API)
    */
-  async addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void> {
+  async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
     // If embedding is configured, auto-embed the message
     if (this.embedding && this.vector) {
       await this.embedAndStoreMessage(message, userId, conversationId);
     }
 
-    await this.storage.addMessage(message, userId, conversationId);
+    await this.storage.addMessage(message, userId, conversationId, context);
   }
 
   /**
    * Add multiple messages in batch
    */
-  async addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void> {
+  async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
     // If embedding is configured, auto-embed the messages
     if (this.embedding && this.vector) {
       await this.embedAndStoreMessages(messages, userId, conversationId);
     }
 
-    await this.storage.addMessages(messages, userId, conversationId);
+    await this.storage.addMessages(messages, userId, conversationId, context);
   }
 
   /**
    * Clear messages for a user
    */
-  async clearMessages(userId: string, conversationId?: string): Promise<void> {
-    return this.storage.clearMessages(userId, conversationId);
+  async clearMessages(
+    userId: string,
+    conversationId?: string,
+    context?: OperationContext,
+  ): Promise<void> {
+    if (this.vector) {
+      try {
+        const vectorIds = await this.getMessageVectorIdsForClear(userId, conversationId);
+        if (vectorIds.length > 0) {
+          await this.vector.deleteBatch(vectorIds);
+        }
+      } catch (error) {
+        console.warn(
+          `Failed to delete vectors while clearing messages for user ${userId}${conversationId ? ` conversation ${conversationId}` : ""}:`,
+          error,
+        );
+      }
+    }
+
+    return this.storage.clearMessages(userId, conversationId, context);
+  }
+
+  /**
+   * Delete specific messages by ID for a conversation
+   * Adapters should delete atomically when possible; otherwise a best-effort delete may be used.
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
+    await this.storage.deleteMessages(messageIds, userId, conversationId, context);
+
+    if (this.vector && messageIds.length > 0) {
+      try {
+        const vectorIds = messageIds.map((id) => `msg_${conversationId}_${id}`);
+        await this.vector.deleteBatch(vectorIds);
+      } catch (error) {
+        console.warn(
+          `Failed to delete vectors for conversation ${conversationId} messages:`,
+          error,
+        );
+      }
+    }
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    if (!this.storage.getConversationSteps) {
+      return [];
+    }
+    return this.storage.getConversationSteps(userId, conversationId, options);
   }
 
   // ============================================================================
@@ -142,6 +258,13 @@ export class Memory {
    */
   async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     return this.storage.queryConversations(options);
+  }
+
+  /**
+   * Count conversations with the same filtering as queryConversations (ignores limit/offset)
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    return this.storage.countConversations(options);
   }
 
   /**
@@ -205,7 +328,7 @@ export class Memory {
       semanticThreshold?: number;
       mergeStrategy?: "prepend" | "append" | "interleave";
     },
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     // Get recent messages
     const recentMessages = await this.storage.getMessages(userId, conversationId, {
       limit: options?.limit,
@@ -259,22 +382,65 @@ export class Memory {
     userId: string,
     conversationId: string,
     messageIds: string[],
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     // Get all messages once and map by id to preserve the order of messageIds
     const allMessages = await this.storage.getMessages(userId, conversationId);
     const byId = new Map(allMessages.map((m) => [m.id, m] as const));
-    const ordered = messageIds.map((id) => byId.get(id)).filter((m): m is UIMessage => Boolean(m));
+    const ordered = messageIds
+      .map((id) => byId.get(id))
+      .filter((m): m is UIMessage<{ createdAt: Date }> => Boolean(m));
     return ordered;
+  }
+
+  private async getMessageVectorIdsForClear(
+    userId: string,
+    conversationId?: string,
+  ): Promise<string[]> {
+    const vectorIds = new Set<string>();
+
+    if (conversationId) {
+      const messages = await this.storage.getMessages(userId, conversationId);
+      for (const message of messages) {
+        vectorIds.add(`msg_${conversationId}_${message.id}`);
+      }
+      return Array.from(vectorIds);
+    }
+
+    const totalConversations = await this.storage.countConversations({ userId });
+    let offset = 0;
+
+    while (offset < totalConversations) {
+      const conversations = await this.storage.queryConversations({
+        userId,
+        limit: VECTOR_CLEAR_CONVERSATION_PAGE_SIZE,
+        offset,
+      });
+
+      for (const conversation of conversations) {
+        const messages = await this.storage.getMessages(userId, conversation.id);
+        for (const message of messages) {
+          vectorIds.add(`msg_${conversation.id}_${message.id}`);
+        }
+      }
+
+      if (conversations.length === 0) {
+        break;
+      }
+
+      offset += conversations.length;
+    }
+
+    return Array.from(vectorIds);
   }
 
   /**
    * Merge two arrays of messages, removing duplicates
    */
   private mergeMessages(
-    recentMessages: UIMessage[],
-    semanticMessages: UIMessage[],
+    recentMessages: UIMessage<{ createdAt: Date }>[],
+    semanticMessages: UIMessage<{ createdAt: Date }>[],
     strategy: "prepend" | "append" | "interleave" = "append",
-  ): UIMessage[] {
+  ): UIMessage<{ createdAt: Date }>[] {
     // Create a Set of message IDs from recent messages
     const recentIds = new Set(recentMessages.map((m) => m.id));
 
@@ -291,7 +457,7 @@ export class Memory {
         return [...recentMessages, ...uniqueSemanticMessages];
       case "interleave": {
         // Interleave semantic messages with recent messages
-        const merged: UIMessage[] = [];
+        const merged: UIMessage<{ createdAt: Date }>[] = [];
         const maxLength = Math.max(recentMessages.length, uniqueSemanticMessages.length);
         for (let i = 0; i < maxLength; i++) {
           if (i < uniqueSemanticMessages.length) {
@@ -882,6 +1048,7 @@ Remember:
     context?: {
       logger?: Logger;
     },
+    operationContext?: OperationContext,
   ): Promise<void> {
     if (!userId || !conversationId) return;
 
@@ -900,8 +1067,8 @@ Remember:
         });
       }
 
-      // Add message to conversation
-      await this.addMessage(message, userId, conversationId);
+      // Add message to conversation with OperationContext
+      await this.addMessage(message, userId, conversationId, operationContext);
     } catch (error) {
       // Log error
       logger?.error?.(
@@ -928,11 +1095,12 @@ Remember:
       semanticThreshold?: number;
       mergeStrategy?: "prepend" | "append" | "interleave";
     },
-  ): Promise<UIMessage[]> {
+    operationContext?: OperationContext,
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     const logger = options?.logger || this.logger;
 
     try {
-      let messages: UIMessage[] = [];
+      let messages: UIMessage<{ createdAt: Date }>[] = [];
 
       // Semantic search decision
       if (options?.useSemanticSearch && options?.currentQuery && this.hasVectorSupport()) {
@@ -949,10 +1117,15 @@ Remember:
           },
         );
       } else {
-        // Regular message retrieval
-        messages = await this.getMessages(userId, conversationId, {
-          limit: options?.limit,
-        });
+        // Regular message retrieval with OperationContext
+        messages = await this.getMessages(
+          userId,
+          conversationId,
+          {
+            limit: options?.limit,
+          },
+          operationContext,
+        );
       }
 
       logger?.debug?.(`[Memory] Read successful (${messages.length} records)`);
@@ -1006,6 +1179,13 @@ Remember:
   getStorageMetadata(): MemoryStorageMetadata {
     const adapter = this.storage?.constructor?.name || "UnknownStorageAdapter";
     return { adapter };
+  }
+
+  /**
+   * Get conversation title generation configuration
+   */
+  getTitleGenerationConfig(): MemoryConfig["generateTitle"] | undefined {
+    return this.titleGenerationConfig;
   }
 
   /**
@@ -1063,6 +1243,13 @@ Remember:
    */
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     return this.storage.getWorkflowState(executionId);
+  }
+
+  /**
+   * Query workflow states with filters
+   */
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    return this.storage.queryWorkflowRuns(query);
   }
 
   /**

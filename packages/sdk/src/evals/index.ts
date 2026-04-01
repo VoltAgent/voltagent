@@ -22,40 +22,42 @@ import type {
 
 export class VoltOpsRestClient {
   private readonly client: VoltAgentCoreAPI;
+  public readonly evals: VoltAgentCoreAPI["evals"];
 
   constructor(options: VoltAgentClientOptions) {
     this.client = new VoltAgentCoreAPI(options);
+    this.evals = this.client.evals;
   }
 
   async createEvalRun(payload: CreateEvalRunRequest = {}): Promise<EvalRunSummary> {
-    return await this.client.createEvalRun(payload);
+    return await this.client.evals.runs.create(payload);
   }
 
   async appendEvalResults(
     runId: string,
     payload: AppendEvalRunResultsRequest,
   ): Promise<EvalRunSummary> {
-    return await this.client.appendEvalResults(runId, payload);
+    return await this.client.evals.runs.appendResults(runId, payload);
   }
 
   async completeEvalRun(runId: string, payload: CompleteEvalRunRequest): Promise<EvalRunSummary> {
-    return await this.client.completeEvalRun(runId, payload);
+    return await this.client.evals.runs.complete(runId, payload);
   }
 
   async failEvalRun(runId: string, payload: FailEvalRunRequest): Promise<EvalRunSummary> {
-    return await this.client.failEvalRun(runId, payload);
+    return await this.client.evals.runs.fail(runId, payload);
   }
 
   async createEvalScorer(payload: CreateEvalScorerRequest): Promise<EvalScorerSummary> {
-    return await this.client.createEvalScorer(payload);
+    return await this.client.evals.scorers.create(payload);
   }
 
   async listDatasets(name?: string): Promise<EvalDatasetSummary[]> {
-    return await this.client.listEvalDatasets(name);
+    return await this.client.evals.datasets.list(name);
   }
 
   async getDataset(datasetId: string): Promise<EvalDatasetDetail | null> {
-    return await this.client.getEvalDataset(datasetId);
+    return await this.client.evals.datasets.get(datasetId);
   }
 
   async getDatasetByName(name: string): Promise<EvalDatasetDetail | null> {
@@ -72,11 +74,11 @@ export class VoltOpsRestClient {
     versionId: string,
     options?: ListEvalDatasetItemsOptions,
   ): Promise<EvalDatasetItemsResponse> {
-    return await this.client.listEvalDatasetItems(datasetId, versionId, options);
+    return await this.client.evals.datasets.listItems(datasetId, versionId, options);
   }
 
   async getLatestDatasetVersionId(datasetId: string): Promise<string | null> {
-    return await this.client.getLatestDatasetVersionId(datasetId);
+    return await this.client.evals.datasets.getLatestVersionId(datasetId);
   }
 
   async resolveDatasetVersionId(params: {
@@ -127,18 +129,18 @@ export class VoltOpsRestClient {
   async listExperiments(
     options: ListEvalExperimentsOptions = {},
   ): Promise<EvalExperimentSummary[]> {
-    return await this.client.listEvalExperiments(options);
+    return await this.client.evals.experiments.list(options);
   }
 
   async getExperiment(
     experimentId: string,
     options: { projectId?: string } = {},
   ): Promise<EvalExperimentDetail | null> {
-    return await this.client.getEvalExperiment(experimentId, options);
+    return await this.client.evals.experiments.get(experimentId, options);
   }
 
   async createExperiment(payload: CreateEvalExperimentRequest): Promise<EvalExperimentSummary> {
-    return await this.client.createEvalExperiment(payload);
+    return await this.client.evals.experiments.create(payload);
   }
 
   async resolveExperimentId(

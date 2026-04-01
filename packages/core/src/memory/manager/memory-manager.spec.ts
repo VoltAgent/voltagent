@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OperationContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
@@ -5,6 +6,15 @@ import { Memory } from "../../memory";
 import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory";
 import { createTestUIMessage } from "../../memory/test-utils";
 import { MemoryManager } from "./memory-manager";
+
+type EnsureConversationExistsSpyTarget = {
+  ensureConversationExists: (
+    context: OperationContext,
+    userId: string,
+    conversationId: string,
+    input?: OperationContext["input"] | UIMessage,
+  ) => Promise<boolean>;
+};
 
 // Helper function to create mock OperationContext
 function createMockOperationContext(): OperationContext {
@@ -90,6 +100,32 @@ describe("MemoryManager", () => {
       const messages = await memory.getMessages("user-1", "conv-1");
       expect(messages).toHaveLength(1);
       expect(messages[0].id).toBe("msg-1");
+    });
+
+    it("should generate a title when creating a conversation", async () => {
+      const context = createMockOperationContext();
+      context.input = "Plan a weekend trip to Rome.";
+
+      const titleGenerator = vi.fn().mockResolvedValue("Rome Weekend Plan");
+      const managerWithTitle = new MemoryManager(
+        "agent-1",
+        memory,
+        {},
+        getGlobalLogger().child({ test: true }),
+        titleGenerator,
+      );
+
+      const message = createTestUIMessage({
+        id: "msg-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Sure, let's plan it." }],
+      });
+
+      await managerWithTitle.saveMessage(context, message, "user-1", "conv-title");
+
+      const conversation = await memory.getConversation("conv-title");
+      expect(conversation?.title).toBe("Rome Weekend Plan");
+      expect(titleGenerator).toHaveBeenCalledTimes(1);
     });
 
     it("should handle errors gracefully", async () => {
@@ -189,6 +225,77 @@ describe("MemoryManager", () => {
   describe("shutdown", () => {
     it("should shutdown gracefully", async () => {
       await expect(manager.shutdown()).resolves.not.toThrow();
+    });
+  });
+
+  describe("saveConversationSteps", () => {
+    it("should create conversation automatically before persisting steps", async () => {
+      const context = createMockOperationContext();
+      context.input = "first turn";
+
+      await manager.saveConversationSteps(
+        context,
+        [
+          {
+            id: "step-1",
+            conversationId: "conv-steps-auto",
+            userId: "user-steps-auto",
+            agentId: "agent-1",
+            agentName: "Agent 1",
+            operationId: "op-1",
+            stepIndex: 0,
+            type: "text",
+            role: "assistant",
+            content: "hello",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        "user-steps-auto",
+        "conv-steps-auto",
+      );
+
+      const conversation = await memory.getConversation("conv-steps-auto");
+      expect(conversation).not.toBeNull();
+
+      const steps = await memory.getConversationSteps("user-steps-auto", "conv-steps-auto");
+      expect(steps).toHaveLength(1);
+      expect(steps[0]?.id).toBe("step-1");
+    });
+
+    it("should skip step persistence when ensuring conversation fails", async () => {
+      const context = createMockOperationContext();
+      context.input = "first turn";
+
+      const managerWithEnsureConversationExists =
+        manager as unknown as EnsureConversationExistsSpyTarget;
+      const ensureConversationExistsSpy = vi
+        .spyOn(managerWithEnsureConversationExists, "ensureConversationExists")
+        .mockResolvedValue(false);
+      const saveConversationStepsSpy = vi.spyOn(memory, "saveConversationSteps");
+
+      await manager.saveConversationSteps(
+        context,
+        [
+          {
+            id: "step-2",
+            conversationId: "conv-steps-fail",
+            userId: "user-steps-fail",
+            agentId: "agent-1",
+            agentName: "Agent 1",
+            operationId: "op-2",
+            stepIndex: 0,
+            type: "text",
+            role: "assistant",
+            content: "hello",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        "user-steps-fail",
+        "conv-steps-fail",
+      );
+
+      expect(ensureConversationExistsSpy).toHaveBeenCalledTimes(1);
+      expect(saveConversationStepsSpy).not.toHaveBeenCalled();
     });
   });
 });

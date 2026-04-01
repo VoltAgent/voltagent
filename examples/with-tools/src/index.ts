@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -15,7 +15,7 @@ const logger = createPinoLogger({
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({}),
-  embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
 });
 
@@ -23,7 +23,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Assistant with Tools",
   instructions: "A helpful assistant that can use tools to provide better answers",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [
     addCalendarEventTool,
     checkCalendarTool,

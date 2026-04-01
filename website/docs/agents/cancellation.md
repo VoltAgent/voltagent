@@ -13,12 +13,11 @@ Create an `AbortController` and pass it to agent methods:
 
 ```typescript
 import { Agent, isAbortError } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const abortController = new AbortController();
@@ -157,19 +156,19 @@ In supervisor-subagent architectures, the abort signal propagates to all subagen
 const researcher = new Agent({
   name: "Researcher",
   instructions: "Research topics thoroughly",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const writer = new Agent({
   name: "Writer",
   instructions: "Write detailed content",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const supervisor = new Agent({
   name: "Supervisor",
   instructions: "Coordinate research and writing",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [researcher, writer],
 });
 
@@ -233,7 +232,7 @@ import { createHooks, isAbortError } from "@voltagent/core";
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: createHooks({
     onEnd: async ({ error, context }) => {
       if (isAbortError(error)) {

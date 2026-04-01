@@ -1,7 +1,10 @@
 import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
+import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
+import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { VoltOpsClient } from "../voltops/client";
+import type { Workspace } from "../workspace";
 
 /**
  * Registry to manage and track agents
@@ -21,6 +24,11 @@ export class AgentRegistry {
   private globalVoltOpsClient?: VoltOpsClient;
   private globalLogger?: Logger;
   private globalObservability?: VoltAgentObservability;
+  private globalMemory?: Memory;
+  private globalAgentMemory?: Memory;
+  private globalWorkflowMemory?: Memory;
+  private globalToolRouting?: ToolRoutingConfig;
+  private globalWorkspace?: Workspace;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -229,5 +237,75 @@ export class AgentRegistry {
    */
   public getGlobalObservability(): VoltAgentObservability | undefined {
     return this.globalObservability;
+  }
+
+  /**
+   * Set the global fallback Memory instance.
+   */
+  public setGlobalMemory(memory: Memory | undefined): void {
+    this.globalMemory = memory;
+  }
+
+  /**
+   * Get the global fallback Memory instance.
+   */
+  public getGlobalMemory(): Memory | undefined {
+    return this.globalMemory;
+  }
+
+  /**
+   * Set the global default Memory instance for agents.
+   */
+  public setGlobalAgentMemory(memory: Memory | undefined): void {
+    this.globalAgentMemory = memory;
+  }
+
+  /**
+   * Get the global default Memory instance for agents.
+   */
+  public getGlobalAgentMemory(): Memory | undefined {
+    return this.globalAgentMemory ?? this.globalMemory;
+  }
+
+  /**
+   * Set the global default Memory instance for workflows.
+   */
+  public setGlobalWorkflowMemory(memory: Memory | undefined): void {
+    this.globalWorkflowMemory = memory;
+  }
+
+  /**
+   * Get the global default Memory instance for workflows.
+   */
+  public getGlobalWorkflowMemory(): Memory | undefined {
+    return this.globalWorkflowMemory ?? this.globalMemory;
+  }
+
+  /**
+   * Set the global default tool routing configuration.
+   */
+  public setGlobalToolRouting(toolRouting: ToolRoutingConfig | undefined): void {
+    this.globalToolRouting = toolRouting;
+  }
+
+  /**
+   * Get the global default tool routing configuration.
+   */
+  public getGlobalToolRouting(): ToolRoutingConfig | undefined {
+    return this.globalToolRouting;
+  }
+
+  /**
+   * Set the global Workspace instance.
+   */
+  public setGlobalWorkspace(workspace: Workspace | undefined): void {
+    this.globalWorkspace = workspace;
+  }
+
+  /**
+   * Get the global Workspace instance.
+   */
+  public getGlobalWorkspace(): Workspace | undefined {
+    return this.globalWorkspace;
   }
 }

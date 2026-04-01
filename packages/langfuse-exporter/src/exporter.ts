@@ -89,6 +89,16 @@ type LangfuseExporterParams = {
   debug?: boolean;
 } & LangfuseOptions;
 
+type TraceInfo = {
+  rootSpan?: ReadableSpan;
+  traceName?: string;
+  userId?: string;
+  sessionId?: string;
+  tags?: string[];
+  langfuseTraceId?: string;
+  updateParent: boolean;
+};
+
 export class LangfuseExporter implements SpanExporter {
   private readonly langfuse: Langfuse;
   private readonly debug: boolean;
@@ -144,7 +154,7 @@ export class LangfuseExporter implements SpanExporter {
     }
   }
 
-  private processTraceSpans(traceId: string, spans: ReadableSpan[]): void {
+  private extractTraceInfo(spans: ReadableSpan[]): TraceInfo {
     let rootSpan: ReadableSpan | undefined = undefined;
     let traceName: string | undefined = undefined;
     let userId: string | undefined = undefined;
@@ -188,10 +198,32 @@ export class LangfuseExporter implements SpanExporter {
       if (attrs.langfuseUpdateParent != null) updateParent = Boolean(attrs.langfuseUpdateParent);
     }
 
-    const finalTraceId = langfuseTraceId ?? traceId;
-    traceName = traceName ?? rootSpan?.name ?? `Trace ${finalTraceId.substring(0, 8)}`;
+    return {
+      rootSpan,
+      traceName,
+      userId,
+      sessionId,
+      tags,
+      langfuseTraceId,
+      updateParent,
+    };
+  }
 
-    // Create Langfuse Trace - only include trace-level fields if updateParent is true
+  private buildTraceParams(
+    finalTraceId: string,
+    traceName: string,
+    traceInfo: TraceInfo,
+  ): {
+    id: string;
+    name?: string;
+    userId?: string;
+    sessionId?: string;
+    tags?: string[];
+    metadata?: Record<string, any>;
+    input?: any;
+    output?: any;
+    model?: string;
+  } {
     const traceParams: {
       id: string;
       name?: string;
@@ -204,21 +236,45 @@ export class LangfuseExporter implements SpanExporter {
       model?: string;
     } = { id: finalTraceId };
 
-    if (updateParent) {
+    if (traceInfo.updateParent) {
       traceParams.name = traceName;
-      traceParams.userId = userId;
-      traceParams.sessionId = sessionId;
-      traceParams.tags = tags;
+      traceParams.userId = traceInfo.userId;
+      traceParams.sessionId = traceInfo.sessionId;
+      traceParams.tags = traceInfo.tags;
       traceParams.input = safeJsonParse(
-        String(rootSpan?.attributes["ai.prompt.messages"] ?? rootSpan?.attributes?.input ?? null),
+        String(
+          traceInfo.rootSpan?.attributes["ai.prompt.messages"] ??
+            traceInfo.rootSpan?.attributes?.input ??
+            null,
+        ),
       );
       traceParams.output = safeJsonParse(
-        String(rootSpan?.attributes["ai.response.text"] ?? rootSpan?.attributes?.output ?? null),
+        String(
+          traceInfo.rootSpan?.attributes["ai.response.text"] ??
+            traceInfo.rootSpan?.attributes?.output ??
+            null,
+        ),
       );
       // Add combined metadata from root span? Let's extract from root if available.
-      traceParams.metadata = rootSpan ? extractMetadata(rootSpan.attributes) : undefined;
-      traceParams.model = String(rootSpan?.attributes["ai.model.name"]) ?? undefined;
+      traceParams.metadata = traceInfo.rootSpan
+        ? extractMetadata(traceInfo.rootSpan.attributes)
+        : undefined;
+      const modelName = traceInfo.rootSpan?.attributes["ai.model.name"];
+      traceParams.model = modelName != null ? String(modelName) : undefined;
     }
+
+    return traceParams;
+  }
+
+  private processTraceSpans(traceId: string, spans: ReadableSpan[]): void {
+    const traceInfo = this.extractTraceInfo(spans);
+
+    const finalTraceId = traceInfo.langfuseTraceId ?? traceId;
+    const traceName =
+      traceInfo.traceName ?? traceInfo.rootSpan?.name ?? `Trace ${finalTraceId.substring(0, 8)}`;
+
+    // Create Langfuse Trace - only include trace-level fields if updateParent is true
+    const traceParams = this.buildTraceParams(finalTraceId, traceName, traceInfo);
 
     this.logDebug(`Creating/Updating Langfuse trace ${finalTraceId}`, traceParams);
     this.langfuse.trace(traceParams);

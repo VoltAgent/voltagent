@@ -45,6 +45,105 @@ interface CustomerProjectPageProps {
   };
 }
 
+type CaseStudyContentPart =
+  | { type: "quote"; content: string }
+  | { type: "bullets"; content: string[] }
+  | { type: "text"; content: string };
+
+const appendTextSections = (rawText: string, parts: CaseStudyContentPart[]): void => {
+  const remainingText = rawText.trim();
+  if (!remainingText) {
+    return;
+  }
+
+  if (remainingText.includes(":") && remainingText.includes(";")) {
+    const bulletSections: string[][] = [];
+    const textParts: string[] = [];
+
+    const sentences = remainingText.split(". ");
+
+    for (const sentence of sentences) {
+      if (sentence.includes(":") && sentence.includes(";")) {
+        const colonIndex = sentence.indexOf(":");
+        const beforeColon = sentence.substring(0, colonIndex + 1);
+        const afterColon = sentence.substring(colonIndex + 1);
+
+        if (beforeColon.trim()) {
+          textParts.push(beforeColon.trim());
+        }
+
+        if (afterColon.trim()) {
+          const bulletPoints = afterColon
+            .split(";")
+            .map((point) => point.trim())
+            .filter((point) => point);
+          bulletSections.push(bulletPoints);
+        }
+      } else if (sentence.trim()) {
+        textParts.push(sentence.trim() + (sentence === sentences[sentences.length - 1] ? "" : "."));
+      }
+    }
+
+    for (let j = 0; j < Math.max(textParts.length, bulletSections.length); j++) {
+      if (j < textParts.length && textParts[j]) {
+        parts.push({
+          type: "text",
+          content: textParts[j],
+        });
+      }
+      if (j < bulletSections.length && bulletSections[j] && bulletSections[j].length > 0) {
+        parts.push({
+          type: "bullets",
+          content: bulletSections[j],
+        });
+      }
+    }
+    return;
+  }
+
+  parts.push({ type: "text", content: remainingText });
+};
+
+const parseSolutionContent = (content: string): CaseStudyContentPart[] => {
+  const parts: CaseStudyContentPart[] = [];
+  let currentText = "";
+  let inQuote = false;
+  let quoteText = "";
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+
+    if (char === '"' && !inQuote) {
+      appendTextSections(currentText, parts);
+      currentText = "";
+      inQuote = true;
+      quoteText = "";
+      continue;
+    }
+
+    if (char === '"' && inQuote) {
+      if (quoteText.trim()) {
+        parts.push({
+          type: "quote",
+          content: quoteText.trim(),
+        });
+        quoteText = "";
+      }
+      inQuote = false;
+      continue;
+    }
+
+    if (inQuote) {
+      quoteText += char;
+    } else {
+      currentText += char;
+    }
+  }
+
+  appendTextSections(currentText, parts);
+  return parts;
+};
+
 export default function CustomerProjectPage({ customer }: CustomerProjectPageProps): JSX.Element {
   if (!customer) {
     return (
@@ -331,196 +430,47 @@ export default function CustomerProjectPage({ customer }: CustomerProjectPagePro
                   The Solution: VoltAgent + VoltOps
                 </h3>
                 <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
-                  {(() => {
-                    const content = customer.case_study.solution_paragraph;
-                    const parts = [];
-                    let currentText = "";
-                    let inQuote = false;
-                    let quoteText = "";
-
-                    for (let i = 0; i < content.length; i++) {
-                      const char = content[i];
-
-                      if (char === '"' && !inQuote) {
-                        // Starting a quote
-                        if (currentText.trim()) {
-                          // Handle multiple bullet point sections
-                          const remainingText = currentText.trim();
-
-                          // Look for patterns like "text: bullet; bullet; bullet. Text: bullet; bullet; bullet"
-                          const bulletSections = [];
-                          const textParts = [];
-
-                          // Split by periods to find sections
-                          const sentences = remainingText.split(". ");
-
-                          for (const sentence of sentences) {
-                            if (sentence.includes(":") && sentence.includes(";")) {
-                              // This sentence has bullet points
-                              const colonIndex = sentence.indexOf(":");
-                              const beforeColon = sentence.substring(0, colonIndex + 1);
-                              const afterColon = sentence.substring(colonIndex + 1);
-
-                              if (beforeColon.trim()) {
-                                textParts.push(beforeColon.trim());
-                              }
-
-                              if (afterColon.trim()) {
-                                const bulletPoints = afterColon
-                                  .split(";")
-                                  .map((point) => point.trim())
-                                  .filter((point) => point);
-                                bulletSections.push(bulletPoints);
-                              }
-                            } else if (sentence.trim()) {
-                              // Regular text
-                              textParts.push(
-                                sentence.trim() +
-                                  (sentence === sentences[sentences.length - 1] ? "" : "."),
-                              );
-                            }
-                          }
-
-                          // Add text and bullet sections alternately
-                          for (
-                            let j = 0;
-                            j < Math.max(textParts.length, bulletSections.length);
-                            j++
-                          ) {
-                            if (j < textParts.length && textParts[j]) {
-                              parts.push({
-                                type: "text",
-                                content: textParts[j],
-                              });
-                            }
-                            if (j < bulletSections.length && bulletSections[j]) {
-                              parts.push({
-                                type: "bullets",
-                                content: bulletSections[j],
-                              });
-                            }
-                          }
-
-                          currentText = "";
-                        }
-                        inQuote = true;
-                        quoteText = "";
-                      } else if (char === '"' && inQuote) {
-                        // Ending a quote
-                        if (quoteText.trim()) {
-                          parts.push({
-                            type: "quote",
-                            content: quoteText.trim(),
-                          });
-                          quoteText = "";
-                        }
-                        inQuote = false;
-                      } else if (inQuote) {
-                        quoteText += char;
-                      } else {
-                        currentText += char;
-                      }
-                    }
-
-                    if (currentText.trim()) {
-                      // Handle remaining text with same logic
-                      const remainingText = currentText.trim();
-
-                      if (remainingText.includes(":") && remainingText.includes(";")) {
-                        const bulletSections = [];
-                        const textParts = [];
-
-                        const sentences = remainingText.split(". ");
-
-                        for (const sentence of sentences) {
-                          if (sentence.includes(":") && sentence.includes(";")) {
-                            const colonIndex = sentence.indexOf(":");
-                            const beforeColon = sentence.substring(0, colonIndex + 1);
-                            const afterColon = sentence.substring(colonIndex + 1);
-
-                            if (beforeColon.trim()) {
-                              textParts.push(beforeColon.trim());
-                            }
-
-                            if (afterColon.trim()) {
-                              const bulletPoints = afterColon
-                                .split(";")
-                                .map((point) => point.trim())
-                                .filter((point) => point);
-                              bulletSections.push(bulletPoints);
-                            }
-                          } else if (sentence.trim()) {
-                            textParts.push(
-                              sentence.trim() +
-                                (sentence === sentences[sentences.length - 1] ? "" : "."),
-                            );
-                          }
-                        }
-
-                        for (
-                          let j = 0;
-                          j < Math.max(textParts.length, bulletSections.length);
-                          j++
-                        ) {
-                          if (j < textParts.length && textParts[j]) {
-                            parts.push({ type: "text", content: textParts[j] });
-                          }
-                          if (j < bulletSections.length && bulletSections[j]) {
-                            parts.push({
-                              type: "bullets",
-                              content: bulletSections[j],
-                            });
-                          }
-                        }
-                      } else {
-                        parts.push({ type: "text", content: remainingText });
-                      }
-                    }
-
-                    return parts.map((part) => {
-                      if (part.type === "quote") {
-                        return (
-                          <blockquote
-                            key={`solution-quote-${part.content
-                              .substring(0, 30)
-                              .replace(/\s+/g, "-")}`}
-                            className="border-l-4 border-[#00d992] pl-4 italic text-gray-200"
-                          >
-                            "{part.content}"
-                          </blockquote>
-                        );
-                      }
-                      if (part.type === "bullets") {
-                        return (
-                          <ul
-                            key={`solution-bullets-${part.content[0]
-                              .substring(0, 20)
-                              .replace(/\s+/g, "-")}`}
-                            className="space-y-2 ml-4"
-                          >
-                            {part.content.map((bullet, bulletIndex) => (
-                              <li
-                                key={`bullet-${bullet
-                                  .substring(0, 15)
-                                  .replace(/\s+/g, "-")}-${bulletIndex}`}
-                              >
-                                {bullet}
-                              </li>
-                            ))}
-                          </ul>
-                        );
-                      }
+                  {parseSolutionContent(customer.case_study.solution_paragraph).map((part) => {
+                    if (part.type === "quote") {
                       return (
-                        <p
-                          key={`solution-text-${part.content
+                        <blockquote
+                          key={`solution-quote-${part.content
                             .substring(0, 30)
                             .replace(/\s+/g, "-")}`}
+                          className="border-l-4 border-[#00d992] pl-4 italic text-gray-200"
                         >
-                          {part.content}
-                        </p>
+                          "{part.content}"
+                        </blockquote>
                       );
-                    });
-                  })()}
+                    }
+                    if (part.type === "bullets") {
+                      return (
+                        <ul
+                          key={`solution-bullets-${part.content[0]
+                            .substring(0, 20)
+                            .replace(/\s+/g, "-")}`}
+                          className="space-y-2 ml-4"
+                        >
+                          {part.content.map((bullet, bulletIndex) => (
+                            <li
+                              key={`bullet-${bullet
+                                .substring(0, 15)
+                                .replace(/\s+/g, "-")}-${bulletIndex}`}
+                            >
+                              {bullet}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    return (
+                      <p
+                        key={`solution-text-${part.content.substring(0, 30).replace(/\s+/g, "-")}`}
+                      >
+                        {part.content}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
 

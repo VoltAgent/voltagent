@@ -19,6 +19,29 @@ import zodToJsonSchema from "zod-to-json-schema";
 import type { GroqProviderOptions } from "./types";
 import { convertToolsForSDK } from "./utils";
 
+type GroqUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
+type GroqStreamState = {
+  accumulatedText: string;
+  usage?: GroqUsage;
+  groqMessages: Groq.Chat.ChatCompletionMessageParam[];
+};
+
+type GroqStreamConfig = {
+  model: string;
+  temperature: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  stopSequences?: string[] | string;
+  tools?: Groq.Chat.ChatCompletionTool[];
+};
+
 // Deprecation warning
 console.warn(
   "\x1b[33m⚠️  DEPRECATION WARNING: @voltagent/groq-ai is deprecated and will no longer receive updates.\x1b[0m\n" +
@@ -208,6 +231,208 @@ export class GroqProvider implements LLMProvider<string> {
     return null;
   };
 
+  private buildStreamParams(
+    config: GroqStreamConfig,
+    messages: Groq.Chat.ChatCompletionMessageParam[],
+    includeTools: boolean,
+  ) {
+    return {
+      model: config.model,
+      messages,
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+      top_p: config.topP,
+      frequency_penalty: config.frequencyPenalty,
+      presence_penalty: config.presencePenalty,
+      stop: config.stopSequences,
+      stream: true,
+      ...(includeTools ? { tools: config.tools } : {}),
+    };
+  }
+
+  private updateUsageFromChunk(
+    chunk: Groq.Chat.ChatCompletionChunk,
+    currentUsage: GroqUsage | undefined,
+  ): GroqUsage | undefined {
+    if (chunk.x_groq?.usage) {
+      return {
+        promptTokens: chunk.x_groq.usage.prompt_tokens,
+        completionTokens: chunk.x_groq.usage.completion_tokens,
+        totalTokens: chunk.x_groq.usage.total_tokens,
+      };
+    }
+    return currentUsage;
+  }
+
+  private async emitTextChunk(
+    content: string,
+    controller: ReadableStreamDefaultController<string>,
+    options: StreamTextOptions<string>,
+    state: GroqStreamState,
+  ): Promise<void> {
+    if (!content) {
+      return;
+    }
+
+    state.accumulatedText += content;
+    controller.enqueue(content);
+
+    if (options.onChunk) {
+      const step = {
+        id: "",
+        type: "text" as const,
+        content,
+        role: "assistant" as MessageRole,
+      };
+      await options.onChunk(step);
+    }
+  }
+
+  private async executeToolCalls(
+    toolCalls: Array<any>,
+    tools: NonNullable<StreamTextOptions<string>["tools"]>,
+    options: StreamTextOptions<string>,
+    usage: GroqUsage | undefined,
+    groqMessages: Groq.Chat.ChatCompletionMessageParam[],
+  ): Promise<Array<{ toolCallId: string; name: string; output: any }>> {
+    const toolResults: Array<{ toolCallId: string; name: string; output: any }> = [];
+
+    for (const toolCall of toolCalls) {
+      const step = this.createStepFromChunk({
+        type: "tool-call",
+        toolCallId: toolCall.id,
+        toolName: toolCall.function?.name,
+        args: toolCall.function?.arguments,
+        usage,
+      });
+      if (step && options.onChunk) await options.onChunk(step);
+      if (step && options.onStepFinish) await options.onStepFinish(step);
+
+      const functionName = toolCall.function?.name;
+      const functionToCall = tools.find((toolItem) => functionName === toolItem.name)?.execute;
+      const functionArgs = JSON.parse(
+        toolCall.function?.arguments ? toolCall.function?.arguments : "{}",
+      );
+      if (functionToCall === undefined) {
+        throw new Error(`Function ${functionName} not found in tools`);
+      }
+      const functionResponse = await functionToCall(functionArgs);
+      if (functionResponse === undefined) {
+        throw new Error(`Function ${functionName} returned undefined`);
+      }
+      toolResults.push({
+        toolCallId: toolCall.id,
+        name: functionName,
+        output: functionResponse,
+      });
+
+      groqMessages.push({
+        tool_call_id: toolCall.id ? toolCall.id : "",
+        role: "tool",
+        content: JSON.stringify(functionResponse),
+      });
+    }
+
+    return toolResults;
+  }
+
+  private async emitToolResults(
+    toolResults: Array<{ toolCallId: string; name: string; output: any }>,
+    options: StreamTextOptions<string>,
+    usage: GroqUsage | undefined,
+  ): Promise<void> {
+    if (toolResults.length === 0) {
+      return;
+    }
+
+    for (const toolResult of toolResults) {
+      const step = this.createStepFromChunk({
+        type: "tool-result",
+        toolCallId: toolResult.toolCallId,
+        toolName: toolResult.name,
+        result: toolResult.output,
+        usage,
+      });
+      if (step && options.onChunk) await options.onChunk(step);
+      if (step && options.onStepFinish) await options.onStepFinish(step);
+    }
+  }
+
+  private async processStreamChunk(params: {
+    chunk: Groq.Chat.ChatCompletionChunk;
+    controller: ReadableStreamDefaultController<string>;
+    options: StreamTextOptions<string>;
+    state: GroqStreamState;
+    streamConfig: GroqStreamConfig;
+  }): Promise<void> {
+    const { chunk, controller, options, state, streamConfig } = params;
+    const content = chunk.choices[0]?.delta?.content || "";
+    await this.emitTextChunk(content, controller, options, state);
+    state.usage = this.updateUsageFromChunk(chunk, state.usage);
+
+    const toolCalls = chunk.choices[0]?.delta?.tool_calls || [];
+    if (toolCalls.length === 0 || !options.tools) {
+      return;
+    }
+
+    const toolResults = await this.executeToolCalls(
+      toolCalls,
+      options.tools,
+      options,
+      state.usage,
+      state.groqMessages,
+    );
+    await this.emitToolResults(toolResults, options, state.usage);
+
+    const secondStream = await this.groq.chat.completions.create(
+      this.buildStreamParams(streamConfig, state.groqMessages, false),
+    );
+
+    for await (const followUpChunk of secondStream) {
+      const followUpContent = followUpChunk.choices[0]?.delta?.content || "";
+      await this.emitTextChunk(followUpContent, controller, options, state);
+      state.usage = this.updateUsageFromChunk(followUpChunk, state.usage);
+    }
+  }
+
+  private async runTextStreamProcessing(params: {
+    stream: AsyncIterable<Groq.Chat.ChatCompletionChunk>;
+    controller: ReadableStreamDefaultController<string>;
+    options: StreamTextOptions<string>;
+    state: GroqStreamState;
+    streamConfig: GroqStreamConfig;
+  }): Promise<void> {
+    const { stream, controller, options, state, streamConfig } = params;
+    for await (const chunk of stream) {
+      await this.processStreamChunk({ chunk, controller, options, state, streamConfig });
+    }
+
+    controller.close();
+    await this.finalizeTextStream(options, state);
+  }
+
+  private async finalizeTextStream(
+    options: StreamTextOptions<string>,
+    state: GroqStreamState,
+  ): Promise<void> {
+    if (options.onFinish) {
+      await options.onFinish({
+        text: state.accumulatedText,
+      });
+    }
+
+    if (options.onStepFinish && state.accumulatedText) {
+      const textStep = {
+        id: "",
+        type: "text" as const,
+        content: state.accumulatedText,
+        role: "assistant" as MessageRole,
+        usage: state.usage,
+      };
+      await options.onStepFinish(textStep);
+    }
+  }
+
   generateText = async (
     options: GenerateTextOptions<string>,
   ): Promise<ProviderTextResponse<any>> => {
@@ -372,184 +597,38 @@ export class GroqProvider implements LLMProvider<string> {
       } = options.provider || {};
 
       // Create stream from Groq API
-      const stream = await this.groq.chat.completions.create({
+      const streamConfig: GroqStreamConfig = {
         model: options.model,
-        messages: groqMessages,
         temperature,
-        max_tokens: maxTokens,
-        top_p: topP,
-        frequency_penalty: frequencyPenalty,
-        presence_penalty: presencePenalty,
-        stop: stopSequences,
+        maxTokens,
+        topP,
+        frequencyPenalty,
+        presencePenalty,
+        stopSequences,
         tools: groqTools,
-        // Enable streaming
-        stream: true,
-      });
-
-      let accumulatedText = "";
-      let usage: {
-        promptTokens: number;
-        completionTokens: number;
-        totalTokens: number;
       };
-      const that = this; // Preserve 'this' context for the stream processing
+      const stream = await this.groq.chat.completions.create(
+        this.buildStreamParams(streamConfig, groqMessages, true),
+      );
+
+      const state: GroqStreamState = {
+        accumulatedText: "",
+        usage: undefined,
+        groqMessages,
+      };
+      const provider = this; // Preserve 'this' context for the stream processing
       // Create a readable stream to return to the caller
       const textStream = createAsyncIterableStream(
         new ReadableStream({
           async start(controller) {
             try {
-              // Process each chunk from the Groq stream
-              for await (const chunk of stream) {
-                // Extract content from the chunk
-                const content = chunk.choices[0]?.delta?.content || "";
-                // If we have content, add it to accumulated text and emit it
-                if (content) {
-                  accumulatedText += content;
-                  controller.enqueue(content);
-
-                  // Call onChunk with text chunk
-                  if (options.onChunk) {
-                    const step = {
-                      id: "",
-                      type: "text" as const,
-                      content,
-                      role: "assistant" as MessageRole,
-                    };
-                    await options.onChunk(step);
-                  }
-                }
-
-                if (chunk.x_groq?.usage) {
-                  usage = {
-                    promptTokens: chunk.x_groq?.usage.prompt_tokens,
-                    completionTokens: chunk.x_groq?.usage.completion_tokens,
-                    totalTokens: chunk.x_groq?.usage.total_tokens,
-                  };
-                }
-
-                const toolCalls = chunk.choices[0]?.delta?.tool_calls || [];
-                const toolResults = [];
-
-                if (toolCalls && toolCalls.length > 0 && options && options.tools) {
-                  for (const toolCall of toolCalls) {
-                    // Handle all tool calls - each as a separate step
-                    const step = that.createStepFromChunk({
-                      type: "tool-call",
-                      toolCallId: toolCall.id,
-                      toolName: toolCall.function?.name,
-                      args: toolCall.function?.arguments,
-                      usage: usage,
-                    });
-                    if (step && options.onChunk) await options.onChunk(step);
-                    if (step && options.onStepFinish) await options.onStepFinish(step);
-                    //Call the function with the arguments
-                    const functionName = toolCall.function?.name;
-                    const functionToCall = options.tools.find(
-                      (toolItem) => functionName === toolItem.name,
-                    )?.execute;
-                    const functionArgs = JSON.parse(
-                      toolCall.function?.arguments ? toolCall.function?.arguments : "{}",
-                    );
-                    if (functionToCall === undefined) {
-                      throw `Function ${functionName} not found in tools`;
-                    }
-                    const functionResponse = await functionToCall(functionArgs);
-                    if (functionResponse === undefined) {
-                      throw `Function ${functionName} returned undefined`;
-                    }
-                    toolResults.push({
-                      toolCallId: toolCall.id,
-                      name: functionName,
-                      output: functionResponse,
-                    });
-
-                    groqMessages.push({
-                      tool_call_id: toolCall.id ? toolCall.id : "",
-                      role: "tool",
-                      content: JSON.stringify(functionResponse),
-                    });
-                  }
-                  // Handle all tool results - each as a separate step
-                  if (toolCalls && toolResults && toolResults.length > 0) {
-                    for (const toolResult of toolResults) {
-                      const step = that.createStepFromChunk({
-                        type: "tool-result",
-                        toolCallId: toolResult.toolCallId,
-                        toolName: toolResult.name,
-                        result: toolResult.output,
-                        usage: usage,
-                      });
-                      if (step && options.onChunk) await options.onChunk(step);
-                      if (step && options.onStepFinish) await options.onStepFinish(step);
-                    }
-                  }
-                  // Call Groq API
-                  const secondStream = await that.groq.chat.completions.create({
-                    model: options.model,
-                    messages: groqMessages,
-                    temperature,
-                    max_tokens: maxTokens,
-                    top_p: topP,
-                    frequency_penalty: frequencyPenalty,
-                    presence_penalty: presencePenalty,
-                    stop: stopSequences,
-                    stream: true,
-                  });
-
-                  for await (const chunk of secondStream) {
-                    // Extract content from the chunk
-                    const content = chunk.choices[0]?.delta?.content || "";
-                    // If we have content, add it to accumulated text and emit it
-                    if (content) {
-                      accumulatedText += content;
-                      controller.enqueue(content);
-
-                      // Call onChunk with text chunk
-                      if (options.onChunk) {
-                        const step = {
-                          id: "",
-                          type: "text" as const,
-                          content,
-                          role: "assistant" as MessageRole,
-                        };
-                        await options.onChunk(step);
-                      }
-                    }
-
-                    if (chunk.x_groq?.usage) {
-                      usage = {
-                        promptTokens: chunk.x_groq?.usage.prompt_tokens,
-                        completionTokens: chunk.x_groq?.usage.completion_tokens,
-                        totalTokens: chunk.x_groq?.usage.total_tokens,
-                      };
-                    }
-                  }
-                }
-              }
-
-              // When stream completes, close the controller
-              controller.close();
-
-              // Call onFinish with complete result
-              if (options.onFinish) {
-                await options.onFinish({
-                  text: accumulatedText,
-                });
-              }
-
-              // Call onStepFinish with complete result if provided
-              if (options.onStepFinish) {
-                if (accumulatedText) {
-                  const textStep = {
-                    id: "",
-                    type: "text" as const,
-                    content: accumulatedText,
-                    role: "assistant" as MessageRole,
-                    usage,
-                  };
-                  await options.onStepFinish(textStep);
-                }
-              }
+              await provider.runTextStreamProcessing({
+                stream,
+                controller,
+                options,
+                state,
+                streamConfig,
+              });
             } catch (error) {
               // Handle errors during streaming
               console.error("Error during Groq stream processing:", error);

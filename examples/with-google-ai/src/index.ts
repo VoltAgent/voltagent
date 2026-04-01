@@ -1,4 +1,3 @@
-import { google } from "@ai-sdk/google";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -13,7 +12,7 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "Google Assistant",
   instructions: "A helpful assistant powered by Google Gemini",
-  model: google("gemini-2.0-flash"),
+  model: "google/gemini-2.0-flash",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

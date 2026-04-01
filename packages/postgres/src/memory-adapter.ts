@@ -9,9 +9,12 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@volt
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
@@ -51,6 +54,12 @@ export interface PostgreSQLMemoryOptions {
   tablePrefix?: string;
 
   /**
+   * PostgreSQL schema to use for all tables
+   * @default undefined
+   */
+  schema?: string;
+
+  /**
    * Whether to enable debug logging
    * @default false
    */
@@ -65,12 +74,14 @@ export interface PostgreSQLMemoryOptions {
 export class PostgreSQLMemoryAdapter implements StorageAdapter {
   private pool: Pool;
   private tablePrefix: string;
+  private schema: string | undefined;
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private debug: boolean;
 
   constructor(options: PostgreSQLMemoryOptions) {
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
+    this.schema = options.schema;
     this.debug = options.debug ?? false;
 
     // Create PostgreSQL connection pool
@@ -106,6 +117,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Get fully qualified table name with schema
+   */
+  private getTableName(tableName: string): string {
+    if (this.schema) {
+      return `"${this.schema}"."${tableName}"`;
+    }
+    return tableName;
+  }
+
+  /**
    * Initialize database schema
    */
   private async initialize(): Promise<void> {
@@ -120,9 +141,19 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const usersTable = `${this.tablePrefix}_users`;
+      // Create schema if it doesn't exist and it's not the default public schema
+      if (this.schema && this.schema !== "public") {
+        await client.query(`CREATE SCHEMA IF NOT EXISTS "${this.schema}"`);
+        this.log(`Ensured schema "${this.schema}" exists`);
+      }
+
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const baseConversationsTable = `${this.tablePrefix}_conversations`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const baseMessagesTable = `${this.tablePrefix}_messages`;
+      const usersTable = this.getTableName(`${this.tablePrefix}_users`);
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+      const baseStepsTable = `${this.tablePrefix}_steps`;
 
       // Create users table (for user-level working memory)
       await client.query(`
@@ -163,14 +194,21 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       `);
 
       // Create workflow states table
-      const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+      const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+      const baseWorkflowStatesTable = `${this.tablePrefix}_workflow_states`;
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
           id TEXT PRIMARY KEY,
           workflow_id TEXT NOT NULL,
           workflow_name TEXT NOT NULL,
           status TEXT NOT NULL,
+          input JSONB,
+          context JSONB,
+          workflow_state JSONB,
           suspension JSONB,
+          events JSONB,
+          output JSONB,
+          cancellation JSONB,
           user_id TEXT,
           conversation_id TEXT,
           metadata JSONB,
@@ -179,35 +217,67 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         )
       `);
 
+      // Create conversation steps table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${stepsTable} (
+          id TEXT PRIMARY KEY,
+          conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL,
+          agent_id TEXT NOT NULL,
+          agent_name TEXT,
+          operation_id TEXT,
+          step_index INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT,
+          arguments JSONB,
+          result JSONB,
+          usage JSONB,
+          sub_agent_id TEXT,
+          sub_agent_name TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+        )
+      `);
+
       // Create indexes for better performance
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_user_id 
         ON ${conversationsTable}(user_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_resource_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_resource_id 
         ON ${conversationsTable}(resource_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_conversation_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_conversation_id 
         ON ${messagesTable}(conversation_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_created_at 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_created_at 
         ON ${messagesTable}(created_at)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_workflow_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_workflow_id 
         ON ${workflowStatesTable}(workflow_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_status 
         ON ${workflowStatesTable}(status)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${baseStepsTable}_conversation 
+        ON ${stepsTable}(conversation_id, step_index)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${baseStepsTable}_operation 
+        ON ${stepsTable}(conversation_id, operation_id)
       `);
 
       // Run migration for existing tables
@@ -215,6 +285,13 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         await this.addUIMessageColumnsToMessagesTable(client);
       } catch (error) {
         this.log("Error adding UIMessage columns (non-critical):", error);
+      }
+
+      // Run workflow state columns migration
+      try {
+        await this.addWorkflowStateColumns(client);
+      } catch (error) {
+        this.log("Error adding workflow state columns (non-critical):", error);
       }
 
       await client.query("COMMIT");
@@ -251,7 +328,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const messageId = message.id || this.generateId();
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -263,10 +341,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       await client.query(
         `INSERT INTO ${messagesTable} 
          (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (conversation_id, message_id) DO UPDATE SET
+           user_id = EXCLUDED.user_id,
+           role = EXCLUDED.role,
+           parts = EXCLUDED.parts,
+           metadata = EXCLUDED.metadata,
+           format_version = EXCLUDED.format_version`,
         [
           conversationId,
-          message.id || this.generateId(),
+          messageId,
           userId,
           message.role,
           safeStringify(message.parts),
@@ -296,7 +380,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -308,13 +392,20 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       // Insert all messages
       for (const message of messages) {
+        const messageId = message.id || this.generateId();
         await client.query(
           `INSERT INTO ${messagesTable} 
            (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           ON CONFLICT (conversation_id, message_id) DO UPDATE SET
+             user_id = EXCLUDED.user_id,
+             role = EXCLUDED.role,
+             parts = EXCLUDED.parts,
+             metadata = EXCLUDED.metadata,
+             format_version = EXCLUDED.format_version`,
           [
             conversationId,
-            message.id || this.generateId(),
+            messageId,
             userId,
             message.role,
             safeStringify(message.parts),
@@ -335,6 +426,86 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     }
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (steps.length === 0) {
+      return;
+    }
+
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+
+      for (const step of steps) {
+        await client.query(
+          `INSERT INTO ${stepsTable} (
+             id,
+             conversation_id,
+             user_id,
+             agent_id,
+             agent_name,
+             operation_id,
+             step_index,
+             type,
+             role,
+             content,
+             arguments,
+             result,
+             usage,
+             sub_agent_id,
+             sub_agent_name,
+             created_at
+           ) VALUES (
+             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+           )
+           ON CONFLICT (id) DO UPDATE SET
+             conversation_id = EXCLUDED.conversation_id,
+             user_id = EXCLUDED.user_id,
+             agent_id = EXCLUDED.agent_id,
+             agent_name = EXCLUDED.agent_name,
+             operation_id = EXCLUDED.operation_id,
+             step_index = EXCLUDED.step_index,
+             type = EXCLUDED.type,
+             role = EXCLUDED.role,
+             content = EXCLUDED.content,
+             arguments = EXCLUDED.arguments,
+             result = EXCLUDED.result,
+             usage = EXCLUDED.usage,
+             sub_agent_id = EXCLUDED.sub_agent_id,
+             sub_agent_name = EXCLUDED.sub_agent_name,
+             created_at = EXCLUDED.created_at`,
+          [
+            step.id,
+            step.conversationId,
+            step.userId,
+            step.agentId,
+            step.agentName ?? null,
+            step.operationId ?? null,
+            step.stepIndex,
+            step.type,
+            step.role,
+            step.content ?? null,
+            step.arguments ? safeStringify(step.arguments) : null,
+            step.result ? safeStringify(step.result) : null,
+            step.usage ? safeStringify(step.usage) : null,
+            step.subAgentId ?? null,
+            step.subAgentName ?? null,
+            step.createdAt ?? new Date().toISOString(),
+          ],
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   /**
    * Get messages with optional filtering
    */
@@ -342,7 +513,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     await this.initPromise;
 
     // Debug: Method entry
@@ -350,7 +521,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
       const { limit, before, after, roles } = options || {};
 
       // Debug: Parsed options
@@ -362,8 +533,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       });
 
       // Build query with filters - use SELECT * to handle both old and new schemas safely
-      let sql = `SELECT * FROM ${messagesTable}
-                 WHERE conversation_id = $1 AND user_id = $2`;
+      let sql = `SELECT * FROM (
+             SELECT * FROM ${messagesTable}
+             WHERE conversation_id = $1 AND user_id = $2`;
       const params: any[] = [conversationId, userId];
       let paramCount = 3;
 
@@ -398,11 +570,13 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       // Order by creation time and apply limit
-      sql += " ORDER BY created_at ASC";
+      sql += " ORDER BY created_at DESC";
       if (limit && limit > 0) {
         sql += ` LIMIT $${paramCount}`;
         params.push(limit);
       }
+
+      sql += " ) AS subq ORDER BY created_at ASC";
 
       // Debug: Final SQL and parameters
       this.log("Final SQL query:", sql);
@@ -494,7 +668,10 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           id: row.message_id,
           role: row.role as "system" | "user" | "assistant",
           parts,
-          metadata: row.metadata,
+          metadata: {
+            ...(row.metadata || {}),
+            createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
+          },
         };
 
         // Debug: Final message structure
@@ -517,6 +694,60 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     }
   }
 
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+      const conditions: string[] = ["conversation_id = $1", "user_id = $2"];
+      const values: Array<string | number> = [conversationId, userId];
+      let paramIndex = values.length;
+
+      if (options?.operationId) {
+        paramIndex += 1;
+        conditions.push(`operation_id = $${paramIndex}`);
+        values.push(options.operationId);
+      }
+
+      let query = `SELECT * FROM ${stepsTable} WHERE ${conditions.join(" AND ")} ORDER BY step_index ASC`;
+
+      if (options?.limit && options.limit > 0) {
+        paramIndex += 1;
+        query += ` LIMIT $${paramIndex}`;
+        values.push(options.limit);
+      }
+
+      const result = await client.query(query, values);
+
+      return result.rows.map((row) => ({
+        id: row.id,
+        conversationId: row.conversation_id,
+        userId: row.user_id,
+        agentId: row.agent_id,
+        agentName: row.agent_name ?? undefined,
+        operationId: row.operation_id ?? undefined,
+        stepIndex:
+          typeof row.step_index === "number" ? row.step_index : Number(row.step_index ?? 0),
+        type: row.type,
+        role: row.role,
+        content: row.content ?? undefined,
+        arguments: row.arguments ?? undefined,
+        result: row.result ?? undefined,
+        usage: row.usage ?? undefined,
+        subAgentId: row.sub_agent_id ?? undefined,
+        subAgentName: row.sub_agent_name ?? undefined,
+        createdAt: row.created_at ?? new Date().toISOString(),
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
   /**
    * Clear messages for a user
    */
@@ -527,8 +758,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
 
       if (conversationId) {
         // Clear messages for specific conversation
@@ -536,10 +768,21 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           `DELETE FROM ${messagesTable} WHERE conversation_id = $1 AND user_id = $2`,
           [conversationId, userId],
         );
+        await client.query(
+          `DELETE FROM ${stepsTable} WHERE conversation_id = $1 AND user_id = $2`,
+          [conversationId, userId],
+        );
       } else {
         // Clear all messages for the user
         await client.query(
           `DELETE FROM ${messagesTable}
+           WHERE conversation_id IN (
+             SELECT id FROM ${conversationsTable} WHERE user_id = $1
+           )`,
+          [userId],
+        );
+        await client.query(
+          `DELETE FROM ${stepsTable}
            WHERE conversation_id IN (
              SELECT id FROM ${conversationsTable} WHERE user_id = $1
            )`,
@@ -557,6 +800,33 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Delete specific messages by ID for a conversation
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.initPromise;
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      await client.query(
+        `DELETE FROM ${messagesTable}
+         WHERE conversation_id = $1 AND user_id = $2 AND message_id = ANY($3::text[])`,
+        [conversationId, userId, messageIds],
+      );
+    } finally {
+      client.release();
+    }
+  }
+
   // ============================================================================
   // Conversation Operations
   // ============================================================================
@@ -569,7 +839,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       // Check if conversation already exists
       const existing = await this.getConversation(input.id);
@@ -618,7 +888,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(`SELECT * FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -649,7 +919,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(
         `SELECT * FROM ${conversationsTable} WHERE resource_id = $1 ORDER BY updated_at DESC`,
@@ -688,7 +958,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       let sql = `SELECT * FROM ${conversationsTable} WHERE 1=1`;
       const params: any[] = [];
       let paramCount = 1;
@@ -740,6 +1010,39 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Count conversations with filters
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      let sql = `SELECT COUNT(*) as count FROM ${conversationsTable} WHERE 1=1`;
+      const params: any[] = [];
+      let paramCount = 1;
+
+      if (options.userId) {
+        sql += ` AND user_id = $${paramCount}`;
+        params.push(options.userId);
+        paramCount++;
+      }
+
+      if (options.resourceId) {
+        sql += ` AND resource_id = $${paramCount}`;
+        params.push(options.resourceId);
+        paramCount++;
+      }
+
+      const result = await client.query(sql, params);
+      const count = Number(result.rows[0]?.count ?? 0);
+      return Number.isNaN(count) ? 0 : count;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Update a conversation
    */
   async updateConversation(
@@ -752,7 +1055,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       const conversation = await this.getConversation(id);
       if (!conversation) {
         throw new ConversationNotFoundError(id);
@@ -819,7 +1122,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       await client.query(`DELETE FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -851,7 +1154,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -896,7 +1199,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const now = new Date().toISOString();
 
         // Check if user exists
@@ -955,7 +1258,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -991,7 +1294,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(`SELECT * FROM ${workflowStatesTable} WHERE id = $1`, [
       executionId,
     ]);
@@ -1006,13 +1309,98 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: row.status,
-      suspension: row.suspension || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     };
+  }
+
+  /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    await this.initPromise;
+
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (query.workflowId) {
+      conditions.push(`workflow_id = $${paramIndex++}`);
+      params.push(query.workflowId);
+    }
+
+    if (query.status) {
+      conditions.push(`status = $${paramIndex++}`);
+      params.push(query.status);
+    }
+
+    if (query.from) {
+      conditions.push(`created_at >= $${paramIndex++}`);
+      params.push(query.from);
+    }
+
+    if (query.to) {
+      conditions.push(`created_at <= $${paramIndex++}`);
+      params.push(query.to);
+    }
+
+    if (query.userId) {
+      conditions.push(`user_id = $${paramIndex++}`);
+      params.push(query.userId);
+    }
+
+    if (query.metadata && Object.keys(query.metadata).length > 0) {
+      conditions.push(`metadata @> $${paramIndex++}::jsonb`);
+      params.push(safeStringify(query.metadata));
+    }
+
+    let sql = `SELECT * FROM ${workflowStatesTable}`;
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(" AND ")}`;
+    }
+    sql += " ORDER BY created_at DESC";
+
+    if (query.limit !== undefined) {
+      sql += ` LIMIT $${paramIndex++}`;
+      params.push(query.limit);
+    }
+
+    if (query.offset !== undefined) {
+      sql += ` OFFSET $${paramIndex++}`;
+      params.push(query.offset);
+    }
+
+    const result = await this.pool.query(sql, params);
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      workflowId: row.workflow_id,
+      workflowName: row.workflow_name,
+      status: row.status as WorkflowStateEntry["status"],
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
   }
 
   /**
@@ -1021,21 +1409,27 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const client = await this.pool.connect();
 
     try {
       await client.query("BEGIN");
 
       await client.query(
-        `INSERT INTO ${workflowStatesTable} 
-         (id, workflow_id, workflow_name, status, suspension, user_id, conversation_id, metadata, created_at, updated_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `INSERT INTO ${workflowStatesTable}
+         (id, workflow_id, workflow_name, status, input, context, workflow_state, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT (id) DO UPDATE SET
          workflow_id = EXCLUDED.workflow_id,
          workflow_name = EXCLUDED.workflow_name,
          status = EXCLUDED.status,
+         input = EXCLUDED.input,
+         context = EXCLUDED.context,
+         workflow_state = EXCLUDED.workflow_state,
          suspension = EXCLUDED.suspension,
+         events = EXCLUDED.events,
+         output = EXCLUDED.output,
+         cancellation = EXCLUDED.cancellation,
          user_id = EXCLUDED.user_id,
          conversation_id = EXCLUDED.conversation_id,
          metadata = EXCLUDED.metadata,
@@ -1045,10 +1439,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           state.workflowId,
           state.workflowName,
           state.status,
-          state.suspension ? safeStringify(state.suspension) : null,
+          state.input !== undefined ? safeStringify(state.input) : null,
+          state.context !== undefined ? safeStringify(state.context) : null,
+          state.workflowState !== undefined ? safeStringify(state.workflowState) : null,
+          state.suspension !== undefined ? safeStringify(state.suspension) : null,
+          state.events !== undefined ? safeStringify(state.events) : null,
+          state.output !== undefined ? safeStringify(state.output) : null,
+          state.cancellation !== undefined ? safeStringify(state.cancellation) : null,
           state.userId || null,
           state.conversationId || null,
-          state.metadata ? safeStringify(state.metadata) : null,
+          state.metadata !== undefined ? safeStringify(state.metadata) : null,
           state.createdAt,
           state.updatedAt,
         ],
@@ -1092,7 +1492,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(
       `SELECT * FROM ${workflowStatesTable} WHERE workflow_id = $1 AND status = $2 ORDER BY created_at DESC`,
       [workflowId, "suspended"],
@@ -1103,10 +1503,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: "suspended" as const,
-      suspension: row.suspension || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));
@@ -1125,8 +1531,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * Updates messages with user_id='default' to use the actual user_id from their conversation
    */
   private async migrateDefaultUserIds(_client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
-    const conversationsTableName = `${this.tablePrefix}_conversations`;
+    const messagesTableName = this.getTableName(`${this.tablePrefix}_messages`);
+    const conversationsTableName = this.getTableName(`${this.tablePrefix}_conversations`);
 
     try {
       // First, check if there are any messages with default user_id
@@ -1178,81 +1584,149 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Add new columns to messages table for UIMessage format if they don't exist
-   * This allows existing tables to support both old and new message formats
+   * Add new columns to workflow_states table for workflow state persistence.
+   * This migration adds support for input/context/workflow_state and event/output/cancellation tracking.
    */
-  private async addUIMessageColumnsToMessagesTable(client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
+  private async addWorkflowStateColumns(client: PoolClient): Promise<void> {
+    // Use base table name for information_schema queries
+    const baseTable = `${this.tablePrefix}_workflow_states`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
 
     try {
-      // Check which columns exist
       const columnCheck = await client.query(
         `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = $1
-        `,
-        [messagesTableName],
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
 
-      // Add new columns if they don't exist
+      if (!existingColumns.includes("input")) {
+        try {
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN input JSONB`);
+          this.log("Added 'input' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("context")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN context JSONB`,
+          );
+          this.log("Added 'context' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("workflow_state")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN workflow_state JSONB`,
+          );
+          this.log("Added 'workflow_state' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("events")) {
+        try {
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN events JSONB`);
+          this.log("Added 'events' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("output")) {
+        try {
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN output JSONB`);
+          this.log("Added 'output' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("cancellation")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN cancellation JSONB`,
+          );
+          this.log("Added 'cancellation' column to workflow_states table");
+        } catch (_e) {}
+      }
+    } catch (error) {
+      this.log("Failed to add workflow state columns (non-critical):", error);
+    }
+  }
+
+  /**
+   * Add new columns to messages table for UIMessage format if they don't exist
+   * This allows existing tables to support both old and new message formats
+   */
+  private async addUIMessageColumnsToMessagesTable(client: PoolClient): Promise<void> {
+    const baseTable = `${this.tablePrefix}_messages`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
+
+    try {
+      const columnCheck = await client.query(
+        `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
+      );
+
+      const existingColumns = columnCheck.rows.map((row) => row.column_name);
+
       if (!existingColumns.includes("parts")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN parts JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN parts JSONB`);
           this.log("Added 'parts' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("metadata")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN metadata JSONB`);
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN metadata JSONB`,
+          );
           this.log("Added 'metadata' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("format_version")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN format_version INTEGER DEFAULT 2`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN format_version INTEGER DEFAULT 2`,
           );
           this.log("Added 'format_version' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("user_id")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
           );
           this.log("Added 'user_id' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       // Make content and type nullable for new format
       if (existingColumns.includes("content")) {
         const contentInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'content'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'content'
+        `,
+          params,
         );
 
         if (contentInfo.rows[0]?.is_nullable === "NO") {
           try {
             await client.query(
-              `ALTER TABLE ${messagesTableName} ALTER COLUMN content DROP NOT NULL`,
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN content DROP NOT NULL`,
             );
             this.log("Made 'content' column nullable");
           } catch (e) {
@@ -1264,16 +1738,18 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       if (existingColumns.includes("type")) {
         const typeInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'type'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'type'
+        `,
+          params,
         );
 
         if (typeInfo.rows[0]?.is_nullable === "NO") {
           try {
-            await client.query(`ALTER TABLE ${messagesTableName} ALTER COLUMN type DROP NOT NULL`);
+            await client.query(
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN type DROP NOT NULL`,
+            );
             this.log("Made 'type' column nullable");
           } catch (e) {
             this.log("Error making type nullable:", e);
@@ -1284,7 +1760,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       this.log("UIMessage columns migration completed for messages table");
     } catch (error) {
       this.log("Error in UIMessage columns migration (non-critical):", error);
-      // Don't throw - this is not critical for new installations
     }
   }
 }

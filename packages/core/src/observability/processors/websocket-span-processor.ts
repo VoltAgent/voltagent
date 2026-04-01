@@ -61,6 +61,21 @@ export class WebSocketSpanProcessor implements SpanProcessor {
     const parentSpan = trace.getSpan(parentContext);
     const parentSpanId = parentSpan ? parentSpan.spanContext().spanId : undefined;
 
+    // Extract links if available
+    const spanLinks = (span as any).links;
+    const links =
+      spanLinks && spanLinks.length > 0
+        ? spanLinks.map((link: any) => ({
+            context: {
+              traceId: link.context.traceId,
+              spanId: link.context.spanId,
+              traceFlags: link.context.traceFlags,
+              traceState: link.context.traceState,
+            },
+            attributes: link.attributes,
+          }))
+        : undefined;
+
     // Create a minimal ObservabilitySpan for start event
     const observabilitySpan = {
       traceId: span.spanContext().traceId,
@@ -72,6 +87,7 @@ export class WebSocketSpanProcessor implements SpanProcessor {
       attributes: (span as any).attributes || {},
       status: { code: 0 },
       events: [],
+      links,
     };
 
     const event: ObservabilityWebSocketEvent = {

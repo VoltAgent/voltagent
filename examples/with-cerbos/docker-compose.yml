@@ -1,0 +1,24 @@
+services:
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:latest
+    container_name: cerbos-pdp
+    ports:
+      - "3593:3593" # gRPC
+      - "3592:3592" # HTTP
+    volumes:
+      - ./policies:/policies
+    command: ["server", "--config=/conf.yaml"]
+    configs:
+      - source: cerbos-config
+        target: /conf.yaml
+
+configs:
+  cerbos-config:
+    content: |
+      server:
+        httpListenAddr: ":3592"
+        grpcListenAddr: ":3593"
+      storage:
+        driver: disk
+        disk:
+          directory: /policies

@@ -1,5 +1,4 @@
-import type { LanguageModelUsage } from "ai";
-import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
+import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Agent } from "../agent";
 import { normalizeOutputGuardrailList } from "../guardrail";
@@ -150,7 +149,13 @@ describe("Output guardrail streaming integration", () => {
       {
         type: "finish",
         finishReason: "stop",
-        totalUsage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
+        totalUsage: {
+          inputTokens: 1,
+          outputTokens: 2,
+          totalTokens: 3,
+          inputTokenDetails: { noCacheTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+          outputTokenDetails: { textTokens: 2, reasoningTokens: 0 },
+        },
       } as any,
     ];
 
@@ -197,7 +202,13 @@ describe("Output guardrail streaming integration", () => {
   });
 
   it("processes multiple guardrails alongside tool events without losing finish", async () => {
-    const usage: LanguageModelUsage = { inputTokens: 2, outputTokens: 4, totalTokens: 6 };
+    const usage: LanguageModelUsage = {
+      inputTokens: 2,
+      outputTokens: 4,
+      totalTokens: 6,
+      inputTokenDetails: { noCacheTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0 },
+      outputTokenDetails: { textTokens: 4, reasoningTokens: 0 },
+    };
     const parts: VoltAgentTextStreamPart[] = [
       { type: "start" } as VoltAgentTextStreamPart,
       {
@@ -296,11 +307,15 @@ describe("Output guardrail streaming integration", () => {
   });
 
   it("closes UI stream with guardrails applied", async () => {
-    const usage: LanguageModelUsage = { inputTokens: 1, outputTokens: 2, totalTokens: 3 };
+    const finishReason = { unified: "stop", raw: "stop" };
+    const usage = {
+      inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+      outputTokens: { total: 2, text: 2, reasoning: 0 },
+    };
 
     const agent = new Agent({
       name: "guardrail-ui",
-      model: new MockLanguageModelV2({
+      model: new MockLanguageModelV3({
         doStream: async () => ({
           stream: simulateReadableStream({
             chunks: [
@@ -308,7 +323,7 @@ describe("Output guardrail streaming integration", () => {
               { type: "text-delta", id: "text-1", delta: "Hesap numarası 1234 " },
               { type: "text-delta", id: "text-1", delta: "kapatıldı." },
               { type: "text-end", id: "text-1" },
-              { type: "finish", finishReason: "stop", totalUsage: usage, usage } as any,
+              { type: "finish", finishReason, usage },
             ],
           }),
         }),
@@ -359,7 +374,7 @@ describe("Output guardrail streaming integration", () => {
   it("baseline agent without guardrails resolves text stream", async () => {
     const agent = new Agent({
       name: "baseline",
-      model: new MockLanguageModelV2({
+      model: new MockLanguageModelV3({
         doStream: async () => ({
           stream: simulateReadableStream({
             chunks: [
@@ -368,10 +383,12 @@ describe("Output guardrail streaming integration", () => {
               { type: "text-end", id: "text-1" },
               {
                 type: "finish",
-                finishReason: "stop",
-                usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-                totalUsage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-              } as any,
+                finishReason: { unified: "stop", raw: "stop" },
+                usage: {
+                  inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+                  outputTokens: { total: 1, text: 1, reasoning: 0 },
+                },
+              },
             ],
           }),
         }),

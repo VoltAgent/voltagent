@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { defineDataset } from "viteval/dataset";
 import { z } from "zod";
@@ -10,7 +9,7 @@ export default defineDataset({
 
     for (let i = 0; i < 10; i++) {
       const { object } = await generateObject({
-        model: openai("gpt-5"),
+        model: "openai/gpt-5",
         system: `
           You are an expert at generating test data for a general knowledge agent. You will generate a general knowledge question and the expected answer.
           `,

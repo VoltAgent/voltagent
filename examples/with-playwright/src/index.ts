@@ -1,4 +1,3 @@
-import { mistral } from "@ai-sdk/mistral";
 import VoltAgent, { Agent, Memory, type OperationContext, type AgentHooks } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -48,7 +47,7 @@ const memory = new Memory({
 export const browserAgent = new Agent({
   name: "Browser Agent",
   instructions: "You are an AI agent specialized in web automation with Playwright.",
-  model: mistral("mistral-large-latest"),
+  model: "mistral/mistral-large-latest",
 
   hooks: {
     onEnd: async ({ context }) => {

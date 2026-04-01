@@ -5,6 +5,9 @@
 
 import type { UIMessage } from "ai";
 import type { z } from "zod";
+import type { MessageRole, UsageInfo } from "../agent/providers/base/types";
+import type { AgentModelValue, OperationContext } from "../agent/types";
+import type { EmbeddingModelReference, EmbeddingOptions } from "./adapters/embedding/types";
 
 // ============================================================================
 // Core Types (Re-exported from existing memory system)
@@ -65,12 +68,52 @@ export type GetMessagesOptions = {
   roles?: string[];
 };
 
+export type ConversationStepType = "text" | "tool_call" | "tool_result";
+
+export interface ConversationStepRecord {
+  id: string;
+  conversationId: string;
+  userId: string;
+  agentId: string;
+  agentName?: string;
+  operationId: string;
+  stepIndex: number;
+  type: ConversationStepType;
+  role: MessageRole;
+  content?: string;
+  arguments?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null;
+  usage?: UsageInfo;
+  subAgentId?: string;
+  subAgentName?: string;
+  createdAt: string;
+}
+
+export interface GetConversationStepsOptions {
+  limit?: number;
+  operationId?: string;
+}
+
 /**
  * Memory options for MemoryManager
  */
 
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export type MemoryOptions = {};
+
+export type ConversationTitleConfig = {
+  enabled?: boolean;
+  model?: AgentModelValue;
+  maxOutputTokens?: number;
+  maxLength?: number;
+  systemPrompt?: string | null;
+};
+
+export type ConversationTitleGenerator = (params: {
+  input: OperationContext["input"] | UIMessage;
+  context: OperationContext;
+  defaultTitle: string;
+}) => Promise<string | null>;
 
 // ============================================================================
 // Workflow State Types
@@ -93,6 +136,8 @@ export interface WorkflowStateEntry {
   input?: unknown;
   /** Execution context */
   context?: Array<[string | symbol, unknown]>;
+  /** Shared workflow state at the time of persistence */
+  workflowState?: Record<string, unknown>;
   /** Suspension metadata including checkpoint data */
   suspension?: {
     suspendedAt: Date;
@@ -102,18 +147,68 @@ export interface WorkflowStateEntry {
     checkpoint?: {
       stepExecutionState?: any;
       completedStepsData?: any[];
+      workflowState?: Record<string, unknown>;
+      stepData?: Record<
+        string,
+        {
+          input: unknown;
+          output?: unknown;
+          status: "running" | "success" | "error" | "suspended" | "cancelled" | "skipped";
+          error?: unknown;
+        }
+      >;
+      usage?: UsageInfo;
     };
     suspendData?: any;
+  };
+  /**
+   * Stream events collected during execution
+   * Used for timeline visualization in UI
+   */
+  events?: Array<{
+    id: string;
+    type: string;
+    name?: string;
+    from?: string;
+    startTime: string;
+    endTime?: string;
+    status?: string;
+    input?: any;
+    output?: any;
+    metadata?: Record<string, unknown>;
+    context?: Record<string, unknown>;
+  }>;
+  /** Final output of the workflow execution */
+  output?: unknown;
+  /** Cancellation metadata */
+  cancellation?: {
+    cancelledAt: Date;
+    reason?: string;
   };
   /** User ID if applicable */
   userId?: string;
   /** Conversation ID if applicable */
   conversationId?: string;
+  /** Source execution ID if this run is a replay */
+  replayedFromExecutionId?: string;
+  /** Source step ID used when this run was replayed */
+  replayFromStepId?: string;
   /** Additional metadata */
   metadata?: Record<string, unknown>;
   /** Timestamps */
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface WorkflowRunQuery {
+  workflowId?: string;
+  status?: WorkflowStateEntry["status"];
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  offset?: number;
+  userId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -165,9 +260,9 @@ export interface MemoryConfig {
   storage: StorageAdapter;
 
   /**
-   * Optional embedding adapter for semantic operations
+   * Optional embedding adapter or model reference for semantic operations
    */
-  embedding?: EmbeddingAdapter;
+  embedding?: EmbeddingAdapterInput;
 
   /**
    * Optional vector adapter for similarity search
@@ -197,7 +292,29 @@ export interface MemoryConfig {
    * Enables agents to maintain important context
    */
   workingMemory?: WorkingMemoryConfig;
+
+  /**
+   * Automatically generate a title for new conversations using the agent's model
+   * (or the override model if provided).
+   * @default false
+   */
+  generateTitle?: boolean | ConversationTitleConfig;
 }
+
+/**
+ * Embedding adapter config for Memory
+ */
+export type EmbeddingAdapterConfig = EmbeddingOptions & {
+  model: EmbeddingModelReference;
+};
+
+/**
+ * Embedding input options for Memory
+ */
+export type EmbeddingAdapterInput =
+  | EmbeddingAdapter
+  | EmbeddingModelReference
+  | EmbeddingAdapterConfig;
 
 /**
  * Metadata about the underlying storage adapter
@@ -278,14 +395,36 @@ export interface VectorItem {
  */
 export interface StorageAdapter {
   // Message operations
-  addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void>;
-  addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void>;
+  addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
+  addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
   getMessages(
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]>;
-  clearMessages(userId: string, conversationId?: string): Promise<void>;
+    context?: OperationContext,
+  ): Promise<UIMessage<{ createdAt: Date }>[]>;
+  clearMessages(userId: string, conversationId?: string, context?: OperationContext): Promise<void>;
+  /**
+   * Delete specific messages by ID for a conversation.
+   * Adapters should perform an atomic delete when possible. If atomic deletes or transactions
+   * are unavailable, a best-effort deletion (for example, clear + rehydrate) may be used.
+   */
+  deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
 
   // Conversation operations
   createConversation(input: CreateConversationInput): Promise<Conversation>;
@@ -296,11 +435,22 @@ export interface StorageAdapter {
     options?: Omit<ConversationQueryOptions, "userId">,
   ): Promise<Conversation[]>;
   queryConversations(options: ConversationQueryOptions): Promise<Conversation[]>;
+  /**
+   * Count conversations matching query filters (limit/offset ignored).
+   */
+  countConversations(options: ConversationQueryOptions): Promise<number>;
   updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
   ): Promise<Conversation>;
   deleteConversation(id: string): Promise<void>;
+
+  saveConversationSteps?(steps: ConversationStepRecord[]): Promise<void>;
+  getConversationSteps?(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]>;
 
   // Working Memory operations
   getWorkingMemory(params: {
@@ -324,6 +474,7 @@ export interface StorageAdapter {
 
   // Workflow State operations
   getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null>;
+  queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]>;
   setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void>;
   updateWorkflowState(executionId: string, updates: Partial<WorkflowStateEntry>): Promise<void>;
   getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]>;

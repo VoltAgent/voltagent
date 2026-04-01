@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -24,7 +23,7 @@ const agentWithRetriever = new Agent({
   name: "Assistant with Retriever",
   instructions:
     "A helpful assistant that can retrieve information from the Chroma knowledge base using semantic search to provide better answers. I automatically search for relevant information when needed.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   retriever: retriever,
   memory,
 });
@@ -34,7 +33,7 @@ const agentWithTools = new Agent({
   name: "Assistant with Tools",
   instructions:
     "A helpful assistant that can search the Chroma knowledge base using tools. The agent will decide when to search for information based on user questions.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [retriever.tool],
   memory,
 });

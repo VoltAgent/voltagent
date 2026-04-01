@@ -6,7 +6,11 @@ import { registerAddCommand } from "./commands/add";
 import { registerDeployCommand } from "./commands/deploy";
 import { registerEvalCommand } from "./commands/eval";
 import { registerInitCommand } from "./commands/init";
+import { registerLoginCommand } from "./commands/login";
+import { registerLogoutCommand } from "./commands/logout";
 import { registerMCPCommand } from "./commands/mcp";
+import { registerPromptsCommand } from "./commands/prompts";
+import { registerTunnelCommand } from "./commands/tunnel";
 import { registerUpdateCommand } from "./commands/update";
 import { registerWhoamiCommand } from "./commands/whoami";
 import { captureError } from "./utils/analytics";
@@ -30,6 +34,10 @@ const createCLI = () => {
   registerMCPCommand(program);
   registerDeployCommand(program);
   registerEvalCommand(program);
+  registerTunnelCommand(program);
+  registerPromptsCommand(program);
+  registerLoginCommand(program);
+  registerLogoutCommand(program);
 
   return program;
 };

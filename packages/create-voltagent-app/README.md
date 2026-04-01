@@ -90,7 +90,7 @@ Create a new VoltAgent project in seconds using the `create-voltagent-app` CLI t
 npm create voltagent-app@latest
 ```
 
-This command guides you through setup.
+This command guides you through setup, including selecting a server (Hono or Elysia).
 
 You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
@@ -98,8 +98,7 @@ You'll see the starter code in `src/index.ts`, which now registers both an agent
 import { VoltAgent, Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
+import { honoServer } from "@voltagent/server-hono"; // or elysiaServer from @voltagent/server-elysia
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
 
@@ -120,7 +119,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory,
 });
@@ -133,7 +132,7 @@ new VoltAgent({
   workflows: {
     expenseApprovalWorkflow,
   },
-  server: honoServer(),
+  server: honoServer(), // or elysiaServer()
   logger,
 });
 ```

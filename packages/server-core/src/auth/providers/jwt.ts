@@ -30,6 +30,12 @@ export interface JWTAuthOptions {
     audience?: string;
     issuer?: string;
   };
+
+  /**
+   * When true, all routes require authentication by default (opt-out model)
+   * @default false
+   */
+  defaultPrivate?: boolean;
 }
 
 /**
@@ -86,6 +92,7 @@ export function jwtAuth(options: JWTAuthOptions): AuthProvider<Request> {
     },
 
     publicRoutes,
+    defaultPrivate: options.defaultPrivate,
   };
 }
 

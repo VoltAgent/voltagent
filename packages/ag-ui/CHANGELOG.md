@@ -1,0 +1,139 @@
+# @voltagent/ag-ui
+
+## 1.0.7
+
+### Patch Changes
+
+- [#1137](https://github.com/VoltAgent/voltagent/pull/1137) [`bb6e9b1`](https://github.com/VoltAgent/voltagent/commit/bb6e9b1e3d81e21dd885a24dc0863b67d249f3b6) Thanks [@corners99](https://github.com/corners99)! - feat(ag-ui): add ACTIVITY_SNAPSHOT and ACTIVITY_DELTA event support
+
+## 1.0.6
+
+### Patch Changes
+
+- [#1149](https://github.com/VoltAgent/voltagent/pull/1149) [`19c4fcf`](https://github.com/VoltAgent/voltagent/commit/19c4fcfc10ba0908e47c482b17355715c7467da3) Thanks [@corners99](https://github.com/corners99)! - fix: use `input` instead of `args` for tool-call parts in message conversion
+
+  When converting CopilotKit assistant messages with tool calls to VoltAgent format,
+  the adapter was setting `args` on tool-call parts. The AI SDK's `ToolCallPart`
+  interface expects `input`, causing the Anthropic provider to send `undefined` as
+  the tool_use input — rejected by the API with:
+
+  "messages.N.content.N.tool_use.input: Input should be a valid dictionary"
+
+## 1.0.5
+
+### Patch Changes
+
+- [#1135](https://github.com/VoltAgent/voltagent/pull/1135) [`a447ca3`](https://github.com/VoltAgent/voltagent/commit/a447ca3228712edbf19f53979a0429c773cc4aa3) Thanks [@corners99](https://github.com/corners99)! - fix(core,ag-ui): guard double writer.close() and RUN_FINISHED after RUN_ERROR
+
+## 1.0.4
+
+### Patch Changes
+
+- [#1074](https://github.com/VoltAgent/voltagent/pull/1074) [`e2793c1`](https://github.com/VoltAgent/voltagent/commit/e2793c1734fc9a388e13b920a913e47531f14f35) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve assistant feedback metadata across AG-UI streams
+  - Map VoltAgent `message-metadata` stream chunks to AG-UI `CUSTOM` events, which are the protocol-native channel for application-specific metadata.
+  - Stop emitting legacy internal tool-result metadata markers from the adapter.
+  - Remove the legacy metadata marker filter from model-input message conversion.
+
+## 1.0.3
+
+### Patch Changes
+
+- [#1022](https://github.com/VoltAgent/voltagent/pull/1022) [`48d94af`](https://github.com/VoltAgent/voltagent/commit/48d94af243f8fbd37cb92fa3803eb877208ac34c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: keep streaming message ids consistent with memory by emitting `messageId` on start/start-step chunks and using it for UI stream mapping (leaving text-part ids intact).
+
+## 1.0.2
+
+### Patch Changes
+
+- [`f6ffb8a`](https://github.com/VoltAgent/voltagent/commit/f6ffb8ae0fd95fbe920058e707d492d8c21b2505) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: VoltAgent 2.x (AI SDK v6)
+
+  VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. VoltAgent APIs are compatible, but if you call AI SDK directly, follow the upstream v6 migration guide.
+
+  Migration summary (1.x -> 2.x):
+  1. Update VoltAgent packages
+  - `npm run volt update`
+  - If the CLI is missing: `npx @voltagent/cli init` then `npm run volt update`
+  2. Align AI SDK packages
+  - `pnpm add ai@^6 @ai-sdk/provider@^3 @ai-sdk/provider-utils@^4 @ai-sdk/openai@^3`
+  - If you use UI hooks, upgrade `@ai-sdk/react` to `^3`
+  3. Structured output
+  - `generateObject` and `streamObject` are deprecated in VoltAgent 2.x
+  - Use `generateText` / `streamText` with `Output.object(...)`
+
+  Full migration guide: https://voltagent.dev/docs/getting-started/migration-guide/
+
+## 1.0.1
+
+### Patch Changes
+
+- [`c3943aa`](https://github.com/VoltAgent/voltagent/commit/c3943aa89a7bee113d99404ecd5a81a62bc159c2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: VoltAgent 2.x (AI SDK v6)
+
+  VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. VoltAgent APIs are compatible, but if you call AI SDK directly, follow the upstream v6 migration guide.
+
+  Migration summary (1.x -> 2.x):
+  1. Update VoltAgent packages
+  - `npm run volt update`
+  - If the CLI is missing: `npx @voltagent/cli init` then `npm run volt update`
+  2. Align AI SDK packages
+  - `pnpm add ai@^6 @ai-sdk/provider@^3 @ai-sdk/provider-utils@^4 @ai-sdk/openai@^3`
+  - If you use UI hooks, upgrade `@ai-sdk/react` to `^3`
+  3. Structured output
+  - `generateObject` and `streamObject` are deprecated in VoltAgent 2.x
+  - Use `generateText` / `streamText` with `Output.object(...)`
+
+  Full migration guide: https://voltagent.dev/docs/getting-started/migration-guide/
+
+## 1.0.0
+
+### Major Changes
+
+- [#894](https://github.com/VoltAgent/voltagent/pull/894) [`ee05549`](https://github.com/VoltAgent/voltagent/commit/ee055498096b1b99015a8362903712663969677f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: VoltAgent 2.x (AI SDK v6)
+
+  VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. VoltAgent APIs are compatible, but if you call AI SDK directly, follow the upstream v6 migration guide.
+
+  Migration summary (1.x -> 2.x):
+  1. Update VoltAgent packages
+  - `npm run volt update`
+  - If the CLI is missing: `npx @voltagent/cli init` then `npm run volt update`
+  2. Align AI SDK packages
+  - `pnpm add ai@^6 @ai-sdk/provider@^3 @ai-sdk/provider-utils@^4 @ai-sdk/openai@^3`
+  - If you use UI hooks, upgrade `@ai-sdk/react` to `^3`
+  3. Structured output
+  - `generateObject` and `streamObject` are deprecated in VoltAgent 2.x
+  - Use `generateText` / `streamText` with `Output.object(...)`
+
+  Full migration guide: https://voltagent.dev/docs/getting-started/migration-guide/
+
+### Patch Changes
+
+- Updated dependencies [[`ee05549`](https://github.com/VoltAgent/voltagent/commit/ee055498096b1b99015a8362903712663969677f)]:
+  - @voltagent/internal@1.0.0
+
+## 0.1.0
+
+### Minor Changes
+
+- [#861](https://github.com/VoltAgent/voltagent/pull/861) [`9854d43`](https://github.com/VoltAgent/voltagent/commit/9854d4374c977751f29f73b097164ed33c2290d5) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add AG-UI adapter for CopilotKit integration #295
+
+  New `@voltagent/ag-ui` package enables seamless CopilotKit integration with VoltAgent agents.
+
+  ## Features
+  - **VoltAgent AGUI**: AG-UI protocol adapter that wraps VoltAgent agents, streaming events (text chunks, tool calls, state snapshots) in AG-UI format
+  - **registerCopilotKitRoutes**: One-liner to mount CopilotKit runtime on any Hono-based VoltAgent server
+  - **State persistence**: Automatically syncs AG-UI state to VoltAgent working memory for cross-turn context
+  - **Tool mapping**: VoltAgent tools are exposed to CopilotKit clients with full streaming support
+
+  ## Usage
+
+  ```ts
+  import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => registerCopilotKitRoutes({ app, resourceIds: ["myAgent"] }),
+    }),
+  });
+  ```
+
+  Includes `with-copilotkit` example with Vite React client and VoltAgent server setup.

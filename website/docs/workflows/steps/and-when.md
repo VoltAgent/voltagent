@@ -46,7 +46,8 @@ const workflow = createWorkflowChain({
 .andWhen({
   id: "step-name",
   condition: ({ data }) => data.someField > 100,
-  step: andThen({ execute: async () => {...} })
+  step: andThen({ execute: async () => {...} }),
+  retries?: number
 })
 ```
 

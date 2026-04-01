@@ -19,7 +19,7 @@ import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory"
 // Import AgentTraceContext for proper span hierarchy
 import type { AgentTraceContext } from "../../agent/open-telemetry/trace-context";
 
-import type { MemoryOptions } from "../types";
+import type { ConversationStepRecord, ConversationTitleGenerator, MemoryOptions } from "../types";
 
 /**
  * MemoryManager - Simplified version for conversation management only
@@ -52,6 +52,11 @@ export class MemoryManager {
   private backgroundQueue: BackgroundQueue;
 
   /**
+   * Optional title generator for new conversations
+   */
+  private titleGenerator?: ConversationTitleGenerator;
+
+  /**
    * Creates a new MemoryManager V2 with same signature as original
    */
   constructor(
@@ -59,10 +64,12 @@ export class MemoryManager {
     memory?: Memory | false,
     options: MemoryOptions = {},
     logger?: Logger,
+    titleGenerator?: ConversationTitleGenerator,
   ) {
     this.resourceId = resourceId;
     this.logger = logger || getGlobalLogger().child({ component: "memory-manager", resourceId });
     this.options = options;
+    this.titleGenerator = titleGenerator;
 
     // Handle conversation memory
     if (memory === false) {
@@ -103,6 +110,8 @@ export class MemoryManager {
   ): Promise<void> {
     if (!this.conversationMemory || !userId) return;
 
+    const messageWithMetadata = this.applyOperationMetadata(message, context);
+
     // Use contextual logger from operation context - PRESERVED
     const memoryLogger = context.logger.child({
       operation: "write",
@@ -110,9 +119,10 @@ export class MemoryManager {
 
     // Event tracking with OpenTelemetry spans
     const trace = context.traceContext;
-    const spanInput = { userId, conversationId, message };
+    const spanInput = { userId, conversationId, message: messageWithMetadata };
     const writeSpan = trace.createChildSpan("memory.write", "memory", {
-      label: message.role === "user" ? "Persist User Message" : "Persist Assistant Message",
+      label:
+        messageWithMetadata.role === "user" ? "Persist User Message" : "Persist Assistant Message",
       attributes: {
         "memory.operation": "write",
         input: safeStringify(spanInput),
@@ -126,19 +136,30 @@ export class MemoryManager {
           // Ensure conversation exists
           const conv = await this.conversationMemory?.getConversation(conversationId);
           if (!conv) {
+            const title = await this.resolveConversationTitle(
+              context,
+              context.input ?? messageWithMetadata,
+              "Conversation",
+            );
             await this.conversationMemory?.createConversation({
               id: conversationId,
               userId: userId,
               resourceId: this.resourceId,
-              title: "Conversation",
+              title,
               metadata: {},
             });
           }
 
           // Add message to conversation using Memory V2's saveMessageWithContext
-          await this.conversationMemory?.saveMessageWithContext(message, userId, conversationId, {
-            logger: memoryLogger,
-          });
+          await this.conversationMemory?.saveMessageWithContext(
+            messageWithMetadata,
+            userId,
+            conversationId,
+            {
+              logger: memoryLogger,
+            },
+            context, // Pass OperationContext to Memory
+          );
         }
       });
 
@@ -152,7 +173,7 @@ export class MemoryManager {
       memoryLogger.debug("[Memory] Write successful (1 record)", {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
         operation: "write",
-        message,
+        message: messageWithMetadata,
       });
     } catch (error) {
       // End span with error
@@ -168,6 +189,86 @@ export class MemoryManager {
           error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         },
       );
+    }
+  }
+
+  private applyOperationMetadata(message: UIMessage, context: OperationContext): UIMessage {
+    const operationId = context.operationId;
+    if (!operationId) {
+      return message;
+    }
+
+    const existingMetadata =
+      typeof message.metadata === "object" && message.metadata !== null
+        ? (message.metadata as Record<string, unknown>)
+        : undefined;
+
+    if (existingMetadata?.operationId === operationId) {
+      return message;
+    }
+
+    return {
+      ...message,
+      metadata: {
+        ...(existingMetadata ?? {}),
+        operationId,
+      },
+    };
+  }
+
+  async saveConversationSteps(
+    context: OperationContext,
+    steps: ConversationStepRecord[],
+    userId?: string,
+    conversationId?: string,
+  ): Promise<void> {
+    if (!this.conversationMemory?.saveConversationSteps || !userId || !conversationId) {
+      return;
+    }
+    if (steps.length === 0) {
+      return;
+    }
+
+    const trace = context.traceContext;
+    const span = trace.createChildSpan("memory.steps.write", "memory", {
+      label: "Persist Conversation Steps",
+      attributes: {
+        "memory.operation": "write_steps",
+        "memory.step.count": steps.length,
+        conversationId,
+        userId,
+      },
+    });
+
+    try {
+      await trace.withSpan(span, async () => {
+        const ensuredConversation = await this.ensureConversationExists(
+          context,
+          userId,
+          conversationId,
+          context.input,
+        );
+        if (!ensuredConversation) {
+          throw new Error(
+            `Failed to ensure conversation exists before step persistence for conversation ${conversationId}`,
+          );
+        }
+        await this.conversationMemory?.saveConversationSteps?.(steps);
+      });
+      trace.endChildSpan(span, "completed", {
+        attributes: {
+          "memory.steps_saved": steps.length,
+          conversationId,
+          userId,
+        },
+      });
+    } catch (error) {
+      trace.endChildSpan(span, "error", { error: error as Error });
+      context.logger.error("Failed to save conversation steps", {
+        error,
+        conversationId,
+        userId,
+      });
     }
   }
 
@@ -189,7 +290,7 @@ export class MemoryManager {
       traceContext?: AgentTraceContext; // TraceContext for proper span hierarchy
       parentMemorySpan?: Span; // Parent memory span for proper nesting
     },
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory || !userId) {
       return [];
     }
@@ -201,7 +302,7 @@ export class MemoryManager {
 
     try {
       // Use Memory V2 to get messages with optional semantic search
-      let messages: UIMessage[] = [];
+      let messages: UIMessage<{ createdAt: Date }>[] = [];
 
       if (conversationId && userId) {
         // Check if semantic search is requested
@@ -226,7 +327,12 @@ export class MemoryManager {
           });
         } else {
           // Use regular message retrieval
-          messages = await this.conversationMemory.getMessages(userId, conversationId, { limit });
+          messages = (await this.conversationMemory.getMessages(
+            userId,
+            conversationId,
+            { limit },
+            context, // Pass OperationContext to Memory
+          )) as UIMessage<{ createdAt: Date }>[];
         }
       }
 
@@ -264,7 +370,7 @@ export class MemoryManager {
     userId?: string,
     conversationId?: string,
     limit?: number,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory || !userId || !conversationId) {
       return [];
     }
@@ -275,7 +381,12 @@ export class MemoryManager {
     });
 
     try {
-      const messages = await this.conversationMemory.getMessages(userId, conversationId, { limit });
+      const messages = await this.conversationMemory.getMessages(
+        userId,
+        conversationId,
+        { limit },
+        context, // Pass OperationContext to Memory
+      );
 
       memoryLogger.debug(`[Memory] Search successful (${messages.length} records)`, {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
@@ -357,7 +468,10 @@ export class MemoryManager {
     userId?: string,
     conversationIdParam?: string,
     contextLimit = 10,
-  ): Promise<{ messages: UIMessage[]; conversationId: string }> {
+    options?: {
+      persistInput?: boolean;
+    },
+  ): Promise<{ messages: UIMessage<{ createdAt: Date }>[]; conversationId: string }> {
     // Use the provided conversationId or generate a new one
     const conversationId = conversationIdParam || randomUUID();
 
@@ -371,14 +485,19 @@ export class MemoryManager {
     }
 
     // 🎯 CRITICAL: Always load conversation context (conversation continuity is essential)
-    let messages: UIMessage[] = [];
+    let messages: UIMessage<{ createdAt: Date }>[] = [];
 
     try {
       // Get UIMessages from memory directly - no conversion needed!
       // Filter to only get user and assistant messages (exclude tool, system, etc.)
-      messages = await this.conversationMemory.getMessages(userId, conversationId, {
-        limit: contextLimit,
-      });
+      messages = (await this.conversationMemory.getMessages(
+        userId,
+        conversationId,
+        {
+          limit: contextLimit,
+        },
+        context, // Pass OperationContext to Memory
+      )) as UIMessage<{ createdAt: Date }>[];
 
       context.logger.debug(
         `[Memory] Fetched messages from memory. Message Count: ${messages.length}`,
@@ -393,7 +512,9 @@ export class MemoryManager {
       // Continue with empty messages, but don't fail the operation
     }
 
-    this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
+    if (options?.persistInput !== false) {
+      this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
+    }
 
     return { messages, conversationId };
   }
@@ -417,7 +538,17 @@ export class MemoryManager {
       operation: async () => {
         try {
           // First ensure conversation exists
-          await this.ensureConversationExists(context, userId, conversationId);
+          const ensuredConversation = await this.ensureConversationExists(
+            context,
+            userId,
+            conversationId,
+            input,
+          );
+          if (!ensuredConversation) {
+            throw new Error(
+              `Failed to ensure conversation exists before input persistence for conversation ${conversationId}`,
+            );
+          }
 
           // Then save current input
           await this.saveCurrentInput(context, input, userId, conversationId);
@@ -445,20 +576,75 @@ export class MemoryManager {
   }
 
   /**
+   * Resolve conversation title using optional generator
+   */
+  private async resolveConversationTitle(
+    context: OperationContext,
+    input: OperationContext["input"] | UIMessage | undefined,
+    fallbackTitle: string,
+  ): Promise<string> {
+    if (!this.titleGenerator || !input) {
+      return fallbackTitle;
+    }
+
+    try {
+      const title = await this.titleGenerator({
+        input,
+        context,
+        defaultTitle: fallbackTitle,
+      });
+      if (typeof title === "string" && title.trim().length > 0) {
+        return title.trim();
+      }
+    } catch (error) {
+      context.logger.debug("[Memory] Failed to generate conversation title", {
+        error: safeStringify(error),
+      });
+    }
+
+    return fallbackTitle;
+  }
+
+  /**
    * Ensure conversation exists (background task)
    * PRESERVED FROM ORIGINAL
    */
+  private isConversationAlreadyExistsError(error: unknown): boolean {
+    if (!error || typeof error !== "object") {
+      return false;
+    }
+
+    const record = error as Record<string, unknown>;
+    const code = typeof record.code === "string" ? record.code : "";
+    const duplicateCodes = new Set([
+      "CONVERSATION_ALREADY_EXISTS",
+      "23505", // PostgreSQL unique violation
+      "SQLITE_CONSTRAINT_PRIMARYKEY",
+      "SQLITE_CONSTRAINT_UNIQUE",
+      "SQLITE_CONSTRAINT",
+    ]);
+
+    if (duplicateCodes.has(code)) {
+      return true;
+    }
+
+    const message = typeof record.message === "string" ? record.message.toLowerCase() : "";
+    return message.includes("already exists") || message.includes("duplicate");
+  }
+
   private async ensureConversationExists(
     context: OperationContext,
     userId: string,
     conversationId: string,
-  ): Promise<void> {
-    if (!this.conversationMemory) return;
+    input?: OperationContext["input"] | UIMessage,
+  ): Promise<boolean> {
+    if (!this.conversationMemory) return false;
 
     try {
       const existingConversation = await this.conversationMemory.getConversation(conversationId);
       if (!existingConversation) {
-        const title = `New Chat ${new Date().toISOString()}`;
+        const defaultTitle = `New Chat ${new Date().toISOString()}`;
+        const title = await this.resolveConversationTitle(context, input, defaultTitle);
         try {
           await this.conversationMemory.createConversation({
             id: conversationId,
@@ -470,9 +656,9 @@ export class MemoryManager {
           context.logger.debug("[Memory] Created new conversation", {
             title,
           });
-        } catch (createError: any) {
+        } catch (createError: unknown) {
           // If conversation already exists (race condition), that's fine - our goal is achieved
-          if (createError.code === "CONVERSATION_ALREADY_EXISTS") {
+          if (this.isConversationAlreadyExistsError(createError)) {
             context.logger.debug("[Memory] Conversation already exists (race condition handled)", {
               conversationId,
             });
@@ -488,10 +674,12 @@ export class MemoryManager {
         await this.conversationMemory.updateConversation(conversationId, {});
         context.logger.trace("[Memory] Updated conversation");
       }
+      return true;
     } catch (error) {
       context.logger.error("[Memory] Failed to ensure conversation exists", {
         error,
       });
+      return false;
     }
   }
 
@@ -582,6 +770,20 @@ export class MemoryManager {
    */
   getMemory(): Memory | undefined {
     return this.conversationMemory;
+  }
+
+  /**
+   * Replace the Memory instance used for this manager.
+   */
+  setMemory(memory: Memory | false): void {
+    if (memory === false) {
+      this.conversationMemory = undefined;
+      return;
+    }
+
+    if (memory instanceof Memory) {
+      this.conversationMemory = memory;
+    }
   }
 
   // ============================================================================
@@ -682,10 +884,11 @@ export class MemoryManager {
     logger: Logger,
     traceContext?: AgentTraceContext,
     parentMemorySpan?: Span,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory?.hasVectorSupport?.()) {
       logger.debug("Vector support not available, falling back to regular retrieval");
-      return this.conversationMemory?.getMessages(userId, conversationId, { limit }) || [];
+      return ((await this.conversationMemory?.getMessages(userId, conversationId, { limit })) ||
+        []) as UIMessage<{ createdAt: Date }>[];
     }
 
     // Get adapter info for logging

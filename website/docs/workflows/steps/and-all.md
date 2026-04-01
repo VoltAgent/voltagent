@@ -62,10 +62,42 @@ Think of it like ordering from multiple restaurants at once - you wait for all d
 .andAll({
   id: string,
   steps: Array<Step>,
+  retries?: number,
   name?: string,           // Optional
   purpose?: string         // Optional
 })
 ```
+
+### Retries
+
+```typescript
+.andAll({
+  id: "parallel-with-retries",
+  retries: 2,
+  steps: [
+    andThen({
+      id: "unstable-call",
+      execute: async ({ retryCount }) => {
+        // retryCount starts at 0 and increments on each retry attempt
+        if (retryCount < 2) {
+          throw new Error(`Transient failure (attempt ${retryCount})`);
+        }
+        return { ok: true };
+      },
+    }),
+    andThen({
+      id: "stable-call",
+      execute: async () => ({ ready: true }),
+    }),
+  ],
+})
+```
+
+- `retryCount` starts at 0 and increments on each retry attempt after a thrown error (0 -> 1 -> 2).
+- Retries only apply to thrown errors; suspend or cancel does not trigger retries.
+- `retries` overrides workflow-wide `retryConfig.attempts` for this step.
+- If `retries` is omitted, the workflow `retryConfig.attempts` value is used.
+- When `retries` is set on `andAll`, all parallel steps rerun together and see the same `retryCount`.
 
 ## Common Patterns
 

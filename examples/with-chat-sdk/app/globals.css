@@ -1,0 +1,40 @@
+:root {
+  color-scheme: light;
+  font-family: "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef2f8 100%);
+  color: #111827;
+}
+
+main {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 24px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 2rem;
+}
+
+p {
+  line-height: 1.6;
+}
+
+code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 6px;
+}

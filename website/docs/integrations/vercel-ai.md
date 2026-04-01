@@ -77,10 +77,9 @@ Start with the minimal setup - just enable telemetry in your existing Vercel AI 
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 
 const result = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: "Hello, how are you?",
   experimental_telemetry: {
     isEnabled: true,
@@ -122,11 +121,10 @@ Same minimal setup, but now with tools to see how tool usage is tracked:
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const result = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: "What's the weather like in Tokyo?",
   tools: {
     weather: {
@@ -169,11 +167,10 @@ Now make tracking much more powerful by adding an agent identifier:
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const result = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: "What's the weather like in Paris?",
   tools: {
     weather: {
@@ -218,10 +215,9 @@ You can provide additional context about the execution:
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 
 const result = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: "Tell me a joke",
   experimental_telemetry: {
     isEnabled: true,
@@ -255,11 +251,10 @@ Track different agent roles within the same application:
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 
 // Research agent
 const researchResult = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: "Research information about renewable energy trends",
   experimental_telemetry: {
     isEnabled: true,
@@ -273,7 +268,7 @@ const researchResult = await generateText({
 
 // Writing agent
 const articleResult = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: `Write an article based on this research: ${researchResult.text}`,
   experimental_telemetry: {
     isEnabled: true,
@@ -287,7 +282,7 @@ const articleResult = await generateText({
 
 // Review agent
 const reviewResult = await generateText({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   prompt: `Review and improve this article: ${articleResult.text}`,
   experimental_telemetry: {
     isEnabled: true,
@@ -329,7 +324,7 @@ const result = await tracer.startActiveSpan("user-request-processing", async (sp
   });
 
   const response = await generateText({
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     prompt: "What's the capital of France?",
     experimental_telemetry: {
       isEnabled: true,
@@ -355,7 +350,7 @@ import { trace } from "@opentelemetry/api";
 
 try {
   const result = await generateText({
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     prompt: "Some prompt that might fail",
     experimental_telemetry: {
       isEnabled: true,

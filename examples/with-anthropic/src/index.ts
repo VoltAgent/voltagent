@@ -1,4 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic";
 import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -29,7 +28,7 @@ const agent = new Agent({
   name: "weather-agent",
   instructions:
     "A helpful assistant that can search the web and get weather information. This agent is specifically designed to test the VoltAgent tool_result bug with MCP tools.",
-  model: anthropic("claude-opus-4-1"),
+  model: "anthropic/claude-opus-4-1",
   tools: [weatherTool],
 });
 

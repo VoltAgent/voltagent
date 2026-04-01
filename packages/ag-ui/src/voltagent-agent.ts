@@ -1,0 +1,701 @@
+import { AbstractAgent } from "@ag-ui/client";
+import type {
+  AssistantMessage,
+  BaseEvent,
+  CustomEvent,
+  DeveloperMessage,
+  Message,
+  RunAgentInput,
+  RunErrorEvent,
+  RunFinishedEvent,
+  RunStartedEvent,
+  StateSnapshotEvent,
+  SystemMessage,
+  TextMessageChunkEvent,
+  TextMessageEndEvent,
+  TextMessageStartEvent,
+  ToolCallArgsEvent,
+  ToolCallEndEvent,
+  ToolCallResultEvent,
+  ToolCallStartEvent,
+  ToolMessage,
+  UserMessage,
+} from "@ag-ui/core";
+import { EventType } from "@ag-ui/core";
+import type { StreamTextOptions, VoltAgentTextStreamPart } from "@voltagent/core";
+import type { Agent } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
+import { Observable } from "rxjs";
+
+// ---------------------------------------------------------------------------
+// Activity event types – not yet available in @ag-ui/core v0.0.37, so we
+// define them locally until the upstream package adds them.
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_SNAPSHOT_EVENT_TYPE = "ACTIVITY_SNAPSHOT" as const;
+const ACTIVITY_DELTA_EVENT_TYPE = "ACTIVITY_DELTA" as const;
+
+type ActivitySnapshotEvent = {
+  type: typeof ACTIVITY_SNAPSHOT_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  content: Record<string, unknown>;
+  replace: boolean;
+};
+
+type ActivityDeltaEvent = {
+  type: typeof ACTIVITY_DELTA_EVENT_TYPE;
+  messageId: string;
+  activityType: string;
+  patch: unknown[];
+};
+
+type AGUIContextValue = {
+  state?: Record<string, unknown>;
+  context?: RunAgentInput["context"];
+  forwardedProps?: RunAgentInput["forwardedProps"];
+};
+
+type VoltAgentAGUIConfig = {
+  agent: Agent;
+  /**
+   * Optional function to derive userId for VoltAgent memory/telemetry.
+   */
+  deriveUserId?: (input: RunAgentInput) => string | undefined;
+};
+
+function debugLog(message: string, data?: Record<string, unknown>) {
+  // eslint-disable-next-line no-console
+  console.log(`[VoltAgentAGUI] ${message}`, data ?? {});
+}
+
+/**
+ * VoltAgent adapter that speaks the AG-UI protocol.
+ * and stream VoltAgent events as AG-UI BaseEvents.
+ */
+export class VoltAgentAGUI extends AbstractAgent {
+  private readonly agent: Agent;
+  private readonly deriveUserId?: VoltAgentAGUIConfig["deriveUserId"];
+
+  constructor(config: VoltAgentAGUIConfig) {
+    super();
+    this.agent = config.agent;
+    this.deriveUserId = config.deriveUserId;
+  }
+
+  run(input: RunAgentInput): ReturnType<AbstractAgent["run"]> {
+    const stream$ = new Observable<BaseEvent>((subscriber) => {
+      const abortController = new AbortController();
+      let finishedSent = false;
+      debugLog("run start", { threadId: input.threadId, runId: input.runId });
+      const runStarted: RunStartedEvent = {
+        type: EventType.RUN_STARTED,
+        threadId: input.threadId,
+        runId: input.runId,
+      };
+      subscriber.next(runStarted);
+
+      const run = async () => {
+        let currentMessageId = generateId();
+
+        try {
+          await this.persistStateToWorkingMemory(input);
+
+          const streamOptions = this.buildStreamOptions(input, abortController);
+          const voltMessages = convertAGUIMessagesToVoltMessages(input.messages);
+
+          debugLog("calling agent.streamText", { messagesLength: voltMessages.length });
+          const result = await this.agent.streamText(voltMessages as any, streamOptions);
+
+          for await (const part of result.fullStream) {
+            debugLog("fullStream part", { partType: part.type, id: (part as any).id });
+            if ((part.type === "start" || part.type === "start-step") && part.messageId) {
+              currentMessageId = part.messageId;
+            }
+            const events = convertVoltStreamPartToEvents(part, currentMessageId);
+            if (!events) continue;
+
+            for (const event of events) {
+              debugLog("emit event", { type: event.type, messageId: (event as any).messageId });
+
+              subscriber.next(event as BaseEvent);
+              if (
+                (event.type === EventType.TEXT_MESSAGE_START ||
+                  event.type === EventType.TEXT_MESSAGE_CHUNK ||
+                  event.type === EventType.TEXT_MESSAGE_END) &&
+                "messageId" in event &&
+                event.messageId
+              ) {
+                currentMessageId = event.messageId;
+              }
+            }
+          }
+
+          const snapshotEvent = await this.readWorkingMemorySnapshot(input);
+          if (snapshotEvent) {
+            subscriber.next(snapshotEvent);
+          }
+
+          const finished: RunFinishedEvent = {
+            type: EventType.RUN_FINISHED,
+            threadId: input.threadId,
+            runId: input.runId,
+          };
+          subscriber.next(finished);
+          finishedSent = true;
+          subscriber.complete();
+          debugLog("run finished", { threadId: input.threadId, runId: input.runId });
+        } catch (error) {
+          debugLog("run error", {
+            threadId: input.threadId,
+            runId: input.runId,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+
+          // Emit the error event so consumers know what went wrong.
+          const runError: RunErrorEvent = {
+            type: EventType.RUN_ERROR,
+            message: error instanceof Error ? error.message : "Unknown error",
+          };
+          subscriber.next(runError);
+
+          // The AG-UI verify layer may reject further events once RUN_ERROR
+          // has been emitted (the run is considered terminal). Guard the
+          // RUN_FINISHED emission so the subscriber can still be completed
+          // cleanly without an unhandled exception.
+          try {
+            const finished: RunFinishedEvent = {
+              type: EventType.RUN_FINISHED,
+              threadId: input.threadId,
+              runId: input.runId,
+            };
+            subscriber.next(finished);
+            finishedSent = true;
+          } catch {
+            // Verify layer rejected the event – that's OK, mark as sent
+            // so the unsubscribe handler doesn't attempt it again.
+            finishedSent = true;
+          }
+          subscriber.complete();
+        }
+      };
+
+      void run();
+
+      return () => {
+        debugLog("run abort/unsubscribe", {
+          threadId: input.threadId,
+          runId: input.runId,
+          finishedSent,
+        });
+        abortController.abort();
+        if (!finishedSent) {
+          const finished: RunFinishedEvent = {
+            type: EventType.RUN_FINISHED,
+            threadId: input.threadId,
+            runId: input.runId,
+          };
+          subscriber.next(finished);
+          finishedSent = true;
+          subscriber.complete();
+        }
+      };
+    });
+
+    // Cast through unknown to avoid rxjs type mismatches across hoisted versions
+    return stream$ as unknown as ReturnType<AbstractAgent["run"]>;
+  }
+
+  private buildStreamOptions(
+    input: RunAgentInput,
+    abortController: AbortController,
+  ): StreamTextOptions {
+    const context = new Map<string, unknown>();
+    const aguiContext: AGUIContextValue = {
+      state: (input.state as Record<string, unknown>) || undefined,
+      context: input.context,
+      forwardedProps: input.forwardedProps,
+    };
+
+    context.set("agui:context", aguiContext);
+
+    return {
+      abortSignal: abortController.signal,
+      conversationId: input.threadId,
+      userId: this.deriveUserId?.(input),
+      context,
+    };
+  }
+
+  private async persistStateToWorkingMemory(input: RunAgentInput): Promise<void> {
+    const state = input.state;
+    if (!state || typeof state !== "object" || Object.keys(state).length === 0) {
+      return;
+    }
+
+    const memory = this.agent.getMemory?.();
+    if (!memory) {
+      return;
+    }
+
+    try {
+      await memory.updateWorkingMemory({
+        conversationId: input.threadId,
+        content: safeStringify(state),
+      });
+    } catch (error) {
+      // Non-fatal: working memory might be disabled or misconfigured
+      console.debug?.("Failed to persist AG-UI state to working memory", error);
+    }
+  }
+
+  private async readWorkingMemorySnapshot(
+    input: RunAgentInput,
+  ): Promise<StateSnapshotEvent | undefined> {
+    const memory = this.agent.getMemory?.();
+    if (!memory) {
+      return;
+    }
+
+    try {
+      const raw = await memory.getWorkingMemory({
+        conversationId: input.threadId,
+      });
+
+      if (!raw) {
+        return;
+      }
+
+      let snapshot: unknown = raw;
+      try {
+        snapshot = JSON.parse(raw);
+      } catch {
+        // keep raw string
+      }
+
+      return {
+        type: EventType.STATE_SNAPSHOT,
+        snapshot,
+      };
+    } catch (error) {
+      console.debug?.("Failed to read AG-UI working memory snapshot", error);
+      return;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Message conversion helpers
+// ---------------------------------------------------------------------------
+
+const isUserMessage = (message: Message): message is UserMessage => message.role === "user";
+const isAssistantMessage = (message: Message): message is AssistantMessage =>
+  message.role === "assistant";
+const isSystemMessage = (message: Message): message is SystemMessage => message.role === "system";
+const isDeveloperMessage = (message: Message): message is DeveloperMessage =>
+  message.role === "developer";
+const isToolMessage = (message: Message): message is ToolMessage => message.role === "tool";
+
+type VoltUIPart =
+  | { type: "text"; text: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input?: unknown }
+  | { type: "tool-result"; toolCallId?: string; toolName?: string; output?: unknown };
+
+type VoltUIMessage = {
+  id: string;
+  role: "user" | "assistant" | "system" | "tool";
+  content?: string;
+  parts?: VoltUIPart[];
+};
+
+const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
+function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[] {
+  const toolNameById = new Map<string, string>();
+  const convertedMessages: VoltUIMessage[] = [];
+
+  for (const msg of messages) {
+    const messageId = msg.id || generateId();
+
+    if (isUserMessage(msg)) {
+      convertedMessages.push({
+        id: messageId,
+        role: "user",
+        content: extractTextContent(msg.content),
+      });
+      continue;
+    }
+
+    if (isAssistantMessage(msg)) {
+      const parts: VoltUIPart[] = [];
+      const textContent = msg.content ? extractTextContent(msg.content) : "";
+      if (textContent) {
+        parts.push({ type: "text", text: textContent });
+      }
+
+      for (const call of msg.toolCalls ?? []) {
+        const input = safelyParseJson(call.function.arguments);
+        toolNameById.set(call.id, call.function.name);
+        parts.push({
+          type: "tool-call",
+          toolCallId: call.id,
+          toolName: call.function.name,
+          input,
+        });
+      }
+
+      convertedMessages.push({
+        id: messageId,
+        role: "assistant",
+        parts,
+      });
+      continue;
+    }
+
+    if (isSystemMessage(msg) || isDeveloperMessage(msg)) {
+      convertedMessages.push({
+        id: messageId,
+        role: "system",
+        content: msg.content,
+      });
+      continue;
+    }
+
+    if (isToolMessage(msg)) {
+      const toolName = msg.toolCallId ? toolNameById.get(msg.toolCallId) : undefined;
+      convertedMessages.push({
+        id: messageId,
+        role: "tool",
+        parts: [
+          {
+            type: "tool-result",
+            toolCallId: msg.toolCallId,
+            toolName: toolName ?? "tool",
+            output: safelyParseJson(msg.content),
+          },
+        ],
+      });
+      continue;
+    }
+
+    // Activity messages carry structured content from previous agent turns.
+    // Fold into assistant text so the model can see prior activity context.
+    const activityContent = (msg as { content?: unknown }).content;
+    const activityType = (msg as { activityType?: string }).activityType;
+    const prefix = activityType ? `[Activity: ${activityType}] ` : "";
+    convertedMessages.push({
+      id: messageId,
+      role: "assistant",
+      parts: [
+        {
+          type: "text",
+          text:
+            prefix +
+            (typeof activityContent === "string"
+              ? activityContent
+              : safeStringify(activityContent ?? "")),
+        },
+      ],
+    });
+  }
+
+  return convertedMessages;
+}
+
+function extractTextContent(content: UserMessage["content"] | AssistantMessage["content"]): string {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+
+  const parts = content as Array<Record<string, unknown>>;
+
+  return parts
+    .map((part: Record<string, unknown>) => {
+      const textValue = typeof part.text === "string" ? (part.text as string) : "";
+      return textValue;
+    })
+    .filter((text: string) => text.length > 0)
+    .join("\n");
+}
+
+function safelyParseJson(value: string | unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stream conversion helpers
+// ---------------------------------------------------------------------------
+
+type StreamConversionResult =
+  | TextMessageStartEvent
+  | TextMessageChunkEvent
+  | TextMessageEndEvent
+  | CustomEvent
+  | ToolCallStartEvent
+  | ToolCallEndEvent
+  | ToolCallArgsEvent
+  | ToolCallResultEvent
+  | ActivitySnapshotEvent
+  | ActivityDeltaEvent;
+
+function convertVoltStreamPartToEvents(
+  part: VoltAgentTextStreamPart,
+  fallbackMessageId: string,
+): StreamConversionResult[] | null {
+  const payload = (part as { payload?: Record<string, unknown> }).payload ?? part;
+  const partType = (part as { type: string }).type;
+
+  if (partType === "message-metadata") {
+    const messageId =
+      (part as { messageId?: string }).messageId ??
+      (payload as { messageId?: string }).messageId ??
+      fallbackMessageId;
+    const messageMetadata =
+      (payload as { messageMetadata?: unknown }).messageMetadata ??
+      (payload as { metadata?: unknown }).metadata;
+
+    if (!messageMetadata || typeof messageMetadata !== "object") {
+      return null;
+    }
+
+    // Best-practice carrier for app-specific metadata on AG-UI streams.
+    const customEvent: CustomEvent = {
+      type: EventType.CUSTOM,
+      name: VOLTAGENT_MESSAGE_METADATA_EVENT_NAME,
+      value: {
+        messageId: messageId || undefined,
+        metadata: messageMetadata,
+      },
+    };
+
+    return [customEvent];
+  }
+
+  switch (part.type) {
+    case "text-start": {
+      // Ignore explicit start; we'll synthesize start when first chunk/end arrives to avoid duplicates
+      return null;
+    }
+    case "text-delta": {
+      const messageId = part.messageId ?? fallbackMessageId;
+      const event: TextMessageChunkEvent = {
+        type: EventType.TEXT_MESSAGE_CHUNK,
+        delta: part.text ?? "",
+        messageId,
+        role: "assistant",
+      };
+      return [event];
+    }
+    case "text-end": {
+      // Let transformChunks close the message; avoid emitting END without a START
+      return null;
+    }
+    case "tool-call": {
+      const toolCallId = (payload as { toolCallId?: string }).toolCallId ?? generateId();
+      const toolName = (payload as { toolName?: string }).toolName ?? "tool";
+      const rawArgs =
+        (payload as { args?: unknown }).args ??
+        (payload as { input?: unknown }).input ??
+        (payload as { arguments?: unknown }).arguments;
+      const argsEvent: ToolCallArgsEvent = {
+        type: EventType.TOOL_CALL_ARGS,
+        toolCallId,
+        delta: safeStringify(rawArgs ?? {}),
+      };
+      const startEvent: ToolCallStartEvent = {
+        type: EventType.TOOL_CALL_START,
+        toolCallId,
+        toolCallName: toolName,
+        parentMessageId: fallbackMessageId,
+      };
+      const endEvent: ToolCallEndEvent = {
+        type: EventType.TOOL_CALL_END,
+        toolCallId,
+      };
+      return [startEvent, argsEvent, endEvent];
+    }
+    case "tool-result": {
+      const rawResult =
+        (payload as { result?: unknown }).result ??
+        (payload as { output?: unknown }).output ??
+        (payload as { data?: unknown }).data ??
+        payload;
+
+      // Check if the tool result is an activity message.
+      // Tools can return { activityType: string, content: Record<string, any> }
+      // to emit an ACTIVITY_SNAPSHOT event instead of a plain TOOL_CALL_RESULT.
+      const activityEvents = tryExtractActivityFromToolResult(rawResult, fallbackMessageId);
+      if (activityEvents) {
+        // Emit both the activity event(s) AND the original tool result so that
+        // the model's tool call is properly resolved.
+        const resultEvent: ToolCallResultEvent = {
+          type: EventType.TOOL_CALL_RESULT,
+          toolCallId: (payload as { toolCallId?: string }).toolCallId ?? generateId(),
+          content: safeStringify(rawResult ?? {}),
+          messageId: generateId(),
+          role: "tool",
+        };
+        return [...activityEvents, resultEvent];
+      }
+
+      const resultEvent: ToolCallResultEvent = {
+        type: EventType.TOOL_CALL_RESULT,
+        toolCallId: (payload as { toolCallId?: string }).toolCallId ?? generateId(),
+        content: safeStringify(rawResult ?? {}),
+        messageId: generateId(),
+        role: "tool",
+      };
+      return [resultEvent];
+    }
+    case "error": {
+      const errorEvent: TextMessageChunkEvent = {
+        type: EventType.TEXT_MESSAGE_CHUNK,
+        delta: `Error: ${(payload as { error?: unknown }).error}`,
+        messageId: fallbackMessageId,
+        role: "assistant",
+      };
+      return [errorEvent];
+    }
+    default: {
+      // VoltAgent tools or custom stream parts can emit activity events directly.
+      // These stream part types are not part of the standard AI SDK but can be
+      // injected by VoltAgent hooks or custom tool implementations.
+      const typeStr = partType as string;
+      if (typeStr === "activity-snapshot") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const content =
+          ((payload as { content?: Record<string, unknown> }).content as Record<string, unknown>) ??
+          {};
+        const replace = (payload as { replace?: boolean }).replace ?? true;
+        const event: ActivitySnapshotEvent = {
+          type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+          messageId,
+          activityType,
+          content,
+          replace,
+        };
+        return [event];
+      }
+      if (typeStr === "activity-delta") {
+        const messageId = (part as { messageId?: string }).messageId ?? fallbackMessageId;
+        const activityType = (payload as { activityType?: string }).activityType ?? "activity";
+        const patch = (payload as { patch?: unknown[] }).patch ?? [];
+        const event: ActivityDeltaEvent = {
+          type: ACTIVITY_DELTA_EVENT_TYPE,
+          messageId,
+          activityType,
+          patch,
+        };
+        return [event];
+      }
+      return null;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Activity extraction from tool results
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks whether a tool result represents an activity message.
+ *
+ * A tool can signal that its result should be surfaced as an AG-UI activity
+ * event by returning an object (or array of objects) with these fields:
+ *
+ *   { activityType: string, content: Record<string, any>, replace?: boolean }
+ *
+ * When detected, the adapter emits ACTIVITY_SNAPSHOT events so that
+ * frontends (CopilotKit, A2UI, etc.) can render rich, interactive UI
+ * instead of showing raw tool JSON.
+ */
+function tryExtractActivityFromToolResult(
+  rawResult: unknown,
+  fallbackMessageId: string,
+): (ActivitySnapshotEvent | ActivityDeltaEvent)[] | null {
+  if (!rawResult || typeof rawResult !== "object") return null;
+
+  // Single activity object
+  if (!Array.isArray(rawResult)) {
+    const obj = rawResult as Record<string, unknown>;
+    if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
+      const event: ActivitySnapshotEvent = {
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        content: obj.content as Record<string, unknown>,
+        replace: (obj.replace as boolean) ?? true,
+      };
+      return [event];
+    }
+    if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
+      const event: ActivityDeltaEvent = {
+        type: ACTIVITY_DELTA_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        patch: obj.patch as unknown[],
+      };
+      return [event];
+    }
+    return null;
+  }
+
+  // Array of activity objects
+  const events: (ActivitySnapshotEvent | ActivityDeltaEvent)[] = [];
+  for (const item of rawResult) {
+    if (!item || typeof item !== "object") continue;
+    const obj = item as Record<string, unknown>;
+
+    if (typeof obj.activityType === "string" && obj.content && typeof obj.content === "object") {
+      events.push({
+        type: ACTIVITY_SNAPSHOT_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        content: obj.content as Record<string, unknown>,
+        replace: (obj.replace as boolean) ?? true,
+      });
+    } else if (typeof obj.activityType === "string" && Array.isArray(obj.patch)) {
+      events.push({
+        type: ACTIVITY_DELTA_EVENT_TYPE,
+        messageId: (obj.messageId as string) ?? fallbackMessageId,
+        activityType: obj.activityType as string,
+        patch: obj.patch as unknown[],
+      });
+    }
+  }
+
+  return events.length > 0 ? events : null;
+}
+
+export function createVoltAgentAGUI(config: VoltAgentAGUIConfig): VoltAgentAGUI {
+  return new VoltAgentAGUI(config);
+}
+
+function generateId(): string {
+  const cryptoApi = typeof globalThis !== "undefined" ? (globalThis as any).crypto : undefined;
+  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
+    return cryptoApi.randomUUID();
+  }
+
+  const random = () => Math.floor(Math.random() * 0xffff);
+  let uuid = "";
+  uuid += random().toString(16).padStart(4, "0");
+  uuid += random().toString(16).padStart(4, "0");
+  uuid += "-";
+  uuid += random().toString(16).padStart(4, "0");
+  uuid += "-";
+  uuid += ((random() & 0x0fff) | 0x4000).toString(16).padStart(4, "0");
+  uuid += "-";
+  uuid += ((random() & 0x3fff) | 0x8000).toString(16).padStart(4, "0");
+  uuid += "-";
+  uuid += random().toString(16).padStart(4, "0");
+  uuid += random().toString(16).padStart(4, "0");
+  uuid += random().toString(16).padStart(4, "0");
+  return uuid;
+}

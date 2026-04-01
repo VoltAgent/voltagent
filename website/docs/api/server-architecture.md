@@ -30,6 +30,15 @@ The official server implementation using [Hono](https://hono.dev/):
 - TypeScript-first with excellent DX
 - Works with Node.js, Bun, Deno, and Edge runtimes
 
+### @voltagent/server-elysia
+
+High-performance server implementation using [Elysia](https://elysiajs.com/):
+
+- Extremely fast performance (optimized for Bun)
+- End-to-end type safety with Eden
+- Built-in OpenAPI and Swagger UI support
+- Excellent developer experience with strict typing
+
 ## Core Concepts
 
 ### Server Provider Interface
@@ -209,6 +218,75 @@ new VoltAgent({
 
       // Add rate limiting
       app.use("*", rateLimiter());
+    },
+  }),
+});
+```
+
+## Using the Elysia Server
+
+### Basic Setup
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import { elysiaServer } from "@voltagent/server-elysia";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: elysiaServer({
+    port: 3141,
+    enableSwaggerUI: true,
+  }),
+});
+```
+
+### Configuration Options
+
+```typescript
+interface ElysiaServerConfig {
+  // Port to listen on (default: 3141)
+  port?: number;
+
+  // Hostname to bind the server to (default: "0.0.0.0")
+  hostname?: string;
+
+  // Enable Swagger UI (default: true in dev, false in prod)
+  enableSwaggerUI?: boolean;
+
+  // Configure the Elysia app directly
+  configureApp?: (app: Elysia) => void | Promise<void>;
+
+  // Configure the full app (including routes and middleware)
+  configureFullApp?: (params: {
+    app: Elysia;
+    routes: Record<string, () => void>;
+    middlewares: Record<string, () => void>;
+  }) => void | Promise<void>;
+
+  // Authentication provider
+  authNext?: AuthNextConfig;
+}
+```
+
+### Advanced Configuration
+
+Access the Elysia app directly for custom middleware and routes:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: elysiaServer({
+    configureApp: (app) => {
+      // Add custom middleware
+      app.derive(({ request }) => ({
+        userId: request.headers.get("x-user-id"),
+      }));
+
+      // Add custom routes
+      app.get("/health", () => ({ status: "ok" }));
+
+      // Create route groups
+      app.group("/api/v2", (app) => app.get("/users", getUsersHandler));
     },
   }),
 });

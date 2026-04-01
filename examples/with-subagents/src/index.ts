@@ -1,7 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import {
   Agent,
-  AiSdkEmbeddingAdapter,
   InMemoryVectorAdapter,
   Memory,
   VoltAgent,
@@ -21,7 +19,7 @@ const logger = createPinoLogger({
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
 });
 
@@ -39,15 +37,17 @@ const uppercaseTool = createTool({
 // Create two simple specialized subagents
 const contentCreatorAgent = new Agent({
   name: "ContentCreator",
+  purpose: "Drafts short content",
   instructions: "Creates short text content on requested topics",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 
 const formatterAgent = new Agent({
   name: "Formatter",
+  purpose: "Cleans and formats text",
   instructions: "Formats and styles text content",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [uppercaseTool],
   memory,
 });
@@ -56,12 +56,12 @@ const formatterAgent = new Agent({
 const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
   subAgents: [contentCreatorAgent, formatterAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result"],
+      types: ["tool-call", "tool-result", "text-delta"],
     },
   },
 });

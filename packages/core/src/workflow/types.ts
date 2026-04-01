@@ -3,9 +3,10 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { StreamTextResult, UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
+import type { Agent } from "../agent/agent";
 import type { BaseMessage } from "../agent/providers";
 import type { UsageInfo } from "../agent/providers";
-import type { UserContext } from "../agent/types";
+import type { InputGuardrail, OutputGuardrail, UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { WorkflowExecutionContext } from "./context";
@@ -30,6 +31,12 @@ export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> 
     stepExecutionState?: DangerouslyAllowAny;
     /** Results from completed steps that need to be preserved */
     completedStepsData?: DangerouslyAllowAny[];
+    /** Shared workflow state snapshot */
+    workflowState?: WorkflowStateStore;
+    /** Step data snapshots required by getStepData() after resume */
+    stepData?: Record<string, WorkflowCheckpointStepData>;
+    /** Accumulated usage up to suspension point */
+    usage?: UsageInfo;
   };
 }
 
@@ -197,7 +204,92 @@ export interface WorkflowStreamResult<
    * Abort the workflow execution
    */
   abort: () => void;
+  /**
+   * Subscribe to run-level stream events without consuming the main async iterator.
+   * Returns an unsubscribe function.
+   */
+  watch: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => () => void;
+  /**
+   * Async variant of watch() for compatibility with observer-based integrations.
+   */
+  watchAsync: (cb: (event: WorkflowStreamEvent) => void | Promise<void>) => Promise<() => void>;
+  /**
+   * Create a ReadableStream view over workflow events.
+   */
+  observeStream: () => ReadableStream<WorkflowStreamEvent>;
+  /**
+   * Compatibility surface for legacy stream consumers.
+   */
+  streamLegacy: () => {
+    stream: ReadableStream<WorkflowStreamEvent>;
+    getWorkflowState: () => ReturnType<Memory["getWorkflowState"]>;
+  };
 }
+
+/**
+ * Result returned when a workflow execution is started asynchronously
+ */
+export interface WorkflowStartAsyncResult {
+  /**
+   * Unique execution ID for this workflow run
+   */
+  executionId: string;
+  /**
+   * The workflow ID
+   */
+  workflowId: string;
+  /**
+   * When the async execution was started
+   */
+  startAt: Date;
+}
+
+export interface WorkflowTimeTravelOptions {
+  /**
+   * Source execution ID to replay from
+   */
+  executionId: string;
+  /**
+   * Step ID to restart execution from
+   */
+  stepId: string;
+  /**
+   * Optional override for the selected step input/state data
+   */
+  inputData?: DangerouslyAllowAny;
+  /**
+   * Optional resume payload passed as `resumeData` to the selected step
+   */
+  resumeData?: DangerouslyAllowAny;
+  /**
+   * Optional override for shared workflow state during replay
+   */
+  workflowStateOverride?: WorkflowStateStore;
+  /**
+   * Optional memory adapter to read source execution and persist replay execution state.
+   * Falls back to workflow default memory when omitted.
+   */
+  memory?: Memory;
+}
+
+export interface WorkflowRetryConfig {
+  /**
+   * Number of retry attempts for a step when it throws an error
+   * @default 0
+   */
+  attempts?: number;
+  /**
+   * Delay in milliseconds between retry attempts
+   * @default 0
+   */
+  delayMs?: number;
+}
+
+export type WorkflowStateStore = Record<string, unknown>;
+
+export type WorkflowStateUpdater =
+  | WorkflowStateStore
+  | ((previous: WorkflowStateStore) => WorkflowStateStore);
 
 export interface WorkflowRunOptions {
   /**
@@ -219,9 +311,17 @@ export interface WorkflowRunOptions {
    */
   userId?: string;
   /**
+   * Additional execution metadata persisted with workflow state
+   */
+  metadata?: Record<string, unknown>;
+  /**
    * The user context, this can be used to track the current user context in a workflow
    */
   context?: UserContext;
+  /**
+   * Shared workflow state available to all steps
+   */
+  workflowState?: WorkflowStateStore;
   /**
    * Override Memory V2 for this specific execution
    * Takes priority over workflow config memory and global memory
@@ -236,6 +336,11 @@ export interface WorkflowRunOptions {
    */
   resumeFrom?: WorkflowResumeOptions;
   /**
+   * Internal replay lineage context for deterministic time-travel executions
+   * @internal
+   */
+  replayFrom?: WorkflowReplayOptions;
+  /**
    * Suspension mode:
    * - 'graceful': Wait for current step to complete before suspending (default)
    * - 'immediate': Suspend immediately, even during step execution
@@ -247,6 +352,37 @@ export interface WorkflowRunOptions {
    * If not provided, will use the workflow's logger or global logger
    */
   logger?: Logger;
+  /**
+   * Override retry settings for this workflow execution
+   */
+  retryConfig?: WorkflowRetryConfig;
+  /**
+   * Persist running checkpoints every N completed steps.
+   * @default 1
+   */
+  checkpointInterval?: number;
+  /**
+   * Disable running checkpoint persistence for this execution.
+   * @default false
+   */
+  disableCheckpointing?: boolean;
+  /**
+   * Input guardrails to run before workflow execution
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails to run after workflow execution
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance to supply to workflow guardrails
+   */
+  guardrailAgent?: Agent;
+  /**
+   * Internal flag to skip initial state creation when it is already persisted
+   * @internal
+   */
+  skipStateInit?: boolean;
 }
 
 export interface WorkflowResumeOptions {
@@ -260,6 +396,9 @@ export interface WorkflowResumeOptions {
   checkpoint?: {
     stepExecutionState?: DangerouslyAllowAny;
     completedStepsData?: DangerouslyAllowAny[];
+    workflowState?: WorkflowStateStore;
+    stepData?: Record<string, WorkflowCheckpointStepData>;
+    usage?: UsageInfo;
   };
   /**
    * The step index to resume from
@@ -275,11 +414,132 @@ export interface WorkflowResumeOptions {
   resumeData?: DangerouslyAllowAny;
 }
 
+export interface WorkflowReplayOptions {
+  /**
+   * Source execution ID used for replay lineage
+   */
+  executionId: string;
+  /**
+   * Source step ID where replay starts
+   */
+  stepId: string;
+}
+
+export interface WorkflowRestartCheckpoint {
+  /**
+   * Zero-based step index where execution should continue
+   */
+  resumeStepIndex: number;
+  /**
+   * Last completed step index at checkpoint time
+   */
+  lastCompletedStepIndex: number;
+  /**
+   * Current workflow data snapshot
+   */
+  stepExecutionState?: DangerouslyAllowAny;
+  /**
+   * Completed step snapshots used by downstream lookups
+   */
+  completedStepsData?: DangerouslyAllowAny[];
+  /**
+   * Shared workflow state snapshot
+   */
+  workflowState?: WorkflowStateStore;
+  /**
+   * Step data snapshots required by getStepData() after restart
+   */
+  stepData?: Record<string, WorkflowCheckpointStepData>;
+  /**
+   * Usage accumulated up to checkpoint
+   */
+  usage?: UsageInfo;
+  /**
+   * Event sequence at checkpoint time
+   */
+  eventSequence?: number;
+  /**
+   * Timestamp when the checkpoint was persisted
+   */
+  checkpointedAt: Date;
+}
+
+export interface WorkflowRestartAllResult {
+  restarted: string[];
+  failed: Array<{
+    executionId?: string;
+    workflowId?: string;
+    error: string;
+    isWorkflowFailure?: boolean;
+  }>;
+}
+
 /**
  * Hooks for the workflow
  * @param DATA - The type of the data
  * @param RESULT - The type of the result
  */
+export type WorkflowHookStatus = "completed" | "suspended" | "cancelled" | "error";
+
+export type WorkflowStepStatus =
+  | "running"
+  | "success"
+  | "error"
+  | "suspended"
+  | "cancelled"
+  | "skipped";
+
+export type WorkflowStepData = {
+  input: DangerouslyAllowAny;
+  output?: DangerouslyAllowAny;
+  status: WorkflowStepStatus;
+  error?: Error | null;
+};
+
+export type WorkflowSerializedStepError = {
+  message: string;
+  stack?: string;
+  name?: string;
+};
+
+export type WorkflowCheckpointStepData = {
+  input: DangerouslyAllowAny;
+  output?: DangerouslyAllowAny;
+  status: WorkflowStepStatus;
+  error?: WorkflowSerializedStepError | null;
+};
+
+export type WorkflowHookContext<DATA, RESULT> = {
+  /**
+   * Terminal status for the workflow execution
+   */
+  status: WorkflowHookStatus;
+  /**
+   * The current workflow state
+   */
+  state: WorkflowState<DATA, RESULT>;
+  /**
+   * Result of the workflow execution, if available
+   */
+  result: RESULT | null;
+  /**
+   * Error from the workflow execution, if any
+   */
+  error: unknown | null;
+  /**
+   * Suspension metadata when status is suspended
+   */
+  suspension?: WorkflowSuspensionMetadata;
+  /**
+   * Cancellation metadata when status is cancelled
+   */
+  cancellation?: WorkflowCancellationMetadata;
+  /**
+   * Step input/output snapshots keyed by step ID
+   */
+  steps: Record<string, WorkflowStepData>;
+};
+
 export type WorkflowHooks<DATA, RESULT> = {
   /**
    * Called when the workflow starts
@@ -300,11 +560,33 @@ export type WorkflowHooks<DATA, RESULT> = {
    */
   onStepEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
   /**
-   * Called when the workflow ends
-   * @param state - The current state of the workflow
+   * Called when the workflow is suspended
+   * @param context - The terminal hook context
    * @returns void
    */
-  onEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
+  onSuspend?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow ends with an error
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onError?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow reaches a terminal state
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onFinish?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow ends (completed, cancelled, or error)
+   * @param state - The current state of the workflow
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onEnd?: (
+    state: WorkflowState<DATA, RESULT>,
+    context?: WorkflowHookContext<DATA, RESULT>,
+  ) => Promise<void>;
 };
 
 export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =
@@ -371,6 +653,32 @@ export type WorkflowConfig<
    * If not provided, will use global observability or create a default one
    */
   observability?: VoltAgentObservability;
+  /**
+   * Input guardrails to run before workflow execution
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails to run after workflow execution
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance to supply to workflow guardrails
+   */
+  guardrailAgent?: Agent;
+  /**
+   * Default retry configuration for steps in this workflow
+   */
+  retryConfig?: WorkflowRetryConfig;
+  /**
+   * Default running checkpoint persistence interval in completed-step count.
+   * @default 1
+   */
+  checkpointInterval?: number;
+  /**
+   * Disable running checkpoint persistence for this workflow by default.
+   * @default false
+   */
+  disableCheckpointing?: boolean;
 };
 
 /**
@@ -404,6 +712,10 @@ export type Workflow<
    */
   inputSchema?: INPUT_SCHEMA;
   /**
+   * Result schema for the workflow (for API access)
+   */
+  resultSchema?: RESULT_SCHEMA;
+  /**
    * Suspend schema for the workflow (for API access)
    */
   suspendSchema?: SUSPEND_SCHEMA;
@@ -420,6 +732,22 @@ export type Workflow<
    */
   observability?: VoltAgentObservability;
   /**
+   * Input guardrails configured for this workflow
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails configured for this workflow
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance supplied to workflow guardrails
+   */
+  guardrailAgent?: Agent;
+  /**
+   * Default retry configuration for steps in this workflow
+   */
+  retryConfig?: WorkflowRetryConfig;
+  /**
    * Get the full state of the workflow including all steps
    * @returns The serialized workflow state
    */
@@ -430,8 +758,14 @@ export type Workflow<
     stepsCount: number;
     steps: DangerouslyAllowAny[];
     inputSchema?: DangerouslyAllowAny;
+    resultSchema?: DangerouslyAllowAny;
     suspendSchema?: DangerouslyAllowAny;
     resumeSchema?: DangerouslyAllowAny;
+    retryConfig?: WorkflowRetryConfig;
+    guardrails?: {
+      inputCount: number;
+      outputCount: number;
+    };
   };
   /**
    * Execute the workflow with the given input
@@ -453,6 +787,47 @@ export type Workflow<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
+  /**
+   * Start the workflow in the background without waiting for completion
+   * @param input - The input to the workflow
+   * @param options - Options for the workflow execution
+   * @returns Async start metadata with execution ID
+   */
+  startAsync: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ) => Promise<WorkflowStartAsyncResult>;
+  /**
+   * Replay an existing execution from a selected historical step.
+   * A new execution ID is created and linked to the source run for audit safety.
+   */
+  timeTravel: (
+    options: WorkflowTimeTravelOptions,
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Stream replay execution from a selected historical step.
+   * A new execution ID is created and linked to the source run for audit safety.
+   */
+  timeTravelStream: (
+    options: WorkflowTimeTravelOptions,
+  ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
+  /**
+   * Restart an interrupted execution from persisted checkpoint state
+   * @param executionId - Execution ID to restart
+   * @param options - Optional execution overrides
+   * @returns Execution result of the restarted run
+   */
+  restart: (
+    executionId: string,
+    options?: WorkflowRunOptions,
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Restart all active (running) executions for this workflow
+   * This method only operates on this workflow instance.
+   * Use `WorkflowRegistry.restartAllActiveWorkflowRuns({ workflowId })` for cross-workflow filtering.
+   * @returns Lists of restarted and failed execution IDs
+   */
+  restartAllActive: () => Promise<WorkflowRestartAllResult>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
@@ -482,7 +857,21 @@ export interface BaseWorkflowHistoryEntry {
  */
 export interface BaseWorkflowStepHistoryEntry {
   stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepType:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow"
+    | "guardrail"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   stepName: string;
   status: "pending" | "running" | "completed" | "error" | "skipped"; // includes all possible statuses
   startTime?: Date; // optional since pending steps might not have started
@@ -567,18 +956,21 @@ export interface WorkflowStats {
 /**
  * Event emitted during workflow streaming
  */
+export type WorkflowStreamEventType =
+  | "workflow-start"
+  | "workflow-suspended"
+  | "workflow-complete"
+  | "workflow-cancelled"
+  | "workflow-error"
+  | "step-start"
+  | "step-complete"
+  | (string & {});
+
 export interface WorkflowStreamEvent {
   /**
    * Type of the event (e.g., "step-start", "step-complete", "custom", "agent-stream")
    */
-  type:
-    | "workflow-start"
-    | "workflow-suspended"
-    | "workflow-complete"
-    | "workflow-cancelled"
-    | "workflow-error"
-    | "step-start"
-    | "step-complete";
+  type: WorkflowStreamEventType;
   /**
    * Unique execution ID for this workflow run
    */
@@ -598,7 +990,7 @@ export interface WorkflowStreamEvent {
   /**
    * Current status of the step/event
    */
-  status: "pending" | "running" | "success" | "error" | "suspended" | "cancelled";
+  status: "pending" | "running" | "success" | "skipped" | "error" | "suspended" | "cancelled";
   /**
    * User context passed through the workflow
    */
@@ -621,7 +1013,14 @@ export interface WorkflowStreamEvent {
     | "parallel-all"
     | "parallel-race"
     | "tap"
-    | "workflow";
+    | "workflow"
+    | "guardrail"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   /**
    * Additional metadata
    */
@@ -639,7 +1038,9 @@ export interface WorkflowStreamWriter {
   /**
    * Write a custom event to the stream
    */
-  write(event: Partial<WorkflowStreamEvent> & { type: string }): void;
+  write(
+    event: Omit<Partial<WorkflowStreamEvent>, "type"> & { type: WorkflowStreamEventType },
+  ): void;
 
   /**
    * Pipe events from an agent's fullStream to the workflow stream
@@ -689,6 +1090,7 @@ export interface CreateWorkflowExecutionOptions {
   userId?: string;
   conversationId?: string;
   context?: UserContext;
+  workflowState?: WorkflowStateStore;
   metadata?: Record<string, unknown>;
   executionId?: string;
 }

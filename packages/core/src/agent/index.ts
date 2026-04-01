@@ -17,8 +17,19 @@ export type {
   OutputGuardrailStreamArgs,
   OutputGuardrailStreamResult,
   OutputGuardrailStreamHandler,
+  InputMiddleware,
+  OutputMiddleware,
+  InputMiddlewareArgs,
+  OutputMiddlewareArgs,
+  InputMiddlewareResult,
+  OutputMiddlewareResult,
+  MiddlewareFunction,
+  MiddlewareDefinition,
+  MiddlewareDirection,
+  MiddlewareContext,
 } from "./types";
 export type { CreateInputGuardrailOptions, CreateOutputGuardrailOptions } from "./guardrail";
+export type { CreateInputMiddlewareOptions, CreateOutputMiddlewareOptions } from "./middleware";
 export {
   createSensitiveNumberGuardrail,
   createEmailRedactorGuardrail,
@@ -35,3 +46,4 @@ export {
   createDefaultSafetyGuardrails,
 } from "./guardrails/defaults";
 export { createInputGuardrail, createOutputGuardrail } from "./guardrail";
+export { createInputMiddleware, createOutputMiddleware } from "./middleware";

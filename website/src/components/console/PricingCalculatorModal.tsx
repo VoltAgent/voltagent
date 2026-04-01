@@ -15,8 +15,8 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
     const traces = traceCount;
     const planConfig =
       selectedPlan === "core"
-        ? { baseCost: 50, includedTraces: 5000 }
-        : { baseCost: 500, includedTraces: 20000 };
+        ? { baseCost: 50, includedTraces: 50000 }
+        : { baseCost: 250, includedTraces: 250000 };
 
     if (traces <= planConfig.includedTraces) {
       return {
@@ -49,7 +49,7 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -66,7 +66,7 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-md bg-[#191c24] border border-gray-700/50 rounded-lg p-6 shadow-xl"
+        className="relative w-full max-w-md bg-[#1a1b1e] border border-[#2b2d2f] rounded-xl p-6 shadow-xl"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -105,28 +105,44 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-3">Select Plan:</label>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedPlan("core")}
-              className={`p-3 rounded-lg border font-medium transition-all ${
+            <div
+              onClick={() => {
+                setSelectedPlan("core");
+                if (traceCount > 100000) setTraceCount(100000);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setSelectedPlan("core");
+                  if (traceCount > 100000) setTraceCount(100000);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className={`p-3 rounded-lg font-medium transition-all cursor-pointer text-center ${
                 selectedPlan === "core"
-                  ? "border-emerald-400 bg-emerald-400/10 text-emerald-400"
-                  : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
+                  ? "bg-white text-black"
+                  : "bg-[#2b2d2f] text-gray-300 hover:bg-[#3b3d3f]"
               }`}
             >
               Core ($50)
-            </button>
-            <button
-              type="button"
+            </div>
+            <div
               onClick={() => setSelectedPlan("pro")}
-              className={`p-3 rounded-lg border font-medium transition-all ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setSelectedPlan("pro");
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className={`p-3 rounded-lg font-medium transition-all cursor-pointer text-center ${
                 selectedPlan === "pro"
-                  ? "border-emerald-400 bg-emerald-400/10 text-emerald-400"
-                  : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
+                  ? "bg-white text-black"
+                  : "bg-[#2b2d2f] text-gray-300 hover:bg-[#3b3d3f]"
               }`}
             >
               Pro ($250)
-            </button>
+            </div>
           </div>
         </div>
 
@@ -134,29 +150,28 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
         <div className="mb-6">
           <label htmlFor="trace-slider" className="block text-sm font-medium text-gray-300 mb-4">
             Monthly trace usage:{" "}
-            <span className="text-emerald-400 font-semibold">{traceCount.toLocaleString()}</span>{" "}
-            traces
+            <span className="text-white font-semibold">{traceCount.toLocaleString()}</span> traces
           </label>
           <div className="relative">
             <input
               id="trace-slider"
               type="range"
               min={0}
-              max={50000}
+              max={selectedPlan === "core" ? 100000 : 500000}
               step={1000}
               value={traceCount}
               onChange={(e) => setTraceCount(Number(e.target.value))}
-              className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer ${styles.rangeSlider}`}
+              className={`w-full h-2 bg-[#2b2d2f] rounded-lg appearance-none cursor-pointer ${styles.rangeSlider}`}
               style={{
-                background: `linear-gradient(to right, #00d992 0%, #00d992 ${
-                  (traceCount / 50000) * 100
-                }%, #374151 ${(traceCount / 50000) * 100}%, #374151 100%)`,
+                background: `linear-gradient(to right, #ffffff 0%, #ffffff ${
+                  (traceCount / (selectedPlan === "core" ? 100000 : 500000)) * 100
+                }%, #2b2d2f ${(traceCount / (selectedPlan === "core" ? 100000 : 500000)) * 100}%, #2b2d2f 100%)`,
               }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-400 mt-2">
             <span>0</span>
-            <span>50,000+</span>
+            <span>{selectedPlan === "core" ? "100,000+" : "500,000+"}</span>
           </div>
           <p className="mt-2 text-xs text-gray-400">
             Slide to adjust your expected monthly trace count
@@ -165,73 +180,85 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
 
         {/* Results */}
         <div className="space-y-4 mb-6">
-          <div className="bg-[#292929] rounded-lg p-4 border border-gray-700/50">
-            <h4 className="text-sm font-medium text-emerald-400 mb-3">Cost Breakdown</h4>
+          <div className="bg-[#232527] rounded-lg p-4">
+            <h4 className="text-sm font-medium text-white mb-3">Cost Breakdown</h4>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">
                   {selectedPlan === "core" ? "Core" : "Pro"} Plan Base
                 </span>
-                <span className="text-gray-100 font-medium">${cost.baseCost}</span>
+                <span className="text-white font-medium">${cost.baseCost}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-gray-400">Included traces</span>
-                <span className="text-gray-100 font-medium">
+                <span className="text-white font-medium">
                   {cost.includedTraces.toLocaleString()}
                 </span>
               </div>
 
               {cost.extraTraces > 0 && (
-                <div className="border-t border-gray-700/50 pt-3 mt-3 space-y-2">
+                <div className="border-t border-[#2b2d2f] pt-3 mt-3 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Extra traces</span>
-                    <span className="text-gray-100 font-medium">
+                    <span className="text-white font-medium">
                       {cost.extraTraces.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Overage cost</span>
-                    <span className="text-gray-100 font-medium">${cost.overageCost}</span>
+                    <span className="text-white font-medium">${cost.overageCost}</span>
                   </div>
                 </div>
               )}
 
-              <div className="border-t border-gray-700/50 pt-3 mt-3">
+              <div className="border-t border-[#2b2d2f] pt-3 mt-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-100 font-semibold">Total Monthly Cost</span>
-                  <span className="text-emerald-400 text-lg font-bold">${cost.totalCost}</span>
+                  <span className="text-white font-semibold">Total Monthly Cost</span>
+                  <span className="text-white text-lg font-bold">${cost.totalCost}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Pricing info */}
-          <div className="p-3 bg-emerald-400/10 border border-emerald-400/20 rounded-md">
-            <p className="text-emerald-400 text-xs">
-              <span className="font-medium">Pricing:</span> $
-              {selectedPlan === "core" ? "50" : "500"}/month base + $10 per 5,000 additional traces
+          <div className="p-3 bg-[#232527] rounded-lg">
+            <p className="text-gray-400 text-xs">
+              <span className="font-medium text-white">Pricing:</span> $
+              {selectedPlan === "core" ? "50" : "250"}/month base + $10 per 5,000 additional traces
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <button
-            type="button"
+          <div
             onClick={onClose}
-            className="flex-1 inline-flex items-center justify-center border-solid border font-semibold rounded transition-colors px-4 py-3 text-sm bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                onClose();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="flex-1 inline-flex items-center justify-center font-semibold rounded-lg transition-colors px-4 py-3 text-sm bg-[#2b2d2f] text-white hover:bg-[#3b3d3f] cursor-pointer"
           >
             Close
-          </button>
-          <button
-            type="button"
+          </div>
+          <div
             onClick={() => window.open("https://console.voltagent.dev", "_blank")}
-            className="flex-1 inline-flex items-center justify-center border-solid border font-semibold rounded transition-colors px-4 py-3 text-sm bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                window.open("https://console.voltagent.dev", "_blank");
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="flex-1 inline-flex items-center justify-center font-semibold rounded-lg transition-colors px-4 py-3 text-sm bg-white text-black hover:bg-gray-200 cursor-pointer"
           >
             Get Started
-          </button>
+          </div>
         </div>
       </motion.div>
     </div>

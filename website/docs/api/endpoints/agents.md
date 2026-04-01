@@ -86,9 +86,19 @@ Generate a text response from an agent synchronously.
 {
   "input": "What is the weather like today?",
   "options": {
-    "userId": "user-123",
-    "conversationId": "conv-456",
-    "contextLimit": 10,
+    "memory": {
+      "userId": "user-123",
+      "conversationId": "conv-456",
+      "options": {
+        "contextLimit": 10,
+        "readOnly": false,
+        "conversationPersistence": {
+          "mode": "step",
+          "debounceMs": 200,
+          "flushOnToolResult": true
+        }
+      }
+    },
     "maxSteps": 5,
     "temperature": 0.7,
     "maxOutputTokens": 1000,
@@ -98,7 +108,9 @@ Generate a text response from an agent synchronously.
     "seed": 42,
     "stopSequences": ["\n\n"],
     "providerOptions": {
-      "reasoningEffort": "medium"
+      "openai": {
+        "reasoningEffort": "medium"
+      }
     },
     "context": {
       "role": "admin",
@@ -170,9 +182,28 @@ Generate a text response from an agent synchronously.
 **Options:**
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `userId` | string | - | User ID for tracking |
-| `conversationId` | string | - | Conversation ID for context |
-| `contextLimit` | number | 10 | Message history limit |
+| `memory` | object | - | Runtime memory envelope (preferred) |
+| `memory.userId` | string | - | User ID for memory scoping |
+| `memory.conversationId` | string | - | Conversation ID for memory scoping |
+| `memory.options.contextLimit` | number | 10 | Message history limit |
+| `memory.options.readOnly` | boolean | `false` | Read memory context but disable memory writes for this call |
+| `memory.options.semanticMemory` | object | - | Semantic retrieval config |
+| `memory.options.semanticMemory.enabled` | boolean | - | Enable semantic retrieval for this call. Default: `undefined` (auto-enables if vectors are available). |
+| `memory.options.semanticMemory.semanticLimit` | number | 5 | Number of similar messages to retrieve |
+| `memory.options.semanticMemory.semanticThreshold` | number | 0.7 | Minimum similarity score (0-1) |
+| `memory.options.semanticMemory.mergeStrategy` | string | `"append"` | `"prepend"` or `"append"` or `"interleave"` |
+| `memory.options.conversationPersistence` | object | - | Groups conversation persistence settings (`mode`, `debounceMs`, `flushOnToolResult`) |
+| `memory.options.conversationPersistence.mode` | string | `"step"` | Persistence strategy: `"step"` or `"finish"` |
+| `memory.options.conversationPersistence.debounceMs` | number | `200` | Debounce interval for step checkpoint persistence |
+| `memory.options.conversationPersistence.flushOnToolResult` | boolean | `true` | Flush immediately on `tool-result`/`tool-error` in step mode |
+| `userId` | string | - | Deprecated: use `memory.userId` |
+| `conversationId` | string | - | Deprecated: use `memory.conversationId` |
+| `contextLimit` | number | 10 | Deprecated: use `memory.options.contextLimit` |
+| `semanticMemory` | object | - | Deprecated: use `memory.options.semanticMemory` |
+| `semanticMemory.enabled` | boolean | - | Deprecated: use `memory.options.semanticMemory.enabled`. Default: `undefined` (auto-enables if vectors are available). |
+| `semanticMemory.semanticLimit` | number | 5 | Deprecated: use `memory.options.semanticMemory.semanticLimit` |
+| `semanticMemory.semanticThreshold` | number | 0.7 | Deprecated: use `memory.options.semanticMemory.semanticThreshold` |
+| `semanticMemory.mergeStrategy` | string | `"append"` | Deprecated: use `memory.options.semanticMemory.mergeStrategy` |
 | `maxSteps` | number | - | Max iteration steps (for tool use) |
 | `temperature` | number | 0.7 | Randomness (0-1) |
 | `maxOutputTokens` | number | 4000 | Max tokens to generate |
@@ -183,6 +214,14 @@ Generate a text response from an agent synchronously.
 | `stopSequences` | string[] | - | Stop generation sequences |
 | `providerOptions` | object | - | Provider-specific options |
 | `context` | object | - | Dynamic agent context |
+| `conversationPersistence` | object | - | Deprecated: use `memory.options.conversationPersistence` (groups `mode`, `debounceMs`, `flushOnToolResult`) |
+| `conversationPersistence.mode` | string | `"step"` | Deprecated: use `memory.options.conversationPersistence.mode` |
+| `conversationPersistence.debounceMs` | number | `200` | Deprecated: use `memory.options.conversationPersistence.debounceMs` |
+| `conversationPersistence.flushOnToolResult` | boolean | `true` | Deprecated: use `memory.options.conversationPersistence.flushOnToolResult` |
+
+When both top-level legacy memory fields and `memory` envelope fields are provided, runtime resolution follows `resolveMemoryRuntimeOptions()` and values under `memory` take precedence.
+
+Use `memory.options.readOnly: true` when you need memory context reads without persisting new conversation state.
 
 **Response:**
 
@@ -219,6 +258,122 @@ curl -X POST http://localhost:3141/agents/assistant/text \
   }'
 ```
 
+### Using output for Structured Generation
+
+The `/text`, `/stream`, and `/chat` endpoints support structured output generation using the `output` option. Unlike the `/object` endpoint, this allows you to get structured data **while maintaining full tool calling capabilities**.
+
+**Key Differences:**
+
+| Feature           | `/object` endpoint | `output` with `/text` |
+| ----------------- | ------------------ | --------------------- |
+| Structured output | ✅                 | ✅                    |
+| Tool calling      | ❌                 | ✅                    |
+
+**Request Body with output:**
+
+```json
+{
+  "input": "Create a recipe for pasta carbonara",
+  "options": {
+    "output": {
+      "type": "object",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "ingredients": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "steps": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "prepTime": { "type": "number" }
+        },
+        "required": ["name", "ingredients", "steps"]
+      }
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "text": "Here is a classic pasta carbonara recipe...",
+    "output": {
+      "name": "Classic Pasta Carbonara",
+      "ingredients": [
+        "400g spaghetti",
+        "200g guanciale or pancetta",
+        "4 large eggs",
+        "100g Pecorino Romano cheese",
+        "Black pepper"
+      ],
+      "steps": [
+        "Bring a large pot of salted water to boil",
+        "Cook pasta according to package directions",
+        "While pasta cooks, dice guanciale and cook until crispy",
+        "Beat eggs with grated cheese and black pepper",
+        "Drain pasta, reserving 1 cup pasta water",
+        "Off heat, toss pasta with guanciale and fat",
+        "Add egg mixture, tossing quickly with pasta water"
+      ],
+      "prepTime": 20
+    },
+    "usage": {
+      "promptTokens": 145,
+      "completionTokens": 238,
+      "totalTokens": 383
+    },
+    "finishReason": "stop",
+    "toolCalls": [],
+    "toolResults": []
+  }
+}
+```
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:3141/agents/assistant/text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Create a recipe for pasta carbonara",
+    "options": {
+      "output": {
+        "type": "object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "ingredients": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "prepTime": { "type": "number" }
+          },
+          "required": ["name", "ingredients"]
+        }
+      }
+    }
+  }'
+```
+
+**Supported Types:**
+
+- `"object"` - Returns structured JSON conforming to the provided schema
+- `"text"` - Returns constrained text output
+
+**When to Use:**
+
+- Use `output` when you need structured output AND tool calling
+- Use `/object` endpoint for simple data extraction without tools
+
 ## Stream Text (Raw)
 
 Generate a text response and stream raw fullStream data via Server-Sent Events (SSE). This endpoint provides direct access to all stream events for custom implementations.
@@ -231,13 +386,13 @@ Generate a text response and stream raw fullStream data via Server-Sent Events (
 
 The stream returns raw AI SDK fullStream events. Each event is a JSON object containing the complete event data.
 
-**Event Types:**
+**Common Event Types:**
 
-- `text-delta` - Incremental text chunks with delta content
-- `tool-call` - Tool invocation events
-- `tool-result` - Tool execution results
-- `finish` - Stream completion with usage statistics
-- `error` - Error events if something goes wrong
+- Lifecycle: `start`, `start-step`, `finish-step`, `finish`, `abort`, `error`
+- Text: `text-start`, `text-delta`, `text-end`
+- Reasoning: `reasoning-start`, `reasoning-delta`, `reasoning-end` (if available from the selected model/provider)
+- Tools: `tool-input-start`, `tool-input-delta`, `tool-input-end`, `tool-call`, `tool-result`, `tool-error`
+- Other: `source`, `file`, `raw`
 
 **Use Cases:**
 
@@ -286,6 +441,15 @@ while (true) {
       const eventData = JSON.parse(line.slice(6));
       // Handle different event types
       switch (eventData.type) {
+        case "reasoning-start":
+          console.log("Reasoning started:", eventData.id);
+          break;
+        case "reasoning-delta":
+          console.log("Reasoning:", eventData.delta);
+          break;
+        case "reasoning-end":
+          console.log("Reasoning completed:", eventData.id);
+          break;
         case "text-delta":
           console.log("Text:", eventData.delta);
           break;
@@ -359,8 +523,10 @@ function ChatComponent({ agentId }) {
           body: {
             input: [lastMessage], // Send as array of UIMessage
             options: {
-              userId: "user-123",
-              conversationId: "conv-456",
+              memory: {
+                userId: "user-123",
+                conversationId: "conv-456",
+              },
               temperature: 0.7,
               maxSteps: 10,
             },
@@ -535,7 +701,7 @@ The agent receives this context and can:
 1. **Use streaming for long responses** - Better UX for lengthy generation
 2. **Set appropriate temperature** - Lower (0.3) for factual, higher (0.9) for creative
 3. **Limit tokens for cost control** - Use `maxOutputTokens` wisely
-4. **Provide context** - Use `userId` and `conversationId` for conversation continuity
+4. **Provide context** - Use `options.memory.userId` and `options.memory.conversationId` for conversation continuity
 5. **Handle errors gracefully** - Check `success` field and handle errors
 6. **Use abort signals** - Allow users to cancel long-running requests
 

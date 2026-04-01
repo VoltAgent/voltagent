@@ -225,26 +225,26 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
   return (
     <>
       <div className="relative w-full" ref={containerRef}>
-        <div className="w-full border border-indigo-500/20 rounded-lg transition-all duration-500 ">
+        <div className="w-full border border-[#3d3a39] rounded-lg transition-all duration-500 ">
           <div className="flex flex-col items-center">
             {/* Diagram Section - Top Side */}
             <div className="w-full relative min-h-[650px]  py-12" ref={diagramRef}>
               {/* Mobile Memory Sidebar */}
               {isMobile && (
-                <div className="absolute left-0 top-0 w-[25%] h-full border-r border-gray-500/30 px-2">
+                <div className="absolute left-0 top-0 w-[25%] h-full border-r border-[#3d3a39] px-2">
                   <div className="sticky top-0 flex flex-col gap-4">
                     <div className="text-xs text-main-emerald font-mono">Memory</div>
                     <div
                       ref={userLeadMemoryRef}
-                      className="px-2 py-1 rounded-md text-[10px] bg-black/50 border border-gray-500/30"
+                      className="px-2 py-1 rounded-md text-[10px] bg-[#101010]/50 border border-[#3d3a39]"
                     >
-                      <span className="text-gray-300">User-Lead Memory</span>
+                      <span className="text-[#b8b3b0]">User-Lead Memory</span>
                     </div>
                     <div
                       ref={leadTeamMemoryRef}
-                      className="px-2 py-1 rounded-md text-[10px] bg-black/50 border border-gray-500/30"
+                      className="px-2 py-1 rounded-md text-[10px] bg-[#101010]/50 border border-[#3d3a39]"
                     >
-                      <span className="text-gray-300">Lead-Team Memory</span>
+                      <span className="text-[#b8b3b0]">Lead-Team Memory</span>
                     </div>
                   </div>
                 </div>
@@ -266,12 +266,12 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   <div className="flex items-center justify-center relative w-full lg:w-[350px] md:w-[300px]">
                     <div
                       ref={userNodeRef}
-                      className={`px-4 py-2 rounded-md bg-black/80 text-sm flex items-center gap-3 transition-all duration-700 ease-out ${
+                      className={`px-4 py-2 rounded-md bg-[#101010] text-sm flex items-center gap-3 transition-all duration-700 ease-out ${
                         isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       } ${
                         animationStep >= 1
                           ? `${agentColors.User.border} ${agentColors.User.shadow}`
-                          : "border border-gray-500/30"
+                          : "border border-[#3d3a39]"
                       }`}
                     >
                       <UserIcon className={`w-5 h-5 ${agentColors.User.text}`} />
@@ -307,17 +307,17 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   <div className="flex items-center justify-center">
                     <div
                       ref={leadAgentRegionRef}
-                      className={`relative px-4 md:px-8 lg:px-12 py-12 md:py-16 lg:py-12 rounded-lg border border-dashed  border-gray-500/30 transition-all duration-700 ease-out ${
+                      className={`relative px-4 md:px-8 lg:px-12 py-12 md:py-16 lg:py-12 rounded-lg border border-dashed  border-[#3d3a39] transition-all duration-700 ease-out ${
                         isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       }`}
                     >
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-black px-2 text-xs text-main-emerald font-mono">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#020202] px-2 text-xs text-main-emerald font-mono">
                         Lead Agent
                       </div>
                       <div className="relative w-full lg:w-[170px] md:w-[150px] justify-center items-center">
                         <div
                           ref={supervisorNodeRef}
-                          className={`px-4 py-2 rounded-md bg-black ${
+                          className={`px-4 py-2 rounded-md bg-[#101010] ${
                             agentColors.Supervisor.border
                           } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                             isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
@@ -332,7 +332,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           {supervisorProcessing && (
                             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-full text-center">
                               <div
-                                className={`inline-block text-xs font-mono ${agentColors.Supervisor.text} ${agentColors.Supervisor.border} px-2 py-1 rounded-md bg-black/50 animate-agent-pulse`}
+                                className={`inline-block text-xs font-mono ${agentColors.Supervisor.text} ${agentColors.Supervisor.border} px-2 py-1 rounded-md bg-[#101010]/50 animate-agent-pulse`}
                               >
                                 Thinking...
                               </div>
@@ -372,11 +372,11 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   >
                     <div
                       ref={teamRegionRef}
-                      className={`relative px-12 py-12 rounded-lg border border-dashed border-gray-500/30 transition-all duration-700 ease-out ${
+                      className={`relative px-12 py-12 rounded-lg border border-dashed border-[#3d3a39] transition-all duration-700 ease-out ${
                         isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                       }`}
                     >
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-black px-2 text-xs text-main-emerald font-mono">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#020202] px-2 text-xs text-main-emerald font-mono">
                         Team
                       </div>
                       <div
@@ -391,7 +391,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                               <div
                                 className={`inline-block text-xs font-mono ${agentColors.A.text} ${
                                   agentColors.A.border
-                                } px-2 py-1 rounded-md bg-black/50 ${
+                                } px-2 py-1 rounded-md bg-[#101010]/50 ${
                                   currentThinkingAgent === "A" ? "animate-agent-pulse" : ""
                                 }`}
                               >
@@ -401,7 +401,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           )}
                           <div
                             ref={agentANodeRef}
-                            className={`px-4 py-2 rounded-md w-[170px] bg-black ${
+                            className={`px-4 py-2 rounded-md w-[170px] bg-[#101010] ${
                               agentColors.A.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                               isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
@@ -438,7 +438,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                               <div
                                 className={`inline-block text-xs font-mono ${agentColors.B.text} ${
                                   agentColors.B.border
-                                } px-2 py-1 rounded-md bg-black/50 ${
+                                } px-2 py-1 rounded-md bg-[#101010]/50 ${
                                   currentThinkingAgent === "B" ? "animate-agent-pulse" : ""
                                 }`}
                               >
@@ -448,7 +448,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           )}
                           <div
                             ref={agentBNodeRef}
-                            className={`px-4 py-2 w-[170px] rounded-md bg-black ${
+                            className={`px-4 py-2 w-[170px] rounded-md bg-[#101010] ${
                               agentColors.B.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                               isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
@@ -485,7 +485,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                               <div
                                 className={`inline-block text-xs font-mono ${agentColors.C.text} ${
                                   agentColors.C.border
-                                } px-2 py-1 rounded-md bg-black/50 ${
+                                } px-2 py-1 rounded-md bg-[#101010]/50 ${
                                   currentThinkingAgent === "C" ? "animate-agent-pulse" : ""
                                 }`}
                               >
@@ -495,7 +495,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                           )}
                           <div
                             ref={agentCNodeRef}
-                            className={`px-4 py-2 rounded-md w-[170px] bg-black ${
+                            className={`px-4 py-2 rounded-md w-[170px] bg-[#101010] ${
                               agentColors.C.border
                             } text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                               isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
@@ -548,35 +548,35 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
 
                   {/* Memory Boxes with Border - Center Column */}
                   <div className="lg:col-span-2 md:col-span-1 flex justify-center mt-10 h-[85px] relative">
-                    <div className="absolute -top-3 transform bg-black px-2 text-xs text-main-emerald font-mono">
+                    <div className="absolute -top-3 transform bg-[#020202] px-2 text-xs text-main-emerald font-mono">
                       Conversation-History
                     </div>
-                    <div className="relative px-2 xl:px-8 py-6 rounded-lg w-full lg:w-[85%] border border-dashed border-gray-500/30 transition-all duration-700 ease-out">
+                    <div className="relative px-2 xl:px-8 py-6 rounded-lg w-full lg:w-[85%] border border-dashed border-[#3d3a39] transition-all duration-700 ease-out">
                       <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-10 lg:gap-20">
                         {/* User-Lead Memory */}
                         <div
                           ref={userLeadMemoryRef}
-                          className={`px-2 md:px-4 py-2 rounded-md text-xs md:text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
+                          className={`px-2 md:px-4 py-2 rounded-md bg-[#101010] text-xs md:text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                             isVisible
-                              ? "opacity-100 scale-100 shadow-[0_0_15px_rgba(156,163,175,0.3)]"
+                              ? "opacity-100 scale-100 shadow-[0_0_15px_rgba(92,88,85,0.3)]"
                               : "opacity-0 scale-90"
                           }`}
                         >
-                          <ArrowPathIcon className="w-5 h-5 text-gray-500" />
-                          <span className="text-gray-300">User-Lead Memory</span>
+                          <ArrowPathIcon className="w-5 h-5 text-[#8a8380]" />
+                          <span className="text-[#b8b3b0]">User-Lead Memory</span>
                         </div>
 
                         {/* Lead-Team Memory */}
                         <div
                           ref={leadTeamMemoryRef}
-                          className={`px-2 lg:px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
+                          className={`px-2 lg:px-4 py-2 rounded-md bg-[#101010] text-sm flex items-center gap-2 transition-all duration-700 ease-out ${
                             isVisible
-                              ? "opacity-100 scale-100 shadow-[0_0_15px_rgba(156,163,175,0.3)]"
+                              ? "opacity-100 scale-100 shadow-[0_0_15px_rgba(92,88,85,0.3)]"
                               : "opacity-0 scale-90"
                           }`}
                         >
-                          <ArrowPathIcon className="w-5 h-5 text-gray-500" />
-                          <span className="text-gray-300">Lead-Team Memory</span>
+                          <ArrowPathIcon className="w-5 h-5 text-[#8a8380]" />
+                          <span className="text-[#b8b3b0]">Lead-Team Memory</span>
                         </div>
                       </div>
                     </div>
@@ -808,11 +808,11 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   containerRef={diagramRef}
                   fromRef={leadAgentBeamAnchorRef}
                   toRef={userLeadMemoryRef}
-                  pathColor="rgba(156, 163, 175, 0.2)"
+                  pathColor="rgba(92, 88, 85, 0.2)"
                   pathWidth={1.5}
-                  gradientStartColor="#9ca3af"
-                  gradientStopColor="#9ca3af"
-                  particleColor="#9ca3af"
+                  gradientStartColor="#8a8380"
+                  gradientStopColor="#8a8380"
+                  particleColor="#8a8380"
                   delay={0.1}
                   duration={3}
                   curvature={20}
@@ -837,11 +837,11 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   containerRef={diagramRef}
                   fromRef={userLeadMemoryRef}
                   toRef={leadAgentBeamAnchorRef}
-                  pathColor="rgba(156, 163, 175, 0.2)"
+                  pathColor="rgba(92, 88, 85, 0.2)"
                   pathWidth={1.5}
-                  gradientStartColor="#9ca3af"
-                  gradientStopColor="#9ca3af"
-                  particleColor="#9ca3af"
+                  gradientStartColor="#8a8380"
+                  gradientStopColor="#8a8380"
+                  particleColor="#8a8380"
                   delay={0.2}
                   duration={3}
                   curvature={-20}
@@ -866,11 +866,11 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   containerRef={diagramRef}
                   fromRef={teamBeamAnchorRef}
                   toRef={leadTeamMemoryRef}
-                  pathColor="rgba(156, 163, 175, 0.2)"
+                  pathColor="rgba(92, 88, 85, 0.2)"
                   pathWidth={1.5}
-                  gradientStartColor="#9ca3af"
-                  gradientStopColor="#9ca3af"
-                  particleColor="#9ca3af"
+                  gradientStartColor="#8a8380"
+                  gradientStopColor="#8a8380"
+                  particleColor="#8a8380"
                   delay={0.1}
                   duration={3}
                   curvature={20}
@@ -895,11 +895,11 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
                   containerRef={diagramRef}
                   fromRef={leadTeamMemoryRef}
                   toRef={teamBeamAnchorRef}
-                  pathColor="rgba(156, 163, 175, 0.2)"
+                  pathColor="rgba(92, 88, 85, 0.2)"
                   pathWidth={1.5}
-                  gradientStartColor="#9ca3af"
-                  gradientStopColor="#9ca3af"
-                  particleColor="#9ca3af"
+                  gradientStartColor="#8a8380"
+                  gradientStopColor="#8a8380"
+                  particleColor="#8a8380"
                   delay={0.2}
                   duration={3}
                   curvature={-20}

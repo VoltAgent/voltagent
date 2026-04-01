@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
@@ -47,6 +46,6 @@ Return your response in JSON format:
   "explanation": "detailed explanation",
   "steps": ["step 1", "step 2", ...]
 }`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [calculatorTool],
 });

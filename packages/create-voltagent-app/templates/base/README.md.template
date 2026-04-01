@@ -60,6 +60,7 @@ This VoltAgent application includes:
 - **Workflows**: Pre-configured expense approval workflow
 - **Memory**: Built-in conversation history
 - **Tools**: Extensible tool system
+- **Server**: {{serverName}}
 - **Type Safety**: Full TypeScript support
 
 ## 🔍 VoltOps Platform

@@ -215,7 +215,7 @@ const voiceEnabledAgent = new Agent({
   name: "VoiceBot",
   instructions: "An agent that can speak.",
   provider,
-  model: "gpt-4o", // Choose an appropriate model
+  model: "openai/gpt-4o", // Choose an appropriate model
   voice: voice, // Assign the voice provider here
 });
 

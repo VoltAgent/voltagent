@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, Tool, ToolDeniedError, VoltAgent, messageHelpers } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
@@ -25,7 +24,7 @@ const weatherTool = new Tool({
 const agent = new Agent({
   name: "HooksDemo",
   instructions: "Agent demonstrating all available hooks",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

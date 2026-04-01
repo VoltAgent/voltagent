@@ -14,16 +14,25 @@ import {
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
+  WorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
   WorkflowStreamEventSchema,
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
+  WorkspaceFileListSchema,
+  WorkspaceInfoSchema,
+  WorkspaceReadFileSchema,
+  WorkspaceSkillListSchema,
+  WorkspaceSkillSchema,
 } from "@voltagent/server-core";
 import { createRoute, z } from "../zod-openapi-compat";
 import { createPathParam } from "./path-params";
 
 const agentIdParam = () => createPathParam("id", "The ID of the agent", "my-agent-123");
+const conversationIdParam = () =>
+  createPathParam("conversationId", "The ID of the conversation", "chat_123");
 const workflowIdParam = () => createPathParam("id", "The ID of the workflow", "my-workflow-123");
 const executionIdParam = () =>
   createPathParam("executionId", "The ID of the execution to operate on", "exec_1234567890_abc123");
@@ -52,6 +61,8 @@ export {
   WorkflowSuspendResponseSchema,
   WorkflowCancelRequestSchema,
   WorkflowCancelResponseSchema,
+  WorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
 } from "@voltagent/server-core";
@@ -242,6 +253,83 @@ export const chatRoute = createRoute({
   description: AGENT_ROUTES.chatStream.description,
 });
 
+// Resume chat stream response (UI message stream)
+export const resumeChatStreamRoute = createRoute({
+  method: AGENT_ROUTES.resumeChatStream.method,
+  path: AGENT_ROUTES.resumeChatStream.path
+    .replace(":id", "{id}")
+    .replace(":conversationId", "{conversationId}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+      conversationId: conversationIdParam(),
+    }),
+    query: z.object({
+      userId: z
+        .string()
+        .min(1)
+        .openapi("QueryParam.userId", {
+          description: "User ID for resumable streams",
+          param: { name: "userId", in: "query", required: true },
+          example: "user-123",
+        }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: StreamTextEventSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[200]?.description ||
+        "Successfully resumed SSE stream for chat generation",
+    },
+    204: {
+      content: {
+        "text/plain": {
+          schema: z.string(),
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[204]?.description ||
+        "No active stream found for the conversation",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Missing or invalid userId",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[404]?.description ||
+        "Resumable streams not configured",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[500]?.description ||
+        "Failed to resume chat stream",
+    },
+  },
+  tags: [...AGENT_ROUTES.resumeChatStream.tags],
+  summary: AGENT_ROUTES.resumeChatStream.summary,
+  description: AGENT_ROUTES.resumeChatStream.description,
+});
+
 // Generate object response
 export const objectRoute = createRoute({
   method: AGENT_ROUTES.generateObject.method,
@@ -343,6 +431,277 @@ Example event: 'data: {"partialUpdate": {...}}\n\n' or 'data: {"finalObject": {.
   description: AGENT_ROUTES.streamObject.description,
 });
 
+export const workspaceInfoRoute = createRoute({
+  method: AGENT_ROUTES.getWorkspace.method,
+  path: AGENT_ROUTES.getWorkspace.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceInfoSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[200]?.description ||
+        "Successfully retrieved workspace info",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[404]?.description || "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[500]?.description ||
+        "Failed to retrieve workspace info",
+    },
+  },
+  tags: [...AGENT_ROUTES.getWorkspace.tags],
+  summary: AGENT_ROUTES.getWorkspace.summary,
+  description: AGENT_ROUTES.getWorkspace.description,
+});
+
+export const workspaceListFilesRoute = createRoute({
+  method: AGENT_ROUTES.listWorkspaceFiles.method,
+  path: AGENT_ROUTES.listWorkspaceFiles.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      path: z.string().optional().describe("Workspace path to list"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceFileListSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[200]?.description ||
+        "Successfully listed workspace files",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[400]?.description ||
+        "Invalid request parameters",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[404]?.description ||
+        "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[500]?.description ||
+        "Failed to list workspace files",
+    },
+  },
+  tags: [...AGENT_ROUTES.listWorkspaceFiles.tags],
+  summary: AGENT_ROUTES.listWorkspaceFiles.summary,
+  description: AGENT_ROUTES.listWorkspaceFiles.description,
+});
+
+export const workspaceReadFileRoute = createRoute({
+  method: AGENT_ROUTES.readWorkspaceFile.method,
+  path: AGENT_ROUTES.readWorkspaceFile.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      path: z.string().describe("File path to read"),
+      offset: z.number({ coerce: true }).optional().describe("Line offset (0-indexed)"),
+      limit: z.number({ coerce: true }).optional().describe("Max lines to read"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceReadFileSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[200]?.description ||
+        "Successfully read workspace file",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[400]?.description ||
+        "Invalid request parameters",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[404]?.description ||
+        "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[500]?.description ||
+        "Failed to read workspace file",
+    },
+  },
+  tags: [...AGENT_ROUTES.readWorkspaceFile.tags],
+  summary: AGENT_ROUTES.readWorkspaceFile.summary,
+  description: AGENT_ROUTES.readWorkspaceFile.description,
+});
+
+export const workspaceListSkillsRoute = createRoute({
+  method: AGENT_ROUTES.listWorkspaceSkills.method,
+  path: AGENT_ROUTES.listWorkspaceSkills.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      refresh: z.boolean({ coerce: true }).optional().describe("Refresh skill discovery"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceSkillListSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[200]?.description ||
+        "Successfully listed workspace skills",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[404]?.description ||
+        "Agent, workspace, or skills not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[500]?.description ||
+        "Failed to list workspace skills",
+    },
+  },
+  tags: [...AGENT_ROUTES.listWorkspaceSkills.tags],
+  summary: AGENT_ROUTES.listWorkspaceSkills.summary,
+  description: AGENT_ROUTES.listWorkspaceSkills.description,
+});
+
+export const workspaceGetSkillRoute = createRoute({
+  method: AGENT_ROUTES.getWorkspaceSkill.method,
+  path: AGENT_ROUTES.getWorkspaceSkill.path.replace(":id", "{id}").replace(":skillId", "{skillId}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+      skillId: z.string().describe("Skill identifier"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceSkillSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[200]?.description ||
+        "Successfully retrieved workspace skill",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[404]?.description ||
+        "Agent, workspace, or skill not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[500]?.description ||
+        "Failed to retrieve workspace skill",
+    },
+  },
+  tags: [...AGENT_ROUTES.getWorkspaceSkill.tags],
+  summary: AGENT_ROUTES.getWorkspaceSkill.summary,
+  description: AGENT_ROUTES.getWorkspaceSkill.description,
+});
+
 export const getWorkflowsRoute = createRoute({
   method: WORKFLOW_ROUTES.listWorkflows.method,
   path: WORKFLOW_ROUTES.listWorkflows.path,
@@ -435,6 +794,72 @@ Event types include:
   tags: [...WORKFLOW_ROUTES.streamWorkflow.tags],
   summary: WORKFLOW_ROUTES.streamWorkflow.summary,
   description: WORKFLOW_ROUTES.streamWorkflow.description,
+});
+
+// Attach to workflow stream route
+export const attachWorkflowStreamRoute = createRoute({
+  method: WORKFLOW_ROUTES.attachWorkflowStream.method,
+  path: WORKFLOW_ROUTES.attachWorkflowStream.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    query: z.object({
+      fromSequence: z
+        .string()
+        .optional()
+        .describe("Replay events with sequence greater than this value"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: WorkflowStreamEventSchema,
+        },
+      },
+      description: `Server-Sent Events stream for an existing workflow execution.
+Each event includes SSE id for replay/reconnect support:
+'id: 42\\n'
+'data: {"type":"step-start","executionId":"...", ...}\\n\\n'`,
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[404]?.description ||
+        "Workflow or execution not found",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[409]?.description ||
+        "Workflow execution is not streamable",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[500]?.description ||
+        "Internal server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.attachWorkflowStream.tags],
+  summary: WORKFLOW_ROUTES.attachWorkflowStream.summary,
+  description: WORKFLOW_ROUTES.attachWorkflowStream.description,
 });
 
 // Execute workflow route
@@ -669,4 +1094,67 @@ export const resumeWorkflowRoute = createRoute({
   tags: [...WORKFLOW_ROUTES.resumeWorkflow.tags],
   summary: WORKFLOW_ROUTES.resumeWorkflow.summary,
   description: WORKFLOW_ROUTES.resumeWorkflow.description,
+});
+
+// Replay workflow route
+export const replayWorkflowRoute = createRoute({
+  method: WORKFLOW_ROUTES.replayWorkflow.method,
+  path: WORKFLOW_ROUTES.replayWorkflow.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: WorkflowReplayRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: WorkflowReplayResponseSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[200]?.description ||
+        "Successful workflow replay",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[400]?.description || "Invalid replay request",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.replayWorkflow.responses?.[404]?.description ||
+        "Workflow or execution not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: WORKFLOW_ROUTES.replayWorkflow.responses?.[500]?.description || "Server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.replayWorkflow.tags],
+  summary: WORKFLOW_ROUTES.replayWorkflow.summary,
+  description: WORKFLOW_ROUTES.replayWorkflow.description,
 });

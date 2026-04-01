@@ -27,7 +27,7 @@ const PricingSection = ({
       description: "Perfect for getting started with AI agent monitoring",
       features: [
         "1 seat, 1 project",
-        "100 traces/month",
+        "250 traces/month",
         "3 prompts",
         "3 agents",
         "7-day retention",
@@ -128,7 +128,7 @@ const PricingSection = ({
       features: [
         {
           name: "Monthly Traces",
-          free: "100 traces",
+          free: "250 traces",
           core: "5,000 traces",
           pro: "20,000 traces",
           enterprise: "Unlimited",

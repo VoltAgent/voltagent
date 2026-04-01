@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, type Toolkit, VoltAgent, createReasoningTools } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -27,7 +26,7 @@ const agent = new Agent({
 
   Your aim is to provide well-reasoned, accurate, and complete answers by thinking through the process internally.
   `,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [reasoningToolkit],
   markdown: true,
   memory: new Memory({

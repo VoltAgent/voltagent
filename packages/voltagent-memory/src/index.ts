@@ -2,13 +2,17 @@ import {
   AgentRegistry,
   type Conversation,
   type ConversationQueryOptions,
+  type ConversationStepRecord,
   type CreateConversationInput,
+  type GetConversationStepsOptions,
   type GetMessagesOptions,
+  type OperationContext,
   type SearchResult,
   type StorageAdapter,
   type VectorAdapter,
   type VectorItem,
   type VoltOpsClient,
+  type WorkflowRunQuery,
   type WorkflowStateEntry,
   type WorkingMemoryScope,
 } from "@voltagent/core";
@@ -167,14 +171,24 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     }
   }
 
-  addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void> {
+  addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
     return this.withClientContext(async ({ client, database }) => {
       this.log("Executing managed memory addMessage", safeStringify({ userId, conversationId }));
       await client.managedMemory.messages.add(database.id, { message, userId, conversationId });
     }).then(() => undefined);
   }
 
-  addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void> {
+  addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
     return this.withClientContext(async ({ client, database }) => {
       this.log(
         "Executing managed memory addMessages",
@@ -192,20 +206,81 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
-    return this.withClientContext(({ client, database }) => {
+    _context?: OperationContext,
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
+    return this.withClientContext(async ({ client, database }) => {
       this.log(
         "Fetching managed memory messages",
         safeStringify({ userId, conversationId, options }),
       );
-      return client.managedMemory.messages.list(database.id, { userId, conversationId, options });
+      const messages = await client.managedMemory.messages.list(database.id, {
+        userId,
+        conversationId,
+        options,
+      });
+      return messages as UIMessage<{ createdAt: Date }>[];
     });
   }
 
-  clearMessages(userId: string, conversationId?: string): Promise<void> {
+  saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (!steps.length) {
+      return Promise.resolve();
+    }
+
+    return this.withClientContext(async ({ client, database }) => {
+      this.log(
+        "Saving managed memory conversation steps",
+        safeStringify({ count: steps.length, conversationId: steps[0]?.conversationId }),
+      );
+      await client.managedMemory.steps.save(database.id, steps);
+    }).then(() => undefined);
+  }
+
+  getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    return this.withClientContext(({ client, database }) => {
+      this.log(
+        "Fetching managed memory conversation steps",
+        safeStringify({ userId, conversationId, options }),
+      );
+      return client.managedMemory.steps.list(database.id, { userId, conversationId, options });
+    });
+  }
+
+  clearMessages(
+    userId: string,
+    conversationId?: string,
+    _context?: OperationContext,
+  ): Promise<void> {
     return this.withClientContext(async ({ client, database }) => {
       this.log("Clearing managed memory messages", safeStringify({ userId, conversationId }));
       await client.managedMemory.messages.clear(database.id, { userId, conversationId });
+    }).then(() => undefined);
+  }
+
+  deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
+    return this.withClientContext(async ({ client, database }) => {
+      if (messageIds.length === 0) {
+        return;
+      }
+
+      this.log(
+        "Deleting managed memory messages",
+        safeStringify({ count: messageIds.length, userId, conversationId }),
+      );
+      await client.managedMemory.messages.delete(database.id, {
+        messageIds,
+        userId,
+        conversationId,
+      });
     }).then(() => undefined);
   }
 
@@ -244,6 +319,35 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     return this.withClientContext(({ client, database }) => {
       this.log("Querying managed memory conversations", safeStringify(options));
       return client.managedMemory.conversations.query(database.id, options);
+    });
+  }
+
+  countConversations(options: ConversationQueryOptions): Promise<number> {
+    return this.withClientContext(async ({ client, database }) => {
+      const pageSize = 200;
+      let offset = 0;
+      let total = 0;
+
+      while (true) {
+        const page = await client.managedMemory.conversations.query(database.id, {
+          userId: options.userId,
+          resourceId: options.resourceId,
+          orderBy: options.orderBy,
+          orderDirection: options.orderDirection,
+          limit: pageSize,
+          offset,
+        });
+
+        total += page.length;
+
+        if (page.length < pageSize) {
+          break;
+        }
+
+        offset += pageSize;
+      }
+
+      return total;
     });
   }
 
@@ -308,6 +412,13 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     return this.withClientContext(({ client, database }) => {
       this.log("Fetching managed memory workflow state", safeStringify({ executionId }));
       return client.managedMemory.workflowStates.get(database.id, executionId);
+    });
+  }
+
+  queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    return this.withClientContext(({ client, database }) => {
+      this.log("Querying managed memory workflow states", safeStringify(query));
+      return client.managedMemory.workflowStates.query(database.id, query);
     });
   }
 

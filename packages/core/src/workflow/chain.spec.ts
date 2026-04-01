@@ -75,6 +75,125 @@ describe.sequential("workflow.run", () => {
   });
 });
 
+describe.sequential("workflow.startAsync", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should start chain workflow execution in background", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflowChain({
+      id: "chain-start-async",
+      name: "Chain Start Async",
+      input: z.object({ value: z.number() }),
+      result: z.object({ result: z.number() }),
+      memory,
+    }).andThen({
+      id: "double",
+      execute: async ({ data }) => ({ result: data.value * 2 }),
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const startResult = await workflow.startAsync({ value: 10 });
+
+    expect(startResult).toEqual({
+      executionId: expect.any(String),
+      workflowId: "chain-start-async",
+      startAt: expect.any(Date),
+    });
+
+    let state = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && state?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      state = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(state?.status).toBe("completed");
+    expect(state?.output).toEqual({ result: 20 });
+  });
+});
+
+describe.sequential("workflow.restart", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should restart running executions through the chain API", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflowChain({
+      id: "chain-restart",
+      name: "Chain Restart",
+      input: z.object({ value: z.number() }),
+      result: z.object({ value: z.number() }),
+      memory,
+    }).andThen({
+      id: "echo",
+      execute: async ({ data }) => data,
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const now = new Date();
+    await memory.setWorkflowState("chain-restart-exec", {
+      id: "chain-restart-exec",
+      workflowId: "chain-restart",
+      workflowName: "Chain Restart",
+      status: "running",
+      input: { value: 12 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const restarted = await workflow.restart("chain-restart-exec");
+    expect(restarted.status).toBe("completed");
+    expect(restarted.result).toEqual({ value: 12 });
+  });
+
+  it("should restart all active executions through the chain API", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflowChain({
+      id: "chain-restart",
+      name: "Chain Restart",
+      input: z.object({ value: z.number() }),
+      result: z.object({ value: z.number() }),
+      memory,
+    }).andThen({
+      id: "echo",
+      execute: async ({ data }) => data,
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const now = new Date();
+    await memory.setWorkflowState("chain-restart-all-exec", {
+      id: "chain-restart-all-exec",
+      workflowId: "chain-restart",
+      workflowName: "Chain Restart",
+      status: "running",
+      input: { value: 12 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const summary = await workflow.restartAllActive();
+    expect(summary.restarted).toContain("chain-restart-all-exec");
+    expect(summary.failed).toEqual([]);
+
+    const restartedState = await memory.getWorkflowState("chain-restart-all-exec");
+    expect(restartedState?.status).toBe("completed");
+    expect(restartedState?.output).toEqual({ value: 12 });
+  });
+});
+
 describe.sequential("workflow writer API", () => {
   beforeEach(() => {
     const registry = WorkflowRegistry.getInstance();

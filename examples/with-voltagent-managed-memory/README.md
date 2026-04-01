@@ -41,7 +41,7 @@ const managedMemory = new ManagedMemoryAdapter({
 });
 
 const agent = new Agent({
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({ storage: managedMemory }),
 });
 ```

@@ -83,11 +83,34 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_states (
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
   suspension JSONB,
+  events JSONB,
+  output JSONB,
+  cancellation JSONB,
   user_id TEXT,
   conversation_id TEXT,
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
+);
+
+-- Conversation steps (structured LLM/tool events)
+CREATE TABLE IF NOT EXISTS voltagent_memory_steps (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  agent_name TEXT,
+  operation_id TEXT,
+  step_index INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT,
+  arguments JSONB,
+  result JSONB,
+  usage JSONB,
+  sub_agent_id TEXT,
+  sub_agent_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 -- Indexes
@@ -108,6 +131,12 @@ CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_workflow_id
 
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_status
   ON voltagent_memory_workflow_states(status);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_steps_conversation
+  ON voltagent_memory_steps(conversation_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_steps_operation
+  ON voltagent_memory_steps(conversation_id, operation_id);
 ```
 
 </details>
@@ -128,7 +157,6 @@ Store as environment variables: `SUPABASE_URL` and `SUPABASE_KEY`
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
-import { openai } from "@ai-sdk/openai";
 
 // Using URL and key
 const memory = new Memory({
@@ -151,7 +179,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -172,6 +200,7 @@ const agent = new Agent({
 ## Features
 
 - Messages stored per `userId` and `conversationId`
+- Conversation steps persisted for Observability (Memory Explorer “Steps” tab, sub-agent visibility, usage metadata)
 - Supports complex queries with filtering, pagination, and sorting
 - No automatic message pruning - all messages are preserved
 
@@ -195,16 +224,15 @@ See [Working Memory](./working-memory.md).
 ### Semantic Search
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new SupabaseMemoryAdapter({
     supabaseUrl: process.env.SUPABASE_URL!,
     supabaseKey: process.env.SUPABASE_KEY!,
   }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(), // or pgvector adapter
 });
 ```
@@ -217,7 +245,6 @@ See [Semantic Search](./semantic-search.md).
 import { Agent, Memory } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
 import { createClient } from "@supabase/supabase-js";
-import { openai } from "@ai-sdk/openai";
 
 const supabaseClient = createClient(
   process.env.SUPABASE_URL!,
@@ -232,7 +259,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```

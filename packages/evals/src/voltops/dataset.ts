@@ -1,8 +1,27 @@
-import type { EvalDatasetItemSummary, VoltOpsRestClient } from "@voltagent/sdk";
+import type {
+  EvalDatasetDetail,
+  EvalDatasetItemSummary,
+  EvalDatasetItemsResponse,
+  ListEvalDatasetItemsOptions,
+} from "@voltagent/sdk";
 import type { ExperimentDatasetItem } from "../experiment/types.js";
 import type { VoltEvalDatasetConfig, VoltOpsDatasetStream } from "./types.js";
 
 const DEFAULT_PAGE_SIZE = 200;
+
+export interface VoltOpsDatasetClient {
+  resolveDatasetVersionId(params: {
+    datasetId?: string;
+    datasetName?: string;
+    datasetVersionId?: string;
+  }): Promise<{ datasetId: string; datasetVersionId: string } | null>;
+  getDataset(datasetId: string): Promise<EvalDatasetDetail | null>;
+  listDatasetItems(
+    datasetId: string,
+    versionId: string,
+    options?: ListEvalDatasetItemsOptions,
+  ): Promise<EvalDatasetItemsResponse>;
+}
 
 interface ResolveDatasetIdentifiersResult {
   datasetId: string;
@@ -11,14 +30,14 @@ interface ResolveDatasetIdentifiersResult {
 }
 
 export interface ResolveVoltOpsDatasetOptions {
-  sdk: VoltOpsRestClient;
+  sdk: VoltOpsDatasetClient;
   config: VoltEvalDatasetConfig;
   limit?: number;
   signal?: AbortSignal;
 }
 
 interface IterateItemsOptions {
-  sdk: VoltOpsRestClient;
+  sdk: VoltOpsDatasetClient;
   datasetId: string;
   datasetVersionId: string;
   datasetName: string;
@@ -52,7 +71,7 @@ export async function resolveVoltOpsDatasetStream<
 }
 
 async function resolveDatasetIdentifiers(
-  sdk: VoltOpsRestClient,
+  sdk: VoltOpsDatasetClient,
   config: VoltEvalDatasetConfig,
 ): Promise<ResolveDatasetIdentifiersResult> {
   if (config.id && config.versionId) {
@@ -176,4 +195,14 @@ function normalizeLimit(value?: number): number | undefined {
     return 0;
   }
   return Math.floor(numeric);
+}
+
+export function isVoltOpsDatasetClient(value: unknown): value is VoltOpsDatasetClient {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof (value as VoltOpsDatasetClient).resolveDatasetVersionId === "function" &&
+      typeof (value as VoltOpsDatasetClient).getDataset === "function" &&
+      typeof (value as VoltOpsDatasetClient).listDatasetItems === "function",
+  );
 }

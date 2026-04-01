@@ -1,11 +1,4 @@
-import { openai } from "@ai-sdk/openai";
-import {
-  Agent,
-  AiSdkEmbeddingAdapter,
-  Memory,
-  VoltAgent,
-  VoltAgentObservability,
-} from "@voltagent/core";
+import { Agent, Memory, VoltAgent, VoltAgentObservability } from "@voltagent/core";
 import {
   LibSQLMemoryAdapter,
   LibSQLObservabilityAdapter,
@@ -62,7 +55,7 @@ const jsonMemory = new Memory({
 const jsonAgent = new Agent({
   name: "JSON Memory Agent",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: jsonMemory,
 });
 
@@ -104,7 +97,7 @@ const markdownMemory = new Memory({
 const markdownAgent = new Agent({
   name: "Markdown Memory Agent",
   instructions: "You are a helpful assistant.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: markdownMemory,
 });
 

@@ -35,7 +35,7 @@ export type Toolkit = {
   /**
    * An array of Tool instances that belong to this toolkit.
    */
-  tools: (Tool<ToolSchema> | VercelTool)[];
+  tools: (Tool<ToolSchema, ToolSchema | undefined> | VercelTool)[];
 };
 
 /**

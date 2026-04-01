@@ -25,6 +25,13 @@ export interface ObservabilityConfig {
   logger?: Logger;
   resourceAttributes?: Record<string, any>;
   spanFilters?: SpanFilterConfig;
+  /**
+   * Controls whether flushOnFinish() runs automatically.
+   * - "auto": flush only in serverless (default)
+   * - "always": always flush
+   * - "never": never flush
+   */
+  flushOnFinishStrategy?: "auto" | "always" | "never";
   voltOpsSync?: {
     sampling?: ObservabilitySamplingConfig;
     // BatchSpanProcessor configuration
@@ -155,9 +162,37 @@ export interface SpanAttributes {
   "workflow.step.index"?: number;
   "workflow.step.type"?: string;
   "workflow.step.name"?: string;
+  "workflow.replayed"?: boolean;
+  "workflow.replay.source_trace_id"?: string;
+  "workflow.replay.source_span_id"?: string;
+  "workflow.replay.source_execution_id"?: string;
+  "workflow.replay.source_step_id"?: string;
 
   // Tool-specific attributes
   "tool.name"?: string;
+
+  // Workspace attributes
+  "workspace.id"?: string;
+  "workspace.name"?: string;
+  "workspace.scope"?: "agent" | "conversation";
+  "workspace.operation"?: string;
+  "workspace.fs.path"?: string;
+  "workspace.fs.pattern"?: string;
+  "workspace.fs.bytes"?: number;
+  "workspace.fs.offset"?: number;
+  "workspace.fs.limit"?: number;
+  "workspace.fs.occurrences"?: number;
+  "workspace.search.query"?: string;
+  "workspace.search.mode"?: string;
+  "workspace.search.top_k"?: number;
+  "workspace.search.results"?: number;
+  "workspace.sandbox.command"?: string;
+  "workspace.sandbox.args"?: string[] | string;
+  "workspace.sandbox.cwd"?: string;
+  "workspace.sandbox.timeout_ms"?: number;
+  "workspace.sandbox.exit_code"?: number;
+  "workspace.skills.name"?: string;
+  "workspace.skills.source"?: string;
 
   // Common attributes
   "user.id"?: string;

@@ -95,7 +95,7 @@ Even as someone who works on the platform, I regularly discover new insights abo
 
 - [Voltagent GitHub](https://github.com/VoltAgent/voltagent)
 
-- [Voltops Documentation](https://voltagent.dev/voltops-llm-observability-docs/)
+- [Voltops Documentation](https://voltagent.dev/observability-docs/)
 
 ## LangSmith - The LangChain Native
 

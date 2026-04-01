@@ -30,22 +30,19 @@ export function withWaitUntil(context?: WaitUntilContext | null): () => void {
   const globals = globalThis as VoltAgentGlobal;
   const previousWaitUntil = globals.___voltagent_wait_until;
 
-  const waitUntil = context?.waitUntil;
+  const currentWaitUntil = context?.waitUntil;
 
-  if (waitUntil && typeof waitUntil === "function") {
-    globals.___voltagent_wait_until = (promise) => {
-      try {
-        waitUntil(promise);
-      } catch {
-        // Silently fail if waitUntil throws
-        void promise;
-      }
-    };
+  if (currentWaitUntil && typeof currentWaitUntil === "function") {
+    // Bind to context to avoid "Illegal invocation" errors
+    // And allow errors (like DataCloneError) to propagate so caller can handle fallback
+    globals.___voltagent_wait_until = currentWaitUntil.bind(context);
+  } else {
+    globals.___voltagent_wait_until = undefined;
   }
 
   // Return cleanup function
   return () => {
-    if (waitUntil) {
+    if (currentWaitUntil) {
       if (previousWaitUntil) {
         globals.___voltagent_wait_until = previousWaitUntil;
       } else {

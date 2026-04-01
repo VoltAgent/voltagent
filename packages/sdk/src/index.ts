@@ -1,6 +1,11 @@
+import { VoltOpsClient as CoreVoltOpsClient } from "@voltagent/core";
+
 export { VoltAgentCoreAPI } from "./client";
+
+export class VoltOpsClient extends CoreVoltOpsClient {}
 export { VoltOpsRestClient } from "./evals";
 export { VoltAgentObservabilitySDK } from "./observability";
+export { VoltOpsActionsClient } from "@voltagent/core";
 export type {
   VoltAgentClientOptions,
   ApiError,
@@ -28,4 +33,37 @@ export type {
   EvalExperimentDetail,
   ResolveExperimentIdOptions,
   ResolveExperimentIdResult,
+  KnowledgeBaseTagFilter,
+  RagKnowledgeBaseSummary,
+  RagSearchKnowledgeBaseRequest,
+  RagSearchKnowledgeBaseResponse,
+  RagSearchKnowledgeBaseResult,
 } from "./types";
+export type {
+  VoltOpsActionExecutionResult,
+  VoltOpsAirtableCreateRecordParams,
+  VoltOpsAirtableUpdateRecordParams,
+  VoltOpsAirtableDeleteRecordParams,
+  VoltOpsAirtableGetRecordParams,
+  VoltOpsAirtableListRecordsParams,
+  VoltOpsAirtableCredential,
+  VoltOpsSlackPostMessageParams,
+  VoltOpsSlackDeleteMessageParams,
+  VoltOpsSlackSearchMessagesParams,
+  VoltOpsSlackCredential,
+  VoltOpsDiscordCredential,
+  VoltOpsDiscordConfig,
+  VoltOpsDiscordSendMessageParams,
+  VoltOpsDiscordSendWebhookMessageParams,
+  VoltOpsDiscordChannelMessageParams,
+  VoltOpsDiscordListMessagesParams,
+  VoltOpsDiscordReactionParams,
+  VoltOpsDiscordCreateChannelParams,
+  VoltOpsDiscordUpdateChannelParams,
+  VoltOpsDiscordDeleteChannelParams,
+  VoltOpsDiscordGetChannelParams,
+  VoltOpsDiscordListChannelsParams,
+  VoltOpsDiscordListMembersParams,
+  VoltOpsDiscordMemberRoleParams,
+  VoltOpsDiscordChannelType,
+} from "@voltagent/core";

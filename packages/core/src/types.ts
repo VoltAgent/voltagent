@@ -8,14 +8,20 @@ import type { MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
+import type { AgentConversationPersistenceOptions } from "./agent/types";
 import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
+import type { Memory } from "./memory";
 import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
+import type { ToolRoutingConfig } from "./tool/routing/types";
+import type { TriggerRegistry } from "./triggers/registry";
+import type { VoltAgentTriggersConfig } from "./triggers/types";
 import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
 import type { RegisteredWorkflow } from "./workflow/registry";
 import type { Workflow, WorkflowSuspendController } from "./workflow/types";
+import type { Workspace, WorkspaceConfig } from "./workspace";
 
 export interface MCPLoggingAdapter {
   setLevel?(level: string): Promise<void> | void;
@@ -37,6 +43,24 @@ export interface MCPResourcesAdapter {
 
 export interface MCPElicitationAdapter {
   sendRequest(request: unknown): Promise<unknown>;
+}
+
+export interface ResumableStreamContext {
+  conversationId: string;
+  agentId?: string;
+  userId: string;
+}
+
+export interface ResumableStreamAdapter {
+  createStream(
+    params: ResumableStreamContext & {
+      stream: ReadableStream<string>;
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<string>;
+  resumeStream(streamId: string): Promise<ReadableStream<string> | null>;
+  getActiveStreamId(params: ResumableStreamContext): Promise<string | null>;
+  clearActiveStream(params: ResumableStreamContext & { streamId?: string }): Promise<void>;
 }
 
 // Re-export VoltOps types for convenience
@@ -100,6 +124,7 @@ export interface ServerProviderDeps {
     getWorkflowsForApi(): unknown[];
     getWorkflowDetailForApi(id: string): unknown;
     getWorkflowCount(): number;
+    getAllWorkflowIds(): string[];
     on(event: string, handler: (...args: any[]) => void): void;
     off(event: string, handler: (...args: any[]) => void): void;
     activeExecutions: Map<string, WorkflowSuspendController>;
@@ -120,6 +145,9 @@ export interface ServerProviderDeps {
   a2a?: {
     registry: A2AServerRegistry;
   };
+  triggerRegistry: TriggerRegistry;
+  resumableStream?: ResumableStreamAdapter;
+  resumableStreamDefault?: boolean;
   ensureEnvironment?: (env?: Record<string, unknown>) => void;
 }
 
@@ -188,6 +216,36 @@ export type VoltAgentOptions = {
         DangerouslyAllowAny
       >
   >;
+  /**
+   * Default Memory instance used when agent/workflow defaults are not provided.
+   */
+  memory?: Memory;
+  /**
+   * Default Memory instance used for agents when they don't specify one.
+   * Falls back to `memory` when not provided.
+   */
+  agentMemory?: Memory;
+  /**
+   * Default Memory instance used for workflows when they don't specify one.
+   * Falls back to `memory` when not provided.
+   */
+  workflowMemory?: Memory;
+  /**
+   * Global tool routing defaults (search + call workflow).
+   * When enabled, agents expose searchTools/callTool and hide pool tools from the model.
+   */
+  toolRouting?: ToolRoutingConfig;
+  /**
+   * Default conversation persistence behavior for agents that don't define one.
+   */
+  agentConversationPersistence?: AgentConversationPersistenceOptions;
+  /**
+   * Optional global workspace instance or configuration.
+   * Agents inherit this workspace unless they explicitly provide their own workspace or set it to false.
+   */
+  workspace?: Workspace | WorkspaceConfig;
+  /** Optional VoltOps trigger handlers */
+  triggers?: VoltAgentTriggersConfig;
   /**
    * Server provider factory function
    * Example: honoServer({ port: 3141, enableSwaggerUI: true })

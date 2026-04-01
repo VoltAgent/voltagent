@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -48,9 +47,9 @@ const dynamicAgent = new Agent({
   model: ({ context }) => {
     const tier = (context.get("tier") as string) || "free";
     if (tier === "premium") {
-      return openai("gpt-4o-mini");
+      return "openai/gpt-4o-mini";
     }
-    return openai("gpt-3.5-turbo");
+    return "openai/gpt-3.5-turbo";
   },
   tools: ({ context }) => {
     const role = (context.get("role") as string) || "user";

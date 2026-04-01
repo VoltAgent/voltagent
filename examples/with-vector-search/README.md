@@ -62,18 +62,17 @@ npm create voltagent-app@latest -- --example with-vector-search
 ## Snippet
 
 ```ts
-import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
 });
 
-const agent = new Agent({ name: "Semantic Memory Agent", model: openai("gpt-4o-mini"), memory });
+const agent = new Agent({ name: "Semantic Memory Agent", model: "openai/gpt-4o-mini", memory });
 new VoltAgent({ agents: { agent }, server: honoServer({ port: 3142 }) });
 ```
 

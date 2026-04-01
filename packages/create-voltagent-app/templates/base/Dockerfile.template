@@ -49,6 +49,9 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Copy .env file if it exists (dotenv will read it automatically)
 COPY --chown=nodejs:nodejs .env* ./
 
+# Prepare writable runtime directory for VoltAgent (avoids EACCES on .voltagent)
+RUN mkdir -p /app/.voltagent && chown -R nodejs:nodejs /app
+
 # Switch to non-root user
 USER nodejs
 

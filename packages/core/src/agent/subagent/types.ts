@@ -140,14 +140,42 @@ export function createSubagent<TAgent extends Agent>(
 export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> =
   TextStreamPart<TOOLS> & {
     /**
+     * Optional response message identifier (carried on start/step chunks).
+     */
+    messageId?: string;
+
+    /**
      * Optional identifier for the subagent that generated this event
      */
     subAgentId?: string;
 
     /**
+     * Optional identifier for the agent that actually executed the step
+     * (same as subAgentId for first-level handoffs)
+     */
+    executingAgentId?: string;
+
+    /**
      * Optional name of the subagent that generated this event
      */
     subAgentName?: string;
+
+    /**
+     * Optional name of the agent that actually executed the step
+     * (same as subAgentName for first-level handoffs)
+     */
+    executingAgentName?: string;
+
+    /**
+     * Parent agent reference when forwarded through supervisors
+     */
+    parentAgentId?: string;
+    parentAgentName?: string;
+
+    /**
+     * Ordered list of agent names from supervisor -> executing agent
+     */
+    agentPath?: string[];
   };
 
 /**
@@ -155,14 +183,13 @@ export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<s
  * This maintains compatibility with ai-sdk while adding subagent metadata support.
  *
  * @template TOOLS - The tool set type parameter
- * @template PARTIAL_OUTPUT - The partial output type parameter
  */
-export interface VoltAgentStreamTextResult<
+export type VoltAgentStreamTextResult<
   TOOLS extends Record<string, any> = Record<string, any>,
-  PARTIAL_OUTPUT = any,
-> extends Omit<StreamTextResult<TOOLS, PARTIAL_OUTPUT>, "fullStream"> {
+  OUTPUT = unknown,
+> = Omit<StreamTextResult<TOOLS, any>, "fullStream"> & {
   /**
    * Full stream with subagent metadata support
    */
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
-}
+} & Record<never, OUTPUT>;

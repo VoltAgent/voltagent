@@ -13,18 +13,20 @@ VoltAgent 1.x introduces a pluggable server architecture:
 
 - **`@voltagent/server-core`** - Framework-agnostic core with route definitions, handlers, and base provider
 - **`@voltagent/server-hono`** - Official server implementation using [Hono](https://hono.dev/) (recommended)
+- **`@voltagent/server-elysia`** - High-performance server implementation using [Elysia](https://elysiajs.com/)
 
 ## Quick Start
+
+### Using Hono (Recommended)
 
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({
@@ -36,6 +38,29 @@ new VoltAgent({
 });
 ```
 
+### Using Elysia
+
+```typescript
+import { Agent, VoltAgent } from "@voltagent/core";
+import { elysiaServer } from "@voltagent/server-elysia";
+
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "You are a helpful assistant",
+  model: "openai/gpt-4o-mini",
+});
+
+new VoltAgent({
+  agents: { agent },
+  server: elysiaServer({
+    port: 3141,
+    enableSwaggerUI: true,
+  }),
+});
+```
+
+You can also set `model` to a string like `openai/gpt-4o-mini` instead of importing a provider package.
+
 The server starts automatically and displays:
 
 ```
@@ -43,7 +68,11 @@ The server starts automatically and displays:
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
+
+  Test your agents with VoltOps Console: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
@@ -73,11 +102,32 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 ### Workflow Endpoints
 
 - `GET /workflows` - List all workflows
+- `GET /workflows/executions` - List workflow executions (filters via query params; supports `workflowId`, `status`, `from`, `to`, `userId`, `metadata`)
 - `POST /workflows/:id/execute` - Execute workflow
 - `POST /workflows/:id/stream` - Stream workflow execution (SSE)
 - `POST /workflows/:id/executions/:executionId/suspend` - Suspend execution
 - `POST /workflows/:id/executions/:executionId/resume` - Resume execution
 - `GET /workflows/:id/executions/:executionId/state` - Get execution state
+
+### Tool Endpoints
+
+- `GET /tools` - List all registered tools (across agents)
+- `POST /tools/:name/execute` - Execute a tool directly over HTTP
+
+### Memory Endpoints
+
+- `GET /api/memory/conversations` - List conversations
+- `GET /api/memory/conversations/:conversationId` - Get conversation
+- `GET /api/memory/conversations/:conversationId/messages` - List messages
+- `GET /api/memory/conversations/:conversationId/working-memory` - Get working memory
+- `POST /api/memory/save-messages` - Save messages
+- `POST /api/memory/conversations` - Create conversation
+- `PATCH /api/memory/conversations/:conversationId` - Update conversation
+- `DELETE /api/memory/conversations/:conversationId` - Delete conversation
+- `POST /api/memory/conversations/:conversationId/clone` - Clone conversation
+- `POST /api/memory/conversations/:conversationId/working-memory` - Update working memory
+- `POST /api/memory/messages/delete` - Delete messages
+- `GET /api/memory/search` - Search memory
 
 ### Observability & Logs
 
@@ -101,6 +151,7 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 - **[Server Architecture](./server-architecture.md)** - Understanding the pluggable server design
 - **[Agent Endpoints](./endpoints/agents.md)** - Complete agent API reference with examples
 - **[Workflow Endpoints](./endpoints/workflows.md)** - Workflow execution and management
+- **[Memory Endpoints](./endpoints/memory.md)** - Conversation and message storage APIs
 - **[Authentication](./authentication.md)** - Securing your API endpoints
 - **[Streaming](./streaming.md)** - Real-time features with SSE and WebSocket
 - **[Custom Endpoints](./custom-endpoints.md)** - Adding your own REST endpoints

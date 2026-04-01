@@ -413,6 +413,45 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       // Cleanup
       createPromptHelperSpy.mockRestore();
     });
+
+    it("should auto-register agent-specific VoltOpsClient globally when no global client exists", () => {
+      const agentVoltOpsClient = createMockVoltOpsClient();
+
+      expect(AgentRegistry.getInstance().getGlobalVoltOpsClient()).toBeUndefined();
+
+      new Agent({
+        name: "StandaloneAgent",
+        instructions: "Test instructions",
+        llm: mockProvider,
+        model: "test-model",
+        voltOpsClient: agentVoltOpsClient,
+      });
+
+      expect(AgentRegistry.getInstance().getGlobalVoltOpsClient()).toBe(agentVoltOpsClient);
+    });
+
+    it("should not overwrite an existing global VoltOpsClient", () => {
+      const existingGlobalClient = createMockVoltOpsClient({
+        publicKey: "pk_existing_global",
+        secretKey: "sk_existing_global",
+      });
+      const agentSpecificClient = createMockVoltOpsClient({
+        publicKey: "pk_agent_specific",
+        secretKey: "sk_agent_specific",
+      });
+
+      AgentRegistry.getInstance().setGlobalVoltOpsClient(existingGlobalClient);
+
+      new Agent({
+        name: "StandaloneAgentWithOwnClient",
+        instructions: "Test instructions",
+        llm: mockProvider,
+        model: "test-model",
+        voltOpsClient: agentSpecificClient,
+      });
+
+      expect(AgentRegistry.getInstance().getGlobalVoltOpsClient()).toBe(existingGlobalClient);
+    });
   });
 
   describe("Error handling and edge cases", () => {

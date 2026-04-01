@@ -33,14 +33,23 @@ Follow the prompts, selecting TypeScript and App Router.
 Install the necessary VoltAgent packages and dependencies:
 
 ```bash
-npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.76
+npm install @voltagent/core @ai-sdk/react ai zod@^3.25.76
 ```
 
 - `@voltagent/core`: The core VoltAgent library.
-- `@ai-sdk/openai`: The ai-sdk provider for OpenAI (or your preferred provider).
 - `@ai-sdk/react`: React hooks for AI SDK integration.
 - `ai`: Core AI SDK library for streaming and chat functionality.
 - `zod`: Used when working with structured outputs.
+
+### VoltAgent Built-in Server Dependencies (Required for Debugging)
+
+Install the VoltAgent built-in server dependencies (local REST API on `http://localhost:3141`) so you can
+debug and inspect agent runs during development through `https://console.voltagent.dev`:
+
+```bash
+npm install @voltagent/server-hono
+npm install -D tsx
+```
 
 ## Configure `next.config.ts`
 
@@ -71,14 +80,15 @@ OPENAI_API_KEY="your-openai-api-key-here"
 # Add other environment variables if needed
 ```
 
-## Create API Route
+If you run the built-in server as a separate process, make sure it loads the same env file
+(see the server script below).
 
-Create the main chat API route with the agent and singleton defined inline in `app/api/chat/route.ts`:
+## Define the Agent
 
-```typescript title="app/api/chat/route.ts"
-import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { honoServer } from "@voltagent/server-hono";
+Create the agent in `voltagent/agents.ts`:
+
+```typescript title="voltagent/agents.ts"
+import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple calculator tool
@@ -101,46 +111,79 @@ const calculatorTool = createTool({
   },
 });
 
-// Main agent
 export const agent = new Agent({
   name: "CalculatorAgent",
   instructions:
     "You are a helpful calculator assistant. When users ask you to calculate something, use the calculate tool to perform the math and then explain the result clearly.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [calculatorTool],
 });
+```
 
-// VoltAgent singleton (augments global scope during dev to avoid re-instantiation)
-declare global {
-  var voltAgentInstance: VoltAgent | undefined;
-}
+Re-export it from `voltagent/index.ts`:
 
-function getVoltAgentInstance() {
-  if (!globalThis.voltAgentInstance) {
-    globalThis.voltAgentInstance = new VoltAgent({
-      agents: {
-        agent,
-      },
-      server: honoServer(),
-    });
-  }
-  return globalThis.voltAgentInstance;
-}
+```typescript title="voltagent/index.ts"
+export { agent } from "./agents";
+```
 
-export const voltAgent = getVoltAgentInstance();
+## Create API Route
+
+Create the main chat API route using only the agent. Avoid instantiating `VoltAgent` or
+`honoServer` inside Next.js handlers to prevent port conflicts and `/api` routing issues:
+
+```typescript title="app/api/chat/route.ts"
+import { after } from "next/server";
+import { setWaitUntil } from "@voltagent/core";
+import { agent } from "@/voltagent";
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     const lastMessage = messages[messages.length - 1];
 
+    // Enable non-blocking OTel export for Vercel/serverless
+    setWaitUntil(after);
+
     const result = await agent.streamText([lastMessage]);
+
     return result.toUIMessageStreamResponse();
   } catch (error) {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 ```
+
+## Run the VoltAgent Built-in Server (Separate Process)
+
+Next.js dev mode can spin up multiple workers. To avoid port conflicts and process exits,
+run the built-in server in a separate process. It exposes the REST API that the console uses.
+
+Create `voltagent/server.ts`:
+
+```typescript title="voltagent/server.ts"
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { agent } from "./agents";
+
+new VoltAgent({
+  agents: {
+    agent,
+  },
+  server: honoServer({ port: 3141 }),
+});
+```
+
+Add a script to `package.json`:
+
+```json title="package.json"
+{
+  "scripts": {
+    "voltagent:run": "tsx --env-file=.env.local ./voltagent/server.ts"
+  }
+}
+```
+
+If you use a different env file, update the `--env-file` flag accordingly.
 
 ## Build the Chat UI Component (Client Component)
 
@@ -270,6 +313,14 @@ Now you can run your Next.js development server:
 npm run dev
 ```
 
+Start the built-in server in a separate terminal:
+
+```bash
+npm run voltagent:run
+```
+
+Then open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.
+
 This creates a simple but powerful VoltAgent application with:
 
 - **Single agent** with a custom calculator tool
@@ -277,3 +328,49 @@ This creates a simple but powerful VoltAgent application with:
 - **Tool integration** showing how agents use tools
 
 The agent will use the calculator tool when users ask for mathematical calculations, demonstrating how VoltAgent integrates tools seamlessly into conversations.
+
+## Deploying to Vercel (Serverless)
+
+When deploying VoltAgent to Vercel or other serverless platforms, you need to ensure observability spans are properly exported before the serverless function terminates. Without this, traces may remain in "pending" status in VoltOps even though execution completed successfully.
+
+### The Problem
+
+Serverless functions terminate immediately after sending the response. This can interrupt the OpenTelemetry BatchSpanProcessor before it exports pending spans, causing:
+
+- ❌ Traces stuck in "pending" status in VoltOps
+- ❌ Missing agent completion metadata
+- ❌ Incomplete observability data
+
+### The Solution: Using `setWaitUntil` with `after()`
+
+Next.js 15+ provides the `after()` API to execute code after the response is sent but before the function terminates. VoltAgent provides a helper `setWaitUntil` to leverage this for non-blocking observability exports.
+
+Update your API route as follows:
+
+```typescript
+import { after } from "next/server";
+import { setWaitUntil } from "@voltagent/core"; // Import the helper
+
+export async function POST(req: Request) {
+  // Enable non-blocking OTel export
+  // This ensures spans are flushed in the background without blocking the response
+  setWaitUntil(after);
+
+  // ... your agent logic
+  const result = await agent.streamText([lastMessage]);
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+### Why This Works
+
+1. **`setWaitUntil(after)`**: Registers the Next.js `after` function as the global `waitUntil` handler for VoltAgent.
+2. **Automatic Flushing**: The agent automatically detects when execution finishes (or streams complete) and schedules the span export using the registered `waitUntil`.
+3. **Non-Blocking**: The response is sent immediately to the user, while the span export happens in the background, ensuring no latency penalty.
+
+### Requirements
+
+- **Next.js 15+**: The `after()` API was introduced in Next.js 15
+- **Vercel Platform**: Uses Vercel's `waitUntil()` primitive under the hood
+- **VoltOps Observability**: Only needed if you're using VoltOps for trace monitoring

@@ -55,7 +55,6 @@ Here's a dynamic agent that changes instructions based on user role:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const dynamicAgent = new Agent({
   name: "Adaptive Assistant",
@@ -72,7 +71,7 @@ const dynamicAgent = new Agent({
     }
   },
 
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
@@ -103,13 +102,13 @@ const agent = new Agent({
     return baseInstructions;
   },
 
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
 ### Dynamic Models
 
-The model can be a static `LanguageModel` or a function returning one. The agent resolves the model at [agent.ts:1672](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1672) before each generation call.
+The model can be a static `LanguageModel`, a `provider/model` string, or a function returning either. The agent resolves the model at [agent.ts:1672](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1672) before each generation call.
 
 ```ts
 const agent = new Agent({
@@ -122,11 +121,11 @@ const agent = new Agent({
 
     switch (tier) {
       case "premium":
-        return openai("gpt-4o");
+        return "openai/gpt-4o";
       case "pro":
-        return openai("gpt-4o-mini");
+        return "openai/gpt-4o-mini";
       default:
-        return openai("gpt-3.5-turbo");
+        return "openai/gpt-3.5-turbo";
     }
   },
 });
@@ -179,7 +178,7 @@ const agent = new Agent({
     }
   },
 
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
@@ -326,7 +325,7 @@ Dynamic functions run on every operation. Avoid async operations or heavy comput
 // ✅ Good - Fast synchronous logic
 model: ({ context }) => {
   const tier = context.get('tier') as string;
-  return tier === 'premium' ? openai('gpt-4o') : openai('gpt-3.5-turbo');
+  return tier === 'premium' ? "openai/gpt-4o" : "openai/gpt-3.5-turbo";
 },
 
 // ❌ Avoid - API calls or database queries
@@ -386,12 +385,12 @@ const agent = new Agent({
   model: ({ context }) => {
     // If no tier specified, use default static model
     if (!context.has("tier")) {
-      return openai("gpt-4o-mini"); // Default model
+      return "openai/gpt-4o-mini"; // Default model
     }
 
     // Otherwise, choose based on tier
     const tier = context.get("tier") as string;
-    return tier === "premium" ? openai("gpt-4o") : openai("gpt-3.5-turbo");
+    return tier === "premium" ? "openai/gpt-4o" : "openai/gpt-3.5-turbo";
   },
 
   // model is selected dynamically above
@@ -425,13 +424,13 @@ model: ({ context }) => {
     const tier = context.get("tier") as string;
 
     if (tier === "premium") {
-      return openai("gpt-4o");
+      return "openai/gpt-4o";
     }
-    return openai("gpt-3.5-turbo");
+    return "openai/gpt-3.5-turbo";
   } catch (error) {
     console.warn("Error in dynamic model selection:", error);
     // Fallback to safe default
-    return openai("gpt-3.5-turbo");
+    return "openai/gpt-3.5-turbo";
   }
 };
 ```

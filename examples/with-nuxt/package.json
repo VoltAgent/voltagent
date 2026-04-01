@@ -1,13 +1,12 @@
 {
   "name": "voltagent-example-with-nuxt",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/ui": "^4.0.0",
-    "@voltagent/core": "^1.1.36",
-    "@voltagent/libsql": "^1.0.9",
-    "@voltagent/server-hono": "^1.2.2",
-    "ai": "^5.0.76",
+    "@voltagent/core": "^2.6.13",
+    "@voltagent/libsql": "^2.1.2",
+    "@voltagent/server-hono": "^2.0.8",
+    "ai": "^6.0.0",
     "nuxt": "^4.1.2",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1",
@@ -17,6 +16,11 @@
     "prettier": "^3.5.3"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-nuxt"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",

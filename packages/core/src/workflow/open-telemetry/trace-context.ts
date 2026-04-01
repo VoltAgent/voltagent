@@ -54,6 +54,12 @@ export interface WorkflowTraceContextOptions {
     traceId: string;
     spanId: string;
   };
+  replayedFrom?: {
+    traceId: string;
+    spanId: string;
+    executionId: string;
+    stepId: string;
+  };
 }
 
 export class WorkflowTraceContext {
@@ -69,6 +75,7 @@ export class WorkflowTraceContext {
     options: WorkflowTraceContextOptions,
   ) {
     this.tracer = observability.getTracer();
+    const linkedSpan = options.parentSpan ? undefined : this.resolveLinkedSpan();
 
     // Store common attributes once - these will be inherited by all child spans
     this.commonAttributes = {
@@ -81,9 +88,11 @@ export class WorkflowTraceContext {
     };
 
     // If there's a parent span (e.g., from an agent), use it as context
+    // Otherwise, use a clean context (remove any ambient spans)
+    // This ensures workflow root spans are truly root spans.
     const parentContext = options.parentSpan
       ? trace.setSpan(context.active(), options.parentSpan)
-      : context.active();
+      : trace.deleteSpan(context.active());
 
     // Create root span with common attributes
     const spanAttributes: Record<string, any> = {
@@ -106,23 +115,54 @@ export class WorkflowTraceContext {
       }
     }
 
-    // Create span links if resuming from a previous execution
-    const links = options.resumedFrom
-      ? [
-          {
-            context: {
-              traceId: options.resumedFrom.traceId,
-              spanId: options.resumedFrom.spanId,
-              traceFlags: 1, // Sampled
-              traceState: undefined,
+    // Use links to preserve non-parent trace relationships (request context + resume context)
+    const links = [
+      ...(linkedSpan
+        ? [
+            {
+              context: linkedSpan.spanContext(),
+              attributes: {
+                "link.type": "ambient-parent",
+                "link.source": "active-context",
+              },
             },
-            attributes: {
-              "link.type": "resume",
-              "workflow.resumed": true,
+          ]
+        : []),
+      ...(options.resumedFrom
+        ? [
+            {
+              context: {
+                traceId: options.resumedFrom.traceId,
+                spanId: options.resumedFrom.spanId,
+                traceFlags: 1, // Sampled
+                traceState: undefined,
+              },
+              attributes: {
+                "link.type": "resume",
+                "workflow.resumed": true,
+              },
             },
-          },
-        ]
-      : undefined;
+          ]
+        : []),
+      ...(options.replayedFrom
+        ? [
+            {
+              context: {
+                traceId: options.replayedFrom.traceId,
+                spanId: options.replayedFrom.spanId,
+                traceFlags: 1, // Sampled
+                traceState: undefined,
+              },
+              attributes: {
+                "link.type": "replay",
+                "workflow.replayed": true,
+                "workflow.replay.source_execution_id": options.replayedFrom.executionId,
+                "workflow.replay.source_step_id": options.replayedFrom.stepId,
+              },
+            },
+          ]
+        : []),
+    ];
 
     this.rootSpan = this.tracer.startSpan(
       operationName,
@@ -136,11 +176,27 @@ export class WorkflowTraceContext {
             "workflow.previous_trace_id": options.resumedFrom.traceId,
             "workflow.previous_span_id": options.resumedFrom.spanId,
           }),
+          ...(options.replayedFrom && {
+            "workflow.replayed": true,
+            "workflow.replay.source_trace_id": options.replayedFrom.traceId,
+            "workflow.replay.source_span_id": options.replayedFrom.spanId,
+            "workflow.replay.source_execution_id": options.replayedFrom.executionId,
+            "workflow.replay.source_step_id": options.replayedFrom.stepId,
+          }),
         },
-        links,
+        links: links.length > 0 ? links : undefined,
       },
       parentContext,
     );
+
+    if (options.replayedFrom) {
+      this.rootSpan.addEvent("workflow.replayed", {
+        "replay.source_trace_id": options.replayedFrom.traceId,
+        "replay.source_span_id": options.replayedFrom.spanId,
+        "replay.source_execution_id": options.replayedFrom.executionId,
+        "replay.source_step_id": options.replayedFrom.stepId,
+      });
+    }
 
     // Set active context with root span
     this.activeContext = trace.setSpan(context.active(), this.rootSpan);
@@ -254,6 +310,36 @@ export class WorkflowTraceContext {
   }
 
   /**
+   * Create a generic child span under the workflow root or an optional parent span
+   */
+  createChildSpan(
+    name: string,
+    type: string,
+    options?: {
+      label?: string;
+      attributes?: Record<string, any>;
+      kind?: SpanKind;
+      parentSpan?: Span;
+    },
+  ): Span {
+    const spanOptions: SpanOptions = {
+      kind: options?.kind || SpanKind.INTERNAL,
+      attributes: {
+        ...this.commonAttributes,
+        "span.type": type,
+        ...(options?.label && { "span.label": options.label }),
+        ...(options?.attributes || {}),
+      },
+    };
+
+    const parentContext = options?.parentSpan
+      ? trace.setSpan(this.activeContext, options.parentSpan)
+      : this.activeContext;
+
+    return this.tracer.startSpan(name, spanOptions, parentContext);
+  }
+
+  /**
    * Record a suspension event on the workflow
    */
   recordSuspension(stepIndex: number, reason: string, suspendData?: any, checkpoint?: any): void {
@@ -321,6 +407,14 @@ export class WorkflowTraceContext {
    */
   getRootSpan(): Span {
     return this.rootSpan;
+  }
+
+  /**
+   * Set input on the root span
+   */
+  setInput(input: any): void {
+    const inputStr = typeof input === "string" ? input : safeStringify(input);
+    this.rootSpan.setAttribute("input", inputStr);
   }
 
   /**
@@ -482,6 +576,13 @@ export class WorkflowTraceContext {
   }
 
   /**
+   * Capture the current active span as a link target when we intentionally create a new root trace.
+   */
+  private resolveLinkedSpan(): Span | undefined {
+    return trace.getSpan(context.active());
+  }
+
+  /**
    * Clear step spans (useful for cleanup after parallel execution)
    */
   clearStepSpans(): void {
@@ -523,8 +624,15 @@ export function addWorkflowAttributesToSpan(
     }
   }
 
+  // Replay lineage
+  if (options?.replayFrom) {
+    span.setAttribute("workflow.replayed", true);
+    span.setAttribute("workflow.replay.source_execution_id", options.replayFrom.executionId);
+    span.setAttribute("workflow.replay.source_step_id", options.replayFrom.stepId);
+  }
+
   // Resume information
-  if (options?.resumeFrom) {
+  if (options?.resumeFrom && !options?.replayFrom) {
     span.setAttribute("workflow.resumed", true);
     span.setAttribute("workflow.resume.execution_id", options.resumeFrom.executionId);
     span.setAttribute("workflow.resume.step_index", options.resumeFrom.resumeStepIndex);

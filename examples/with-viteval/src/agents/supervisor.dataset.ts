@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { defineDataset } from "viteval/dataset";
 import { z } from "zod";
@@ -10,7 +9,7 @@ export default defineDataset({
     return await Promise.all(
       categories.map(async ({ name, description }) => {
         const { object } = await generateObject({
-          model: openai("gpt-5"),
+          model: "openai/gpt-5",
           system: `
           You are an expert at generating test data. You will generate a question and the expected answer based on the provided category.
           Be succinct in you questions and answers. The question should be a single sentence, and the answer should be a single sentence or less.

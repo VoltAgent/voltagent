@@ -5,13 +5,13 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from "ai";
+import type { z } from "zod";
 import type { WorkflowExecutionContext } from "../context";
 import type { WorkflowStreamController } from "../stream";
-import type { WorkflowStreamEvent } from "../types";
+import type { WorkflowStateUpdater, WorkflowStepState, WorkflowStreamEvent } from "../types";
 import type { WorkflowState } from "./state";
 import type {
   InternalExtractWorkflowInputData,
-  InternalWorkflowStateParam,
   InternalWorkflowStepConfig,
   WorkflowExecuteContext,
 } from "./types";
@@ -27,12 +27,13 @@ export function convertWorkflowStateToParam<INPUT>(
   state: WorkflowState<INPUT, DangerouslyAllowAny>,
   executionContext?: WorkflowExecutionContext,
   signal?: AbortSignal,
-): InternalWorkflowStateParam<INPUT> & { workflowContext?: WorkflowExecutionContext } {
+): WorkflowStepState<INPUT> & { workflowContext?: WorkflowExecutionContext } {
   return {
     executionId: state.executionId,
     conversationId: state.conversationId,
     userId: state.userId,
-    context: state.context,
+    context: executionContext?.context ?? state.context,
+    workflowState: state.workflowState,
     active: state.active,
     startAt: state.startAt,
     endAt: state.endAt,
@@ -68,19 +69,50 @@ export function defaultStepConfig<CONFIG extends InternalWorkflowStepConfig>(con
  * @param suspendFn - The suspend function for the step
  * @returns The execution context for the step
  */
-export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>(
-  data: InternalExtractWorkflowInputData<DATA>,
-  state: InternalWorkflowStateParam<INPUT>,
+export function createStepExecutionContext<
+  INPUT,
+  DATA,
+  RESULT_SCHEMA extends z.ZodTypeAny,
+  SUSPEND_DATA,
+  RESUME_DATA,
+>(
+  data: DATA,
+  state: WorkflowStepState<INPUT>,
   executionContext: WorkflowExecutionContext,
   suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,
+  bailFn?: (result?: z.infer<RESULT_SCHEMA>) => never,
+  abortFn?: () => never,
   resumeData?: RESUME_DATA,
-): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
+  retryCount = 0,
+  setWorkflowState?: (update: WorkflowStateUpdater) => void,
+): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA, z.infer<RESULT_SCHEMA>> {
   return {
     data,
     state,
     getStepData: (stepId: string) => executionContext?.stepData.get(stepId),
+    getStepResult: <T = unknown>(stepId: string) => {
+      const stepData = executionContext?.stepData.get(stepId);
+      if (!stepData || stepData.output === undefined) {
+        return null;
+      }
+      return stepData.output as T;
+    },
+    getInitData: <T = InternalExtractWorkflowInputData<INPUT>>() => state.input as T,
     suspend: suspendFn,
+    bail:
+      bailFn ??
+      (() => {
+        throw new Error("WORKFLOW_BAIL_NOT_CONFIGURED");
+      }),
+    abort:
+      abortFn ??
+      (() => {
+        throw new Error("WORKFLOW_ABORT_NOT_CONFIGURED");
+      }),
     resumeData,
+    retryCount,
+    workflowState: executionContext.workflowState,
+    setWorkflowState: setWorkflowState ?? (() => undefined),
     logger: executionContext.logger,
     writer: executionContext.streamWriter,
   };

@@ -138,7 +138,6 @@ When the agent calls `think` or `analyze`, it uses parameters like:
 
 ```typescript
 import { Agent, createReasoningTools, type Toolkit } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Get toolkit, automatically adding instructions & examples to system prompt
 const reasoningToolkit: Toolkit = createReasoningTools(); // Uses defaults
@@ -151,8 +150,8 @@ const agent = new Agent({
     evaluate information, and decide on the best course of action before responding.
     Always think step-by-step.
   `,
-  // Reinforce tool usage in instructions; pass ai-sdk model directly
-  model: openai("gpt-4o-mini"), // Ensure model supports tool use
+  // Reinforce tool usage in instructions; pass a model string or LanguageModel
+  model: "openai/gpt-4o-mini", // Ensure model supports tool use
   tools: [
     reasoningToolkit,
     // ... add other tools the agent can call after thinking/analyzing

@@ -7,13 +7,12 @@
 ```typescript
 import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 // Create an agent
 const agent = new Agent({
   name: "Assistant",
   // Pass an ai-sdk model directly
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "Be concise and helpful",
 });
 
@@ -21,7 +20,7 @@ const agent = new Agent({
 const workflow = createWorkflowChain({
   id: "analyze-text",
   input: z.object({ text: z.string() }),
-}).andAgent(({ data }) => `Analyze this text: ${data.text}`, agent, {
+}).andAgent(async ({ data }) => `Analyze this text: ${data.text}`, agent, {
   schema: z.object({
     sentiment: z.enum(["positive", "negative", "neutral"]),
     summary: z.string(),
@@ -34,23 +33,28 @@ const result = await workflow.run({ text: "I love this!" });
 
 ## How It Works
 
-`andAgent` = AI prompt + structured output schema:
+`andAgent` = AI prompt + structured output schema (Zod or `Output.*`):
 
 ```typescript
 .andAgent(
-  prompt,    // What to ask the AI
-  agent,     // Which AI to use
-  { schema } // What shape the answer should be
+  prompt,     // What to ask the AI
+  agent,      // Which AI to use
+  { schema }, // Zod schema or ai-sdk Output.* spec
+  map?        // Optional: merge/shape output with existing data
 )
 ```
 
-**Important:** `andAgent` uses `generateObject` under the hood, which means:
+If you pass a function for `prompt`, it must return a Promise (use `async`) and resolve to a string, `UIMessage[]`, or `ModelMessage[]`.
+
+**Important:** `andAgent` uses `generateText`. If you pass a Zod schema, it is wrapped with `Output.object`. If you pass an `Output.*` spec, it is used directly. This means:
 
 - ✅ You get **structured, typed responses** based on your schema
-- ❌ The agent **cannot use tools** during this step
+- ✅ The agent **can use tools** during this step
 - ❌ **Streaming is not supported** (response returns when complete)
 
-**Need tools or streaming?** Use [andThen](./and-then.md) to call the agent directly with `streamText` or `generateText`.
+By default, the step result replaces the workflow data with the agent output. If you need to keep previous data, use the optional mapper (4th argument) to merge or reshape the output.
+
+**Need streaming or custom tool handling?** Use [andThen](./and-then.md) to call the agent directly with `streamText` or `generateText`.
 
 ## Function Signature
 
@@ -58,12 +62,12 @@ const result = await workflow.run({ text: "I love this!" });
 // Simple prompt (string)
 .andAgent("Summarize this", agent, { schema })
 
-// Dynamic prompt from data (string)
-.andAgent(({ data }) => `Analyze: ${data.text}`, agent, { schema })
+// Dynamic prompt from data (async)
+.andAgent(async ({ data }) => `Analyze: ${data.text}`, agent, { schema })
 
 // Advanced: pass ai-sdk v5 ModelMessage[] (multimodal)
 .andAgent(
-  ({ data }) => [
+  async ({ data }) => [
     { role: 'user', content: [{ type: 'text', text: `Hello ${data.name}` }] },
   ],
   agent,
@@ -72,13 +76,87 @@ const result = await workflow.run({ text: "I love this!" });
 
 // Advanced: pass UIMessage[]
 .andAgent(
-  ({ data }) => [
+  async ({ data }) => [
     { id: crypto.randomUUID(), role: 'user', parts: [{ type: 'text', text: data.prompt }] },
   ],
   agent,
   { schema }
 )
+
+// Merge agent output with existing data
+.andAgent(
+  async ({ data }) => `Classify: ${data.email}`,
+  agent,
+  { schema: z.object({ type: z.enum(["support", "sales", "spam"]) }) },
+  (output, { data }) => ({ ...data, emailType: output })
+)
+
+// Use Output.* for non-object outputs (arrays, choices, json, text)
+// (Requires: import { Output } from "ai";)
+.andAgent(
+  async ({ data }) => `List tags for: ${data.topic}`,
+  agent,
+  { schema: Output.array({ element: z.string() }) }
+)
 ```
+
+## Middleware and Retries
+
+`andAgent` passes the config object to `agent.generateText`, so you can use
+`inputMiddlewares`, `outputMiddlewares`, `maxMiddlewareRetries`, and `maxRetries`
+per step.
+
+```ts
+import { Agent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const redactInput = createInputMiddleware({
+  name: "RedactPII",
+  handler: ({ input }) => {
+    if (typeof input !== "string") return input;
+    return input.replace(/\b\d{16}\b/g, "[redacted]");
+  },
+});
+
+const requireSource = createOutputMiddleware<string>({
+  name: "RequireSource",
+  handler: ({ output, abort }) => {
+    if (!output.includes("source:")) {
+      abort("Missing source in summary", { retry: true });
+    }
+    return output;
+  },
+});
+
+const agent = new Agent({
+  name: "Assistant",
+  model: "openai/gpt-4o-mini",
+  instructions: "Summarize documents with sources.",
+});
+
+createWorkflowChain({
+  id: "doc-summary",
+  input: z.object({ text: z.string() }),
+}).andAgent(async ({ data }) => `Summarize and include source lines: ${data.text}`, agent, {
+  schema: z.object({
+    summary: z.string(),
+    sources: z.array(z.string()),
+  }),
+  inputMiddlewares: [redactInput],
+  outputMiddlewares: [requireSource],
+  maxMiddlewareRetries: 1,
+  maxRetries: 2,
+});
+```
+
+Retry behavior:
+
+- `maxRetries` controls LLM retries for the selected model (total attempts = `maxRetries + 1`).
+- `maxMiddlewareRetries` controls retries triggered by `abort(..., { retry: true })`.
+- A middleware retry restarts the step: middlewares, guardrails, hooks, model selection, and fallback.
+- Output middleware runs on the model text and can trigger retries. It does not change the parsed
+  object returned by `andAgent`.
 
 ## Common Patterns
 
@@ -86,7 +164,7 @@ const result = await workflow.run({ text: "I love this!" });
 
 ```typescript
 .andAgent(
-  ({ data }) => `Analyze sentiment of: ${data.review}`,
+  async ({ data }) => `Analyze sentiment of: ${data.review}`,
   agent,
   {
     schema: z.object({
@@ -102,7 +180,7 @@ const result = await workflow.run({ text: "I love this!" });
 
 ```typescript
 .andAgent(
-  ({ data }) => `Write a ${data.tone} email about ${data.topic}`,
+  async ({ data }) => `Write a ${data.tone} email about ${data.topic}`,
   agent,
   {
     schema: z.object({
@@ -118,7 +196,7 @@ const result = await workflow.run({ text: "I love this!" });
 
 ```typescript
 .andAgent(
-  ({ data }) => `Extract key information from: ${data.document}`,
+  async ({ data }) => `Extract key information from: ${data.document}`,
   agent,
   {
     schema: z.object({
@@ -131,13 +209,47 @@ const result = await workflow.run({ text: "I love this!" });
 )
 ```
 
+### Arrays and Choices
+
+Requires `import { Output } from "ai";`
+
+```typescript
+.andAgent(
+  async ({ data }) => `Give 3 tags for: ${data.topic}`,
+  agent,
+  { schema: Output.array({ element: z.string() }) }
+)
+
+.andAgent(
+  async ({ data }) => `Pick a category for: ${data.title}`,
+  agent,
+  { schema: Output.choice({ options: ["news", "blog", "doc"] }) }
+)
+```
+
+### Merge Output With Existing Data
+
+```typescript
+.andAgent(
+  async ({ data }) => `What type of email is this: ${data.email}`,
+  agent,
+  {
+    schema: z.object({
+      type: z.enum(["support", "sales", "spam"]),
+      priority: z.enum(["low", "medium", "high"]),
+    }),
+  },
+  (output, { data }) => ({ ...data, emailType: output })
+)
+```
+
 ## Dynamic Prompts
 
 Build prompts from workflow data:
 
 ```typescript
 .andAgent(
-  ({ data }) => {
+  async ({ data }) => {
     // Adjust prompt based on data
     if (data.userLevel === "beginner") {
       return `Explain in simple terms: ${data.question}`;
@@ -156,35 +268,39 @@ Combine AI with logic:
 ```typescript
 createWorkflowChain({ id: "smart-email" })
   // Step 1: Classify with AI
-  .andAgent(({ data }) => `What type of email is this: ${data.email}`, agent, {
-    schema: z.object({
-      type: z.enum(["support", "sales", "spam"]),
-      priority: z.enum(["low", "medium", "high"]),
-    }),
-  })
+  .andAgent(
+    async ({ data }) => `What type of email is this: ${data.email}`,
+    agent,
+    {
+      schema: z.object({
+        type: z.enum(["support", "sales", "spam"]),
+        priority: z.enum(["low", "medium", "high"]),
+      }),
+    },
+    (output, { data }) => ({ ...data, emailType: output })
+  )
   // Step 2: Route based on classification
   .andThen({
     id: "route-email",
     execute: async ({ data }) => {
-      if (data.type === "spam") {
+      if (data.emailType.type === "spam") {
         return { action: "delete" };
       }
       return {
         action: "forward",
-        to: data.type === "support" ? "support@" : "sales@",
+        to: data.emailType.type === "support" ? "support@" : "sales@",
       };
     },
   });
 ```
 
-## Using Tools or Streaming
+## Streaming or Custom Tool Handling
 
-If you need the agent to use tools or stream responses, use `andThen` instead:
+`andAgent` supports tools, but it only returns the structured output when the step completes. Use `andThen` when you need streaming tokens or to inspect tool calls/results directly:
 
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 const getWeatherTool = createTool({
   name: "get_weather",
@@ -197,15 +313,15 @@ const getWeatherTool = createTool({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [getWeatherTool],
 });
 
-// Use andThen to call agent directly with tools
+// Use andThen to call the agent directly when you need streaming or tool call inspection
 createWorkflowChain({ id: "weather-flow" }).andThen({
   id: "get-weather",
   execute: async ({ data }) => {
-    // Call streamText/generateText directly for tool support
+    // Call streamText/generateText directly for streaming or tool call handling
     const result = await agent.generateText(`What's the weather in ${data.city}?`);
     return { response: result.text };
   },
@@ -218,7 +334,7 @@ createWorkflowChain({ id: "weather-flow" }).andThen({
 2. **Use enums for categories** - `z.enum()` ensures valid options
 3. **Add descriptions to schema fields** - Helps AI understand what you want
 4. **Handle edge cases** - Check for missing or low-confidence results
-5. **Need tools?** - Use `andThen` with direct agent calls instead of `andAgent`
+5. **Need streaming or tool inspection?** - Use `andThen` with direct agent calls instead of `andAgent`
 
 ## Next Steps
 

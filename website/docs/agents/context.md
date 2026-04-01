@@ -16,9 +16,9 @@ The `context` field in `OperationContext` is a Map that passes custom data throu
 Here's how `context` flows through an agent operation:
 
 ```
-You → Agent → Hooks → Tools → Retrievers → Sub-Agents
-     ↑                                              ↓
-     ← ← ← ← ← context flows everywhere ← ← ← ← ←
+You → Agent → Hooks → Tools → Retrievers → Memory → Sub-Agents
+     ↑                                                        ↓
+     ← ← ← ← ← ← context flows everywhere ← ← ← ← ← ← ← ← ←
 ```
 
 ## Initialize context
@@ -31,7 +31,6 @@ Set default `context` when creating the agent. This context is used for all oper
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Set default context at agent creation
 const defaultContext = new Map();
@@ -40,7 +39,7 @@ defaultContext.set("projectId", "my-project");
 
 const agent = new Agent({
   name: "SimpleAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
   context: defaultContext, // Default context for all operations
 });
@@ -67,7 +66,7 @@ Pass `context` when calling the agent to provide operation-specific data:
 ```typescript
 const agent = new Agent({
   name: "SimpleAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
 });
 
@@ -78,10 +77,79 @@ executionContext.set("language", "English");
 const response = await agent.generateText("Hello!", {
   context: executionContext,
 });
-
 // Now you can access the data from the response
 console.log("Language:", response.context?.get("language"));
 ```
+
+## Sending User Information
+
+You can pass user information to the agent using the `context`. This information is automatically picked up by the tracing system and associated with the trace.
+
+Supported fields:
+
+- `user.name`: User's full name
+- `user.email`: User's email address
+- `user.avatar`: User's avatar URL (optional, falls back to Gravatar using email if not provided)
+- `user.metadata`: Additional metadata object
+
+<Tabs>
+  <TabItem value="sdk" label="SDK" default>
+
+When using the SDK, pass user information in the `context` Map:
+
+```typescript
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({ ... });
+
+const context = new Map();
+context.set("user.name", "John Doe");
+context.set("user.email", "john@example.com");
+context.set("user.avatar", "https://example.com/avatar.jpg");
+context.set("user.metadata", { plan: "pro" });
+
+await agent.generateText("Hello", { userId: "user_123", context });
+```
+
+  </TabItem>
+  <TabItem value="api" label="REST API">
+
+When using the REST API, you can pass user information in the `context` object. You can use either a nested `user` object or flat keys.
+
+**Option 1: Nested User Object**
+
+```json
+{
+  "prompt": "Hello",
+  "userId": "user_123",
+  "context": {
+    "user": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "avatar": "https://example.com/avatar.jpg",
+      "metadata": { "plan": "pro" }
+    }
+  }
+}
+```
+
+**Option 2: Flat Keys**
+
+```json
+{
+  "prompt": "Hello",
+  "userId": "user_123",
+  "context": {
+    "user.name": "John Doe",
+    "user.email": "john@example.com",
+    "user.avatar": "https://example.com/avatar.jpg",
+    "user.metadata": { "plan": "pro" }
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
 
 ## Hooks Access context
 
@@ -92,7 +160,7 @@ import { createHooks } from "@voltagent/core";
 
 const agent = new Agent({
   name: "HookAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: createHooks({
     onStart: (context) => {
       // Read data that was passed in
@@ -120,9 +188,9 @@ context.set("language", "English");
 await agent.generateText("Hello!", { context });
 ```
 
-## Tools Access context
+## Tools Access Context
 
-Tools can read and write to `context` through their options:
+Tools receive the full operation context through the second parameter (`options`), which includes all `OperationContext` fields directly accessible:
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -135,17 +203,29 @@ const loggerTool = createTool({
     message: z.string(),
   }),
   execute: async ({ message }, options) => {
-    // Read from context
-    const language = options?.operationContext?.context?.get("language");
-    const requestId = options?.operationContext?.context?.get("requestId");
+    // Access user-defined context directly
+    const language = options?.context?.get("language");
+    const requestId = options?.context?.get("requestId");
+
+    // Access operation metadata
+    const userId = options?.userId;
+    const operationId = options?.operationId;
+
+    // Use the operation-scoped logger
+    options?.logger?.info(`[${requestId}] User ${userId}: ${message}`);
 
     console.log(`[${requestId}] Language ${language}: ${message}`);
 
     // Write to context
-    const ctx = options?.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const logs = ctx.get("logs") || [];
-      logs.push({ message, timestamp: new Date().toISOString() });
+      logs.push({
+        message,
+        timestamp: new Date().toISOString(),
+        userId,
+        operationId,
+      });
       ctx.set("logs", logs);
     }
 
@@ -155,7 +235,7 @@ const loggerTool = createTool({
 
 const agentWithTool = new Agent({
   name: "ToolAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [loggerTool],
   instructions: "Use the log_message tool to log what the user says.",
 });
@@ -167,11 +247,67 @@ context.set("requestId", "req-456");
 
 const response = await agentWithTool.generateText("Log this: Hello world!", {
   context,
+  userId: "user123",
 });
 
 // Check what was logged
 const logs = response.context?.get("logs");
 console.log("All logs:", logs);
+```
+
+### What's Available in Tool Options?
+
+The `options` parameter in tool `execute` functions combines `ToolExecuteOptions` and `Partial<OperationContext>`:
+
+**From OperationContext:**
+
+- `operationId` - Unique operation identifier
+- `userId` - User identifier (if provided)
+- `conversationId` - Conversation identifier (if provided)
+- `workspace` - Workspace instance configured on the agent (if available)
+- `context` - User-defined context Map (read/write)
+- `systemContext` - Internal system context Map
+- `logger` - Operation-scoped logger with full context
+- `abortController` - For operation cancellation
+- `traceContext` - OpenTelemetry trace context
+- `input` - Original input to the agent
+- `isActive` - Whether operation is still active
+
+**Tool-specific context (from `toolContext?` - optional):**
+
+> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called externally.
+
+- `toolContext?.name` - Name of the tool being executed
+- `toolContext?.callId` - Unique identifier for this tool call (from AI SDK)
+- `toolContext?.messages` - Message history at tool call time (from AI SDK)
+- `toolContext?.abortSignal` - Abort signal for cancellation (from AI SDK)
+
+```typescript
+// Example: Authorization check using context
+const sensitiveDataTool = createTool({
+  name: "get_sensitive_data",
+  description: "Retrieves sensitive user data",
+  parameters: z.object({
+    dataType: z.string(),
+  }),
+  execute: async ({ dataType }, options) => {
+    // Check user role from context
+    const userRole = options?.context?.get("userRole");
+
+    if (userRole !== "admin") {
+      throw new Error("Unauthorized: Admin role required");
+    }
+
+    // Log access with full context including tool name
+    const toolName = options?.toolContext?.name;
+    options?.logger?.warn(`${toolName}: Sensitive data accessed: ${dataType}`, {
+      userId: options?.userId,
+      operationId: options?.operationId,
+    });
+
+    return await fetchSensitiveData(dataType);
+  },
+});
 ```
 
 ## Access Input and Output in Context
@@ -243,7 +379,6 @@ The `input` and `output` fields are particularly useful for:
 
 ```typescript
 import { Agent, createHooks } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const auditHooks = createHooks({
   onEnd: async ({ context, output }) => {
@@ -262,7 +397,7 @@ const auditHooks = createHooks({
 
 const auditedAgent = new Agent({
   name: "Audited Assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
   hooks: auditHooks,
 });
@@ -286,6 +421,9 @@ interface OperationContext {
 
   // Optional conversation identifier
   conversationId?: string;
+
+  // Workspace configured on the agent (if any)
+  workspace?: Workspace;
 }
 ```
 
@@ -302,6 +440,7 @@ const response = await agent.generateText("Hello", {
 console.log(operationContext.userId); // "user-123"
 console.log(operationContext.conversationId); // "conv-456"
 console.log(operationContext.context.get("language")); // "en"
+console.log(operationContext.workspace?.id); // e.g. "demo-workspace"
 ```
 
 ### Operation Metadata (Read-Only)
@@ -329,7 +468,7 @@ interface OperationContext {
 ```typescript
 const agent = new Agent({
   name: "TrackedAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: createHooks({
     onEnd: async ({ context }) => {
       const duration = Date.now() - context.startTime.getTime();
@@ -402,11 +541,10 @@ Here's how to use metadata fields for observability:
 
 ```typescript
 import { Agent, createHooks } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const observableAgent = new Agent({
   name: "ObservableAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: createHooks({
     onStart: ({ context }) => {
       // Use the scoped logger
@@ -451,11 +589,10 @@ The `abortController` field allows operation cancellation:
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "CancellableAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
 });
 
@@ -511,7 +648,7 @@ class SimpleRetriever extends BaseRetriever {
 
 const agentWithRetriever = new Agent({
   name: "RetrievalAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   retriever: new SimpleRetriever(),
   instructions: "Answer using retrieved information.",
 });
@@ -532,7 +669,7 @@ When a supervisor delegates to sub-agents, the parent's `OperationContext` is pa
 // Worker agent - automatically receives supervisor's context
 const workerAgent = new Agent({
   name: "WorkerAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: createHooks({
     onStart: (context) => {
       // Automatically gets context from supervisor
@@ -550,7 +687,7 @@ const workerAgent = new Agent({
 // Supervisor agent
 const supervisorAgent = new Agent({
   name: "SupervisorAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [workerAgent],
   hooks: createHooks({
     onStart: (context) => {
@@ -619,7 +756,7 @@ const counterTool = createTool({
   description: "Increments a counter",
   parameters: z.object({}),
   execute: async (_, options) => {
-    const ctx = options.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const count = (ctx.get("counter") || 0) + 1;
       ctx.set("counter", count);
@@ -632,7 +769,7 @@ const counterTool = createTool({
 // Agent with everything
 const fullAgent = new Agent({
   name: "FullAgent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   retriever: new BasicRetriever(),
   tools: [counterTool],
   hooks: createHooks({
@@ -687,7 +824,7 @@ async function demonstrateFlow() {
 
 The `OperationContext` contains:
 
-- **User-managed**: `context` (Map), `userId`, `conversationId`
+- **User-managed**: `context` (Map), `userId`, `conversationId`, `workspace`
 - **Metadata**: `operationId`, `startTime`, `isActive`, `parentAgentId`
 - **System**: `systemContext`, `logger`, `traceContext`, `conversationSteps`, `abortController`, `cancellationError`, `elicitation`
 - **Input/Output**: `input`, `output` (automatically set)
@@ -729,3 +866,72 @@ hooks: createHooks({
   },
 });
 ```
+
+## Memory Adapters
+
+Custom memory adapters can access `OperationContext` to implement cross-cutting concerns like multi-tenancy, logging, and access control without modifying core adapter logic.
+
+### Example: Multi-Tenant Data Isolation
+
+Custom memory adapters can read user-provided context to implement tenant-scoped data access:
+
+```typescript
+import { InMemoryStorageAdapter } from "@voltagent/core";
+import type { OperationContext, GetMessagesOptions, UIMessage } from "@voltagent/core/agent";
+
+class TenantMemoryAdapter extends InMemoryStorageAdapter {
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: GetMessagesOptions,
+    context?: OperationContext
+  ): Promise<UIMessage[]> {
+    // Read tenant ID from user-provided context
+    const tenantId = context?.context.get("tenantId") as string;
+
+    if (!tenantId) {
+      throw new Error("Tenant ID is required");
+    }
+
+    // Create tenant-scoped user ID
+    const scopedUserId = `${tenantId}:${userId}`;
+
+    // Log access for audit trail
+    context?.logger.info("Tenant memory access", {
+      tenantId,
+      userId,
+      scopedUserId,
+      traceId: context.traceContext.getTraceId(),
+    });
+
+    // Use scoped user ID to isolate tenant data
+    return super.getMessages(scopedUserId, conversationId, options, context);
+  }
+}
+
+// Use the adapter
+const agent = new Agent({
+  memory: new Memory({ storage: new TenantMemoryAdapter() }),
+});
+
+// Tenant A: user-123's data
+await agent.generateText("Show my history", {
+  userId: "user-123",
+  context: new Map([["tenantId", "company-abc"]]), // Stores as "company-abc:user-123"
+});
+
+// Tenant B: same user ID, but different tenant = different data
+await agent.generateText("Show my history", {
+  userId: "user-123",
+  context: new Map([["tenantId", "company-xyz"]]), // Stores as "company-xyz:user-123"
+});
+```
+
+**What this enables:**
+
+- **Data isolation** between tenants using composite keys
+- **Per-request tenant context** without adapter reconfiguration
+- **Audit logging** with full operation context
+- **Flexible access control** based on runtime values
+
+All memory adapters (InMemory, Postgres, LibSQL, Supabase) support `OperationContext` as an optional parameter.

@@ -1,4 +1,12 @@
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage, UIMessagePart } from "ai";
+
+import {
+  hasOpenAIItemIdForPart as hasOpenAIItemIdForPartBase,
+  isObject,
+  isOpenAIReasoningId,
+  stripDanglingOpenAIReasoningFromParts,
+} from "./openai-reasoning-utils";
 
 const WORKING_MEMORY_TOOL_NAMES = new Set([
   "update_working_memory",
@@ -14,14 +22,16 @@ type ToolLikePart = UIMessagePart<any, any> & {
   providerExecuted?: boolean;
   isError?: boolean;
   errorText?: string;
+  approval?: unknown;
 };
 
 type TextLikePart = UIMessagePart<any, any> & {
   text?: string;
 };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+type SanitizeMessagesOptions = {
+  filterIncompleteToolCalls?: boolean;
+};
 
 const safeClone = <T>(value: T): T => {
   if (!isObject(value) && !Array.isArray(value)) {
@@ -37,13 +47,21 @@ const safeClone = <T>(value: T): T => {
   }
 
   try {
-    return JSON.parse(JSON.stringify(value)) as T;
+    return JSON.parse(safeStringify(value)) as T;
   } catch (_error) {
     if (Array.isArray(value)) {
       return value.slice() as T;
     }
     return { ...(value as Record<string, unknown>) } as T;
   }
+};
+
+const compactObject = <T extends Record<string, unknown>>(value: T): T => {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined);
+  if (entries.length === Object.keys(value).length) {
+    return value;
+  }
+  return Object.fromEntries(entries) as T;
 };
 
 const normalizeText = (part: TextLikePart) => {
@@ -82,7 +100,78 @@ const sanitizeReasoningProviderMetadata = (
   return cloned;
 };
 
+const extractOpenAIReasoningId = (metadata: Record<string, unknown>): string | undefined => {
+  const openai = metadata.openai;
+  if (!isObject(openai)) {
+    return undefined;
+  }
+
+  if (typeof (openai as Record<string, unknown>).itemId === "string") {
+    const itemId = ((openai as Record<string, unknown>).itemId as string).trim();
+    if (itemId) {
+      return itemId;
+    }
+  }
+
+  if (typeof (openai as Record<string, unknown>).reasoning_trace_id === "string") {
+    const traceId = ((openai as Record<string, unknown>).reasoning_trace_id as string).trim();
+    if (traceId) {
+      return traceId;
+    }
+  }
+
+  const reasoning = (openai as Record<string, unknown>).reasoning;
+  if (isObject(reasoning)) {
+    const reasoningId = typeof reasoning.id === "string" ? reasoning.id.trim() : "";
+    if (reasoningId) {
+      return reasoningId;
+    }
+  }
+
+  return undefined;
+};
+
+const buildOpenAIReasoningProviderMetadata = (
+  providerMetadata: Record<string, unknown> | undefined,
+  reasoningId: string,
+): Record<string, unknown> | undefined => {
+  const openai =
+    providerMetadata && isObject(providerMetadata.openai) ? providerMetadata.openai : undefined;
+  const openaiMeta = isObject(openai) ? (openai as Record<string, unknown>) : undefined;
+
+  const itemId =
+    typeof openaiMeta?.itemId === "string"
+      ? openaiMeta.itemId.trim()
+      : isOpenAIReasoningId(reasoningId)
+        ? reasoningId
+        : "";
+
+  const reasoningEncryptedContent =
+    typeof openaiMeta?.reasoningEncryptedContent === "string"
+      ? openaiMeta.reasoningEncryptedContent
+      : undefined;
+
+  if (!itemId && !reasoningEncryptedContent) {
+    return undefined;
+  }
+
+  const openaiPayload: Record<string, unknown> = {};
+  if (itemId) {
+    openaiPayload.itemId = itemId;
+  }
+  if (reasoningEncryptedContent) {
+    openaiPayload.reasoningEncryptedContent = reasoningEncryptedContent;
+  }
+
+  return { openai: openaiPayload };
+};
+
 const extractReasoningIdFromMetadata = (metadata: Record<string, unknown>): string | undefined => {
+  const openaiReasoningId = extractOpenAIReasoningId(metadata);
+  if (openaiReasoningId) {
+    return openaiReasoningId;
+  }
+
   const visit = (value: unknown, hasReasoningContext: boolean): string | undefined => {
     if (Array.isArray(value)) {
       for (const element of value) {
@@ -146,6 +235,10 @@ const normalizeReasoning = (part: TextLikePart) => {
   if (reasoningId) {
     normalized.reasoningId = reasoningId;
   }
+  const openaiMetadata = buildOpenAIReasoningProviderMetadata(providerMetadata, reasoningId);
+  if (openaiMetadata) {
+    normalized.providerMetadata = openaiMetadata;
+  }
   if ((part as any).reasoningConfidence !== undefined) {
     normalized.reasoningConfidence = (part as any).reasoningConfidence;
   }
@@ -159,10 +252,65 @@ const toolNameFromType = (type: unknown): string | undefined => {
   return type.slice("tool-".length);
 };
 
+const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => {
+  if (typeof part.type !== "string") {
+    return false;
+  }
+  return part.type.startsWith("tool-") || part.type === "dynamic-tool";
+};
+
+const hasToolOutput = (part: ToolLikePart): boolean => {
+  const state = typeof part.state === "string" ? part.state : undefined;
+  if (
+    state === "output-available" ||
+    state === "output-error" ||
+    state === "output-denied" ||
+    state === "output-streaming"
+  ) {
+    return true;
+  }
+  return part.output !== undefined;
+};
+
+const isToolInputState = (state: string | undefined): boolean =>
+  state === "input-available" ||
+  state === "input-streaming" ||
+  state === "approval-requested" ||
+  state === "approval-responded";
+
+const isToolOutputState = (state: string | undefined): boolean =>
+  state === "output-available" ||
+  state === "output-error" ||
+  state === "output-denied" ||
+  state === "output-streaming";
+
+const isApprovalResponded = (part: ToolLikePart): boolean =>
+  Boolean((part as any).approval && (part as any).approval.approved != null);
+
 const isWorkingMemoryTool = (part: ToolLikePart): boolean => {
   const toolName = toolNameFromType((part as any).type);
   if (!toolName) return false;
   return WORKING_MEMORY_TOOL_NAMES.has(toolName);
+};
+
+const normalizeToolOutputPayload = (output: unknown): unknown => {
+  if (Array.isArray(output)) {
+    return output.map((item) => normalizeToolOutputPayload(item));
+  }
+
+  if (!isObject(output)) {
+    return output;
+  }
+
+  const candidate = output as Record<string, unknown>;
+  if ("value" in candidate) {
+    const type = candidate.type;
+    if (typeof type === "string" && type.toLowerCase().includes("json")) {
+      return normalizeToolOutputPayload(candidate.value);
+    }
+  }
+
+  return output;
 };
 
 const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null => {
@@ -182,10 +330,13 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   if (part.toolCallId) normalized.toolCallId = part.toolCallId;
   if (part.state) normalized.state = part.state;
   if (part.input !== undefined) normalized.input = safeClone(part.input);
-  if (part.output !== undefined) normalized.output = safeClone(part.output);
+  if (part.output !== undefined) {
+    normalized.output = safeClone(normalizeToolOutputPayload(part.output));
+  }
   if (part.providerExecuted !== undefined) normalized.providerExecuted = part.providerExecuted;
   if (part.isError !== undefined) normalized.isError = part.isError;
   if (part.errorText !== undefined) normalized.errorText = part.errorText;
+  if ((part as any).approval !== undefined) normalized.approval = safeClone((part as any).approval);
   const callProviderMetadata = sanitizeReasoningProviderMetadata(
     (part as any).callProviderMetadata,
   );
@@ -200,10 +351,157 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   return normalized as UIMessagePart<any, any>;
 };
 
-export const sanitizeMessagesForModel = (messages: UIMessage[]): UIMessage[] =>
-  messages
+const hasOpenAIReasoningInMessages = (messages: UIMessage[]): boolean =>
+  messages.some(
+    (message) => message.role === "assistant" && hasOpenAIReasoningContext(message.parts),
+  );
+
+const countToolLikeParts = (messages: UIMessage[]): number =>
+  messages.reduce(
+    (count, message) => count + message.parts.filter((part) => isToolLikePart(part)).length,
+    0,
+  );
+
+const isOpenAIReasoningPart = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type !== "reasoning") {
+    return false;
+  }
+
+  const reasoningId =
+    typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+  if (reasoningId && isOpenAIReasoningId(reasoningId)) {
+    return true;
+  }
+
+  const providerMetadata = (part as any).providerMetadata;
+  if (isObject(providerMetadata)) {
+    const openai = providerMetadata.openai;
+    if (isObject(openai)) {
+      const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+      if (itemId && isOpenAIReasoningId(itemId)) {
+        return true;
+      }
+      if (typeof openai.reasoning_trace_id === "string" && openai.reasoning_trace_id.trim()) {
+        return true;
+      }
+      if (isObject(openai.reasoning)) {
+        const id = typeof openai.reasoning.id === "string" ? openai.reasoning.id.trim() : "";
+        if (id && isOpenAIReasoningId(id)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
+const endsWithOpenAIReasoning = (parts: UIMessagePart<any, any>[]): boolean => {
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+    if (part.type === "step-start") {
+      continue;
+    }
+    return isOpenAIReasoningPart(part);
+  }
+  return false;
+};
+
+const hasOpenAIItemIdForPart = (part: UIMessagePart<any, any>): boolean => {
+  return hasOpenAIItemIdForPartBase(part, {
+    isToolPart: (candidate) =>
+      typeof (candidate as any).type === "string" && (candidate as any).type.startsWith("tool-"),
+    getCallProviderMetadata: (candidate) => (candidate as any).callProviderMetadata,
+    getProviderMetadata: (candidate) => (candidate as any).providerMetadata,
+  });
+};
+
+const stripDanglingOpenAIReasoning = (messages: UIMessage[]): UIMessage[] => {
+  const result: UIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      result.push(message);
+      continue;
+    }
+
+    const { parts } = stripDanglingOpenAIReasoningFromParts(message.parts, {
+      isReasoningPart: isOpenAIReasoningPart,
+      hasOpenAIItemIdForPart,
+      getNextPart: (parts, index) => {
+        for (let nextIndex = index + 1; nextIndex < parts.length; nextIndex += 1) {
+          const candidate = parts[nextIndex];
+          if (candidate.type === "step-start") {
+            continue;
+          }
+          return candidate;
+        }
+        return undefined;
+      },
+    });
+
+    if (parts.length === 0) {
+      continue;
+    }
+
+    result.push({
+      ...message,
+      parts,
+      ...(message.metadata ? { metadata: safeClone(message.metadata) } : {}),
+    });
+  }
+
+  return result;
+};
+
+const mergeTrailingReasoningAssistantMessages = (messages: UIMessage[]): UIMessage[] => {
+  const merged: UIMessage[] = [];
+
+  for (const message of messages) {
+    const last = merged.at(-1);
+    if (
+      last &&
+      last.role === "assistant" &&
+      message.role === "assistant" &&
+      endsWithOpenAIReasoning(last.parts)
+    ) {
+      last.parts = [...last.parts, ...message.parts];
+      continue;
+    }
+    merged.push({ ...message, parts: [...message.parts] });
+  }
+
+  return merged;
+};
+
+export const sanitizeMessagesForModel = (
+  messages: UIMessage[],
+  options: SanitizeMessagesOptions = {},
+): UIMessage[] => {
+  const sanitized = messages
     .map((message) => sanitizeMessageForModel(message))
     .filter((message): message is UIMessage => Boolean(message));
+
+  const merged = mergeTrailingReasoningAssistantMessages(sanitized);
+  const shouldFilterIncomplete = options.filterIncompleteToolCalls !== false;
+
+  if (!shouldFilterIncomplete) {
+    return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+  }
+
+  const filtered = filterIncompleteToolCallsForModel(merged);
+  const hasOpenAIReasoning = hasOpenAIReasoningInMessages(merged);
+  if (hasOpenAIReasoning) {
+    const sanitizedToolCount = countToolLikeParts(merged);
+    const filteredToolCount = countToolLikeParts(filtered);
+    if (filteredToolCount < sanitizedToolCount) {
+      // Keep the merged set to avoid orphaning reasoning item references when tools were removed.
+      return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+    }
+  }
+
+  return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(filtered));
+};
 
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
@@ -274,13 +572,115 @@ const normalizeGenericPart = (part: UIMessagePart<any, any>): UIMessagePart<any,
   }
 };
 
+const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] => {
+  const lastMessage = messages.at(-1);
+  const preserveApprovalResponses =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some((part) => isToolLikePart(part) && isApprovalResponded(part));
+
+  const filtered: UIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      filtered.push(message);
+      continue;
+    }
+
+    let mutated = false;
+    const parts = message.parts.filter((part) => {
+      if (!isToolLikePart(part)) {
+        return true;
+      }
+
+      if (hasToolOutput(part)) {
+        return true;
+      }
+
+      if (preserveApprovalResponses && message === lastMessage && isApprovalResponded(part)) {
+        return true;
+      }
+
+      const state = typeof part.state === "string" ? part.state : "input-available";
+      if (
+        state === "input-streaming" ||
+        state === "input-available" ||
+        state === "approval-requested" ||
+        state === "approval-responded"
+      ) {
+        mutated = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    const pruned = collapseRedundantStepStarts(parts);
+    if (pruned.length === 0) {
+      continue;
+    }
+
+    if (!mutated && pruned.length === message.parts.length) {
+      filtered.push(message);
+    } else {
+      filtered.push({
+        ...message,
+        parts: pruned,
+      });
+    }
+  }
+
+  return filtered;
+};
+
+const addStepStartsBetweenToolRuns = (messages: UIMessage[]): UIMessage[] => {
+  let mutated = false;
+
+  const updated = messages.map((message) => {
+    if (message.role !== "assistant") {
+      return message;
+    }
+
+    const nextParts = [...message.parts];
+    let changed = false;
+
+    for (let index = 0; index < nextParts.length - 1; index++) {
+      const part = nextParts[index];
+      const next = nextParts[index + 1];
+
+      if (!isToolLikePart(part)) {
+        continue;
+      }
+
+      if (next?.type === "step-start" || isToolLikePart(next)) {
+        continue;
+      }
+
+      nextParts.splice(index + 1, 0, { type: "step-start" } as UIMessagePart<any, any>);
+      changed = true;
+      mutated = true;
+      index += 1;
+    }
+
+    if (!changed) {
+      return message;
+    }
+
+    return {
+      ...message,
+      parts: nextParts,
+    };
+  });
+
+  return mutated ? updated : messages;
+};
+
 const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any, any>[] => {
   const cleaned: UIMessagePart<any, any>[] = [];
   for (const part of parts) {
     if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      const hasPendingState = (part as any).state === "input-available";
-      const hasResult =
-        (part as any).state === "output-available" || (part as any).output !== undefined;
+      const state = typeof (part as any).state === "string" ? (part as any).state : undefined;
+      const hasPendingState = isToolInputState(state);
+      const hasResult = isToolOutputState(state) || (part as any).output !== undefined;
       if (!hasPendingState && !hasResult && (part as any).input == null) {
         continue;
       }
@@ -320,11 +720,38 @@ const removeProviderExecutedToolsWithoutReasoning = (
   );
 };
 
+const hasOpenAIReasoningContext = (parts: UIMessagePart<any, any>[]): boolean => {
+  for (const part of parts) {
+    if (part.type !== "reasoning") {
+      continue;
+    }
+
+    const reasoningId =
+      typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+    if (reasoningId && isOpenAIReasoningId(reasoningId)) {
+      return true;
+    }
+
+    const providerMetadata = (part as any).providerMetadata;
+    if (isObject(providerMetadata)) {
+      const openai = providerMetadata.openai;
+      if (isObject(openai)) {
+        const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+        if (itemId) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
 const stripReasoningLinkedProviderMetadata = (
   parts: UIMessagePart<any, any>[],
 ): UIMessagePart<any, any>[] => {
-  const hasReasoning = parts.some((part) => part.type === "reasoning");
-  if (hasReasoning) {
+  const hasOpenAIReasoning = hasOpenAIReasoningContext(parts);
+  if (hasOpenAIReasoning) {
     return parts;
   }
 
@@ -332,21 +759,45 @@ const stripReasoningLinkedProviderMetadata = (
     if (!isObject(metadata)) {
       return undefined;
     }
+
     const cloned = { ...(metadata as Record<string, unknown>) };
     const openaiMetadata = cloned.openai;
-    if (
-      !isObject(openaiMetadata) ||
-      !(
-        "itemId" in openaiMetadata ||
-        "reasoning_trace_id" in openaiMetadata ||
-        ("reasoning" in openaiMetadata &&
-          isObject((openaiMetadata as Record<string, unknown>).reasoning))
-      )
-    ) {
+    if (!isObject(openaiMetadata)) {
       return metadata as Record<string, unknown>;
     }
-    cloned.openai = undefined;
-    return Object.keys(cloned).length > 0 ? cloned : undefined;
+
+    const openaiClone = { ...(openaiMetadata as Record<string, unknown>) };
+    let changed = false;
+
+    if (typeof openaiClone.itemId === "string") {
+      const itemId = openaiClone.itemId.trim();
+      if (itemId && isOpenAIReasoningId(itemId)) {
+        openaiClone.itemId = undefined;
+        changed = true;
+      }
+    }
+
+    if (typeof openaiClone.reasoning_trace_id === "string") {
+      openaiClone.reasoning_trace_id = undefined;
+      changed = true;
+    }
+
+    if ("reasoning" in openaiClone) {
+      openaiClone.reasoning = undefined;
+      changed = true;
+    }
+
+    if (!changed) {
+      return metadata as Record<string, unknown>;
+    }
+
+    const cleanedOpenai = compactObject(openaiClone);
+    const nextMetadata = {
+      ...cloned,
+      openai: Object.keys(cleanedOpenai).length > 0 ? cleanedOpenai : undefined,
+    };
+    const cleanedMetadata = compactObject(nextMetadata);
+    return Object.keys(cleanedMetadata).length > 0 ? cleanedMetadata : undefined;
   };
 
   let mutated = false;

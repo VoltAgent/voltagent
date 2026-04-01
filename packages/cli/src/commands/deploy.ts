@@ -3,12 +3,13 @@ import path from "node:path";
 import chalk from "chalk";
 import type { Command } from "commander";
 import inquirer from "inquirer";
+import open from "open";
 import cloudflareTemplate from "../templates/cloudflare-wrangler.toml";
 import netlifyTemplate from "../templates/netlify.toml";
 import vercelTemplate from "../templates/vercel.json.template";
 import { captureError } from "../utils/analytics";
 
-const SUPPORTED_TARGETS = ["cloudflare", "vercel", "netlify"] as const;
+const SUPPORTED_TARGETS = ["voltops", "cloudflare", "vercel", "netlify"] as const;
 type SupportedTarget = (typeof SUPPORTED_TARGETS)[number];
 
 const CLOUDFLARE_WRANGLER_TEMPLATE = cloudflareTemplate;
@@ -22,6 +23,28 @@ async function ensureFile(pathToFile: string, contents: string) {
   } catch {
     await fs.writeFile(pathToFile, contents, { encoding: "utf8" });
     return true;
+  }
+}
+
+async function handleVoltOpsDeploy() {
+  const url = "https://console.voltagent.dev/deployments";
+
+  console.log(chalk.green("\n⚡ VoltOps Deployments"));
+  console.log(chalk.white("   Deploy your VoltAgent application to the cloud with VoltOps.\n"));
+  console.log(chalk.dim(`   ${url}\n`));
+
+  const { openBrowser } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "openBrowser",
+      message: "Open VoltOps Deployments in your browser?",
+      default: true,
+    },
+  ]);
+
+  if (openBrowser) {
+    await open(url);
+    console.log(chalk.green("\n✅ Opened in browser.\n"));
   }
 }
 
@@ -117,7 +140,7 @@ export const registerDeployCommand = (program: Command) => {
             name: "chosenTarget",
             message: "Select a deployment target",
             choices: SUPPORTED_TARGETS,
-            default: "cloudflare",
+            default: "voltops",
           },
         ]);
         target = answer.chosenTarget as SupportedTarget;
@@ -134,6 +157,9 @@ export const registerDeployCommand = (program: Command) => {
 
       try {
         switch (target) {
+          case "voltops":
+            await handleVoltOpsDeploy();
+            break;
           case "cloudflare":
             await handleCloudflareDeploy();
             break;

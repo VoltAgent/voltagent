@@ -2,6 +2,7 @@ import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
   UPDATE_ROUTES,
+  handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
@@ -10,12 +11,20 @@ import {
   handleGenerateText,
   handleGetAgent,
   handleGetAgentHistory,
+  handleGetAgentWorkspaceInfo,
+  handleGetAgentWorkspaceSkill,
   handleGetAgents,
   handleGetLogs,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListAgentWorkspaceFiles,
+  handleListAgentWorkspaceSkills,
+  handleListWorkflowRuns,
+  handleReadAgentWorkspaceFile,
+  handleReplayWorkflow,
+  handleResumeChatStream,
   handleResumeWorkflow,
   handleStreamObject,
   handleStreamText,
@@ -26,22 +35,34 @@ import {
 } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 import {
+  attachWorkflowStreamRoute,
   cancelWorkflowRoute,
   chatRoute,
   executeWorkflowRoute,
   getAgentsRoute,
   getWorkflowsRoute,
   objectRoute,
+  replayWorkflowRoute,
+  resumeChatStreamRoute,
   resumeWorkflowRoute,
   streamObjectRoute,
   streamRoute,
   streamWorkflowRoute,
   suspendWorkflowRoute,
   textRoute,
+  workspaceGetSkillRoute,
+  workspaceInfoRoute,
+  workspaceListFilesRoute,
+  workspaceListSkillsRoute,
+  workspaceReadFileRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
+import { registerTriggerRoutes } from "./trigger.routes";
 export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
+export { registerToolRoutes } from "./tool.routes";
+export { registerTriggerRoutes } from "./trigger.routes";
+export { registerMemoryRoutes } from "./memory.routes";
 
 /**
  * Register agent routes
@@ -118,6 +139,18 @@ export function registerAgentRoutes(
     return response;
   });
 
+  // GET /agents/:id/chat/:conversationId/stream - Resume chat stream (UI message stream SSE)
+  app.openapi(resumeChatStreamRoute, async (c) => {
+    const agentId = c.req.param("id");
+    const conversationId = c.req.param("conversationId");
+    const userId = c.req.query("userId");
+    if (!agentId || !conversationId) {
+      throw new Error("Missing agent or conversation id parameter");
+    }
+
+    return handleResumeChatStream(agentId, conversationId, deps, logger, userId);
+  });
+
   // POST /agents/:id/object - Generate object
   app.openapi(objectRoute, async (c) => {
     const agentId = c.req.param("id");
@@ -163,6 +196,75 @@ export function registerAgentRoutes(
     return c.json(response, 200);
   });
 
+  // GET /agents/:id/workspace - Workspace info
+  app.openapi(workspaceInfoRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const response = await handleGetAgentWorkspaceInfo(agentId, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/ls - List workspace files
+  app.openapi(workspaceListFilesRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const path = c.req.query("path") || undefined;
+    const response = await handleListAgentWorkspaceFiles(agentId, { path }, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/read - Read workspace file
+  app.openapi(workspaceReadFileRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const path = c.req.query("path") || undefined;
+    const offset = c.req.query("offset");
+    const limit = c.req.query("limit");
+    const response = await handleReadAgentWorkspaceFile(
+      agentId,
+      { path, offset, limit },
+      deps,
+      logger,
+    );
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/skills - List workspace skills
+  app.openapi(workspaceListSkillsRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const refresh = c.req.query("refresh");
+    const response = await handleListAgentWorkspaceSkills(agentId, { refresh }, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/skills/:skillId - Get workspace skill
+  app.openapi(workspaceGetSkillRoute, async (c) => {
+    const agentId = c.req.param("id");
+    const skillId = c.req.param("skillId");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    if (!skillId) {
+      return c.json({ success: false, error: "Missing skillId parameter" }, 400);
+    }
+    const response = await handleGetAgentWorkspaceSkill(agentId, skillId, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
   // More agent routes can be added here...
 }
 
@@ -180,6 +282,17 @@ export function registerWorkflowRoutes(
     if (!response.success) {
       return c.json(response, 500);
     }
+    return c.json(response, 200);
+  });
+
+  // GET /workflows/executions - List workflow executions (query-driven)
+  app.get("/workflows/executions", async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    if (!response.success) {
+      return c.json(response, response.error?.includes("not found") ? 404 : 500);
+    }
+
     return c.json(response, 200);
   });
 
@@ -225,6 +338,43 @@ export function registerWorkflowRoutes(
     }
 
     // It's a ReadableStream for custom SSE
+    return c.body(response, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  });
+
+  // Attach to existing workflow stream execution
+  app.openapi(attachWorkflowStreamRoute, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
+
+    const query = c.req.query();
+    const lastEventId = c.req.header("last-event-id");
+    const response = await handleAttachWorkflowStream(
+      workflowId,
+      executionId,
+      {
+        fromSequence: query.fromSequence,
+        lastEventId,
+      },
+      deps,
+      logger,
+    );
+
+    if (isErrorResponse(response)) {
+      const status: 404 | 409 | 500 =
+        response.httpStatus === 404 || response.httpStatus === 409 ? response.httpStatus : 500;
+      return c.json(response, status);
+    }
+
     return c.body(response, {
       status: 200,
       headers: {
@@ -281,6 +431,32 @@ export function registerWorkflowRoutes(
     if (!response.success) {
       return c.json(response, 500);
     }
+    return c.json(response, 200);
+  });
+
+  // Replay workflow execution from a historical step
+  app.openapi(replayWorkflowRoute, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
+    const body = await c.req.json();
+    const response = await handleReplayWorkflow(workflowId, executionId, body, deps, logger);
+    if (!response.success) {
+      const status = response.httpStatus || 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
+  });
+
+  app.get("/workflows/executions", async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    if (!response.success) {
+      return c.json(response, response.error?.includes("not found") ? 404 : 500);
+    }
+
     return c.json(response, 200);
   });
 

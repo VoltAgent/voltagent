@@ -7,13 +7,12 @@ import type { Server } from "node:http";
 import { serve } from "@hono/node-server";
 import type { ServerProviderDeps } from "@voltagent/core";
 import {
-  A2A_ROUTES,
   BaseServerProvider,
-  MCP_ROUTES,
   createWebSocketServer,
   portManager,
   printServerStartup,
   setupWebSocketUpgrade,
+  showAnnouncements,
 } from "@voltagent/server-core";
 import { createApp } from "./app-factory";
 import type { HonoServerConfig } from "./types";
@@ -109,50 +108,39 @@ export class HonoServerProvider extends BaseServerProvider {
 
       // Setup WebSocket if enabled
       if (this.config.enableWebSocket !== false) {
-        this.websocketServer = createWebSocketServer(this.deps, this.logger);
-        setupWebSocketUpgrade(this.server, this.websocketServer, this.config.websocketPath);
+        const authConfig = this.honoConfig.authNext ?? this.honoConfig.auth;
+        this.websocketServer = createWebSocketServer(this.deps, this.logger, authConfig);
+        setupWebSocketUpgrade(
+          this.server,
+          this.websocketServer,
+          this.config.websocketPath,
+          authConfig,
+          this.logger,
+        );
       }
 
       this.running = true;
 
+      // Show announcements (non-blocking)
+      showAnnouncements();
+
       // Collect all endpoints (feature + custom)
-      let allEndpoints: Array<{ method: string; path: string; group?: string }> = [];
-
-      // Get base feature endpoints
-      const addRoutes = (
-        routes: Record<string, { method: string; path: string; tags?: string[] }>,
-        groupLabel: string,
-      ) => {
-        Object.values(routes).forEach((route) => {
-          const prettyPath = route.path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
-          allEndpoints.push({
-            method: route.method.toUpperCase(),
-            path: prettyPath,
-            group: groupLabel,
-          });
-        });
-      };
-
-      // Add feature endpoints
-      const mcpRegistry = this.deps.mcp?.registry;
-      const registeredMcpServers =
-        mcpRegistry && typeof mcpRegistry.list === "function" ? mcpRegistry.list() : [];
-      if (registeredMcpServers.length > 0) {
-        addRoutes(MCP_ROUTES, "MCP Endpoints");
-      }
-
-      const a2aRegistry = this.deps.a2a?.registry;
-      const registeredA2AServers =
-        a2aRegistry && typeof a2aRegistry.list === "function" ? a2aRegistry.list() : [];
-      if (registeredA2AServers.length > 0) {
-        addRoutes(A2A_ROUTES, "A2A Endpoints");
-      }
+      const allEndpoints = this.collectFeatureEndpoints();
 
       // Add custom endpoints if we have them
       if (this.app && this.honoConfig.configureApp) {
         try {
           const customEndpoints = extractCustomEndpoints(this.app);
-          allEndpoints = [...allEndpoints, ...customEndpoints];
+          const seen = new Set(
+            allEndpoints.map((endpoint) => `${endpoint.method} ${endpoint.path}`),
+          );
+          customEndpoints.forEach((endpoint) => {
+            const key = `${endpoint.method} ${endpoint.path}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              allEndpoints.push(endpoint);
+            }
+          });
         } catch (_error) {
           // If extraction fails, continue without custom endpoints
           this.logger.warn("Failed to extract custom endpoints for startup display");

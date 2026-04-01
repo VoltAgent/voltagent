@@ -2,11 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Tool, createTool } from "./index";
 
-// Mock UUID generation
-vi.mock("uuid", () => ({
-  v4: vi.fn().mockReturnValue("mock-uuid"),
-}));
-
 describe("Tool", () => {
   describe("constructor", () => {
     it("should initialize with provided options", () => {
@@ -35,7 +30,7 @@ describe("Tool", () => {
       expect(tool.execute).toEqual(options.execute);
     });
 
-    it("should generate UUID if id is not provided", () => {
+    it("should default id to name if id is not provided", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
@@ -45,7 +40,7 @@ describe("Tool", () => {
 
       const tool = new Tool(options);
 
-      expect(tool.id).toBe("mock-uuid");
+      expect(tool.id).toBe("testTool");
     });
 
     it("should handle minimal options", () => {
@@ -63,6 +58,37 @@ describe("Tool", () => {
       expect(tool.parameters).toEqual(options.parameters);
       expect(tool.outputSchema).toBeUndefined();
       expect(tool.execute).toEqual(options.execute);
+    });
+
+    it("should keep needsApproval when provided", () => {
+      const options = {
+        name: "approvalTool",
+        description: "Requires approval",
+        parameters: z.object({ command: z.string() }),
+        needsApproval: true,
+        execute: vi.fn(),
+      };
+
+      const tool = new Tool(options);
+
+      expect(tool.needsApproval).toBe(true);
+    });
+
+    it("should keep hooks when provided", () => {
+      const onStart = vi.fn();
+      const onEnd = vi.fn();
+      const options = {
+        name: "hookedTool",
+        description: "Hooked tool",
+        parameters: z.object({}),
+        execute: vi.fn(),
+        hooks: { onStart, onEnd },
+      };
+
+      const tool = new Tool(options);
+
+      expect(tool.hooks?.onStart).toBe(onStart);
+      expect(tool.hooks?.onEnd).toBe(onEnd);
     });
 
     it("should throw error if name is missing", () => {
@@ -293,6 +319,29 @@ describe("Tool", () => {
       expect(result?.status).toBe("success");
       expect(result?.data.items).toHaveLength(3);
       expect(result?.data.total).toBe(3);
+    });
+  });
+
+  describe("tags", () => {
+    it("should preserve tags when provided via createTool", () => {
+      const tool = createTool({
+        name: "taggedTool",
+        description: "tool with tags",
+        parameters: z.object({}),
+        tags: ["utility", "demo"],
+      });
+
+      expect(tool.tags).toEqual(["utility", "demo"]);
+    });
+
+    it("should have undefined tags when not provided", () => {
+      const tool = new Tool({
+        name: "untaggedTool",
+        description: "tool without tags",
+        parameters: z.object({}),
+      });
+
+      expect(tool.tags).toBeUndefined();
     });
   });
 });

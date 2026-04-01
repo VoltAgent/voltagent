@@ -7,6 +7,7 @@
 
 // Export main client class
 export { VoltOpsClient } from "./client";
+export { getGlobalVoltOpsClient } from "./global-client";
 
 // Export all types
 export type {
@@ -34,6 +35,39 @@ export type {
   VoltOpsCompleteEvalRunRequest,
   VoltOpsCreateScorerRequest,
   VoltOpsScorerSummary,
+  VoltOpsFeedbackConfig,
+  VoltOpsFeedback,
+  VoltOpsFeedbackCreateInput,
+  VoltOpsFeedbackExpiresIn,
+  VoltOpsFeedbackToken,
+  VoltOpsFeedbackTokenCreateInput,
+  VoltOpsActionExecutionResult,
+  VoltOpsAirtableCreateRecordParams,
+  VoltOpsAirtableUpdateRecordParams,
+  VoltOpsAirtableDeleteRecordParams,
+  VoltOpsAirtableGetRecordParams,
+  VoltOpsAirtableListRecordsParams,
+  VoltOpsAirtableCredential,
+  VoltOpsSlackCredential,
+  VoltOpsDiscordCredential,
+  VoltOpsSlackPostMessageParams,
+  VoltOpsSlackDeleteMessageParams,
+  VoltOpsSlackSearchMessagesParams,
+  VoltOpsDiscordConfig,
+  VoltOpsDiscordSendMessageParams,
+  VoltOpsDiscordSendWebhookMessageParams,
+  VoltOpsDiscordChannelMessageParams,
+  VoltOpsDiscordListMessagesParams,
+  VoltOpsDiscordReactionParams,
+  VoltOpsDiscordCreateChannelParams,
+  VoltOpsDiscordUpdateChannelParams,
+  VoltOpsDiscordDeleteChannelParams,
+  VoltOpsDiscordGetChannelParams,
+  VoltOpsDiscordListChannelsParams,
+  VoltOpsDiscordListMembersParams,
+  VoltOpsDiscordMemberRoleParams,
+  VoltOpsDiscordChannelType,
+  VoltOpsActionsApi,
 } from "./types";
 
 // Export prompt manager implementation
@@ -47,6 +81,9 @@ export { createSimpleTemplateEngine } from "./template-engine";
 
 // Export factory function for backward compatibility
 export { createVoltOpsClient } from "./client";
+
+// Export actions client
+export { VoltOpsActionsClient, type VoltOpsActionsTransport } from "./actions/client";
 
 /**
  * Re-export for convenience - main entry point

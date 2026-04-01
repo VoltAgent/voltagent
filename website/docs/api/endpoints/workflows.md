@@ -115,6 +115,120 @@ Retrieve detailed information about a specific workflow including schemas.
 curl http://localhost:3141/workflows/order-approval
 ```
 
+## List Workflow Executions
+
+Retrieve executions for a workflow using query parameters.
+
+**Endpoint:** `GET /workflows/executions`
+
+**Query Parameters:**
+
+| Name             | Type              | Description                                                                                       |
+| ---------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| `workflowId`     | string (optional) | Workflow ID to filter executions (omit to get all)                                                |
+| `status`         | string (optional) | Filter by status (`running`, `suspended`, `completed`, `cancelled`, `error`)                      |
+| `from`           | string (optional) | ISO timestamp to filter executions created on/after this time                                     |
+| `to`             | string (optional) | ISO timestamp to filter executions created on/before this time                                    |
+| `userId`         | string (optional) | Filter executions by user ID                                                                      |
+| `metadata`       | string (optional) | JSON object filter for execution metadata (URL-encoded), e.g. `{"tenantId":"acme","region":"eu"}` |
+| `metadata.<key>` | string (optional) | Filter a specific metadata key, e.g. `metadata.tenantId=acme`                                     |
+| `limit`          | number (optional) | Max results to return                                                                             |
+| `offset`         | number (optional) | Offset for pagination                                                                             |
+
+**Status aliases:**
+
+- `success` is treated as `completed`
+- `pending` is treated as `running`
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "6a8ca92c-0d8a-425f-b24f-09f841a8c200",
+      "workflowId": "order-approval",
+      "workflowName": "Order Approval Workflow",
+      "status": "completed",
+      "userId": "user-123",
+      "input": {
+        "employeeId": "sample-employeeId",
+        "amount": 42,
+        "category": "sample-category",
+        "description": "sample-description"
+      },
+      "metadata": {
+        "traceId": "abe55638e17097f497bfb7ba5ed92a50",
+        "spanId": "0704efe9b0bf5bfc"
+      },
+      "events": [
+        {
+          "id": "3a290355-4baa-4e48-9502-f8d314fb008e",
+          "type": "workflow-start",
+          "name": "Expense Approval Workflow",
+          "from": "Expense Approval Workflow",
+          "startTime": "2025-12-10T15:18:04.423Z",
+          "endTime": "2025-12-10T15:18:04.423Z",
+          "status": "running",
+          "input": {
+            "employeeId": "sample-employeeId",
+            "amount": 42,
+            "category": "sample-category",
+            "description": "sample-description"
+          }
+        },
+        {
+          "id": "8d80ee68-bd2d-451f-abed-856845280509",
+          "type": "workflow-complete",
+          "name": "Expense Approval Workflow",
+          "from": "Expense Approval Workflow",
+          "startTime": "2025-12-10T15:18:05.415Z",
+          "endTime": "2025-12-10T15:18:05.415Z",
+          "status": "success",
+          "output": {
+            "status": "approved",
+            "approvedBy": "system",
+            "finalAmount": 42
+          }
+        }
+      ],
+      "output": {
+        "status": "approved",
+        "approvedBy": "system",
+        "finalAmount": 42
+      },
+      "createdAt": "2025-12-10T15:18:04.421Z",
+      "updatedAt": "2025-12-10T15:18:05.413Z"
+    }
+  ]
+}
+```
+
+**cURL Example:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?workflowId=order-approval&status=completed&limit=20&offset=0"
+```
+
+**Filter by user and tenant metadata (multi-tenant):**
+
+```bash
+curl "http://localhost:3141/workflows/executions?workflowId=order-approval&userId=user-123&metadata.tenantId=acme&limit=20"
+```
+
+**Filter by metadata JSON object:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?metadata=%7B%22tenantId%22%3A%22acme%22%2C%22region%22%3A%22eu%22%7D"
+```
+
+**List all executions:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?limit=50"
+```
+
 ## Execute Workflow
 
 Execute a workflow synchronously and wait for completion.
@@ -138,6 +252,10 @@ Execute a workflow synchronously and wait for completion.
     "context": {
       "priority": "high",
       "department": "sales"
+    },
+    "workflowState": {
+      "plan": "pro",
+      "region": "eu"
     }
   }
 }
@@ -150,6 +268,7 @@ Execute a workflow synchronously and wait for completion.
 | `conversationId` | string | Conversation context |
 | `executionId` | string | Custom execution ID |
 | `context` | object | Additional context data |
+| `workflowState` | object | Shared state available to workflow steps |
 
 **Response (Completed):**
 
@@ -391,6 +510,128 @@ curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_123/
   }'
 ```
 
+## Replay Workflow
+
+Create a deterministic replay execution from a historical run and selected step.
+
+**Endpoint:** `POST /workflows/:id/executions/:executionId/replay`
+
+**Request Body:**
+
+```json
+{
+  "stepId": "approval-step",
+  "inputData": {
+    "amount": 2500
+  },
+  "resumeData": {
+    "approved": true,
+    "approvedBy": "ops-user-1"
+  },
+  "workflowStateOverride": {
+    "replayReason": "incident-1234"
+  }
+}
+```
+
+**Parameters:**
+
+| Field                   | Type   | Description                             |
+| ----------------------- | ------ | --------------------------------------- |
+| `stepId`                | string | Historical step ID to replay from       |
+| `inputData`             | any    | Optional selected-step input override   |
+| `resumeData`            | any    | Optional resume payload override        |
+| `workflowStateOverride` | object | Optional shared workflow state override |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_replay_123",
+    "startAt": "2024-01-15T11:00:00.000Z",
+    "endAt": "2024-01-15T11:00:02.250Z",
+    "status": "completed",
+    "result": {
+      "approved": true,
+      "finalAmount": 2500
+    }
+  }
+}
+```
+
+**Response (Suspended):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "executionId": "exec_replay_123",
+    "startAt": "2024-01-15T11:00:00.000Z",
+    "endAt": null,
+    "status": "suspended",
+    "result": null,
+    "suspension": {
+      "suspendedAt": "2024-01-15T11:00:01.250Z",
+      "reason": "Awaiting manual approval",
+      "suspendedStepIndex": 2
+    }
+  }
+}
+```
+
+**Error Cases:**
+
+- `400` - Invalid replay parameters (for example, invalid `stepId` or source execution still running)
+- `404` - Workflow or source execution not found
+- `500` - Replay failed due to server error
+
+**cURL Example (Default Replay):**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_123/replay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stepId": "approval-step"
+  }'
+```
+
+**cURL Example (Replay With Overrides):**
+
+```bash
+curl -X POST http://localhost:3141/workflows/order-approval/executions/exec_123/replay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stepId": "approval-step",
+    "inputData": { "amount": 2500 },
+    "resumeData": { "approved": true, "approvedBy": "ops-user-1" },
+    "workflowStateOverride": { "replayReason": "incident-1234" }
+  }'
+```
+
+**JavaScript Example:**
+
+```javascript
+const response = await fetch(
+  "http://localhost:3141/workflows/order-approval/executions/exec_123/replay",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      stepId: "approval-step",
+      inputData: { amount: 2500 },
+      resumeData: { approved: true, approvedBy: "ops-user-1" },
+      workflowStateOverride: { replayReason: "incident-1234" },
+    }),
+  }
+);
+
+const replay = await response.json();
+console.log("Replay execution ID:", replay.data.executionId);
+console.log("Replay status:", replay.data.status);
+```
+
 ## Get Workflow State
 
 Retrieve the current state of a workflow execution.
@@ -406,6 +647,8 @@ Retrieve the current state of a workflow execution.
     "executionId": "exec_1234567890_abc123",
     "workflowId": "order-approval",
     "status": "suspended",
+    "replayedFromExecutionId": "exec_0987654321_replay",
+    "replayFromStepId": "step-approval-1",
     "startAt": "2024-01-15T10:00:00.000Z",
     "suspension": {
       "suspendedAt": "2024-01-15T10:00:02.500Z",

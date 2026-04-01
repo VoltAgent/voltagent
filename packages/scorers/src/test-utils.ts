@@ -20,11 +20,11 @@ export const defaultMockResponse = {
 };
 
 /**
- * Simple MockLanguageModelV2 implementation
- * Based on AI SDK's MockLanguageModelV2 but without MSW dependency
+ * Simple MockLanguageModelV3 implementation
+ * Based on AI SDK's MockLanguageModelV3 but without MSW dependency
  */
-class MockLanguageModelV2 {
-  specificationVersion = "v2";
+class MockLanguageModelV3 {
+  specificationVersion = "v3";
   provider: string;
   modelId: string;
   doGenerate: any;
@@ -75,7 +75,7 @@ export function createMockLanguageModel(config?: {
   doGenerate?: any;
   doStream?: any;
 }): LanguageModel {
-  const mockModel = new MockLanguageModelV2({
+  const mockModel = new MockLanguageModelV3({
     modelId: config?.modelId || "test-model",
     doGenerate: config?.doGenerate || {
       ...defaultMockResponse,

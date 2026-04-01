@@ -1,5 +1,21 @@
-import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  andAgent,
+  andBranch,
+  andDoUntil,
+  andDoWhile,
+  andForEach,
+  andGuardrail,
+  andMap,
+  andSleep,
+  andSleepUntil,
+  andTap,
+  andThen,
+  createInputGuardrail,
+  createOutputGuardrail,
+  createWorkflow,
+} from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -7,13 +23,13 @@ import { z } from "zod";
 // Define reusable agents
 const analysisAgent = new Agent({
   name: "AnalysisAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "You are a data analyst. Provide clear, structured analysis.",
 });
 
 const contentAgent = new Agent({
   name: "ContentAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "You are a content creator. Generate engaging and accurate content.",
 });
 
@@ -21,32 +37,40 @@ const contentAgent = new Agent({
 // Example 1: Basic Order Processing Workflow
 // Concepts: Basic steps (andThen), AI agent (andAgent), conditional logic (andWhen)
 // ==============================================================================
-const orderProcessingWorkflow = createWorkflowChain({
-  id: "order-processing",
-  name: "Order Processing Workflow",
-  purpose: "Process orders with fraud detection and special handling for VIP customers",
+const orderProcessingWorkflow = createWorkflow(
+  {
+    id: "order-processing",
+    name: "Order Processing Workflow",
+    purpose: "Process orders with fraud detection and special handling for VIP customers",
 
-  // Define input and output schemas for type safety
-  input: z.object({
-    orderId: z.string(),
-    customerId: z.string(),
-    amount: z.number(),
-    items: z.array(z.string()),
-  }),
-  result: z.object({
-    orderId: z.string(),
-    status: z.enum(["approved", "rejected", "needs-review"]),
-    totalWithDiscount: z.number(),
-  }),
-})
+    // Define input and output schemas for type safety
+    input: z.object({
+      orderId: z.string(),
+      customerId: z.string(),
+      amount: z.number(),
+      items: z.array(z.string()),
+    }),
+    result: z.object({
+      orderId: z.string(),
+      status: z.enum(["approved", "rejected", "needs-review"]),
+      totalWithDiscount: z.number(),
+    }),
+  },
   // Step 1: Validate order and calculate totals
-  .andThen({
+  andThen({
     id: "validate-order",
-    execute: async ({ data }) => {
+    execute: async ({ data, setWorkflowState }) => {
       console.log(`Validating order ${data.orderId}...`);
 
       // Simple validation logic
       const isValid = data.amount > 0 && data.items.length > 0;
+
+      // Store validation metadata in workflow state (persists across steps)
+      setWorkflowState((prev) => ({
+        ...prev,
+        validatedAt: new Date().toISOString(),
+        validatedBy: "system",
+      }));
 
       return {
         ...data,
@@ -54,17 +78,17 @@ const orderProcessingWorkflow = createWorkflowChain({
         baseTotal: data.amount,
       };
     },
-  })
+  }),
 
   // Step 2: Use AI to analyze order for fraud risk
-  .andAgent(
+  andAgent(
     async ({ data }) => `
       Analyze this order for fraud risk:
       Order ID: ${data.orderId}
       Customer ID: ${data.customerId}
       Amount: $${data.amount}
       Items: ${data.items.join(", ")}
-      
+
       Provide risk level (low/medium/high) and reasoning.
     `,
     analysisAgent,
@@ -74,10 +98,10 @@ const orderProcessingWorkflow = createWorkflowChain({
         reasoning: z.string(),
       }),
     },
-  )
+  ),
 
   // Step 3: Calculate discount for VIP customers
-  .andThen({
+  andThen({
     id: "calculate-discount",
     execute: async ({ data, getStepData }) => {
       const orderData = getStepData("validate-order")?.output;
@@ -101,15 +125,19 @@ const orderProcessingWorkflow = createWorkflowChain({
         totalWithDiscount: orderData?.baseTotal || 0,
       };
     },
-  })
+  }),
 
   // Step 4: Final decision based on validation and risk
-  .andThen({
+  andThen({
     id: "final-decision",
-    execute: async ({ data, getStepData }) => {
+    execute: async ({ data, getStepData, workflowState }) => {
       // Get data from previous steps
       const orderData = getStepData("validate-order")?.output;
       const discountData = getStepData("calculate-discount")?.output;
+
+      // Access workflow state set in earlier steps
+      const validatedAt = workflowState.validatedAt as string | undefined;
+      console.log(`Order validated at: ${validatedAt}`);
 
       // Determine final status
       let status: "approved" | "rejected" | "needs-review";
@@ -128,30 +156,32 @@ const orderProcessingWorkflow = createWorkflowChain({
         totalWithDiscount: discountData?.totalWithDiscount || orderData?.baseTotal || 0,
       };
     },
-  });
+  }),
+);
 
 // ==============================================================================
 // Example 2: Human-in-the-Loop Approval Workflow
 // Concepts: Suspend/resume, step-level schemas, human intervention
 // ==============================================================================
-const expenseApprovalWorkflow = createWorkflowChain({
-  id: "expense-approval",
-  name: "Expense Approval Workflow",
-  purpose: "Process expense reports with manager approval for high amounts",
-  input: z.object({
-    employeeId: z.string(),
-    amount: z.number(),
-    category: z.string(),
-    description: z.string(),
-  }),
-  result: z.object({
-    status: z.enum(["approved", "rejected"]),
-    approvedBy: z.string(),
-    finalAmount: z.number(),
-  }),
-})
+const expenseApprovalWorkflow = createWorkflow(
+  {
+    id: "expense-approval",
+    name: "Expense Approval Workflow",
+    purpose: "Process expense reports with manager approval for high amounts",
+    input: z.object({
+      employeeId: z.string(),
+      amount: z.number(),
+      category: z.string(),
+      description: z.string(),
+    }),
+    result: z.object({
+      status: z.enum(["approved", "rejected"]),
+      approvedBy: z.string(),
+      finalAmount: z.number(),
+    }),
+  },
   // Step 1: Validate expense and check if approval needed
-  .andThen({
+  andThen({
     id: "check-approval-needed",
     // Define what data we expect when resuming this step
     resumeSchema: z.object({
@@ -193,10 +223,10 @@ const expenseApprovalWorkflow = createWorkflowChain({
         finalAmount: data.amount,
       };
     },
-  })
+  }),
 
   // Step 2: Process the final decision
-  .andThen({
+  andThen({
     id: "process-decision",
     execute: async ({ data }) => {
       if (data.approved) {
@@ -211,39 +241,41 @@ const expenseApprovalWorkflow = createWorkflowChain({
         finalAmount: data.finalAmount,
       };
     },
-  });
+  }),
+);
 
 // ==============================================================================
 // Example 3: Multi-Step Content Analysis Workflow
 // Concepts: Step schemas, data transformation, logging with andTap
 // ==============================================================================
-const contentAnalysisWorkflow = createWorkflowChain({
-  id: "content-analysis",
-  name: "Content Analysis Workflow",
-  purpose: "Analyze content for sentiment, keywords, and generate summary",
+const contentAnalysisWorkflow = createWorkflow(
+  {
+    id: "content-analysis",
+    name: "Content Analysis Workflow",
+    purpose: "Analyze content for sentiment, keywords, and generate summary",
 
-  input: z.object({
-    content: z.string(),
-    language: z.enum(["en", "es", "fr"]).default("en"),
-  }),
-  result: z.object({
-    sentiment: z.enum(["positive", "negative", "neutral"]),
-    keywords: z.array(z.string()),
-    summary: z.string(),
-    wordCount: z.number(),
-  }),
-})
+    input: z.object({
+      content: z.string(),
+      language: z.enum(["en", "es", "fr"]).default("en"),
+    }),
+    result: z.object({
+      sentiment: z.enum(["positive", "negative", "neutral"]),
+      keywords: z.array(z.string()),
+      summary: z.string(),
+      wordCount: z.number(),
+    }),
+  },
   // Step 1: Log start and prepare content
-  .andTap({
+  andTap({
     id: "log-start",
     execute: async ({ data }) => {
       console.log(`Starting analysis of ${data.content.length} characters`);
       console.log(`Language: ${data.language}`);
     },
-  })
+  }),
 
   // Step 2: Basic text analysis
-  .andThen({
+  andThen({
     id: "text-analysis",
     execute: async ({ data }) => {
       const words = data.content.split(/\s+/);
@@ -257,18 +289,18 @@ const contentAnalysisWorkflow = createWorkflowChain({
         hasQuestions: data.content.includes("?"),
       };
     },
-  })
+  }),
 
   // Step 3: AI-powered sentiment and keyword analysis
-  .andAgent(
+  andAgent(
     async ({ data }) => `
       Analyze this text and provide:
       1. Overall sentiment (positive/negative/neutral)
       2. Top 5 keywords or key phrases
       3. A brief 2-sentence summary
-      
+
       Text: "${data.content}"
-      
+
       Consider that the text has ${data.wordCount} words.
     `,
     analysisAgent,
@@ -279,10 +311,10 @@ const contentAnalysisWorkflow = createWorkflowChain({
         summary: z.string(),
       }),
     },
-  )
+  ),
 
   // Step 4: Transform data using only inputSchema
-  .andThen({
+  andThen({
     id: "transform-results",
     inputSchema: z.object({
       sentiment: z.enum(["positive", "negative", "neutral"]),
@@ -303,10 +335,10 @@ const contentAnalysisWorkflow = createWorkflowChain({
         wordCount: analysisData?.wordCount || 0,
       };
     },
-  })
+  }),
 
   // Step 5: Log metrics using inputSchema
-  .andTap({
+  andTap({
     id: "log-metrics",
     inputSchema: z.object({
       sentiment: z.enum(["positive", "negative", "neutral"]),
@@ -319,42 +351,279 @@ const contentAnalysisWorkflow = createWorkflowChain({
       console.log(`- Keywords: ${data.keywords.join(", ")}`);
       console.log(`- Word count: ${data.wordCount}`);
     },
-  });
+  }),
+);
 
 // ==============================================================================
 // Example 4: Article Summarization with Dynamic Schema
 // Concepts: Dynamic schema generation based on workflow input
 // ==============================================================================
-const articleSummarizationWorkflow = createWorkflowChain({
-  id: "article-summarizer",
-  name: "Article Summarization Workflow",
-  purpose: "Summarize an article with a dynamically specified length",
-  input: z.object({
-    article: z.string(),
-    min: z.number().default(50),
-    max: z.number().default(150),
-  }),
-  result: z.object({
-    summary: z.string(),
-  }),
-}).andAgent(
-  async ({ data }) =>
-    `Summarize the following article in ${data.min} to ${data.max} characters:
-  
-  Article: ${data.article}`,
-  contentAgent,
+const articleSummarizationWorkflow = createWorkflow(
   {
-    // Dynamically generate the schema based on the input data
-    schema: ({ data }) => {
-      console.log(`Generating schema with min: ${data.min}, max: ${data.max}`);
-      return z.object({
-        summary: z
-          .string()
-          .min(data.min, `Summary must be at least ${data.min} characters`)
-          .max(data.max, `Summary must be at most ${data.max} characters`),
-      });
-    },
+    id: "article-summarizer",
+    name: "Article Summarization Workflow",
+    purpose: "Summarize an article with a dynamically specified length",
+    input: z.object({
+      article: z.string(),
+      min: z.number().default(50),
+      max: z.number().default(150),
+    }),
+    result: z.object({
+      summary: z.string(),
+    }),
   },
+  andAgent(
+    async ({ data }) =>
+      `Summarize the following article in ${data.min} to ${data.max} characters:
+
+  Article: ${data.article}`,
+    contentAgent,
+    {
+      // Dynamically generate the schema based on the input data
+      schema: ({ data }) => {
+        console.log(`Generating schema with min: ${data.min}, max: ${data.max}`);
+        return z.object({
+          summary: z
+            .string()
+            .min(data.min, `Summary must be at least ${data.min} characters`)
+            .max(data.max, `Summary must be at most ${data.max} characters`),
+        });
+      },
+    },
+  ),
+);
+
+// ==============================================================================
+// Example 5: Timed Reminder Workflow
+// Concepts: andSleep, andSleepUntil
+// ==============================================================================
+const timedReminderWorkflow = createWorkflow(
+  {
+    id: "timed-reminder",
+    name: "Timed Reminder Workflow",
+    purpose: "Pause briefly, then align to a scheduled time before completing",
+    input: z.object({
+      userId: z.string(),
+      waitMs: z.number().default(200),
+    }),
+    result: z.object({
+      userId: z.string(),
+      status: z.enum(["sent"]),
+      resumedAt: z.string(),
+    }),
+  },
+  andSleep({
+    id: "pause-briefly",
+    duration: ({ data }) => Math.max(0, data.waitMs),
+  }),
+  andSleepUntil({
+    id: "align-to-next-second",
+    date: () => new Date(Date.now() + 1000),
+  }),
+  andThen({
+    id: "complete-reminder",
+    execute: async ({ data }) => ({
+      userId: data.userId,
+      status: "sent",
+      resumedAt: new Date().toISOString(),
+    }),
+  }),
+);
+
+// ==============================================================================
+// Example 6: Batch Transform Workflow
+// Concepts: andForEach, andMap
+// ==============================================================================
+const batchTransformWorkflow = createWorkflow(
+  {
+    id: "batch-transform",
+    name: "Batch Transform Workflow",
+    purpose: "Process arrays with for-each and map steps",
+    input: z.array(z.number()),
+    result: z.object({
+      original: z.array(z.number()),
+      doubled: z.array(z.number()),
+      count: z.number(),
+      total: z.number(),
+    }),
+  },
+  andForEach({
+    id: "double-each",
+    step: andThen({
+      id: "double",
+      execute: async ({ data }) => data * 2,
+    }),
+    concurrency: 2,
+  }),
+  andMap({
+    id: "summarize-results",
+    map: {
+      original: { source: "input" },
+      doubled: { source: "data" },
+      count: {
+        source: "fn",
+        fn: ({ data }) => (Array.isArray(data) ? data.length : 0),
+      },
+      total: {
+        source: "fn",
+        fn: ({ data }) => (Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0),
+      },
+    },
+  }),
+);
+
+// ==============================================================================
+// Example 7: Loop + Branch Workflow
+// Concepts: andDoWhile, andDoUntil, andBranch
+// ==============================================================================
+const loopAndBranchWorkflow = createWorkflow(
+  {
+    id: "loop-and-branch",
+    name: "Loop + Branch Workflow",
+    purpose: "Demonstrate loops and branching with a simple counter",
+    input: z.object({
+      counter: z.number().default(0),
+    }),
+    result: z.object({
+      counter: z.number(),
+      label: z.enum(["ready", "warmup"]),
+    }),
+  },
+  andDoWhile({
+    id: "warmup-loop",
+    step: andThen({
+      id: "increment-warmup",
+      execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
+    }),
+    condition: ({ data }) => data.counter < 1,
+  }),
+  andDoUntil({
+    id: "retry-loop",
+    step: andThen({
+      id: "increment-retry",
+      execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
+    }),
+    condition: ({ data }) => data.counter >= 3,
+  }),
+  andBranch({
+    id: "categorize-counter",
+    branches: [
+      {
+        condition: ({ data }) => data.counter >= 3,
+        step: andThen({
+          id: "mark-ready",
+          execute: async ({ data }) => ({ ...data, label: "ready" as const }),
+        }),
+      },
+      {
+        condition: ({ data }) => data.counter < 3,
+        step: andThen({
+          id: "mark-warmup",
+          execute: async ({ data }) => ({ ...data, label: "warmup" as const }),
+        }),
+      },
+    ],
+  }),
+  andThen({
+    id: "select-branch",
+    execute: async ({ data }) => {
+      const results = Array.isArray(data) ? data : [];
+      const selected = results.find((entry) => entry !== undefined) as
+        | { counter: number; label: "ready" | "warmup" }
+        | undefined;
+
+      if (!selected) {
+        return { counter: 0, label: "warmup" };
+      }
+
+      return {
+        counter: selected.counter,
+        label: selected.label,
+      };
+    },
+  }),
+);
+
+// ==============================================================================
+// Example 8: Guardrail Workflow
+// Concepts: Workflow-level guardrails, step-level guardrails
+// ==============================================================================
+const trimInput = createInputGuardrail({
+  name: "trim-input",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactNumbers = createOutputGuardrail<string>({
+  name: "redact-numbers",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+const guardrailWorkflow = createWorkflow(
+  {
+    id: "guardrail-workflow",
+    name: "Guardrail Workflow",
+    purpose: "Applies guardrails to sanitize inputs and outputs",
+    input: z.string(),
+    result: z.string(),
+    inputGuardrails: [trimInput],
+    outputGuardrails: [redactNumbers],
+  },
+  andGuardrail({
+    id: "sanitize-step",
+    outputGuardrails: [redactNumbers],
+  }),
+  andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  }),
+);
+
+// ==============================================================================
+// Example 9: Wrapped Agent Call Workflow
+// Concepts: Agent call inside andThen; parent span inheritance
+// ==============================================================================
+const wrappedAgentWorkflow = createWorkflow(
+  {
+    id: "wrapped-agent-call",
+    name: "Wrapped Agent Call Workflow",
+    purpose: "Call an agent from a custom step without using andAgent",
+    input: z.object({
+      topic: z.string(),
+      useAgent: z.boolean().default(true),
+    }),
+    result: z.object({
+      summary: z.string(),
+      usedAgent: z.boolean(),
+    }),
+  },
+  andThen({
+    id: "maybe-call-agent",
+    execute: async ({ data }) => {
+      if (!data.useAgent) {
+        return {
+          summary: `Skipped agent for ${data.topic}.`,
+          usedAgent: false,
+        };
+      }
+
+      const { text } = await contentAgent.generateText(
+        `Write a single-sentence summary about: ${data.topic}`,
+      );
+
+      return {
+        summary: text.trim(),
+        usedAgent: true,
+      };
+    },
+  }),
 );
 
 // Register workflows with VoltAgent
@@ -377,5 +646,10 @@ new VoltAgent({
     expenseApprovalWorkflow,
     contentAnalysisWorkflow,
     articleSummarizationWorkflow,
+    timedReminderWorkflow,
+    batchTransformWorkflow,
+    loopAndBranchWorkflow,
+    guardrailWorkflow,
+    wrappedAgentWorkflow,
   },
 });

@@ -169,17 +169,25 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     const content = response.prompt;
 
     // Create PromptContent with metadata from API response
+    const metadata: PromptContent["metadata"] = {
+      name: response.name,
+      version: response.version,
+      labels: response.labels,
+      tags: response.tags,
+      source: "online",
+      config: response.config,
+    };
+
+    if (response.prompt_id !== undefined) {
+      metadata.prompt_id = response.prompt_id;
+    }
+    if (response.prompt_version_id !== undefined) {
+      metadata.prompt_version_id = response.prompt_version_id;
+    }
+
     const promptContent: PromptContent = {
       type: response.type,
-      metadata: {
-        prompt_id: response.prompt_id,
-        prompt_version_id: response.prompt_version_id,
-        name: response.name,
-        version: response.version,
-        labels: response.labels,
-        tags: response.tags,
-        config: response.config,
-      },
+      metadata,
     };
 
     if (response.type === "chat") {

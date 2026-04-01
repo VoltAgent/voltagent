@@ -2,20 +2,19 @@
   "name": "voltagent-example-with-whatsapp",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
     "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/cli": "^0.1.14",
-    "@voltagent/core": "^1.1.36",
-    "@voltagent/libsql": "^1.0.9",
-    "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.2",
-    "ai": "^5.0.76",
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.6.13",
+    "@voltagent/libsql": "^2.1.2",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.8",
+    "ai": "^6.0.0",
     "dotenv": "^16.4.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "tsx": "^4.19.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2"
   },
   "keywords": [
@@ -25,6 +24,11 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-whatsapp"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",

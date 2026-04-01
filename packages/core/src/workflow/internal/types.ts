@@ -4,9 +4,13 @@ import type { UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
-import type { WorkflowExecutionContext } from "../context";
-import type { WorkflowStreamWriter } from "../types";
-import type { WorkflowState } from "./state";
+import type {
+  WorkflowStateStore,
+  WorkflowStateUpdater,
+  WorkflowStepData,
+  WorkflowStepState,
+  WorkflowStreamWriter,
+} from "../types";
 
 /**
  * The base input type for the workflow
@@ -21,29 +25,28 @@ export type InternalBaseWorkflowInputSchema =
   | string;
 
 /**
- * The state parameter for the workflow, used to pass the state to a step or other function (i.e. hooks)
- * @private - INTERNAL USE ONLY
- */
-export type InternalWorkflowStateParam<INPUT> = Omit<
-  WorkflowState<INPUT, DangerouslyAllowAny>,
-  "data" | "result"
-> & {
-  /** Workflow execution context for event tracking */
-  workflowContext?: WorkflowExecutionContext;
-  /** AbortSignal for checking suspension during step execution */
-  signal?: AbortSignal;
-};
-
-/**
  * Context object for new execute API with helper functions
  * @private - INTERNAL USE ONLY
  */
-export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
-  data: InternalExtractWorkflowInputData<DATA>;
-  state: InternalWorkflowStateParam<INPUT>;
-  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+export interface WorkflowExecuteContext<
+  INPUT,
+  DATA,
+  SUSPEND_DATA,
+  RESUME_DATA,
+  WORKFLOW_RESULT = unknown,
+> {
+  data: DATA;
+  state: WorkflowStepState<INPUT>;
+  getStepData: (stepId: string) => WorkflowStepData | undefined;
+  getStepResult: <T = unknown>(stepId: string) => T | null;
+  getInitData: <T = InternalExtractWorkflowInputData<INPUT>>() => T;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
+  bail: (result?: WORKFLOW_RESULT) => never;
+  abort: () => never;
   resumeData?: RESUME_DATA;
+  retryCount?: number;
+  workflowState: WorkflowStateStore;
+  setWorkflowState: (update: WorkflowStateUpdater) => void;
   /**
    * Logger instance for this workflow execution.
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).
@@ -61,8 +64,15 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
  * Uses context-based API with data, state, and helper functions
  * @private - INTERNAL USE ONLY
  */
-export type InternalWorkflowFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> = (
-  context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>,
+export type InternalWorkflowFunc<
+  INPUT,
+  DATA,
+  RESULT,
+  SUSPEND_DATA,
+  RESUME_DATA,
+  WORKFLOW_RESULT = unknown,
+> = (
+  context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA, WORKFLOW_RESULT>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
@@ -79,13 +89,24 @@ export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
    * Description of what the step does
    */
   purpose?: string;
+  /**
+   * Number of retry attempts when the step throws an error
+   */
+  retries?: number;
 } & T;
 
 /**
  * Base step interface for building new steps
  * @private - INTERNAL USE ONLY
  */
-export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
+export interface InternalBaseWorkflowStep<
+  INPUT,
+  DATA,
+  RESULT,
+  SUSPEND_DATA,
+  RESUME_DATA,
+  WORKFLOW_RESULT = unknown,
+> {
   /**
    * Unique identifier for the step
    */
@@ -119,12 +140,16 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
    */
   resumeSchema?: z.ZodTypeAny;
   /**
+   * Number of retry attempts when the step throws an error
+   */
+  retries?: number;
+  /**
    * Execute the step with the given context
    * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step
    */
   execute: (
-    context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>,
+    context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA, WORKFLOW_RESULT>,
   ) => Promise<RESULT>;
 }
 
@@ -138,9 +163,13 @@ export type InternalAnyWorkflowStep<
   RESULT = DangerouslyAllowAny,
   SUSPEND_DATA = DangerouslyAllowAny,
   RESUME_DATA = DangerouslyAllowAny,
+  WORKFLOW_RESULT = unknown,
 > =
-  | InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>
-  | Omit<InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>, "type">;
+  | InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA, WORKFLOW_RESULT>
+  | Omit<
+      InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA, WORKFLOW_RESULT>,
+      "type"
+    >;
 
 /**
  * Infer the result type from a list of steps

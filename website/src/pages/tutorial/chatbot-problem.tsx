@@ -485,7 +485,6 @@ export default function ChatbotProblemTutorial() {
                   <div className="flex w-[45%] flex-col gap-4">
                     {/* Card 1 - Tool Definition */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "tool_definition"
@@ -514,7 +513,6 @@ export default function ChatbotProblemTutorial() {
 
                     {/* Card 2 - Tool Meta */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "tool_meta"
@@ -543,7 +541,6 @@ export default function ChatbotProblemTutorial() {
 
                     {/* Card 3 - Parameters */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "parameters"
@@ -572,7 +569,6 @@ export default function ChatbotProblemTutorial() {
 
                     {/* Card 4 - Execute */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "execute"
@@ -601,7 +597,6 @@ export default function ChatbotProblemTutorial() {
 
                     {/* Card 5 - Agent */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "agent"

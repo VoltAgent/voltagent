@@ -62,6 +62,10 @@ export function Footer() {
             <div className="text-gray-400 text-center lg:text-left text-xs md:text-base">
               VoltAgent Inc. © {new Date().getFullYear()}
             </div>
+            <div className="flex gap-4 mt-2 text-center lg:text-left">
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
+              <FooterLink href="/terms">Terms of Service</FooterLink>
+            </div>
           </div>
 
           {/* Main footer links */}
@@ -85,19 +89,8 @@ export function Footer() {
                 <FooterLink href="/docs/">Docs</FooterLink>
               </li>
               <li>
-                <FooterLink href="/mcp/">MCP Directory</FooterLink>
-              </li>
-              <li>
                 <FooterLink href="https://voltagent.dev/tutorial/introduction/" target="_blank">
                   Tutorial
-                </FooterLink>
-              </li>
-              <li>
-                <FooterLink
-                  href="https://github.com/VoltAgent/awesome-claude-code-subagents"
-                  target="_blank"
-                >
-                  awesome-claude-subagents
                 </FooterLink>
               </li>
               <li>
@@ -126,9 +119,6 @@ export function Footer() {
               </li>
               <li>
                 <FooterLink href="/about/">About us</FooterLink>
-              </li>
-              <li>
-                <FooterLink href="/customers/">Customers</FooterLink>
               </li>
               <li>
                 <FooterLink href="/oss-friends">OSS Friends</FooterLink>

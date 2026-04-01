@@ -35,7 +35,7 @@
     "tslib": "^2.3.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
-    "vite": "^5.0.0",
+    "vite": "^7.2.7",
     "vitest": "^3.2.4"
   },
   "engines": {
@@ -45,7 +45,7 @@
   "license": "MIT",
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "biome check --apply --no-errors-on-unmatched"
+      "biome check --write --no-errors-on-unmatched"
     ],
     "*.{md,mdx}": [
       "prettier --config ./.prettierrc --write"
@@ -54,6 +54,7 @@
   "nx": {},
   "packageManager": "pnpm@8.10.5",
   "private": true,
+  "repository": "VoltAgent/voltagent.git",
   "scripts": {
     "archive:deprecated": "node scripts/archive-deprecated.js",
     "attw": "lerna run attw --scope @voltagent/*",
@@ -71,7 +72,7 @@
     "lint": "biome check .",
     "lint:ci": "biome ci .",
     "lint:error": "biome check . --diagnostic-level error",
-    "lint:fix": "biome check . --apply",
+    "lint:fix": "biome check . --write",
     "lint:staged": "lint-staged",
     "nuke": "echo 'Removing all node_modules, builds and lockfiles' && pnpm nuke:node_modules && pnpm nuke:builds && pnpm nuke:lockfiles",
     "nuke:builds": "lerna exec -- rimraf dist && lerna exec -- rimraf build",
@@ -89,6 +90,7 @@
     "publish": "lerna publish",
     "sp": "syncpack",
     "start": "lerna run start",
+    "sync:docs-mcp": "node scripts/sync-docs-mcp.js",
     "test": "lerna run test --stream",
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
@@ -97,6 +99,8 @@
   },
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "examples/*/client",
+    "examples/*/server"
   ]
 }

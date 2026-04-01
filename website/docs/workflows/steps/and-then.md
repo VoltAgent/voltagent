@@ -42,12 +42,33 @@ const result = await workflow.run({ text: "hello" });
 ### Available Parameters
 
 ```typescript
-execute: async ({ data, suspend, resumeData }) => {
+execute: async ({ data, suspend, resumeData, retryCount }) => {
   // data: All accumulated data from previous steps
   // suspend: Function to pause workflow
   // resumeData: Data provided when resuming
+  // retryCount: 0 for the initial attempt, increments by 1 for each retry
 };
 ```
+
+### Retries
+
+```typescript
+.andThen({
+  id: "fetch-user",
+  retries: 2,
+  execute: async ({ data, retryCount }) => {
+    // retryCount starts at 0, then 1/2 for each retry attempt
+    const user = await fetchUser(data.userId);
+    return { user };
+  }
+})
+```
+
+Retries only apply to thrown errors; suspend or cancel does not retry.
+
+`retries: 2` means up to 2 retry attempts (3 total tries including the first).
+
+You can also set workflow-wide defaults with `retryConfig` on `createWorkflowChain`; `retries` overrides it.
 
 ## Data Flow Example
 
@@ -131,12 +152,11 @@ createWorkflowChain({
 
 ### Agent with Tools
 
-When you need tool support or streaming (not available in `andAgent`), call the agent directly:
+When you need streaming or custom tool handling, call the agent directly:
 
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 const searchTool = createTool({
   name: "search_database",
@@ -150,7 +170,7 @@ const searchTool = createTool({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [searchTool],
 });
 
@@ -172,8 +192,8 @@ const agent = new Agent({
 
 **Why use `andThen` instead of `andAgent`?**
 
-- `andAgent` uses `generateObject` (structured output only, no tools)
-- `andThen` with direct agent calls supports `streamText`/`generateText` (tools + streaming)
+- `andAgent` uses `generateText` with `Output.object` (structured output, no streaming)
+- `andThen` with direct agent calls supports `streamText`/`generateText` (streaming + direct tool access)
 
 ## Suspend & Resume Support
 

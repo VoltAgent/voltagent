@@ -1,10 +1,12 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9259e833-0f5c-4eb6-8cc7-4e6930cc27e1" />
+<img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/d9ad69bd-b905-42a3-81af-99a0581348c0" />
 </a>
 
-<br/>
-<br/>
+<h3 align="center">
+AI Agent 工程平台
+</h3>
+
 <div align="center">
 <a href="../README.md">English</a> | 繁體中文 | <a href="README-cn-bsc.md">简体中文</a> | <a href="README-jp.md">日本語</a> | <a href="README-kr.md">한국어</a>
 </div>
@@ -22,7 +24,6 @@
 
 <div align="center">
 
-[![GitHub stars](https://img.shields.io/github/stars/voltagent/voltagent?style=social)](https://github.com/voltagent/voltagent)
 [![GitHub issues](https://img.shields.io/github/issues/voltagent/voltagent)](https://github.com/voltagent/voltagent/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/voltagent/voltagent)](https://github.com/voltagent/voltagent/pulls)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -35,25 +36,20 @@
 
 </div>
 
-<br/>
+<h3 align="center">
+⭐ 喜歡我們的專案嗎？給我們一個星標 ⬆️
+</h3>
 
-**VoltAgent** 是一個開源的 TypeScript 框架，用於構建和編排 AI 代理。
-您可以構建具有記憶、工作流程、工具和內建 LLM 可觀測性的生產就緒代理。
+VoltAgent 是一個端到端的 AI Agent 工程平台，由兩個主要部分組成：
 
-## 為什麼選擇 VoltAgent？
+- **[開源 TypeScript 框架](#core-framework)** – Memory、RAG、Guardrails、Tools、MCP、Voice、Workflow 等。
+- **[VoltOps 控制台](#voltops-console)** `Cloud` `Self-Hosted` – 可觀測性、自動化、部署、評估、安全護欄、提示詞等。
 
-- **從第一天就準備好生產環境**：部署具有內建記憶、工作流程和可觀測性的代理，而無需從頭開始構建基礎設施。
-- **自信編碼**：全面的 TypeScript 支援，具有類型安全的工具、自動推斷和整個代理系統的編譯時安全性。
-- **像專業人士一樣調試**：內建的 VoltOps 可觀測性讓您追蹤每個決策、監控效能並即時優化工作流程，無需外部工具。
-- **簡單構建複雜系統**：使用監督協調、聲明式工作流程和模組化架構編排多代理團隊，從原型擴展到生產環境。
+以完全的程式碼控制構建代理，並以生產就緒的可視化和操作來發布它們。
 
-## 代理開發平台
+<h2 id="core-framework">核心 TypeScript 框架</h2>
 
-VoltAgent 通過兩個互補的工具提供完整的開發和監控 AI 代理平台。
-
-### 核心框架
-
-使用核心框架，您可以構建具有記憶、工具和多步驟工作流程的智能代理，同時連接到任何 AI 提供商。創建專業代理在監督協調下協同工作的精密多代理系統。
+使用開源框架，您可以構建具有記憶、工具和多步驟工作流程的智慧代理，同時連接到任何 AI 提供商。創建專業代理在監督協調下協同工作的精密多代理系統。
 
 - **[核心運行時](https://voltagent.dev/docs/agents/overview/) (`@voltagent/core`)**：在一個地方定義具有類型化角色、工具、記憶和模型提供商的代理，使一切保持有序。
 - **[工作流程引擎](https://voltagent.dev/docs/workflows/overview/)**：聲明式描述多步驟自動化，而不是拼接自定義控制流程。
@@ -62,11 +58,10 @@ VoltAgent 通過兩個互補的工具提供完整的開發和監控 AI 代理平
 - **[LLM 兼容性](https://voltagent.dev/docs/getting-started/providers-models/)**：通過更改配置而不是重寫代理邏輯，在 OpenAI、Anthropic、Google 或其他提供商之間切換。
 - **[記憶](https://voltagent.dev/docs/agents/memory/overview/)**：附加持久記憶適配器，使代理能夠跨運行記住重要上下文。
 - **[檢索與 RAG](https://voltagent.dev/docs/rag/overview/)**：插入檢索器代理，從您的數據源提取事實並在模型回答之前奠定響應基礎（RAG）。
-- **[評估](https://voltagent.dev/docs/evals/overview/)**：與您的工作流程一起運行代理評估套件，更快地提供防護欄。
-
-### VoltOps LLM 可觀測性平台
-
-VoltAgent 配備內建的 [VoltOps](#使用-voltops-的內建-llm-可觀測性) LLM 可觀測性，可即時監控和調試您的代理，提供詳細的執行追蹤、效能指標和視覺化儀表板。檢查代理做出的每個決策，追蹤工具使用情況，並使用內建的基於 OpenTelemetry 的可觀測性優化您的工作流程。
+- **[VoltAgent 知識庫](https://voltagent.dev/docs/rag/voltagent/)**：使用託管的 RAG 服務進行文檔攝入、分塊、嵌入和搜索。
+- **[語音](https://voltagent.dev/docs/agents/voice/)**：使用 OpenAI、ElevenLabs 或自定義語音提供商添加文字轉語音和語音轉文字功能。
+- **[安全護欄](https://voltagent.dev/docs/guardrails/overview/)**：在運行時攔截和驗證代理輸入或輸出，以執行內容策略和安全規則。
+- **[評估](https://voltagent.dev/docs/evals/overview/)**：與您的工作流程一起運行代理評估套件，以衡量和改進代理行為。
 
 #### MCP 伺服器 (@voltagent/mcp-docs-server)
 
@@ -109,7 +104,7 @@ const memory = new Memory({
 // 專案的簡單通用代理
 const agent = new Agent({
   name: "my-agent",
-  instructions: "可以檢查天氣並協助各種任務的有用助手",
+  instructions: "A helpful assistant that can check weather and help with various tasks",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
   memory,
@@ -154,7 +149,7 @@ Test your agents with VoltOps Console: https://console.voltagent.dev
 4. 開始聊天：在代理詳情頁面上，點擊右下角的聊天圖示以打開聊天視窗。
 5. 發送訊息：輸入「你好」之類的訊息並按 Enter。
 
-![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+[![VoltAgent Demo](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)
 
 ### 運行您的第一個工作流程
 
@@ -235,7 +230,7 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 
 您可以直接從 VoltOps 控制台測試預建的 `expenseApprovalWorkflow`：
 
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+[![expense-approval](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)
 
 1.  **前往工作流程頁面**：啟動伺服器後，直接前往[工作流程頁面](https://console.voltagent.dev/workflows)。
 2.  **選擇您的專案**：使用專案選擇器選擇您的專案（例如「my-agent-app」）。
@@ -251,9 +246,22 @@ export const expenseApprovalWorkflow = createWorkflowChain({
     ```
 5.  **查看結果**：執行後，您可以檢查每個步驟的詳細日誌，並直接在控制台中查看最終輸出。
 
-## 使用 VoltOps 的內建 LLM 可觀測性
+## 範例
 
-VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫助您即時監控、調試和優化代理。
+有關更多範例，請訪問我們的[範例存儲庫](https://github.com/VoltAgent/voltagent/tree/main/examples)。
+
+- **[Airtable 代理](https://voltagent.dev/examples/guides/airtable-agent)** - 響應新記錄並通過 VoltOps 操作將更新寫回 Airtable。
+- **[Slack 代理](https://voltagent.dev/examples/guides/slack-agent)** - 響應頻道訊息並通過 VoltOps Slack 操作進行回覆。
+- **[ChatGPT 應用與 VoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - 通過 MCP 部署 VoltAgent 並連接到 ChatGPT 應用。
+- **[WhatsApp 訂單代理](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 構建一個 WhatsApp 聊天機器人，通過自然對話處理食品訂單。([原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp))
+- **[YouTube 轉部落格代理](https://voltagent.dev/examples/agents/youtube-blog-agent)** - 使用監督者代理與 MCP 工具將 YouTube 視訊轉換為 Markdown 部落格文章。([原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog))
+- **[AI 廣告生成代理](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)** - 使用 BrowserBase Stagehand 和 Google Gemini AI 生成 Instagram 廣告。([原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator))
+- **[AI 食譜生成代理](https://voltagent.dev/examples/agents/recipe-generator)** - 根據食材和偏好創建個性化烹飪建議。([原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator) | [視訊](https://youtu.be/KjV1c6AhlfY))
+- **[AI 研究助手代理](https://voltagent.dev/examples/agents/research-assistant)** - 用於生成全面報告的多代理研究工作流程。([原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant) | [視訊](https://youtu.be/j6KAUaoZMy4))
+
+<h2 id="voltops-console">VoltOps 控制台：LLM 可觀測性 - 自動化 - 部署</h2>
+
+VoltOps 控制台是 VoltAgent 的平台端，提供可觀測性、自動化和部署功能，讓您可以通過實時執行追蹤、效能指標和可視化儀表板在生產環境中監控和調試代理。
 
 🎬 [試用即時演示](https://console.voltagent.dev/demo)
 
@@ -265,22 +273,17 @@ VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫
 
 通過詳細的追蹤和效能指標深入了解代理執行流程。
 
-<br/>
-
-![VoltOps Observability Overview](https://cdn.voltagent.dev/console/observability.png)
+<img alt="1" src="https://github.com/user-attachments/assets/21c6d05d-f333-4c61-9218-8862d16110fd" />
 
 ### 儀表板
 
 獲取所有代理、工作流程和系統效能指標的全面概覽。
 
-<br/>
-
-![VoltOps Dashboard](https://cdn.voltagent.dev/console/dashboard.png)
+<img alt="dashboard" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### 日誌
 
 追蹤每個代理互動和工作流程步驟的詳細執行日誌。
-<br/>
 
 ![VoltOps Logs](https://cdn.voltagent.dev/console/logs.png)
 
@@ -288,15 +291,11 @@ VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫
 
 檢查和管理代理記憶、上下文和對話歷史。
 
-<br/>
-
 ![VoltOps Memory Overview](https://cdn.voltagent.dev/console/memory.png)
 
 ### 追蹤
 
 分析完整的執行追蹤以了解代理行為並優化效能。
-
-<br/>
 
 ![VoltOps Traces](https://cdn.voltagent.dev/console/traces.png)
 
@@ -304,114 +303,49 @@ VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫
 
 直接在控制台中設計、測試和改進提示。
 
-<br/>
+<img  alt="prompts" src="https://github.com/user-attachments/assets/fb6d71eb-8f81-4443-a494-08c33ec9bcc4" />
 
-![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
+### 部署
 
-## 範例
+透過一鍵 GitHub 整合和託管基礎設施將您的代理部署到生產環境。
 
-探索具有完整原始碼和視訊教程的 VoltAgent 實際實現。
+<img alt="deployment" src="https://github.com/user-attachments/assets/e329ab4b-7464-435a-96cc-90214e8a3cfa" />
 
-有關更多範例和用例，請訪問我們的[範例存儲庫](https://github.com/VoltAgent/voltagent/tree/main/examples)。
+📖 [VoltOps 部署文檔](https://voltagent.dev/docs/deployment/voltops/)
 
-### WhatsApp 訂單代理
+### 觸發器與操作
 
-構建一個 WhatsApp 聊天機器人，通過自然對話處理食品訂單，從數據庫管理菜單項，並使用完整的對話上下文處理訂單。
+使用 webhooks、計劃和自定義觸發器自動化代理工作流程，以響應外部事件。
 
-<br/>
+<img width="1277"  alt="triggers" src="https://github.com/user-attachments/assets/67e36934-2eb5-4cf1-94f8-3057d805ef65" />
 
-<img width="1111" height="347" alt="whatsapp" src="https://github.com/user-attachments/assets/dc9c4986-3e68-42f8-a450-ecd79b4dbd99" />
+### 監控
 
-<br/>
-<br/>
+監控整個系統的代理健康狀況、效能指標和資源使用情況。
 
-- 📖 [教程](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
-- 💻 [原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
+<img  alt="monitoring" src="https://github.com/user-attachments/assets/1fd1151f-5ee4-4c7c-8ec7-29874e37c48f" />
 
-### YouTube 轉部落格代理
+### 安全護欄
 
-使用監督者代理協調具有 MCP 工具、共享工作記憶和 VoltOps 可觀測性的子代理，將 YouTube 視訊轉換為 Markdown 部落格文章。
+設置安全邊界和內容過濾器，確保代理在定義的參數範圍內運行。
 
-<br/>
+<img  alt="guardrails" src="https://github.com/user-attachments/assets/52bd51f0-944e-4202-9f54-7bb2e0e2d1f6" />
 
-<img width="1113" height="363" alt="youtube" src="https://github.com/user-attachments/assets/f9c944cf-8a9a-4ac5-a5f9-860ce08f058b" />
+### 評估
 
-<br/>
-<br/>
+運行評估套件以測試代理行為、準確性和效能基準。
 
-- 📖 [教程](https://voltagent.dev/examples/agents/youtube-blog-agent)
-- 💻 [原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
+<img  alt="evals" src="https://github.com/user-attachments/assets/510cc180-2661-4973-a48f-074d4703d90b" />
 
-### AI 廣告生成代理
+### RAG（知識庫）
 
-實現一個 Instagram 廣告生成器，使用 BrowserBase Stagehand 分析著陸頁、提取品牌數據並通過 Google Gemini AI 生成視覺效果。
+將您的代理連接到知識源，具有內建的檢索增強生成功能。
 
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator">
-<img width="1115" height="363" alt="instagram" src="https://github.com/user-attachments/assets/973e79c7-34ec-4f8e-8a41-9273d44234c6" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [教程](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
-- 💻 [原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
-
-### AI 食譜生成代理
-
-構建一個智能食譜推薦系統，根據可用食材、飲食偏好和時間限制創建個性化烹飪建議。
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator">
-<img width="1111" height="363" alt="cook" src="https://github.com/user-attachments/assets/dde6ce2f-c963-4075-9825-f216bc6e3467" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [教程](https://voltagent.dev/examples/agents/recipe-generator)
-- 📹 [觀看視訊](https://youtu.be/KjV1c6AhlfY)
-- 💻 [原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
-
-### AI 研究助手代理
-
-創建一個多代理研究工作流程，其中不同的 AI 代理協作研究主題並生成具有類型安全數據流的全面報告。
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant">
-<img width="2228" height="678" alt="research" src="https://github.com/user-attachments/assets/8f459748-132e-4ff3-9afe-0561fa5075c2" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [教程](https://voltagent.dev/examples/agents/research-assistant)
-- 📹 [觀看視訊](https://youtu.be/j6KAUaoZMy4)
-- 💻 [原始碼](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
-
-## 用例
-
-為不同行業的實際業務需求構建 AI 代理：
-
-- **[HR 代理](https://voltagent.dev/use-cases/hr-agent/)** - 自動化招聘、員工入職和 HR 支援任務。
-- **[客戶支援代理](https://voltagent.dev/use-cases/customer-support-agent/)** - 構建處理客戶問題和疑問的支援代理。
-- **[銷售團隊](https://voltagent.dev/use-cases/sales-teams/)** - 驗證潛在客戶、收集客戶數據並個性化銷售外展。
-- **[財務代理](https://voltagent.dev/use-cases/finance-agent/)** - 管理發票、追蹤費用並生成財務報告。
-- **[開發代理](https://voltagent.dev/use-cases/development-agent/)** - 審查程式碼、管理部署並幫助開發團隊。
-- **[行銷代理](https://voltagent.dev/use-cases/marketing-agent/)** - 規劃活動、創建內容並分析行銷效能。
-- **[法律代理](https://voltagent.dev/use-cases/legal-agent/)** - 審查合約、檢查合規性並處理法律任務。
-- **[保險代理](https://voltagent.dev/use-cases/insurance-agent/)** - 處理索賠、評估風險並管理保單。
-- **[工業代理](https://voltagent.dev/use-cases/industrial-agent/)** - 監控設備、預測維護需求並確保安全。
-- **[教育代理](https://voltagent.dev/use-cases/education-agent/)** - 提供個性化輔導、追蹤學生進度並支援學習。
-- **[政府代理](https://voltagent.dev/use-cases/government-agent/)** - 處理許可申請、處理福利並服務公民。
-- **[文檔代理](https://voltagent.dev/use-cases/documentation-agent/)** - 創建 API 文檔、編寫變更日誌並從程式碼生成教程。
+<img  alt="rag" src="https://github.com/user-attachments/assets/a6c2f668-7ad1-4fb6-b67f-654335285f1e" />
 
 ## 學習 VoltAgent
 
-- 📖 **[從互動式教程開始](https://voltagent.dev/tutorial/introduction/)**以學習構建 AI 代理的基礎知識。
+- **[從互動式教程開始](https://voltagent.dev/tutorial/introduction/)** 以學習構建 AI 代理的基礎知識。
 - **[文檔](https://voltagent.dev/docs/)**：深入了解指南、概念和教程。
 - **[範例](https://github.com/voltagent/voltagent/tree/main/examples)**：探索實際實現。
 - **[部落格](https://voltagent.dev/blog/)**：閱讀更多技術見解和最佳實踐。
@@ -426,10 +360,8 @@ VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫
 
 VoltAgent 是一項社群努力，正是因為有像您這樣的人，它才不斷變得更好。
 
-![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=100)
-
-您的星星幫助我們接觸更多開發者！如果您發現 VoltAgent 有用，請考慮在 GitHub 上給我們一顆星以支援該專案並幫助其他人發現它。
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=500&columns=20&anon=1)
 
 ## 許可證
 
-在 MIT 許可證下授權，Copyright © 2025-present VoltAgent。
+在 MIT 許可證下授權，Copyright © 2026-present VoltAgent。
