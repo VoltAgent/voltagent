@@ -55,6 +55,7 @@ import type { MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import type { ConversationTitleConfig, ConversationTitleGenerator } from "../memory/types";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
+import { RateLimitManager } from "../rate-limit/manager";
 import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { type ObservabilityFlushState, flushObservability } from "../observability/utils";
 import { AgentRegistry } from "../registries/agent-registry";
@@ -967,6 +968,7 @@ export class Agent {
   private readonly toolManager: ToolManager;
   private readonly toolPoolManager: ToolManager;
   private readonly subAgentManager: SubAgentManager;
+  private readonly rateLimitManager?: RateLimitManager;
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
   private readonly evalConfig?: AgentEvalConfig;
@@ -1095,6 +1097,25 @@ export class Agent {
       this.supervisorConfig,
     );
 
+    // Initialize rate limit manager if configuration provided
+    if (options.rateLimits) {
+      this.rateLimitManager = new RateLimitManager(this.id, options.rateLimits, this.logger);
+      this.logger.debug("Rate limit manager initialized", {
+        event: LogEvents.AGENT_CREATED,
+        agentId: this.id,
+        hasLLMRateLimit: !!options.rateLimits.llm,
+        hasToolRateLimits: !!options.rateLimits.tools,
+      });
+    }
+
+    // Initialize prompts helper with VoltOpsClient (agent's own or global)
+    // Priority 1: Agent's own VoltOpsClient
+    // Priority 2: Global VoltOpsClient from registry
+    const voltOpsClient =
+      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    if (voltOpsClient) {
+      this.prompts = voltOpsClient.createPromptHelper(this.id);
+    }
     // Initialize prompts helper with local prompts and VoltOps clients
     this.prompts = VoltOpsClientClass.createPromptHelperFromSources(this.id, this.voltOpsClient);
   }
@@ -1215,6 +1236,34 @@ export class Agent {
 
             methodLogger.debug("Starting agent llm call");
 
+        // Rate limit check before LLM call
+        if (this.rateLimitManager) {
+          // Extract provider from model if available
+          const provider = this.extractProviderFromModel(model);
+          const modelId = modelName;
+
+          await this.rateLimitManager.checkLLMRateLimit();
+
+          methodLogger.debug("Rate limit check passed for LLM call", {
+            event: LogEvents.AGENT_GENERATION_STARTED,
+            provider,
+            model: modelId,
+          });
+        }
+
+        // Extract VoltAgent-specific options
+        const {
+          userId,
+          conversationId,
+          parentAgentId,
+          parentOperationContext,
+          hooks,
+          maxSteps: userMaxSteps,
+          tools: userTools,
+          experimental_output,
+          providerOptions,
+          ...aiSDKOptions
+        } = options || {};
             methodLogger.debug("[LLM] - Generating text", {
               messages: messages.map((msg) => ({
                 role: msg.role,
@@ -1824,6 +1873,21 @@ export class Agent {
 
         // Setup abort signal listener
         this.setupAbortSignalListener(oc);
+
+        // Rate limit check before LLM call
+        if (this.rateLimitManager) {
+          // Extract provider from model if available
+          const provider = this.extractProviderFromModel(model);
+          const modelId = modelName;
+
+          await this.rateLimitManager.checkLLMRateLimit();
+
+          methodLogger.debug("Rate limit check passed for stream call", {
+            event: LogEvents.AGENT_STREAM_STARTED,
+            provider,
+            model: modelId,
+          });
+        }
 
         // Extract VoltAgent-specific options
         const {
@@ -3506,6 +3570,19 @@ export class Agent {
       return false;
     }
     return Boolean(error.retry) && retryCount < maxRetries;
+  }
+
+  /**
+   * Extract provider name from AI SDK model
+   * Returns the provider identifier for rate limiting purposes
+   */
+  private extractProviderFromModel(model: LanguageModel): string {
+    // AI SDK models have a 'provider' property that identifies the provider
+    // e.g., "google.generative-ai", "openai", "anthropic"
+    if (typeof model === "object" && model !== null && "provider" in model) {
+      return String(model.provider);
+    }
+    return "unknown";
   }
 
   /**
@@ -5500,6 +5577,22 @@ export class Agent {
     const hooks = this.getMergedHooks(options);
     const candidates = this.getModelCandidates().filter((entry) => entry.enabled !== false);
 
+              // Rate limit check before tool execution
+              if (this.rateLimitManager) {
+                await this.rateLimitManager.checkToolRateLimit(tool.name);
+
+                oc.logger.debug("Rate limit check passed for tool execution", {
+                  event: LogEvents.AGENT_STEP_TOOL_CALL,
+                  toolName: tool.name,
+                });
+              }
+
+              // Execute tool with OperationContext directly
+              if (!tool.execute) {
+                throw new Error(`Tool ${tool.name} does not have "execute" method`);
+              }
+              const result = await tool.execute(args, oc);
+              const validatedResult = await this.validateToolOutput(result, tool);
     if (candidates.length === 0) {
       throw createVoltAgentError("No enabled models configured", { code: "MODEL_LIST_EMPTY" });
     }
