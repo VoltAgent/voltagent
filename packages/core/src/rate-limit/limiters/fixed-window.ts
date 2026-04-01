@@ -12,7 +12,7 @@
  */
 
 import { RateLimitExceededError } from "../errors";
-import type { RateLimiter, RateLimitExceededAction, RateLimitStats } from "../types";
+import type { RateLimitExceededAction, RateLimitStats, RateLimiter } from "../types";
 
 export interface FixedWindowCounterConfig {
   /** Maximum requests per window */
@@ -26,7 +26,7 @@ export interface FixedWindowCounterConfig {
 }
 
 export class FixedWindowCounterLimiter implements RateLimiter {
-  private count: number = 0;
+  private count = 0;
   private windowStart: number;
   private readonly limit: number;
   private readonly windowMs: number;
@@ -63,16 +63,15 @@ export class FixedWindowCounterLimiter implements RateLimiter {
           stats,
           scope: this.scope,
         });
-      } else {
-        // Delay until window resets
-        const waitTime = this.windowStart + this.windowMs - now;
-        if (waitTime > 0) {
-          await this.delay(waitTime);
-        }
-        // After waiting, reset window and retry
-        this.count = 0;
-        this.windowStart = Date.now();
       }
+      // Delay until window resets
+      const waitTime = this.windowStart + this.windowMs - now;
+      if (waitTime > 0) {
+        await this.delay(waitTime);
+      }
+      // After waiting, reset window and retry
+      this.count = 0;
+      this.windowStart = Date.now();
     }
 
     // Increment counter
