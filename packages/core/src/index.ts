@@ -123,8 +123,6 @@ export { RateLimitManager } from "./rate-limit/manager";
 export type {
   AgentRateLimitConfig,
   LLMRateLimitConfig,
-  RateLimitConfig,
-  RateLimitContext,
   RateLimiter,
   RateLimitExceededAction,
   RateLimitScope,

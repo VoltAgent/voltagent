@@ -5,8 +5,9 @@
 
 /**
  * Available rate limiting strategies
+ * - 'fixed_window': Simple counter that resets after a fixed time period (MVP implementation)
  */
-export type RateLimitStrategy = "fixed_window" | "token_bucket" | "leaky_bucket";
+export type RateLimitStrategy = "fixed_window";
 
 /**
  * Action to take when rate limit is exceeded
@@ -17,12 +18,10 @@ export type RateLimitExceededAction = "delay" | "throw";
 
 /**
  * Scope for rate limiting
- * - 'global': Apply to all operations across all agents
- * - 'agent': Apply per agent instance
- * - 'tool': Apply per tool
- * - 'provider': Apply per LLM provider
+ * - 'global': Apply to all LLM operations across all agents
+ * - 'tool': Apply per tool per agent
  */
-export type RateLimitScope = "global" | "agent" | "tool" | "provider";
+export type RateLimitScope = "global" | "tool";
 
 /**
  * Statistics for current rate limit state
@@ -36,20 +35,6 @@ export interface RateLimitStats {
   resetAt: Date;
   /** Current request count in window */
   current: number;
-}
-
-/**
- * Base configuration for a rate limiter
- */
-export interface RateLimitConfig {
-  /** Rate limiting strategy to use */
-  strategy: RateLimitStrategy;
-  /** Maximum number of requests per window */
-  limit: number;
-  /** Time window in milliseconds */
-  windowMs: number;
-  /** Action when limit is exceeded */
-  onExceeded?: RateLimitExceededAction;
 }
 
 /**
@@ -80,17 +65,10 @@ export interface ToolRateLimitConfig {
 
 /**
  * Configuration for provider-specific rate limiting
+ * NOTE: Provider-specific limits are not currently implemented.
+ * Use LLMRateLimitConfig global limits instead.
  */
-export interface ProviderRateLimitConfig {
-  /** Maximum requests per minute */
-  maxRequestsPerMinute?: number;
-  /** Maximum tokens per minute (future enhancement) */
-  maxTokensPerMinute?: number;
-  /** Rate limiting strategy */
-  strategy?: RateLimitStrategy;
-  /** Action when limit exceeded */
-  onExceeded?: RateLimitExceededAction;
-}
+// REMOVED: ProviderRateLimitConfig - not implemented in current version
 
 /**
  * Complete rate limiting configuration for an agent
@@ -100,24 +78,6 @@ export interface AgentRateLimitConfig {
   llm?: LLMRateLimitConfig;
   /** Per-tool rate limits (keyed by tool name) */
   tools?: Record<string, ToolRateLimitConfig>;
-  /** Per-provider rate limits (keyed by provider name like 'openai', 'anthropic') */
-  providers?: Record<string, ProviderRateLimitConfig>;
-}
-
-/**
- * Context for rate limit check
- */
-export interface RateLimitContext {
-  /** Agent ID */
-  agentId: string;
-  /** Operation type (llm or tool) */
-  operationType: "llm" | "tool";
-  /** Provider name (for LLM operations) */
-  provider?: string;
-  /** Model name (for LLM operations) */
-  model?: string;
-  /** Tool name (for tool operations) */
-  toolName?: string;
 }
 
 /**
@@ -154,14 +114,13 @@ export interface RateLimiter {
 
 /**
  * Scope identifier for rate limit manager
+ * Identifies which rate limiter to use for a specific operation
  */
 export interface RateLimitScopeId {
-  /** Scope type */
-  type: "global" | "agent" | "tool" | "provider";
-  /** Agent ID (for agent/tool scopes) */
+  /** Scope type - either global (all LLM calls) or tool-specific */
+  type: "global" | "tool";
+  /** Agent ID (required for tool scope) */
   agentId?: string;
-  /** Tool name (for tool scope) */
+  /** Tool name (required for tool scope) */
   toolName?: string;
-  /** Provider name (for provider scope) */
-  provider?: string;
 }

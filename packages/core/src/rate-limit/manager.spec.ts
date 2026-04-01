@@ -19,13 +19,6 @@ describe("RateLimitManager", () => {
         strategy: "fixed_window",
         onExceeded: "throw",
       },
-      providers: {
-        openai: {
-          maxRequestsPerMinute: 5,
-          strategy: "fixed_window",
-          onExceeded: "throw",
-        },
-      },
       tools: {
         search_tool: {
           maxRequestsPerMinute: 3,
@@ -50,64 +43,19 @@ describe("RateLimitManager", () => {
   describe("checkLLMRateLimit", () => {
     it("should allow requests within global LLM limit", async () => {
       for (let i = 0; i < 10; i++) {
-        await expect(
-          manager.checkLLMRateLimit({ provider: "unknown", model: "test-model" })
-        ).resolves.not.toThrow();
+        await expect(manager.checkLLMRateLimit()).resolves.not.toThrow();
       }
 
       // 11th request should throw
-      await expect(
-        manager.checkLLMRateLimit({ provider: "unknown", model: "test-model" })
-      ).rejects.toThrow(RateLimitExceededError);
-    });
-
-    it("should prioritize provider-specific limit over global limit", async () => {
-      // OpenAI has limit of 5, global has 10
-      for (let i = 0; i < 5; i++) {
-        await expect(
-          manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-        ).resolves.not.toThrow();
-      }
-
-      // 6th OpenAI request should throw
-      await expect(
-        manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-      ).rejects.toThrow(RateLimitExceededError);
-    });
-
-    it("should handle different providers independently", async () => {
-      // Use 5 OpenAI requests
-      for (let i = 0; i < 5; i++) {
-        await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
-      }
-
-      // Claude should still have full global limit available
-      for (let i = 0; i < 10; i++) {
-        await expect(
-          manager.checkLLMRateLimit({ provider: "anthropic", model: "claude-3" })
-        ).resolves.not.toThrow();
-      }
+      await expect(manager.checkLLMRateLimit()).rejects.toThrow(RateLimitExceededError);
     });
 
     it("should allow requests when no limit configured", async () => {
       const noLimitManager = new RateLimitManager("test-agent", {});
 
       for (let i = 0; i < 100; i++) {
-        await expect(
-          noLimitManager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-        ).resolves.not.toThrow();
+        await expect(noLimitManager.checkLLMRateLimit()).resolves.not.toThrow();
       }
-    });
-
-    it("should handle provider name case-insensitively", async () => {
-      await manager.checkLLMRateLimit({ provider: "OpenAI", model: "gpt-4" });
-      await manager.checkLLMRateLimit({ provider: "OPENAI", model: "gpt-4" });
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
-
-      const stats = manager.getAllStats();
-      // Should only have one limiter for openai
-      const openaiKeys = Object.keys(stats).filter((key) => key.includes("openai"));
-      expect(openaiKeys.length).toBe(1);
     });
   });
 
@@ -119,7 +67,7 @@ describe("RateLimitManager", () => {
 
       // 4th request should throw
       await expect(manager.checkToolRateLimit("search_tool")).rejects.toThrow(
-        RateLimitExceededError
+        RateLimitExceededError,
       );
     });
 
@@ -143,8 +91,8 @@ describe("RateLimitManager", () => {
   describe("getAllStats", () => {
     it("should return stats for all active limiters", async () => {
       // Trigger creation of different limiters
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
-      await manager.checkLLMRateLimit({ provider: "anthropic", model: "claude-3" });
+      await manager.checkLLMRateLimit();
+      await manager.checkLLMRateLimit();
       await manager.checkToolRateLimit("search_tool");
 
       const stats = manager.getAllStats();
@@ -168,8 +116,8 @@ describe("RateLimitManager", () => {
   describe("resetAll", () => {
     it("should reset all active limiters", async () => {
       // Use some requests
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
+      await manager.checkLLMRateLimit();
+      await manager.checkLLMRateLimit();
       await manager.checkToolRateLimit("search_tool");
 
       manager.resetAll();
@@ -184,18 +132,14 @@ describe("RateLimitManager", () => {
     it("should allow requests after reset", async () => {
       // Use up openai limit
       for (let i = 0; i < 5; i++) {
-        await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
+        await manager.checkLLMRateLimit();
       }
 
-      await expect(
-        manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-      ).rejects.toThrow(RateLimitExceededError);
+      await expect(manager.checkLLMRateLimit()).rejects.toThrow(RateLimitExceededError);
 
       manager.resetAll();
 
-      await expect(
-        manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-      ).resolves.not.toThrow();
+      await expect(manager.checkLLMRateLimit()).resolves.not.toThrow();
     });
   });
 
@@ -204,15 +148,15 @@ describe("RateLimitManager", () => {
       const stats1 = manager.getAllStats();
       expect(Object.keys(stats1).length).toBe(0);
 
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
+      await manager.checkLLMRateLimit();
 
       const stats2 = manager.getAllStats();
       expect(Object.keys(stats2).length).toBe(1);
     });
 
     it("should reuse existing limiter", async () => {
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
-      await manager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" });
+      await manager.checkLLMRateLimit();
+      await manager.checkLLMRateLimit();
 
       const stats = manager.getAllStats();
       expect(Object.keys(stats).length).toBe(1); // Only one limiter should exist
@@ -236,15 +180,11 @@ describe("RateLimitManager", () => {
 
       // Should not throw - when config is invalid/incomplete, it allows requests through
       // This is a graceful degradation approach
-      await expect(
-        invalidManager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-      ).resolves.not.toThrow();
+      await expect(invalidManager.checkLLMRateLimit()).resolves.not.toThrow();
 
       // Verify multiple requests are allowed (no rate limiting applied)
       for (let i = 0; i < 10; i++) {
-        await expect(
-          invalidManager.checkLLMRateLimit({ provider: "openai", model: "gpt-4" })
-        ).resolves.not.toThrow();
+        await expect(invalidManager.checkLLMRateLimit()).resolves.not.toThrow();
       }
     });
   });
@@ -262,11 +202,11 @@ describe("RateLimitManager", () => {
       const delayManager = new RateLimitManager("test-agent", delayConfig);
 
       // Use up limit
-      await delayManager.checkLLMRateLimit({ provider: "test", model: "test" });
-      await delayManager.checkLLMRateLimit({ provider: "test", model: "test" });
+      await delayManager.checkLLMRateLimit();
+      await delayManager.checkLLMRateLimit();
 
       // Next request should delay
-      const checkPromise = delayManager.checkLLMRateLimit({ provider: "test", model: "test" });
+      const checkPromise = delayManager.checkLLMRateLimit();
 
       let resolved = false;
       checkPromise.then(() => {

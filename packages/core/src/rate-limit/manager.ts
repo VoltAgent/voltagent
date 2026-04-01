@@ -10,7 +10,7 @@
 
 import type { Logger } from "@voltagent/internal";
 import { FixedWindowCounterLimiter } from "./limiters/fixed-window";
-import type { AgentRateLimitConfig, RateLimiter, RateLimitScopeId } from "./types";
+import type { AgentRateLimitConfig, RateLimitScopeId, RateLimiter } from "./types";
 
 export class RateLimitManager {
   private limiters: Map<string, RateLimiter> = new Map();
@@ -28,25 +28,8 @@ export class RateLimitManager {
    * Check rate limit for LLM call
    * This is called before generateText/streamText
    */
-  async checkLLMRateLimit(context: { provider?: string; model?: string }): Promise<void> {
-    // Priority order:
-    // 1. Provider-specific limit (if configured)
-    // 2. Global LLM limit (if configured)
-
-    const providerName = context.provider?.toLowerCase();
-
-    // Check provider-specific limit first
-    if (providerName && this.config.providers?.[providerName]) {
-      const scopeId: RateLimitScopeId = {
-        type: "provider",
-        provider: providerName,
-      };
-      const limiter = this.getLimiter(scopeId, this.config.providers[providerName]);
-      await limiter.acquire();
-      return;
-    }
-
-    // Check global LLM limit
+  async checkLLMRateLimit(): Promise<void> {
+    // Check global LLM limit (if configured)
     if (this.config.llm) {
       const scopeId: RateLimitScopeId = {
         type: "global",
@@ -88,13 +71,14 @@ export class RateLimitManager {
       maxTokensPerMinute?: number;
       strategy?: string;
       onExceeded?: "delay" | "throw";
-    }
+    },
   ): RateLimiter {
     const key = this.getScopeKey(scopeId);
 
     // Return existing limiter if already created
-    if (this.limiters.has(key)) {
-      return this.limiters.get(key)!;
+    const existingLimiter = this.limiters.get(key);
+    if (existingLimiter) {
+      return existingLimiter;
     }
 
     // Create new limiter
@@ -120,7 +104,7 @@ export class RateLimitManager {
       maxTokensPerMinute?: number;
       strategy?: string;
       onExceeded?: "delay" | "throw";
-    }
+    },
   ): RateLimiter {
     const limit = config.maxRequestsPerMinute || 60; // Default 60 requests/min
     const strategy = config.strategy || "fixed_window";
@@ -129,7 +113,7 @@ export class RateLimitManager {
     // For MVP, only fixed_window is implemented
     if (strategy !== "fixed_window") {
       this.logger?.warn(
-        `Unsupported rate limit strategy: ${strategy}. Falling back to fixed_window`
+        `Unsupported rate limit strategy: ${strategy}. Falling back to fixed_window`,
       );
     }
 
@@ -148,12 +132,8 @@ export class RateLimitManager {
     switch (scopeId.type) {
       case "global":
         return "global:llm";
-      case "agent":
-        return `agent:${scopeId.agentId}`;
       case "tool":
         return `tool:${scopeId.agentId}:${scopeId.toolName}`;
-      case "provider":
-        return `provider:${scopeId.provider}`;
       default:
         return "unknown";
     }

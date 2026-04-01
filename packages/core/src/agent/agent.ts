@@ -545,10 +545,7 @@ export class Agent {
           const provider = this.extractProviderFromModel(model);
           const modelId = modelName;
 
-          await this.rateLimitManager.checkLLMRateLimit({
-            provider,
-            model: modelId,
-          });
+          await this.rateLimitManager.checkLLMRateLimit();
 
           methodLogger.debug("Rate limit check passed for LLM call", {
             event: LogEvents.AGENT_GENERATION_STARTED,
@@ -777,10 +774,7 @@ export class Agent {
           const provider = this.extractProviderFromModel(model);
           const modelId = modelName;
 
-          await this.rateLimitManager.checkLLMRateLimit({
-            provider,
-            model: modelId,
-          });
+          await this.rateLimitManager.checkLLMRateLimit();
 
           methodLogger.debug("Rate limit check passed for stream call", {
             event: LogEvents.AGENT_STREAM_STARTED,

@@ -1,15 +1,12 @@
 /**
  * Example: Rate Limiting in VoltAgent
- *
- * This example demonstrates how to use the rate limiting feature
- * to control the frequency of LLM calls and tool executions.
  */
-import "dotenv/config";
 import { google } from "@ai-sdk/google";
 import { Agent, RateLimitExceededError, createTool } from "@voltagent/core";
+import "dotenv/config";
 import { z } from "zod";
 
-// Create a simple search tool
+// Create simple tools
 const searchTool = createTool({
   name: "search_tool",
   description: "Search for information",
@@ -19,6 +16,18 @@ const searchTool = createTool({
   execute: async ({ query }) => {
     console.log(`[TOOL] Searching for: ${query}`);
     return `Search results for: ${query}`;
+  },
+});
+
+const calculateTool = createTool({
+  name: "calculator",
+  description: "Perform calculations",
+  parameters: z.object({
+    expression: z.string().describe("Math expression to calculate"),
+  }),
+  execute: async ({ expression }) => {
+    console.log(`[TOOL] Calculating: ${expression}`);
+    return `Result: ${expression} = 42`;
   },
 });
 
@@ -94,22 +103,25 @@ async function example2_delayStrategy() {
   }
 }
 
-// Example 3: Provider-Specific Rate Limiting
-async function example3_providerSpecificLimits() {
-  console.log("\n=== Example 3: Provider-Specific Rate Limiting ===");
+// Example 3: Tool-Specific Rate Limiting
+async function example3_toolRateLimiting() {
+  console.log("\n=== Example 3: Tool-Specific Rate Limiting ===");
 
   const agent = new Agent({
-    name: "provider-limited-agent",
+    name: "tool-limited-agent",
     model: google("gemini-2.0-flash-exp"),
-    instructions: "You are a helpful assistant.",
+    instructions: "You are a helpful assistant with tools.",
+    tools: [searchTool, calculateTool],
     rateLimits: {
-      llm: {
-        maxRequestsPerMinute: 10, // Global limit: 10 requests/min
-        onExceeded: "throw",
-      },
-      providers: {
-        google: {
-          maxRequestsPerMinute: 3, // Google-specific: 3 requests/min
+      tools: {
+        search_tool: {
+          maxRequestsPerMinute: 5,
+          strategy: "fixed_window",
+          onExceeded: "throw",
+        },
+        calculator: {
+          maxRequestsPerMinute: 10,
+          strategy: "fixed_window",
           onExceeded: "throw",
         },
       },
@@ -117,24 +129,23 @@ async function example3_providerSpecificLimits() {
   });
 
   try {
-    console.log("Provider-specific limit (Google): 3 requests/min");
-    console.log("Global limit: 10 requests/min\n");
+    console.log("Agent with tool-specific limits:", "\n");
+    console.log("search_tool: 5 requests/min");
+    console.log("calculator: 10 requests/min\n");
 
-    for (let i = 1; i <= 4; i++) {
-      console.log(`Google request ${i}/4...`);
-      await agent.generateText(`Hello ${i}`);
-      console.log("✓ Success");
-    }
+    const response = await agent.generateText("Search for 'JavaScript' and calculate 2 + 2.");
+
+    console.log("\n✓ Response:", `${response.text.substring(0, 100)}...`);
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`✗ Google rate limit exceeded (3/min): ${error.message}`);
+      console.error(`✗ Tool rate limit exceeded: ${error.message}`);
     }
   }
 }
 
 // Example 4: Tool-Specific Rate Limiting
 async function example4_toolRateLimiting() {
-  console.log("\n=== Example 4: Tool-Specific Rate Limiting ===");
+  console.log("\n=== Example 4: Tool Rate Limiting ===");
 
   const agent = new Agent({
     name: "tool-limited-agent",
@@ -167,7 +178,7 @@ async function example4_toolRateLimiting() {
   }
 }
 
-// Example 5: Combined Rate Limiting
+// Example 5: Combined LLM + Tool Rate Limiting
 async function example5_combinedLimits() {
   console.log("\n=== Example 5: Combined LLM + Tool Rate Limiting ===");
 
@@ -187,17 +198,10 @@ async function example5_combinedLimits() {
           onExceeded: "delay",
         },
       },
-      providers: {
-        google: {
-          maxRequestsPerMinute: 4,
-          onExceeded: "throw",
-        },
-      },
     },
   });
 
   console.log("Configuration:");
-  console.log("  - Google provider: 4 req/min (throw)");
   console.log("  - Global LLM: 5 req/min (delay)");
   console.log("  - Search tool: 3 req/min (delay)\n");
 
@@ -248,15 +252,15 @@ async function main() {
   try {
     // Uncomment the examples you want to run:
 
-    // await example1_basicLLMRateLimit();
-    // await example2_delayStrategy();
-    // await example3_providerSpecificLimits();
-    // await example4_toolRateLimiting();
-    // await example5_combinedLimits();
-    // await example6_monitoringStats();
+    await example1_basicLLMRateLimit();
+    await example2_delayStrategy();
+    await example3_toolRateLimiting();
+    await example4_toolRateLimiting();
+    await example5_combinedLimits();
+    await example6_monitoringStats();
 
     console.log(`\n${"=".repeat(60)}`);
-    console.log("\n✓ All examples completed!");
+    console.log("\n✓ Examples ready!");
     console.log("\nNote: Uncomment examples in main() to run them.");
   } catch (error) {
     console.error("\n✗ Error:", error);
@@ -269,7 +273,7 @@ main().catch(console.error);
 export {
   example1_basicLLMRateLimit,
   example2_delayStrategy,
-  example3_providerSpecificLimits,
+  example3_toolRateLimiting,
   example4_toolRateLimiting,
   example5_combinedLimits,
   example6_monitoringStats,

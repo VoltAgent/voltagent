@@ -12,9 +12,6 @@ export { RateLimitManager } from "./manager";
 export type {
   AgentRateLimitConfig,
   LLMRateLimitConfig,
-  ProviderRateLimitConfig,
-  RateLimitConfig,
-  RateLimitContext,
   RateLimiter,
   RateLimitExceededAction,
   RateLimitScope,
