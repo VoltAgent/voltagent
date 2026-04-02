@@ -4103,6 +4103,12 @@ export class Agent {
   }
 
   private shouldPersistMemoryForContext(oc: OperationContext): boolean {
+    // Skip memory persistence for delegated sub-agent calls to prevent
+    // polluting the parent conversation's memory with duplicate messages.
+    // See: https://github.com/VoltAgent/voltagent/issues/1026
+    if (oc.parentAgentId) {
+      return false;
+    }
     return !this.isReadOnlyMemoryForContext(oc);
   }
 
