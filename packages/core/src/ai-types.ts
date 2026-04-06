@@ -3,3 +3,6 @@ import type { generateText } from "ai";
 
 // StopWhen predicate type used by ai-sdk generate/stream functions
 export type StopWhen = Parameters<typeof generateText>[0]["stopWhen"];
+
+// PrepareStep callback type used by ai-sdk generate/stream functions
+export type PrepareStep = Parameters<typeof generateText>[0]["prepareStep"];

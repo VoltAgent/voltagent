@@ -610,6 +610,19 @@ console.log(out.context); // VoltAgent Map
 - This overrides VoltAgent's default `stepCountIs(maxSteps)` guard.
 - Be cautious: permissive predicates can lead to long-running or looping generations; overly strict ones may stop before tools complete.
 
+### prepareStep callback (advanced)
+
+- You can pass an ai-sdk `prepareStep` callback in `AgentOptions` or in per-call method options to control tool availability, tool choice, and other settings before each step.
+- Per-call `prepareStep` overrides the agent-level default.
+- Example: force text-only output after the first step:
+  ```ts
+  const agent = new Agent({
+    name: "my-agent",
+    model,
+    prepareStep: ({ steps }) => (steps.length > 0 ? { toolChoice: "none" } : {}),
+  });
+  ```
+
 ### Built-in server removed; use `@voltagent/server-hono`
 
 VoltAgent 1.x decouples the HTTP server from `@voltagent/core`. The built-in server is removed in favor of pluggable server providers. The recommended provider is `@voltagent/server-hono` (powered by Hono). Default port remains `3141`.

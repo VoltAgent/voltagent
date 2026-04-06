@@ -11,7 +11,7 @@ import type {
   ProviderTextResponse,
   ProviderTextStreamResponse,
 } from "../agent/providers/base/types";
-import type { StopWhen } from "../ai-types";
+import type { PrepareStep, StopWhen } from "../ai-types";
 
 import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
 import type { Memory } from "../memory";
@@ -723,6 +723,17 @@ export type AgentOptions = {
    * Per-call `stopWhen` in method options overrides this.
    */
   stopWhen?: StopWhen;
+  /**
+   * Default step preparation callback (ai-sdk `prepareStep`).
+   * Called before each step to control tool availability, tool choice, etc.
+   * Per-call `prepareStep` in method options overrides this.
+   *
+   * @example
+   * ```ts
+   * prepareStep: ({ steps }) => (steps.length > 0 ? { toolChoice: 'none' } : {}),
+   * ```
+   */
+  prepareStep?: PrepareStep;
   markdown?: boolean;
   /**
    * When true, use the active VoltAgent span as the parent if parentSpan is not provided.
