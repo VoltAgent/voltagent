@@ -31,11 +31,19 @@
  * - Production is strictly protected (NODE_ENV=production)
  */
 export function isDevRequest(req: Request): boolean {
-  const hasDevHeader = req.headers.get("x-voltagent-dev") === "true";
   // Treat undefined/empty NODE_ENV as development (only production is strict)
   const isDevEnv = process.env.NODE_ENV !== "production";
+  if (!isDevEnv) {
+    return false;
+  }
 
-  return hasDevHeader && isDevEnv;
+  const hasDevHeader = req.headers.get("x-voltagent-dev") === "true";
+  if (hasDevHeader) {
+    return true;
+  }
+
+  const url = new URL(req.url, "http://localhost");
+  return url.searchParams.get("dev") === "true";
 }
 
 /**
