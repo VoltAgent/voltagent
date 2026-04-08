@@ -302,7 +302,7 @@ export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/
 // Convenience re-exports from ai-sdk so apps need only @voltagent/core
 export { stepCountIs, hasToolCall } from "ai";
 export type { LanguageModel } from "ai";
-export type { StopWhen } from "./ai-types";
+export type { PrepareStep, StopWhen } from "./ai-types";
 
 export type {
   ManagedMemoryStatus,

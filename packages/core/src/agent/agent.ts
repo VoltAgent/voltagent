@@ -128,7 +128,7 @@ export type {
   SemanticMemoryOptions,
 } from "./types";
 import { P, match } from "ts-pattern";
-import type { StopWhen } from "../ai-types";
+import type { PrepareStep, StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
 import type { ConversationStepRecord } from "../memory/types";
 import { applySummarization } from "./apply-summarization";
@@ -923,6 +923,13 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
    * Tool choice strategy for AI SDK calls.
    */
   toolChoice?: ToolChoice<Record<string, unknown>>;
+
+  /**
+   * Step preparation callback (ai-sdk `prepareStep`).
+   * Called before each step to control tool availability, tool choice, etc.
+   * Overrides the agent-level `prepareStep` if provided.
+   */
+  prepareStep?: PrepareStep;
 }
 
 export type GenerateTextOptions<
@@ -964,6 +971,7 @@ export class Agent {
   readonly maxSteps: number;
   readonly maxRetries: number;
   readonly stopWhen?: StopWhen;
+  readonly prepareStep?: PrepareStep;
   readonly markdown: boolean;
   readonly inheritParentSpan: boolean;
   readonly voice?: Voice;
@@ -1022,6 +1030,7 @@ export class Agent {
     this.maxSteps = options.maxSteps ?? defaultMaxSteps;
     this.maxRetries = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
     this.stopWhen = options.stopWhen;
+    this.prepareStep = options.prepareStep;
     this.markdown = options.markdown ?? false;
     this.inheritParentSpan = options.inheritParentSpan ?? true;
     this.voice = options.voice;
@@ -1264,6 +1273,11 @@ export class Agent {
               providerOptions,
               ...aiSDKOptions
             } = options || {};
+
+            // Apply agent-level prepareStep as default (per-call overrides)
+            if (this.prepareStep && !aiSDKOptions.prepareStep) {
+              aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions["prepareStep"];
+            }
 
             const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
               | ToolChoice<Record<string, unknown>>
@@ -1878,6 +1892,11 @@ export class Agent {
           providerOptions,
           ...aiSDKOptions
         } = options || {};
+
+        // Apply agent-level prepareStep as default (per-call overrides)
+        if (this.prepareStep && !aiSDKOptions.prepareStep) {
+          aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions["prepareStep"];
+        }
 
         const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
           | ToolChoice<Record<string, unknown>>
