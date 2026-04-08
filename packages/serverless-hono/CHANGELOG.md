@@ -1,5 +1,18 @@
 # @voltagent/serverless-hono
 
+## 2.0.10
+
+### Patch Changes
+
+- [#1191](https://github.com/VoltAgent/voltagent/pull/1191) [`a21275f`](https://github.com/VoltAgent/voltagent/commit/a21275f65e1bb7230b8f41802345e0d475441730) Thanks [@ravyg](https://github.com/ravyg)! - fix(serverless-hono): defer waitUntil cleanup to prevent tool crashes in Cloudflare Workers
+
+  The `finally` block in `toCloudflareWorker()`, `toVercelEdge()`, and `toDeno()` was calling `cleanup()` immediately when the Response was returned, before streaming and tool execution completed. This cleared the global `___voltagent_wait_until` while tools were still using it, causing crashes with time-consuming tools.
+
+  Cleanup is now deferred through the platform's own `waitUntil()` so it runs only after all pending background work has settled.
+
+- Updated dependencies [[`19fa54b`](https://github.com/VoltAgent/voltagent/commit/19fa54b27ce3ba3286603fd80efe7969f928098c)]:
+  - @voltagent/server-core@2.1.12
+
 ## 2.0.9
 
 ### Patch Changes

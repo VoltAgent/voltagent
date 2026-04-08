@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 2.7.0
+
+### Minor Changes
+
+- [#1192](https://github.com/VoltAgent/voltagent/pull/1192) [`0dc2935`](https://github.com/VoltAgent/voltagent/commit/0dc2935772b62ec63f2a03b7bbe03c8619a37f89) Thanks [@ravyg](https://github.com/ravyg)! - feat(core): add `prepareStep` to AgentOptions for per-step tool control
+
+  Surfaces the AI SDK's `prepareStep` callback as a top-level `AgentOptions` property so users can set a default step preparation callback at agent creation time. Per-call `prepareStep` in method options overrides the agent-level default.
+
+  This enables controlling tool availability, tool choice, and other step settings on a per-step basis without passing `prepareStep` on every call.
+
 ## 2.6.14
 
 ### Patch Changes
