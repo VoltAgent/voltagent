@@ -1,5 +1,14 @@
 # @voltagent/server-core
 
+## 2.1.12
+
+### Patch Changes
+
+- [#1189](https://github.com/VoltAgent/voltagent/pull/1189) [`19fa54b`](https://github.com/VoltAgent/voltagent/commit/19fa54b27ce3ba3286603fd80efe7969f928098c) Thanks [@pandego](https://github.com/pandego)! - Fix the development console-access bypass for Request-based WebSocket paths using `?dev=true`.
+
+- Updated dependencies [[`0dc2935`](https://github.com/VoltAgent/voltagent/commit/0dc2935772b62ec63f2a03b7bbe03c8619a37f89)]:
+  - @voltagent/core@2.7.0
+
 ## 2.1.11
 
 ### Patch Changes
