@@ -80,14 +80,13 @@ describe("A2A Routes", () => {
   });
 
   it("should handle agent card request", async () => {
-    vi.mocked(serverCore.resolveAgentCard).mockResolvedValue({
+    vi.mocked(serverCore.resolveAgentCard).mockReturnValue({
       name: "agent",
       description: "desc",
     } as any);
 
-    const response = await app.handle(
-      new Request("http://localhost/.well-known/server1/agent-card.json"),
-    );
+    const requestUrl = "http://localhost/.well-known/server1/agent-card.json";
+    const response = await app.handle(new Request(requestUrl));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -98,7 +97,7 @@ describe("A2A Routes", () => {
       mockDeps.a2a.registry,
       "server1",
       "server1",
-      {},
+      { requestUrl },
     );
   });
 

@@ -79,13 +79,21 @@ pnpm --filter voltagent-example-with-a2a-server dev
 The Hono server listens on `http://localhost:3141`. Check the discovery document:
 
 ```bash
-curl http://localhost:3141/.well-known/support/agent-card.json | jq
+curl http://localhost:3141/.well-known/supportagent/agent-card.json | jq
+```
+
+The returned card advertises the JSON-RPC endpoint via its `url` field:
+
+```json
+{
+  "url": "http://localhost:3141/a2a/supportagent"
+}
 ```
 
 Send a JSON-RPC request to the agent:
 
 ```bash
-curl -X POST http://localhost:3141/a2a/support \
+curl -X POST http://localhost:3141/a2a/supportagent \
   -H "Content-Type: application/json" \
   -d '{
         "jsonrpc": "2.0",
@@ -110,7 +118,7 @@ There is a helper that exercises the example end-to-end. Start the dev server in
 pnpm --filter voltagent-example-with-a2a-server test:smoke
 ```
 
-The script fetches the agent card, sends a message via `/a2a`, and asserts that the resulting task transitions to `completed`.
+The script fetches the agent card, asserts that it points to the absolute `/a2a` endpoint, sends a message via `/a2a`, and asserts that the resulting task transitions to `completed`.
 
 ## Next steps
 

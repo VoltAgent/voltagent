@@ -31,6 +31,30 @@ import type {
 } from "./types";
 import { VoltA2AError } from "./types";
 
+const DEFAULT_A2A_ROUTE_PREFIX = "/a2a";
+
+function sanitizeSegment(segment: string): string {
+  return encodeURIComponent(segment.replace(/^\/+|\/+$/g, ""));
+}
+
+function buildA2AEndpointPath(serverId: string): string {
+  return `${DEFAULT_A2A_ROUTE_PREFIX}/${sanitizeSegment(serverId)}`;
+}
+
+function resolveAgentCardUrl(serverId: string, requestUrl?: string): string {
+  const endpointPath = buildA2AEndpointPath(serverId);
+
+  if (!requestUrl) {
+    return endpointPath;
+  }
+
+  try {
+    return new URL(endpointPath, requestUrl).toString();
+  } catch {
+    return endpointPath;
+  }
+}
+
 export class A2AServer {
   private deps?: Required<A2AServerDeps>;
   private readonly config: A2AServerConfig;
@@ -69,9 +93,9 @@ export class A2AServer {
     };
   }
 
-  getAgentCard(agentId: string, _context: A2ARequestContext = {}): AgentCard {
-    const agent = this.resolveAgent(agentId, _context);
-    const url = `/.well-known/${agentId}/agent-card.json`;
+  getAgentCard(agentId: string, context: A2ARequestContext = {}): AgentCard {
+    const agent = this.resolveAgent(agentId, context);
+    const url = resolveAgentCardUrl(agentId, context.requestUrl);
 
     return buildAgentCard(agent, {
       url,

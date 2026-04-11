@@ -187,9 +187,11 @@ export function registerA2ARoutes(app: Elysia, deps: ServerProviderDeps, logger:
   // GET /a2a/:serverId/card - Get agent card
   app.get(
     A2A_ROUTES.agentCard.path,
-    async ({ params, set }) => {
+    async ({ params, request, set }) => {
       try {
-        const card = resolveAgentCard(typedRegistry, params.serverId, params.serverId, {});
+        const card = resolveAgentCard(typedRegistry, params.serverId, params.serverId, {
+          requestUrl: request.url,
+        });
         return card;
       } catch (error) {
         const response = normalizeError(null, error);

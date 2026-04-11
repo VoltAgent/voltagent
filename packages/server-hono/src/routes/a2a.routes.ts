@@ -99,7 +99,9 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
   app.openapi(agentCardRoute as any, (c) => {
     const serverId = requirePathParam(c, "serverId");
     try {
-      const card = resolveAgentCard(typedRegistry, serverId, serverId, {});
+      const card = resolveAgentCard(typedRegistry, serverId, serverId, {
+        requestUrl: c.req.url,
+      });
       return c.json(card, 200);
     } catch (error) {
       const response = normalizeError(null, error);

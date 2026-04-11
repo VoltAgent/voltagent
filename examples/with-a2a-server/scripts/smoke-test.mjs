@@ -151,6 +151,7 @@ async function run() {
   console.log("🔎 Fetching agent card...");
   const card = await getAgentCard();
   assert.equal(card.name, "supportagent");
+  assert.equal(card.url, new URL(`/a2a/${AGENT_ID}`, BASE_URL).toString());
   assert.equal(Array.isArray(card.skills), true);
   console.log("✅ Agent card retrieved");
 
