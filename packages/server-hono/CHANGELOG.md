@@ -1,5 +1,20 @@
 # @voltagent/server-hono
 
+## 2.0.9
+
+### Patch Changes
+
+- [#1199](https://github.com/VoltAgent/voltagent/pull/1199) [`b6813e9`](https://github.com/VoltAgent/voltagent/commit/b6813e91aad3e3897a50111039e4adf90cae68a0) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: point A2A agent cards at the JSON-RPC endpoint
+
+  A2A agent cards now advertise `/a2a/{serverId}` instead of the internal
+  `/.well-known/{serverId}/agent-card.json` discovery document. When the card is
+  served through the Hono or Elysia integrations, VoltAgent also resolves that
+  endpoint to an absolute URL based on the incoming request.
+
+- Updated dependencies [[`b6813e9`](https://github.com/VoltAgent/voltagent/commit/b6813e91aad3e3897a50111039e4adf90cae68a0)]:
+  - @voltagent/a2a-server@2.0.3
+  - @voltagent/server-core@2.1.13
+
 ## 2.0.8
 
 ### Patch Changes

@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/a2a-server",
   "description": "VoltAgent A2A server implementation for exposing agents over the Agent-to-Agent protocol.",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "dependencies": {
     "@a2a-js/sdk": "^0.2.5",
     "@voltagent/internal": "^1.0.2",
