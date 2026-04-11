@@ -36,6 +36,7 @@ export interface A2ARequestContext {
   userId?: string;
   sessionId?: string;
   metadata?: Record<string, unknown>;
+  requestUrl?: string;
 }
 
 export interface AgentCardSkill {

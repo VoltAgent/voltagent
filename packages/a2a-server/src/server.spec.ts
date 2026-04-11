@@ -176,6 +176,24 @@ describe("A2AServer", () => {
     });
   });
 
+  it("uses the A2A endpoint for agent card URLs", () => {
+    const agent: StubAgent = {
+      id: "support-agent",
+      purpose: "Answer support questions",
+      generateText: vi.fn(),
+      streamText: vi.fn(),
+    };
+
+    const server = createServer(agent);
+
+    expect(server.getAgentCard("support-agent").url).toBe("/a2a/support-agent");
+    expect(
+      server.getAgentCard("support-agent", {
+        requestUrl: "https://agents.example/.well-known/support-agent/agent-card.json",
+      }).url,
+    ).toBe("https://agents.example/a2a/support-agent");
+  });
+
   it("streams incremental updates and completes the task", async () => {
     const streamText = vi.fn().mockImplementation(async () => ({
       text: Promise.resolve("Final response"),

@@ -48,7 +48,7 @@ export const a2aServer = new A2AServer({
 });
 ```
 
-The server metadata feeds the discovery card served from `/.well-known/{agentId}/agent-card.json`.
+The server metadata feeds the discovery card served from `/.well-known/{serverId}/agent-card.json`. The card's `url` field points to `/a2a/{serverId}`, and when the card is fetched over HTTP VoltAgent returns that URL as an absolute address.
 
 ## Register The Server With VoltAgent
 
@@ -71,17 +71,17 @@ export const voltAgent = new VoltAgent({
 
 With this in place, VoltAgent automatically exposes:
 
-- `GET /.well-known/{agentId}/agent-card.json`
-- `POST /a2a/{agentId}`
+- `GET /.well-known/{serverId}/agent-card.json`
+- `POST /a2a/{serverId}`
 
 The JSON-RPC handler accepts `message/send`, `message/stream`, `tasks/get`, and `tasks/cancel` requests.
 
 ## Available Endpoints
 
-| Method | Path                                     | Description                                                                                                      |
-| ------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/.well-known/{agentId}/agent-card.json` | Returns the discovery card for the specified agent.                                                              |
-| `POST` | `/a2a/{agentId}`                         | Accepts JSON-RPC 2.0 requests. Supported methods: `message/send`, `message/stream`, `tasks/get`, `tasks/cancel`. |
+| Method | Path                                      | Description                                                                                                      |
+| ------ | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/.well-known/{serverId}/agent-card.json` | Returns the discovery card for the specified A2A server. The card's `url` points to `/a2a/{serverId}`.           |
+| `POST` | `/a2a/{serverId}`                         | Accepts JSON-RPC 2.0 requests. Supported methods: `message/send`, `message/stream`, `tasks/get`, `tasks/cancel`. |
 
 Example JSON-RPC payload for `message/send`:
 
