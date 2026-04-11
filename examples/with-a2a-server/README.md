@@ -93,7 +93,7 @@ The returned card advertises the JSON-RPC endpoint via its `url` field:
 Send a JSON-RPC request to the agent:
 
 ```bash
-curl -X POST http://localhost:3141/a2a/support \
+curl -X POST http://localhost:3141/a2a/supportagent \
   -H "Content-Type: application/json" \
   -d '{
         "jsonrpc": "2.0",

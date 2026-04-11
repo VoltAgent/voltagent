@@ -223,6 +223,6 @@ The test sends a `message/send`, streams a `message/stream`, and exercises `task
 
 ## Troubleshooting checklist
 
-- **404 for discovery card**: ensure the agent ID you request matches the key inside `VoltAgent({ agents: { ... } })`.
+- **404 for discovery card**: ensure the `serverId` in `/.well-known/{serverId}/agent-card.json` matches `A2AServer({ id })`, or the normalized `name` when `id` is omitted. It does not come from `VoltAgent({ agents: { ... } })` or the `a2aServers` map key.
 - **Unexpected JSON in SSE**: confirm you are stripping the `\x1E` prefix before parsing the JSON payload.
 - **Cancellation not propagating**: verify you call `tasks/cancel` with the task ID from the stream and that your TaskStore preserves the `activeCancellations` set.

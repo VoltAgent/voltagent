@@ -34,7 +34,7 @@ import { VoltA2AError } from "./types";
 const DEFAULT_A2A_ROUTE_PREFIX = "/a2a";
 
 function sanitizeSegment(segment: string): string {
-  return segment.replace(/^\/+|\/+$|\s+/g, "");
+  return encodeURIComponent(segment.replace(/^\/+|\/+$/g, ""));
 }
 
 function buildA2AEndpointPath(serverId: string): string {

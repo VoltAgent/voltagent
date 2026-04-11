@@ -194,6 +194,25 @@ describe("A2AServer", () => {
     ).toBe("https://agents.example/a2a/support-agent");
   });
 
+  it("encodes reserved characters in A2A endpoint URLs without removing spaces", () => {
+    const agentId = "support agent/ops?";
+    const agent: StubAgent = {
+      id: agentId,
+      purpose: "Answer support questions",
+      generateText: vi.fn(),
+      streamText: vi.fn(),
+    };
+
+    const server = createServer(agent);
+
+    expect(server.getAgentCard(agentId).url).toBe("/a2a/support%20agent%2Fops%3F");
+    expect(
+      server.getAgentCard(agentId, {
+        requestUrl: "https://agents.example/.well-known/support%20agent%2Fops%3F/agent-card.json",
+      }).url,
+    ).toBe("https://agents.example/a2a/support%20agent%2Fops%3F");
+  });
+
   it("streams incremental updates and completes the task", async () => {
     const streamText = vi.fn().mockImplementation(async () => ({
       text: Promise.resolve("Final response"),

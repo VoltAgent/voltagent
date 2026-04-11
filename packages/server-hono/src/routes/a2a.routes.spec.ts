@@ -1,3 +1,5 @@
+import { A2AServerRegistry, type ServerProviderDeps, TriggerRegistry } from "@voltagent/core";
+import type { Logger } from "@voltagent/internal";
 import * as serverCore from "@voltagent/server-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OpenAPIHono } from "../zod-openapi-compat";
@@ -26,45 +28,136 @@ vi.mock("@voltagent/a2a-server", async () => {
   };
 });
 
-describe("A2A Routes", () => {
-  let app: OpenAPIHono;
-  const mockDeps = {
-    a2a: {
-      registry: {
-        list: vi.fn().mockReturnValue([{ id: "server1" }]),
+function createMockA2ARegistry() {
+  const registry = new A2AServerRegistry();
+  registry.register(
+    {
+      getMetadata() {
+        return {
+          id: "server1",
+          name: "server1",
+          version: "1.0.0",
+        };
       },
     },
-  } as any;
-  const mockLogger = {
+    {
+      agentRegistry: {
+        getAgent() {
+          return undefined;
+        },
+        getAllAgents() {
+          return [];
+        },
+      },
+    },
+  );
+  return registry;
+}
+
+function createMockDeps(): ServerProviderDeps {
+  return {
+    agentRegistry: {
+      getAgent() {
+        return undefined;
+      },
+      getAllAgents() {
+        return [];
+      },
+      getAgentCount() {
+        return 0;
+      },
+      removeAgent() {
+        return false;
+      },
+      registerAgent() {},
+      getGlobalVoltOpsClient() {
+        return undefined;
+      },
+      getGlobalLogger() {
+        return undefined;
+      },
+    },
+    workflowRegistry: {
+      getWorkflow() {
+        return undefined;
+      },
+      getWorkflowsForApi() {
+        return [];
+      },
+      getWorkflowDetailForApi() {
+        return undefined;
+      },
+      getWorkflowCount() {
+        return 0;
+      },
+      getAllWorkflowIds() {
+        return [];
+      },
+      on() {},
+      off() {},
+      activeExecutions: new Map(),
+      async resumeSuspendedWorkflow() {
+        return undefined;
+      },
+    },
+    triggerRegistry: new TriggerRegistry(),
+    a2a: {
+      registry: createMockA2ARegistry(),
+    },
+  };
+}
+
+function createMockLogger(): Logger {
+  const logger: Logger = {
     trace: vi.fn(),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  } as any;
+    fatal: vi.fn(),
+    child: vi.fn(() => logger),
+  };
+
+  return logger;
+}
+
+describe("A2A Routes", () => {
+  let app: InstanceType<typeof OpenAPIHono>;
+  let mockDeps: ServerProviderDeps;
+  let mockLogger: Logger;
 
   beforeEach(() => {
     app = new OpenAPIHono();
-    registerA2ARoutes(app as any, mockDeps, mockLogger);
+    mockDeps = createMockDeps();
+    mockLogger = createMockLogger();
+    registerA2ARoutes(app, mockDeps, mockLogger);
     vi.clearAllMocks();
   });
 
   it("passes the request URL when resolving the agent card", async () => {
-    vi.mocked(serverCore.resolveAgentCard).mockReturnValue({
+    const card = {
       name: "agent",
       description: "desc",
-    } as any);
+      url: "https://agents.example/a2a/server1",
+      version: "1.0.0",
+      capabilities: {
+        streaming: true,
+        pushNotifications: false,
+        stateTransitionHistory: false,
+      },
+      defaultInputModes: ["text"],
+      defaultOutputModes: ["text"],
+      skills: [],
+    };
+    vi.mocked(serverCore.resolveAgentCard).mockReturnValue(card);
 
     const requestUrl = "http://agents.example/.well-known/server1/agent-card.json";
     const response = await app.request(requestUrl);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      name: "agent",
-      description: "desc",
-    });
+    expect(await response.json()).toEqual(card);
     expect(serverCore.resolveAgentCard).toHaveBeenCalledWith(
-      mockDeps.a2a.registry,
+      mockDeps.a2a?.registry,
       "server1",
       "server1",
       { requestUrl },

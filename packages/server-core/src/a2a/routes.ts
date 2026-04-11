@@ -10,5 +10,5 @@ export function buildA2AEndpointPath(serverId: string): string {
 }
 
 function sanitizeSegment(segment: string): string {
-  return segment.replace(/^\/+|\/+$|\s+/g, "");
+  return encodeURIComponent(segment.replace(/^\/+|\/+$/g, ""));
 }
