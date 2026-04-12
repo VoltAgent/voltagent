@@ -402,4 +402,110 @@ describe("Output guardrail streaming integration", () => {
     }
     expect(collected.join("")).toBe("hello");
   });
+
+  it("preserves providerMetadata on tool-result events (Google Vertex thinking models)", async () => {
+    const googleThoughtSignature = "CiQBjz1rXwFvT1I/B/3qqqGc2FdAgzW+FJY4Tg/zPaWUtF6imFw=";
+    const parts: VoltAgentTextStreamPart[] = [
+      { type: "start" } as VoltAgentTextStreamPart,
+      {
+        type: "tool-call",
+        toolCallId: "tool-1",
+        toolName: "getWeather",
+        input: { location: "Perth" },
+        providerMetadata: { google: { thoughtSignature: googleThoughtSignature } },
+      } as VoltAgentTextStreamPart,
+      {
+        type: "tool-result",
+        toolCallId: "tool-1",
+        output: { weather: { location: "Perth", condition: "Sunny", temperature: 25 } },
+        providerMetadata: { google: { thoughtSignature: googleThoughtSignature } },
+      } as VoltAgentTextStreamPart,
+      { type: "text-start", id: "text-1" } as VoltAgentTextStreamPart,
+      { type: "text-delta", id: "text-1", delta: "The weather is sunny." } as any,
+      { type: "text-end", id: "text-1" } as VoltAgentTextStreamPart,
+      { type: "finish", finishReason: "stop" } as any,
+    ];
+
+    const pipeline = buildPipeline(parts, {
+      id: "passthrough",
+      name: "Passthrough",
+      handler: async (_ctx) => ({ pass: true }) as const,
+      streamHandler: ({ part }) => part,
+    });
+
+    const emitted: VoltAgentTextStreamPart[] = [];
+    for await (const chunk of pipeline.fullStream) {
+      emitted.push(chunk as VoltAgentTextStreamPart);
+    }
+
+    await pipeline.finalizePromise;
+
+    // tool-call should preserve providerMetadata
+    const toolCall = emitted.find((c) => c.type === "tool-call") as any;
+    expect(toolCall).toBeDefined();
+    expect(toolCall.providerMetadata).toEqual({
+      google: { thoughtSignature: googleThoughtSignature },
+    });
+
+    // tool-result should preserve providerMetadata (the fix for #1195)
+    const toolResult = emitted.find((c) => c.type === "tool-result") as any;
+    expect(toolResult).toBeDefined();
+    expect(toolResult.providerMetadata).toEqual({
+      google: { thoughtSignature: googleThoughtSignature },
+    });
+  });
+
+  it("forwards providerMetadata to tool-output-available in UI stream (fixes #1195)", async () => {
+    const googleThoughtSignature = "CiQBjz1rXwFvT1I/B/3qqqGc2FdAgzW+FJY4Tg/zPaWUtF6imFw=";
+    const parts: VoltAgentTextStreamPart[] = [
+      { type: "start" } as VoltAgentTextStreamPart,
+      {
+        type: "tool-call",
+        toolCallId: "tool-1",
+        toolName: "getWeather",
+        input: { location: "Perth" },
+        providerMetadata: { google: { thoughtSignature: googleThoughtSignature } },
+      } as VoltAgentTextStreamPart,
+      {
+        type: "tool-result",
+        toolCallId: "tool-1",
+        output: { weather: { location: "Perth", condition: "Sunny", temperature: 25 } },
+        providerMetadata: { google: { thoughtSignature: googleThoughtSignature } },
+      } as VoltAgentTextStreamPart,
+      { type: "text-start", id: "text-1" } as VoltAgentTextStreamPart,
+      { type: "text-delta", id: "text-1", delta: "The weather is sunny." } as any,
+      { type: "text-end", id: "text-1" } as VoltAgentTextStreamPart,
+      { type: "finish", finishReason: "stop" } as any,
+    ];
+
+    const pipeline = buildPipeline(parts, {
+      id: "passthrough",
+      name: "Passthrough",
+      handler: async (_ctx) => ({ pass: true }) as const,
+      streamHandler: ({ part }) => part,
+    });
+
+    const uiStream = pipeline.createUIStream();
+    const uiChunks: Array<Record<string, unknown>> = [];
+    for await (const chunk of uiStream) {
+      uiChunks.push(chunk as Record<string, unknown>);
+    }
+
+    await pipeline.finalizePromise;
+
+    // tool-input-available (from tool-call) should have providerMetadata
+    const toolInput = uiChunks.find((c) => c.type === "tool-input-available") as any;
+    expect(toolInput).toBeDefined();
+    expect(toolInput.providerMetadata).toEqual({
+      google: { thoughtSignature: googleThoughtSignature },
+    });
+
+    // tool-output-available (from tool-result) should have providerMetadata
+    // Before the fix, this was missing and caused zod schema validation to fail
+    const toolOutput = uiChunks.find((c) => c.type === "tool-output-available") as any;
+    expect(toolOutput).toBeDefined();
+    expect(toolOutput.providerMetadata).toEqual({
+      google: { thoughtSignature: googleThoughtSignature },
+    });
+  });
 });
