@@ -573,6 +573,7 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
         toolCallId?: string;
         output?: unknown;
         providerExecuted?: boolean;
+        providerMetadata?: unknown;
         dynamic?: unknown;
       };
       return {
@@ -580,6 +581,7 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
         toolCallId: typed.toolCallId,
         output: typed.output,
         ...(typed.providerExecuted != null ? { providerExecuted: typed.providerExecuted } : {}),
+        ...(typed.providerMetadata != null ? { providerMetadata: typed.providerMetadata } : {}),
         ...(typed.dynamic != null ? { dynamic: typed.dynamic } : {}),
       } as InferUIMessageChunk<UI_MESSAGE>;
     }
@@ -589,6 +591,7 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
         toolCallId?: string;
         error?: unknown;
         providerExecuted?: boolean;
+        providerMetadata?: unknown;
         dynamic?: unknown;
       };
       return {
@@ -596,16 +599,18 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
         toolCallId: typed.toolCallId,
         errorText: onError(typed.error),
         ...(typed.providerExecuted != null ? { providerExecuted: typed.providerExecuted } : {}),
+        ...(typed.providerMetadata != null ? { providerMetadata: typed.providerMetadata } : {}),
         ...(typed.dynamic != null ? { dynamic: typed.dynamic } : {}),
       } as InferUIMessageChunk<UI_MESSAGE>;
     }
 
     case "tool-output": {
-      const typed = part as { toolCallId?: string; output: unknown };
+      const typed = part as { toolCallId?: string; output: unknown; providerMetadata?: unknown };
       return {
         type: "tool-output-available",
         toolCallId: typed.toolCallId,
         output: typed.output,
+        ...(typed.providerMetadata != null ? { providerMetadata: typed.providerMetadata } : {}),
       } as InferUIMessageChunk<UI_MESSAGE>;
     }
 
