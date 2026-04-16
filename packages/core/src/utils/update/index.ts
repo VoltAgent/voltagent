@@ -353,6 +353,17 @@ export const updateAllPackages = async (
       .filter((pkg) => pkg.type !== "latest")
       .filter((pkg) => VALID_PKG_NAME_RE.test(pkg.name))
       .map((pkg) => `${pkg.name}@latest`);
+
+    if (packagesToUpdate.length === 0) {
+      return {
+        success: true,
+        message:
+          skippedPackages.length > 0
+            ? `Skipped ${skippedPackages.length} invalid package name(s); no valid packages to update`
+            : "No valid packages to update",
+      };
+    }
+
     logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // 4. Run the update command based on package manager
