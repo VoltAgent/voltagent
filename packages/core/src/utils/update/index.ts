@@ -10,6 +10,12 @@ import {
   writeUpdateCache,
 } from "./cache";
 
+/**
+ * Valid npm package name pattern.
+ * Shared between updateAllPackages and updateSinglePackage to prevent command injection.
+ */
+const VALID_PKG_NAME_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+
 type UpdateOptions = {
   filter?: string;
   useCache?: boolean;
@@ -332,11 +338,21 @@ export const updateAllPackages = async (
     const packageManager = detectPackageManager(rootDir);
 
     // 3. Prepare the package list for updating
+    const logger = new LoggerProxy({ component: "update-checker" });
+
+    const skippedPackages = updateCheckResult.updates.filter(
+      (pkg) => pkg.type !== "latest" && !VALID_PKG_NAME_RE.test(pkg.name),
+    );
+    if (skippedPackages.length > 0) {
+      logger.warn(
+        `Skipped ${skippedPackages.length} package(s) with invalid names: ${skippedPackages.map((p) => p.name).join(", ")}`,
+      );
+    }
+
     const packagesToUpdate = updateCheckResult.updates
       .filter((pkg) => pkg.type !== "latest")
+      .filter((pkg) => VALID_PKG_NAME_RE.test(pkg.name))
       .map((pkg) => `${pkg.name}@latest`);
-
-    const logger = new LoggerProxy({ component: "update-checker" });
     logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // 4. Run the update command based on package manager
@@ -410,9 +426,7 @@ export const updateSinglePackage = async (
     }
 
     // Command injection protection - only allow valid NPM package names
-    const isValidPackageName = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
-      packageName,
-    );
+    const isValidPackageName = VALID_PKG_NAME_RE.test(packageName);
     if (!isValidPackageName) {
       return {
         success: false,
