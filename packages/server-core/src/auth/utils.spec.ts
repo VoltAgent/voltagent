@@ -26,6 +26,11 @@ describe("auth utils", () => {
       vi.stubEnv("NODE_ENV", "");
       expect(isDevEnvironment()).toBe(false);
     });
+
+    it("returns false when NODE_ENV is undefined (fail-closed)", () => {
+      vi.stubEnv("NODE_ENV", undefined as unknown as string);
+      expect(isDevEnvironment()).toBe(false);
+    });
   });
 
   describe("isDevRequest", () => {
@@ -59,6 +64,24 @@ describe("auth utils", () => {
 
     it("rejects the dev query param when NODE_ENV is empty", () => {
       vi.stubEnv("NODE_ENV", "");
+
+      const req = new Request("http://localhost/ws?dev=true");
+
+      expect(isDevRequest(req)).toBe(false);
+    });
+
+    it("rejects the dev header when NODE_ENV is undefined (fail-closed)", () => {
+      vi.stubEnv("NODE_ENV", undefined as unknown as string);
+
+      const req = new Request("http://localhost/api", {
+        headers: { "x-voltagent-dev": "true" },
+      });
+
+      expect(isDevRequest(req)).toBe(false);
+    });
+
+    it("rejects the dev query param when NODE_ENV is undefined", () => {
+      vi.stubEnv("NODE_ENV", undefined as unknown as string);
 
       const req = new Request("http://localhost/ws?dev=true");
 
