@@ -12,6 +12,7 @@ import { requiresAuth } from "../auth/defaults";
 import type { AuthNextConfig } from "../auth/next";
 import { isAuthNextConfig, normalizeAuthNextConfig, resolveAuthNextAccess } from "../auth/next";
 import type { AuthProvider } from "../auth/types";
+import { isDevEnvironment } from "../auth/utils";
 import { handleWebSocketConnection } from "./handlers";
 
 /**
@@ -19,7 +20,7 @@ import { handleWebSocketConnection } from "./handlers";
  */
 function isDevWebSocketRequest(req: IncomingMessage): boolean {
   const hasDevHeader = req.headers["x-voltagent-dev"] === "true";
-  const isDevEnv = process.env.NODE_ENV !== "production";
+  const isDevEnv = isDevEnvironment();
   return hasDevHeader && isDevEnv;
 }
 
@@ -29,7 +30,7 @@ function isWebSocketDevBypass(req: IncomingMessage, url: URL): boolean {
   }
 
   const devParam = url.searchParams.get("dev");
-  return devParam === "true" && process.env.NODE_ENV !== "production";
+  return devParam === "true" && isDevEnvironment();
 }
 
 /**

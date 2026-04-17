@@ -3,6 +3,17 @@
  */
 
 /**
+ * Check if the current process is running in an explicit dev/test environment.
+ * Undefined/empty NODE_ENV is treated as production (fail-closed) to prevent
+ * accidental auth bypass on deployments that forget to set NODE_ENV.
+ */
+export function isDevEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"
+  );
+}
+
+/**
  * Check if request is from development environment
  *
  * Requires BOTH a client header AND an explicit dev/test environment for security.
@@ -32,11 +43,7 @@
  * - Only NODE_ENV=development|test enables dev bypass (fail-closed)
  */
 export function isDevRequest(req: Request): boolean {
-  // Only treat explicitly-set development/test as dev environment.
-  // Undefined/empty NODE_ENV is NOT treated as dev — fail-closed prevents
-  // accidental auth bypass on deployments that forget to set NODE_ENV.
-  const isDevEnv =
-    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+  const isDevEnv = isDevEnvironment();
   if (!isDevEnv) {
     return false;
   }
