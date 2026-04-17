@@ -5,34 +5,38 @@
 /**
  * Check if request is from development environment
  *
- * Requires BOTH client header AND non-production environment for security.
- * This prevents production bypass while allowing local development.
+ * Requires BOTH a client header AND an explicit dev/test environment for security.
+ * Undefined NODE_ENV is treated as production (fail-closed) to prevent
+ * accidental auth bypass on deployed servers that forgot to set NODE_ENV.
  *
  * @param req - The incoming HTTP request
  * @returns True if both dev header and non-production environment are present
  *
  * @example
- * // Local development with header (typical case)
- * NODE_ENV=undefined + x-voltagent-dev=true → true (auth bypassed)
- *
- * // Development with header (playground)
+ * // Development with header (typical case)
  * NODE_ENV=development + x-voltagent-dev=true → true (auth bypassed)
  *
- * // Development without header (testing auth)
- * NODE_ENV=undefined + no header → false (auth required)
+ * // Test with header
+ * NODE_ENV=test + x-voltagent-dev=true → true (auth bypassed)
+ *
+ * // Undefined NODE_ENV with header (deployed server)
+ * NODE_ENV=undefined + x-voltagent-dev=true → false (auth required)
  *
  * // Production with header (attacker attempt)
  * NODE_ENV=production + x-voltagent-dev=true → false (auth required)
  *
  * @security
- * - Client header alone: Cannot bypass in production
- * - Non-production env alone: Developer can still test auth
+ * - Client header alone: Cannot bypass auth
+ * - Dev/test env alone: Developer can still test auth
  * - Both required: Selective bypass for DX
- * - Production is strictly protected (NODE_ENV=production)
+ * - Only NODE_ENV=development|test enables dev bypass (fail-closed)
  */
 export function isDevRequest(req: Request): boolean {
-  // Treat undefined/empty NODE_ENV as development (only production is strict)
-  const isDevEnv = process.env.NODE_ENV !== "production";
+  // Only treat explicitly-set development/test as dev environment.
+  // Undefined/empty NODE_ENV is NOT treated as dev — fail-closed prevents
+  // accidental auth bypass on deployments that forget to set NODE_ENV.
+  const isDevEnv =
+    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
   if (!isDevEnv) {
     return false;
   }
