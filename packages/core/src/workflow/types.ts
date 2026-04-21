@@ -1120,7 +1120,7 @@ export interface UpdateWorkflowStepOptions {
  * The state parameter passed to workflow steps
  */
 export type WorkflowStepState<INPUT> = Omit<
-  WorkflowState<INPUT, DangerouslyAllowAny>,
+  WorkflowState<INPUT, unknown>,
   "data" | "result"
 > & {
   /** Workflow execution context for event tracking */
