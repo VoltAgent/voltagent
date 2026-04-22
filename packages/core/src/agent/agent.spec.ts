@@ -4672,6 +4672,55 @@ Use pandas and summarize findings.`.split("\n"),
       expect(systemMessage.content).toContain("Use markdown to format your answers");
     });
 
+    it("should expose request headers to dynamic model, tools, and instructions", async () => {
+      const requestHeaders = {
+        authorization: "Bearer test-token",
+        "x-tenant-id": "tenant-1",
+      };
+      const dynamicInstructions = vi.fn().mockResolvedValue("Dynamic content");
+      const dynamicModel = vi.fn().mockResolvedValue(mockModel as any);
+      const dynamicTools = vi.fn().mockResolvedValue([]);
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: dynamicInstructions,
+        model: dynamicModel,
+        tools: dynamicTools,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [{ type: "text", text: "Response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Hello", {
+        requestHeaders,
+      });
+
+      expect(dynamicInstructions.mock.calls[0][0].headers).toEqual(requestHeaders);
+      expect(dynamicModel.mock.calls[0][0].headers).toEqual(requestHeaders);
+      expect(dynamicTools.mock.calls[0][0].headers).toEqual(requestHeaders);
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0] as Record<string, unknown>;
+      expect(callArgs.requestHeaders).toBeUndefined();
+    });
+
     it("should add retriever context correctly through enrichInstructions", async () => {
       // Create mock retriever
       const mockRetriever = {

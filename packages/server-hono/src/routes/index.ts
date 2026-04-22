@@ -103,7 +103,14 @@ export function registerAgentRoutes(
     const body = await c.req.json();
 
     const signal = c.req.raw.signal;
-    const response = await handleGenerateText(agentId, body, deps, logger, signal);
+    const response = await handleGenerateText(
+      agentId,
+      body,
+      deps,
+      logger,
+      signal,
+      c.req.raw.headers,
+    );
     if (!response.success) {
       const { httpStatus, ...details } = response;
       return c.json(details, httpStatus || 500);
@@ -119,7 +126,7 @@ export function registerAgentRoutes(
     }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
-    const response = await handleStreamText(agentId, body, deps, logger, signal);
+    const response = await handleStreamText(agentId, body, deps, logger, signal, c.req.raw.headers);
 
     // Handler now always returns a Response object
     return response;
@@ -133,7 +140,7 @@ export function registerAgentRoutes(
     }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
-    const response = await handleChatStream(agentId, body, deps, logger, signal);
+    const response = await handleChatStream(agentId, body, deps, logger, signal, c.req.raw.headers);
 
     // Handler now always returns a Response object
     return response;
@@ -159,7 +166,14 @@ export function registerAgentRoutes(
     }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
-    const response = await handleGenerateObject(agentId, body, deps, logger, signal);
+    const response = await handleGenerateObject(
+      agentId,
+      body,
+      deps,
+      logger,
+      signal,
+      c.req.raw.headers,
+    );
     if (!response.success) {
       const { httpStatus, ...details } = response;
       return c.json(details, httpStatus || 500);
@@ -175,7 +189,14 @@ export function registerAgentRoutes(
     }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
-    const response = await handleStreamObject(agentId, body, deps, logger, signal);
+    const response = await handleStreamObject(
+      agentId,
+      body,
+      deps,
+      logger,
+      signal,
+      c.req.raw.headers,
+    );
 
     // Handler now always returns a Response object
     return response;

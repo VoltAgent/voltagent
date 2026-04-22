@@ -66,6 +66,7 @@ export async function handleGenerateText(
   deps: ServerProviderDeps,
   logger: Logger,
   signal?: AbortSignal,
+  requestHeaders?: Headers | Record<string, string | string[] | undefined>,
 ): Promise<ApiResponse> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -77,7 +78,7 @@ export async function handleGenerateText(
     }
 
     const { input } = body;
-    const options = processAgentOptions(body, signal);
+    const options = processAgentOptions(body, signal, requestHeaders);
 
     const result = await agent.generateText(input, options);
 
@@ -131,6 +132,7 @@ export async function handleStreamText(
   deps: ServerProviderDeps,
   logger: Logger,
   signal?: AbortSignal,
+  requestHeaders?: Headers | Record<string, string | string[] | undefined>,
 ): Promise<Response> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -150,7 +152,7 @@ export async function handleStreamText(
     }
 
     const { input } = body;
-    const options = processAgentOptions(body, signal);
+    const options = processAgentOptions(body, signal, requestHeaders);
 
     const result = await agent.streamText(input, options);
 
@@ -216,6 +218,7 @@ export async function handleChatStream(
   deps: ServerProviderDeps,
   logger: Logger,
   signal?: AbortSignal,
+  requestHeaders?: Headers | Record<string, string | string[] | undefined>,
 ): Promise<Response> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -245,7 +248,7 @@ export async function handleChatStream(
       typeof body?.options?.resumableStream === "boolean"
         ? body.options.resumableStream
         : (deps.resumableStreamDefault ?? false);
-    const options = processAgentOptions(body, signal);
+    const options = processAgentOptions(body, signal, requestHeaders);
     const memory =
       options.memory && typeof options.memory === "object" ? options.memory : undefined;
     const memoryConversationId =
@@ -478,6 +481,7 @@ export async function handleGenerateObject(
   deps: ServerProviderDeps,
   logger: Logger,
   signal?: AbortSignal,
+  requestHeaders?: Headers | Record<string, string | string[] | undefined>,
 ): Promise<ApiResponse> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -489,7 +493,7 @@ export async function handleGenerateObject(
     }
 
     const { input, schema: jsonSchema } = body;
-    const options = processAgentOptions(body, signal);
+    const options = processAgentOptions(body, signal, requestHeaders);
 
     // Convert JSON schema to Zod schema (supports zod v3 and v4)
     const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(
@@ -521,6 +525,7 @@ export async function handleStreamObject(
   deps: ServerProviderDeps,
   logger: Logger,
   signal?: AbortSignal,
+  requestHeaders?: Headers | Record<string, string | string[] | undefined>,
 ): Promise<Response> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -540,7 +545,7 @@ export async function handleStreamObject(
     }
 
     const { input, schema: jsonSchema } = body;
-    const options = processAgentOptions(body, signal);
+    const options = processAgentOptions(body, signal, requestHeaders);
 
     // Convert JSON schema to Zod schema (supports zod v3 and v4)
     const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(

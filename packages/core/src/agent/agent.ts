@@ -845,6 +845,14 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
    */
   conversationId?: string;
   context?: ContextInput;
+  /**
+   * HTTP request headers associated with this call.
+   *
+   * Server adapters populate this from the incoming request and expose it to
+   * dynamic `model`, `instructions`, and `tools` callbacks as `headers`.
+   * This is separate from AI SDK/provider `headers`.
+   */
+  requestHeaders?: Record<string, string>;
   elicitation?: (request: unknown) => Promise<unknown>;
 
   // Parent tracking
@@ -1259,6 +1267,7 @@ export class Agent {
               conversationId,
               memory: _memory,
               context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
+              requestHeaders: _requestHeaders,
               parentAgentId,
               parentOperationContext,
               hooks,
@@ -1877,6 +1886,7 @@ export class Agent {
           conversationId,
           memory: _memory,
           context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
+          requestHeaders: _requestHeaders,
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -2780,6 +2790,7 @@ export class Agent {
               conversationId,
               memory: _memory,
               context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
+              requestHeaders: _requestHeaders,
               parentAgentId,
               parentOperationContext,
               hooks,
@@ -3153,6 +3164,7 @@ export class Agent {
           conversationId,
           memory: _memory,
           context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
+          requestHeaders: _requestHeaders,
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -4058,6 +4070,7 @@ export class Agent {
     return {
       operationId,
       context,
+      requestHeaders: options?.requestHeaders ?? options?.parentOperationContext?.requestHeaders,
       systemContext,
       isActive: true,
       logger,
@@ -5080,6 +5093,7 @@ export class Agent {
 
     const dynamicValueOptions: DynamicValueOptions = {
       context: oc.context,
+      headers: oc.requestHeaders,
       prompts: promptHelper,
     };
 
@@ -5541,10 +5555,12 @@ export class Agent {
         (this.prompts
           ? {
               context: oc.context,
+              headers: oc.requestHeaders,
               prompts: this.prompts,
             }
           : {
               context: oc.context,
+              headers: oc.requestHeaders,
               prompts: {
                 getPrompt: async () => ({ type: "text" as const, text: "" }),
               },

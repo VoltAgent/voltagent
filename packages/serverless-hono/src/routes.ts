@@ -141,7 +141,11 @@ function extractHeaders(
   headers: Headers | NodeJS.Dict<string | string[] | undefined>,
 ): Record<string, string> {
   if (headers instanceof Headers) {
-    return Object.fromEntries(headers.entries());
+    const result: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
   }
 
   const result: Record<string, string> = {};
@@ -296,6 +300,7 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       deps,
       logger,
       signal,
+      c.req.raw.headers,
     );
     return c.json(response, response.success ? 200 : 500);
   });
@@ -314,6 +319,7 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       deps,
       logger,
       signal,
+      c.req.raw.headers,
     );
     return response;
   });
@@ -332,6 +338,7 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       deps,
       logger,
       signal,
+      c.req.raw.headers,
     );
   });
 
@@ -362,6 +369,7 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       deps,
       logger,
       signal,
+      c.req.raw.headers,
     );
     return c.json(response, response.success ? 200 : 500);
   });
@@ -380,6 +388,7 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       deps,
       logger,
       signal,
+      c.req.raw.headers,
     );
   });
 
