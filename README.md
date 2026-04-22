@@ -344,6 +344,66 @@ Connect your agents to knowledge sources with built-in retrieval-augmented gener
 
 <img  alt="rag" src="https://github.com/user-attachments/assets/a6c2f668-7ad1-4fb6-b67f-654335285f1e" />
 
+## ❓ FAQ & Troubleshooting
+
+### Common Questions
+
+**Q: Which AI providers does VoltAgent support?**
+
+A: VoltAgent supports OpenAI, Anthropic, Google, and other major providers through the [LLM Compatibility layer](https://voltagent.dev/docs/getting-started/providers-models/). You can switch providers by changing configuration without rewriting agent logic.
+
+**Q: How do I add memory to my agents?**
+
+A: Attach memory adapters to your agents using the [Memory system](https://voltagent.dev/docs/agents/memory/overview/). VoltAgent provides durable memory adapters that persist context across runs.
+
+**Q: Can I use VoltAgent with MCP servers?**
+
+A: Yes! VoltAgent has native [MCP support](https://voltagent.dev/docs/agents/mcp/) and even provides an [MCP docs server](https://voltagent.dev/docs/getting-started/mcp-docs-server/) for AI coding assistants like Claude, Cursor, or Windsurf.
+
+**Q: How do I deploy my agents to production?**
+
+A: Use [VoltOps Console](https://voltagent.dev/voltops-llm-observability/) for one-click deployment with GitHub integration, or self-host using the [deployment guide](https://voltagent.dev/docs/deployment/voltops/).
+
+**Q: Does VoltAgent support voice interactions?**
+
+A: Yes, VoltAgent includes [Voice capabilities](https://voltagent.dev/docs/agents/voice/) with support for OpenAI, ElevenLabs, and custom voice providers for text-to-speech and speech-to-text.
+
+### Troubleshooting
+
+**Issue: Agent not responding or hanging**
+
+- Check your API keys are correctly configured in environment variables
+- Verify the model provider is accessible and has available quota
+- Enable [resumable streaming](https://voltagent.dev/docs/agents/resumable-streaming/) to debug execution flow
+- Check [VoltOps Observability](https://voltagent.dev/voltops-llm-observability/) for detailed traces
+
+**Issue: Memory not persisting between runs**
+
+- Ensure you've attached a memory adapter to your agent
+- Verify the memory storage backend (Redis, SQLite, etc.) is running
+- Check memory configuration in your agent options
+
+**Issue: Tools not being called correctly**
+
+- Verify tool schemas are correctly defined with Zod
+- Check that tool names match between definition and usage
+- Review [Tool Registry documentation](https://voltagent.dev/docs/agents/tools/) for proper setup
+- Enable debug logging to see tool invocation details
+
+**Issue: RAG retrieval returning irrelevant results**
+
+- Review your chunking strategy and chunk sizes
+- Check embedding model configuration
+- Verify documents are properly ingested in the [Knowledge Base](https://voltagent.dev/docs/rag/voltagent/)
+- Consider adjusting similarity search thresholds
+
+**Getting More Help**
+
+- 📚 Browse the full [Documentation](https://voltagent.dev/docs/)
+- 💬 Join our [Discord community](https://s.voltagent.dev/discord) for real-time help
+- 🐛 Report bugs via [GitHub Issues](https://github.com/VoltAgent/voltagent/issues)
+- 📖 Read technical insights on our [Blog](https://voltagent.dev/blog/)
+
 ## Learning VoltAgent
 
 - **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
