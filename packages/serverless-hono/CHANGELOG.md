@@ -1,5 +1,50 @@
 # @voltagent/serverless-hono
 
+## 2.0.11
+
+### Patch Changes
+
+- [#1218](https://github.com/VoltAgent/voltagent/pull/1218) [`4860832`](https://github.com/VoltAgent/voltagent/commit/48608321ec9a67a6bb0cc93ec93681eab51de9d0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(agent): expose request headers to dynamic agent configuration
+
+  Dynamic `instructions`, `model`, and `tools` functions now receive a `headers` map in
+  `DynamicValueOptions` when an agent is called through the built-in HTTP endpoints. This makes it
+  possible to configure tenant-aware models and request-scoped tools from headers such as
+  `authorization`, `x-tenant-id`, or `x-user-id` without manually copying them into
+  `options.context`.
+
+  Header names are normalized to lowercase:
+
+  ```ts
+  const agent = new Agent({
+    name: "Tenant Agent",
+    instructions: "You are a tenant-aware assistant.",
+    model: ({ headers }) => {
+      return headers?.["x-tenant-id"] === "enterprise" ? "openai/gpt-4o" : "openai/gpt-4o-mini";
+    },
+    tools: ({ headers }) => {
+      return headers?.authorization ? [createTenantTool(headers.authorization)] : [];
+    },
+  });
+  ```
+
+  For direct in-process calls, pass `requestHeaders`:
+
+  ```ts
+  await agent.generateText("Hello", {
+    requestHeaders: {
+      authorization: "Bearer token",
+      "x-tenant-id": "tenant-1",
+    },
+  });
+  ```
+
+  Fixes #1201
+
+- [#1214](https://github.com/VoltAgent/voltagent/pull/1214) [`fbbdc9e`](https://github.com/VoltAgent/voltagent/commit/fbbdc9eca53201d2b8657a6080b17473d336fe5c) Thanks [@octo-patch](https://github.com/octo-patch)! - fix(serverless-hono): withWaitUntil must not destroy global state when context has no waitUntil
+
+- Updated dependencies [[`4860832`](https://github.com/VoltAgent/voltagent/commit/48608321ec9a67a6bb0cc93ec93681eab51de9d0)]:
+  - @voltagent/server-core@2.1.14
+
 ## 2.0.10
 
 ### Patch Changes

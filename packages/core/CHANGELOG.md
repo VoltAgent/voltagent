@@ -1,5 +1,56 @@
 # @voltagent/core
 
+## 2.7.1
+
+### Patch Changes
+
+- [#1218](https://github.com/VoltAgent/voltagent/pull/1218) [`4860832`](https://github.com/VoltAgent/voltagent/commit/48608321ec9a67a6bb0cc93ec93681eab51de9d0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(agent): expose request headers to dynamic agent configuration
+
+  Dynamic `instructions`, `model`, and `tools` functions now receive a `headers` map in
+  `DynamicValueOptions` when an agent is called through the built-in HTTP endpoints. This makes it
+  possible to configure tenant-aware models and request-scoped tools from headers such as
+  `authorization`, `x-tenant-id`, or `x-user-id` without manually copying them into
+  `options.context`.
+
+  Header names are normalized to lowercase:
+
+  ```ts
+  const agent = new Agent({
+    name: "Tenant Agent",
+    instructions: "You are a tenant-aware assistant.",
+    model: ({ headers }) => {
+      return headers?.["x-tenant-id"] === "enterprise" ? "openai/gpt-4o" : "openai/gpt-4o-mini";
+    },
+    tools: ({ headers }) => {
+      return headers?.authorization ? [createTenantTool(headers.authorization)] : [];
+    },
+  });
+  ```
+
+  For direct in-process calls, pass `requestHeaders`:
+
+  ```ts
+  await agent.generateText("Hello", {
+    requestHeaders: {
+      authorization: "Bearer token",
+      "x-tenant-id": "tenant-1",
+    },
+  });
+  ```
+
+  Fixes #1201
+
+- [#1202](https://github.com/VoltAgent/voltagent/pull/1202) [`71c9f84`](https://github.com/VoltAgent/voltagent/commit/71c9f84a9f58b591c453900c7c0a4eda53a08196) Thanks [@KeWang0622](https://github.com/KeWang0622)! - fix(core): forward providerMetadata on tool-result and tool-error stream chunks
+
+  Google Vertex thinking models attach `providerMetadata` (containing `thoughtSignature`) to
+  tool-output stream events. The `tool-result` → `tool-output-available` and `tool-error` →
+  `tool-output-error` conversions in `convertFullStreamChunkToUIMessageStream` were not forwarding
+  this field, causing the AI SDK's UI message stream schema validation to reject the chunk as
+  having unrecognized keys. This broke all tool calls when using `@ai-sdk/google-vertex` with
+  thinking models (e.g. `gemini-3-flash-preview`).
+
+  Fixes #1195
+
 ## 2.7.0
 
 ### Minor Changes
