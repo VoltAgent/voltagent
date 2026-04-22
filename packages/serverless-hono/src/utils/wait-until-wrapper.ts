@@ -34,20 +34,21 @@ export function withWaitUntil(context?: WaitUntilContext | null): () => void {
 
   if (currentWaitUntil && typeof currentWaitUntil === "function") {
     // Bind to context to avoid "Illegal invocation" errors
-    // And allow errors (like DataCloneError) to propagate so caller can handle fallback
-    globals.___voltagent_wait_until = currentWaitUntil.bind(context);
-  } else {
-    globals.___voltagent_wait_until = undefined;
-  }
-
-  // Return cleanup function
-  return () => {
-    if (currentWaitUntil) {
-      if (previousWaitUntil) {
-        globals.___voltagent_wait_until = previousWaitUntil;
-      } else {
-        globals.___voltagent_wait_until = undefined;
+    // Wrap in try/catch so errors (like DataCloneError) are swallowed and don't break the caller
+    const boundWaitUntil = currentWaitUntil.bind(context);
+    globals.___voltagent_wait_until = (promise: Promise<unknown>) => {
+      try {
+        boundWaitUntil(promise);
+      } catch {
+        // Swallow errors to avoid breaking the caller
       }
-    }
+    };
+  }
+  // No else branch — don't touch global when context has no waitUntil,
+  // to avoid destroying a previously set value from an outer scope
+
+  // Return cleanup function that always restores the previous state
+  return () => {
+    globals.___voltagent_wait_until = previousWaitUntil;
   };
 }
