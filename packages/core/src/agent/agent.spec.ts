@@ -1714,6 +1714,67 @@ Use pandas and summarize findings.`.split("\n"),
 
       operationContext.traceContext.end("completed");
     });
+
+    it("runs execution validators before tool start hooks and execution", async () => {
+      const validator = vi.fn(() => ({
+        pass: false as const,
+        message: "Destination is outside the allowed tenant",
+        code: "TENANT_POLICY_BLOCKED",
+        httpStatus: 412 as const,
+      }));
+      const onToolStart = vi.fn();
+      const executeTool = vi.fn().mockResolvedValue("should-not-run");
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolStart }),
+        executionValidators: {
+          tools: [validator],
+        },
+      });
+
+      const tool = new Tool({
+        name: "send-message",
+        description: "Send a message",
+        parameters: z.object({ destination: z.string() }),
+        execute: executeTool,
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(tool);
+      const result = await execute({ destination: "external" });
+
+      expect(validator).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "tool",
+          agent,
+          tool,
+          toolName: "send-message",
+          args: { destination: "external" },
+          operationContext,
+          timestamp: expect.any(Date),
+        }),
+      );
+      expect(onToolStart).not.toHaveBeenCalled();
+      expect(executeTool).not.toHaveBeenCalled();
+      expect(operationContext.abortController.signal.aborted).toBe(true);
+      expect(result).toMatchObject({
+        error: true,
+        name: "ExecutionValidationError",
+        message: "Destination is outside the allowed tenant",
+        code: "TENANT_POLICY_BLOCKED",
+        httpStatus: 412,
+        toolName: "send-message",
+      });
+
+      operationContext.traceContext.end("completed");
+    });
   });
 
   describe("Agent as Tool (toTool)", () => {

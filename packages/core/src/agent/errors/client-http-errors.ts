@@ -46,6 +46,12 @@ export type ToolDeniedErrorCode =
   | "TOOL_PLAN_REQUIRED"
   | "TOOL_QUOTA_EXCEEDED";
 
+export type ExecutionValidationErrorCode =
+  | "EXECUTION_VALIDATION_FAILED"
+  | "TOOL_VALIDATION_FAILED"
+  | "WORKFLOW_VALIDATION_FAILED"
+  | string;
+
 /**
  * Error thrown when a tool execution is denied by a controller or policy layer
  */
@@ -71,4 +77,32 @@ export function isClientHTTPError(error: unknown): error is ClientHTTPError {
 
 export function isToolDeniedError(error: unknown): error is ToolDeniedError {
   return error instanceof ToolDeniedError;
+}
+
+/**
+ * Error thrown when an execution validator denies a tool or workflow execution.
+ */
+export class ExecutionValidationError extends ClientHTTPError {
+  readonly metadata?: Record<string, unknown>;
+
+  constructor({
+    targetName = "ExecutionValidationError",
+    message,
+    code = "EXECUTION_VALIDATION_FAILED",
+    httpStatus = 403,
+    metadata,
+  }: {
+    targetName?: string;
+    message: string;
+    code?: ExecutionValidationErrorCode;
+    httpStatus?: ClientHttpErrorCode;
+    metadata?: Record<string, unknown>;
+  }) {
+    super(targetName, httpStatus, code, message);
+    this.metadata = metadata;
+  }
+}
+
+export function isExecutionValidationError(error: unknown): error is ExecutionValidationError {
+  return error instanceof ExecutionValidationError;
 }
