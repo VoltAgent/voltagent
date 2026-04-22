@@ -1,5 +1,15 @@
 # @voltagent/server-hono
 
+## 2.0.12
+
+### Patch Changes
+
+- [#1224](https://github.com/VoltAgent/voltagent/pull/1224) [`8b09874`](https://github.com/VoltAgent/voltagent/commit/8b09874ceeb6203434ea35f7985016fb77ba7d7e) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(server-hono): generate Swagger schemas with a single Zod instance
+
+  Built-in Swagger route schemas now reuse the same schema definitions with the Zod instance selected
+  by server-hono's OpenAPI compatibility layer. This avoids mixing Zod v3/v4 schema instances and
+  prevents `/doc` from failing during OpenAPI generation.
+
 ## 2.0.11
 
 ### Patch Changes
