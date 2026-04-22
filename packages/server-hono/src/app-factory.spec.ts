@@ -1,6 +1,9 @@
+import { TOOL_ROUTES } from "@voltagent/server-core";
 import { cors } from "hono/cors";
 import { describe, expect, it } from "vitest";
+import { z as zodV4 } from "zod/v4";
 import { createApp } from "./app-factory";
+import { OpenApiGeneratorV31 } from "./vendor/zod-to-openapi/v4";
 
 const createDeps = () =>
   ({
@@ -270,6 +273,17 @@ describe("app-factory CORS configuration", () => {
     expect(defaultRes.headers.get("access-control-allow-credentials")).toBe("true");
   });
 
+  it("should generate OpenAPI docs for built-in tool routes", async () => {
+    const { app } = await createApp(createDeps(), {});
+
+    const res = await app.request("/doc");
+    const doc = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(doc.paths[TOOL_ROUTES.listTools.path].get).toBeDefined();
+    expect(doc.paths[TOOL_ROUTES.executeTool.path.replace(":name", "{name}")].post).toBeDefined();
+  });
+
   it("should keep custom routes public in opt-in mode (default)", async () => {
     const mockAuthProvider = {
       verifyToken: async (token: string) => {
@@ -324,5 +338,43 @@ describe("app-factory CORS configuration", () => {
 
     // Auth middleware should execute before custom route
     expect(executionOrder).toEqual(["auth-middleware", "custom-route"]);
+  });
+});
+
+describe("Zod v4 OpenAPI compatibility", () => {
+  it("should generate docs for record schemas with explicit key and value types", () => {
+    const schema = zodV4.object({
+      parameters: zodV4.record(zodV4.string(), zodV4.any()).optional(),
+      context: zodV4.record(zodV4.string(), zodV4.any()).optional().default({}),
+    });
+    const route = {
+      method: "post",
+      path: "/tools/{name}/execute",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema,
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Successful response",
+        },
+      },
+    };
+
+    const doc = new OpenApiGeneratorV31([{ type: "route", route }]).generateDocument({
+      openapi: "3.1.0",
+      info: { title: "Zod v4 regression", version: "1.0.0" },
+    });
+
+    const requestSchema =
+      doc.paths["/tools/{name}/execute"].post.requestBody.content["application/json"].schema;
+
+    expect(requestSchema.properties.parameters.additionalProperties).toEqual({});
+    expect(requestSchema.properties.context.additionalProperties).toEqual({});
   });
 });

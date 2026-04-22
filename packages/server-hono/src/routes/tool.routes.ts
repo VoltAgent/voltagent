@@ -16,7 +16,7 @@ const ToolDefinitionSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   description: z.string().optional(),
-  parameters: z.record(z.any()).optional(),
+  parameters: z.record(z.string(), z.any()).optional(),
   status: z.string().optional(),
   agents: z
     .array(
@@ -37,7 +37,7 @@ const ToolListResponseSchema = z.object({
 const ToolExecuteRequestSchema = z
   .object({
     input: z.any().optional().default({}),
-    context: z.record(z.any()).optional().default({}),
+    context: z.record(z.string(), z.any()).optional().default({}),
     userId: z.string().optional(),
     conversationId: z.string().optional(),
   })
