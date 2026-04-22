@@ -6,6 +6,17 @@ import type { ServerEndpointSummary } from "@voltagent/server-core";
 import { A2A_ROUTES, ALL_ROUTES, MCP_ROUTES } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 
+const OPENAPI_METHODS = ["get", "post", "put", "patch", "delete", "options", "head"] as const;
+const OPENAPI_METHOD_SET = new Set(OPENAPI_METHODS.map((method) => method.toUpperCase()));
+const BUILT_IN_ROUTE_DEFINITIONS = [
+  ...Object.values(ALL_ROUTES),
+  ...Object.values(MCP_ROUTES),
+  ...Object.values(A2A_ROUTES),
+];
+const BUILT_IN_ROUTE_MAP = new Map(
+  BUILT_IN_ROUTE_DEFINITIONS.map((route) => [`${route.method.toUpperCase()}:${route.path}`, route]),
+);
+
 /**
  * Known VoltAgent built-in paths that should be excluded when extracting custom endpoints
  */
@@ -79,8 +90,7 @@ export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSumm
         }
 
         // Check each HTTP method for this path
-        const methods = ["get", "post", "put", "patch", "delete", "options", "head"] as const;
-        methods.forEach((method) => {
+        OPENAPI_METHODS.forEach((method) => {
           const operation = (pathItem as any)[method];
           if (operation) {
             const routeKey = `${method.toUpperCase()}:${path}`;
@@ -144,6 +154,230 @@ function isBuiltInPath(path: string): boolean {
   return false;
 }
 
+function getRoutePath(route: { path: string; basePath?: string }): string {
+  const rawPath = route.basePath ? `${route.basePath}${route.path}` : route.path;
+  return rawPath.replace(/\/+/g, "/");
+}
+
+function toOpenApiPath(path: string): string {
+  return path.replace(/:([a-zA-Z0-9_]+)/g, "{$1}");
+}
+
+function toRouteDefinitionPath(path: string): string {
+  return path.replace(/\{([^}]+)\}/g, ":$1");
+}
+
+function getFallbackTag(path: string): string {
+  if (path.startsWith("/agents")) {
+    return "Agents";
+  }
+  if (path.startsWith("/workflows")) {
+    return "Workflows";
+  }
+  if (path.startsWith("/tools")) {
+    return "Tools";
+  }
+  if (path.startsWith("/api/logs")) {
+    return "Logs";
+  }
+  if (path.startsWith("/observability")) {
+    return "Observability";
+  }
+  if (path.startsWith("/memory")) {
+    return "Memory";
+  }
+  if (path.startsWith("/mcp")) {
+    return "MCP";
+  }
+  if (path.startsWith("/.well-known") || path.startsWith("/a2a")) {
+    return "A2A";
+  }
+  if (path.startsWith("/updates")) {
+    return "Updates";
+  }
+  return isBuiltInPath(path) ? "VoltAgent API" : "Custom Endpoints";
+}
+
+function addEndpointToDoc(doc: any, endpoint: ServerEndpointSummary, pathOverride?: string) {
+  const path = pathOverride ?? endpoint.path;
+  const method = endpoint.method.toLowerCase();
+
+  if (!OPENAPI_METHODS.includes(method as (typeof OPENAPI_METHODS)[number])) {
+    return;
+  }
+
+  doc.paths = doc.paths || {};
+
+  if (!doc.paths[path]) {
+    doc.paths[path] = {};
+  }
+
+  const pathObj = doc.paths[path] as any;
+  if (pathObj[method]) {
+    return;
+  }
+
+  const tag = endpoint.group || getFallbackTag(path);
+  const descriptionPrefix = tag === "Custom Endpoints" ? "Custom endpoint" : `${tag} endpoint`;
+  pathObj[method] = {
+    tags: [tag],
+    summary: endpoint.description || `${endpoint.method} ${path}`,
+    description: endpoint.description || `${descriptionPrefix}: ${endpoint.method} ${path}`,
+    responses: {
+      200: {
+        description: "Successful response",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: true,
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const pathWithBraces = toOpenApiPath(path);
+  if (pathWithBraces.includes("{")) {
+    const params = pathWithBraces.match(/\{([^}]+)\}/g);
+    if (params) {
+      pathObj[method].parameters = params.map((param: string) => {
+        const paramName = param.slice(1, -1);
+        return {
+          name: paramName,
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+          description: `Path parameter: ${paramName}`,
+        };
+      });
+    }
+  }
+
+  if (["post", "put", "patch"].includes(method)) {
+    pathObj[method].requestBody = {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            additionalProperties: true,
+          },
+        },
+      },
+    };
+  }
+}
+
+function applyRouteDefinitionMetadata(
+  doc: any,
+  route: (typeof BUILT_IN_ROUTE_DEFINITIONS)[number],
+) {
+  const path = toOpenApiPath(route.path);
+  const method = route.method;
+  const operation = doc.paths?.[path]?.[method];
+  if (!operation) {
+    return;
+  }
+
+  operation.tags = [...route.tags];
+  operation.summary = route.summary;
+  operation.description = route.description;
+  if (route.operationId) {
+    operation.operationId = route.operationId;
+  }
+
+  if (route.responses) {
+    operation.responses = {};
+    Object.entries(route.responses).forEach(([statusCode, response]) => {
+      operation.responses[statusCode] = {
+        description: response.description,
+        ...(response.contentType
+          ? {
+              content: {
+                [response.contentType]: {
+                  schema: {
+                    type: "object",
+                    additionalProperties: true,
+                  },
+                },
+              },
+            }
+          : {}),
+      };
+    });
+  }
+}
+
+function getFallbackOpenApiDocFromRoutes(app: OpenAPIHonoType, baseDoc: any): any {
+  try {
+    if (!app.routes || !Array.isArray(app.routes)) {
+      return baseDoc;
+    }
+
+    const fallbackDoc = {
+      ...baseDoc,
+      openapi: baseDoc.openapi || "3.1.0",
+      paths: { ...(baseDoc.paths || {}) },
+    };
+    const seenRoutes = new Set<string>();
+
+    app.routes.forEach((route) => {
+      const method = route.method.toUpperCase();
+      if (!OPENAPI_METHOD_SET.has(method)) {
+        return;
+      }
+
+      const routePath = getRoutePath(route);
+      if (!routePath || routePath === "*" || routePath === "/" || routePath === "/doc") {
+        return;
+      }
+
+      if (toOpenApiPath(routePath) === "/ui") {
+        return;
+      }
+
+      const routeDefinitionPath = toRouteDefinitionPath(routePath);
+      const routeDefinition = BUILT_IN_ROUTE_MAP.get(`${method}:${routeDefinitionPath}`);
+      if (!routeDefinition) {
+        return;
+      }
+
+      const openApiPath = toOpenApiPath(routeDefinition.path);
+      const routeKey = `${method}:${openApiPath}`;
+      if (seenRoutes.has(routeKey)) {
+        return;
+      }
+
+      seenRoutes.add(routeKey);
+      addEndpointToDoc(
+        fallbackDoc,
+        {
+          method,
+          path: openApiPath,
+          group: routeDefinition.tags[0] || getFallbackTag(routePath),
+        },
+        openApiPath,
+      );
+      applyRouteDefinitionMetadata(fallbackDoc, routeDefinition);
+    });
+
+    extractCustomEndpoints(app).forEach((endpoint) => {
+      const routeKey = `${endpoint.method}:${endpoint.path}`;
+      if (seenRoutes.has(routeKey)) {
+        return;
+      }
+
+      seenRoutes.add(routeKey);
+      addEndpointToDoc(fallbackDoc, endpoint);
+    });
+
+    return seenRoutes.size > 0 ? fallbackDoc : baseDoc;
+  } catch (_fallbackError) {
+    return baseDoc;
+  }
+}
+
 /**
  * Get enhanced OpenAPI document that includes custom endpoints
  * @param app The Hono OpenAPI app instance
@@ -164,84 +398,14 @@ export function getEnhancedOpenApiDoc(app: OpenAPIHonoType, baseDoc: any): any {
     // Add custom endpoints to the OpenAPI document
     fullDoc.paths = fullDoc.paths || {};
 
-    customEndpoints.forEach((endpoint) => {
-      const path = endpoint.path;
-      const method = endpoint.method.toLowerCase();
-
-      // Initialize path object if it doesn't exist
-      if (!fullDoc.paths[path]) {
-        fullDoc.paths[path] = {};
-      }
-
-      // Skip if this operation already exists in OpenAPI doc (don't overwrite)
-      const pathObj = fullDoc.paths[path] as any;
-      if (pathObj[method]) {
-        return;
-      }
-
-      // Add the operation for this method (only for routes not in OpenAPI doc)
-      pathObj[method] = {
-        tags: ["Custom Endpoints"],
-        summary: endpoint.description || `${endpoint.method} ${path}`,
-        description: endpoint.description || `Custom endpoint: ${endpoint.method} ${path}`,
-        responses: {
-          200: {
-            description: "Successful response",
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    success: { type: "boolean" },
-                    data: { type: "object" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      };
-
-      // Add parameters for path variables (support both :param and {param} formats)
-      const pathWithBraces = path.replace(/:([a-zA-Z0-9_]+)/g, "{$1}");
-      if (pathWithBraces.includes("{")) {
-        const params = pathWithBraces.match(/\{([^}]+)\}/g);
-        if (params) {
-          pathObj[method].parameters = params.map((param: string) => {
-            const paramName = param.slice(1, -1); // Remove { and }
-            return {
-              name: paramName,
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-              description: `Path parameter: ${paramName}`,
-            };
-          });
-        }
-      }
-
-      // Add request body for POST/PUT/PATCH methods
-      if (["post", "put", "patch"].includes(method)) {
-        pathObj[method].requestBody = {
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                additionalProperties: true,
-              },
-            },
-          },
-        };
-      }
-    });
+    customEndpoints.forEach((endpoint) => addEndpointToDoc(fullDoc, endpoint));
 
     // Ensure proper tags for organization of existing routes
     if (fullDoc.paths) {
       Object.entries(fullDoc.paths).forEach(([path, pathItem]) => {
         if (pathItem && !isBuiltInPath(path)) {
           // Add "Custom Endpoints" tag to custom routes for better organization
-          const methods = ["get", "post", "put", "patch", "delete", "options", "head"] as const;
-          methods.forEach((method) => {
+          OPENAPI_METHODS.forEach((method) => {
             const operation = (pathItem as any)[method];
             if (operation) {
               operation.tags = operation.tags || [];
@@ -257,6 +421,6 @@ export function getEnhancedOpenApiDoc(app: OpenAPIHonoType, baseDoc: any): any {
     return fullDoc;
   } catch (error) {
     console.warn("Failed to enhance OpenAPI document with custom endpoints:", error);
-    return baseDoc;
+    return getFallbackOpenApiDocFromRoutes(app, baseDoc);
   }
 }

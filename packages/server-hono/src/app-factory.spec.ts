@@ -284,6 +284,21 @@ describe("app-factory CORS configuration", () => {
     expect(doc.paths[TOOL_ROUTES.executeTool.path.replace(":name", "{name}")].post).toBeDefined();
   });
 
+  it("should keep Swagger paths populated when OpenAPI schema generation fails", async () => {
+    const { app } = await createApp(createDeps(), {});
+    app.getOpenAPIDocument = () => {
+      throw new Error("OpenAPI generation failed");
+    };
+
+    const res = await app.request("/doc");
+    const doc = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(doc.paths["/agents"].get).toBeDefined();
+    expect(doc.paths[TOOL_ROUTES.listTools.path].get).toBeDefined();
+    expect(doc.paths[TOOL_ROUTES.executeTool.path.replace(":name", "{name}")].post).toBeDefined();
+  });
+
   it("should keep custom routes public in opt-in mode (default)", async () => {
     const mockAuthProvider = {
       verifyToken: async (token: string) => {
