@@ -2,7 +2,8 @@
 "@voltagent/server-hono": patch
 ---
 
-fix(server-hono): keep Swagger docs populated when OpenAPI generation falls back
+fix(server-hono): generate Swagger schemas with a single Zod instance
 
-Swagger now falls back to registered VoltAgent and custom route metadata when schema generation
-throws, so `/ui` and `/doc` still list available APIs instead of rendering an empty spec.
+Built-in Swagger route schemas now reuse the same schema definitions with the Zod instance selected
+by server-hono's OpenAPI compatibility layer. This avoids mixing Zod v3/v4 schema instances and
+prevents `/doc` from failing during OpenAPI generation.
