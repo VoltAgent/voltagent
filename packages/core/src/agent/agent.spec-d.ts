@@ -227,6 +227,7 @@ describe("Agent Type System", () => {
       // Dynamic model function
       const dynamicModelFn: DynamicValue<AgentModelReference> = async (options) => {
         expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
+        expectTypeOf(options.headers).toMatchTypeOf<Record<string, string> | undefined>();
         return mockModel;
       };
 
@@ -257,6 +258,7 @@ describe("Agent Type System", () => {
       // Dynamic value function
       const dynamicInstructions: InstructionsDynamicValue = async (options) => {
         expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
+        expectTypeOf(options.headers).toMatchTypeOf<Record<string, string> | undefined>();
         return "Dynamic instructions";
       };
       expectTypeOf(dynamicInstructions).toMatchTypeOf<InstructionsDynamicValue>();
@@ -277,6 +279,7 @@ describe("Agent Type System", () => {
       // Dynamic model
       const dynamicModel: ModelDynamicValue<ModelRouterModelId> = async (options) => {
         expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
+        expectTypeOf(options.headers).toMatchTypeOf<Record<string, string> | undefined>();
         return "openai/gpt-4o-mini";
       };
       expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<ModelRouterModelId>>();
@@ -311,6 +314,7 @@ describe("Agent Type System", () => {
       // Dynamic tools
       const dynamicTools: ToolsDynamicValue = async (options) => {
         expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
+        expectTypeOf(options.headers).toMatchTypeOf<Record<string, string> | undefined>();
         return [tool];
       };
       expectTypeOf(dynamicTools).toMatchTypeOf<ToolsDynamicValue>();
@@ -430,6 +434,10 @@ describe("Agent Type System", () => {
         maxSteps: 5,
         signal: new AbortSignal(),
         context: new Map(),
+        requestHeaders: {
+          authorization: "Bearer token",
+          "x-tenant-id": "tenant-1",
+        },
       };
 
       const legacyOptions: PublicGenerateOptions = {

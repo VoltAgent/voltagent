@@ -165,6 +165,7 @@ instructions: (options: DynamicValueOptions) => Promise<string | PromptContent>;
 
 interface DynamicValueOptions {
   context: Map<string | symbol, unknown>;
+  headers?: Record<string, string>;
   prompts: PromptHelper;
 }
 

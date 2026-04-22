@@ -39,6 +39,7 @@ type DynamicValue<T> = (options: DynamicValueOptions) => Promise<T> | T;
 
 interface DynamicValueOptions {
   context: Map<string | symbol, unknown>; // Runtime context you provide
+  headers?: Record<string, string>; // HTTP request headers, when called through a server adapter
   prompts: PromptHelper; // VoltOps prompt management
 }
 ```
@@ -103,6 +104,38 @@ const agent = new Agent({
   },
 
   model: "openai/gpt-4o",
+});
+```
+
+### Request Headers
+
+When an agent is called through the built-in HTTP endpoints, VoltAgent exposes the request headers to dynamic `instructions`, `model`, and `tools` functions as `headers`. Header names are normalized to lowercase.
+
+```ts
+const agent = new Agent({
+  name: "Tenant Agent",
+  instructions: "You are a tenant-aware assistant.",
+  model: ({ headers }) => {
+    const tenantId = headers?.["x-tenant-id"];
+
+    return tenantId === "enterprise" ? "openai/gpt-4o" : "openai/gpt-4o-mini";
+  },
+  tools: ({ headers }) => {
+    const token = headers?.authorization;
+
+    return token ? [createTenantTool(token)] : [];
+  },
+});
+```
+
+For direct in-process calls, pass `requestHeaders`:
+
+```ts
+await agent.generateText("Hello", {
+  requestHeaders: {
+    authorization: "Bearer token",
+    "x-tenant-id": "tenant-1",
+  },
 });
 ```
 

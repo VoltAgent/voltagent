@@ -1,5 +1,6 @@
 import { ToolDeniedError } from "@voltagent/core";
 import { describe, expect, it, vi } from "vitest";
+import { processAgentOptions } from "../utils/options";
 import { handleChatStream, handleGenerateText } from "./agent.handlers";
 
 describe("server-core: agent.handlers ClientHTTPError mapping", () => {
@@ -54,6 +55,71 @@ describe("server-core: agent.handlers ClientHTTPError mapping", () => {
     expect(res).toMatchObject({
       success: false,
       error: "Model timeout",
+    });
+  });
+
+  it("handleGenerateText should pass request headers into agent options", async () => {
+    const logger = { error: vi.fn() } as any;
+
+    const mockAgent = {
+      generateText: vi.fn(async () => ({
+        text: "ok",
+        usage: undefined,
+        finishReason: "stop",
+        toolCalls: [],
+        toolResults: [],
+        feedback: null,
+      })),
+    } as any;
+
+    const deps = {
+      agentRegistry: {
+        getAgent: vi.fn(() => mockAgent),
+      },
+    } as any;
+
+    const headers = new Headers({
+      Authorization: "Bearer test-token",
+      "X-Tenant-ID": "tenant-1",
+    });
+
+    const res = await handleGenerateText(
+      "agent-1",
+      { input: "hi" },
+      deps,
+      logger,
+      undefined,
+      headers,
+    );
+
+    expect(res.success).toBe(true);
+    expect(mockAgent.generateText).toHaveBeenCalledWith(
+      "hi",
+      expect.objectContaining({
+        requestHeaders: {
+          authorization: "Bearer test-token",
+          "x-tenant-id": "tenant-1",
+        },
+      }),
+    );
+  });
+});
+
+describe("server-core: processAgentOptions", () => {
+  it("processAgentOptions should lowercase Headers entries", () => {
+    const headers = new Headers();
+    vi.spyOn(headers, "entries").mockReturnValue(
+      [
+        ["Authorization", "Bearer test-token"],
+        ["X-Tenant-ID", "tenant-1"],
+      ][Symbol.iterator]() as HeadersIterator<[string, string]>,
+    );
+
+    const options = processAgentOptions({ options: {} }, undefined, headers);
+
+    expect(options.requestHeaders).toEqual({
+      authorization: "Bearer test-token",
+      "x-tenant-id": "tenant-1",
     });
   });
 });

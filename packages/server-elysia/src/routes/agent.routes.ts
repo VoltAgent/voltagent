@@ -126,7 +126,14 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.post(
     "/agents/:id/text",
     async ({ params, body, request, set }) => {
-      const response = await handleGenerateText(params.id, body, deps, logger, request.signal);
+      const response = await handleGenerateText(
+        params.id,
+        body,
+        deps,
+        logger,
+        request.signal,
+        request.headers,
+      );
       if (!response.success) {
         const { httpStatus, ...details } = response;
         set.status = httpStatus || 500;
@@ -154,7 +161,14 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.post(
     "/agents/:id/stream",
     async ({ params, body, request }) => {
-      const response = await handleStreamText(params.id, body, deps, logger, request.signal);
+      const response = await handleStreamText(
+        params.id,
+        body,
+        deps,
+        logger,
+        request.signal,
+        request.headers,
+      );
       return response;
     },
     {
@@ -172,7 +186,14 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.post(
     "/agents/:id/chat",
     async ({ params, body, request }) => {
-      const response = await handleChatStream(params.id, body, deps, logger, request.signal);
+      const response = await handleChatStream(
+        params.id,
+        body,
+        deps,
+        logger,
+        request.signal,
+        request.headers,
+      );
       return response;
     },
     {
@@ -190,7 +211,14 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.post(
     "/agents/:id/object",
     async ({ params, body, request, set }) => {
-      const response = await handleGenerateObject(params.id, body, deps, logger, request.signal);
+      const response = await handleGenerateObject(
+        params.id,
+        body,
+        deps,
+        logger,
+        request.signal,
+        request.headers,
+      );
       if (!response.success) {
         const { httpStatus, ...details } = response;
         set.status = httpStatus || 500;
@@ -218,7 +246,14 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.post(
     "/agents/:id/stream-object",
     async ({ params, body, request }) => {
-      const response = await handleStreamObject(params.id, body, deps, logger, request.signal);
+      const response = await handleStreamObject(
+        params.id,
+        body,
+        deps,
+        logger,
+        request.signal,
+        request.headers,
+      );
       return response;
     },
     {

@@ -3,6 +3,34 @@ import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 
+type RequestHeadersInput = Headers | Record<string, string | string[] | undefined>;
+
+function normalizeRequestHeaders(
+  headers?: RequestHeadersInput,
+): Record<string, string> | undefined {
+  if (!headers) {
+    return undefined;
+  }
+
+  if (typeof Headers !== "undefined" && headers instanceof Headers) {
+    const entries = Array.from(headers.entries()).map(
+      ([key, value]) => [key.toLowerCase(), value] as const,
+    );
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value === "string") {
+      normalized[key.toLowerCase()] = value;
+    } else if (Array.isArray(value)) {
+      normalized[key.toLowerCase()] = value.join(", ");
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
 /**
  * Process agent options from request body
  */
@@ -52,6 +80,7 @@ export interface ProcessedAgentOptions {
   stopSequences?: string[];
   maxRetries?: number;
   abortSignal?: AbortSignal;
+  requestHeaders?: Record<string, string>;
   onFinish?: (result: unknown) => Promise<void>;
   output?: any;
   resumableStream?: boolean;
@@ -61,13 +90,19 @@ export interface ProcessedAgentOptions {
 /**
  * Process and normalize agent options from request body
  */
-export function processAgentOptions(body: any, signal?: AbortSignal): ProcessedAgentOptions {
+export function processAgentOptions(
+  body: any,
+  signal?: AbortSignal,
+  requestHeaders?: RequestHeadersInput,
+): ProcessedAgentOptions {
   // Now all options should be in body.options, no need to merge from root
   const options = body.options || {};
+  const normalizedRequestHeaders = normalizeRequestHeaders(requestHeaders);
 
   const processedOptions: ProcessedAgentOptions = {
     ...options,
     ...(signal && { abortSignal: signal }),
+    ...(normalizedRequestHeaders && { requestHeaders: normalizedRequestHeaders }),
   };
 
   // Convert context to Map for internal use

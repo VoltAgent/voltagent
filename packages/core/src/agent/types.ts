@@ -1078,6 +1078,9 @@ export interface CommonGenerateOptions {
   // Optional user-defined context to be passed from a parent operation
   context?: UserContext;
 
+  // HTTP request headers associated with this generation call, when available.
+  requestHeaders?: Record<string, string>;
+
   // Optional hooks to be included only during the operation call and not persisted in the agent
   hooks?: AgentHooks;
 }
@@ -1305,6 +1308,9 @@ export type OperationContext = {
 
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;
+
+  /** HTTP request headers associated with this operation, when available */
+  readonly requestHeaders?: Record<string, string>;
 
   /** System-managed context map for internal operation tracking */
   readonly systemContext: Map<string | symbol, unknown>;
