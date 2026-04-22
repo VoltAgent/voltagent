@@ -1,5 +1,14 @@
 # @voltagent/server-hono
 
+## 2.0.11
+
+### Patch Changes
+
+- [#1220](https://github.com/VoltAgent/voltagent/pull/1220) [`9adf876`](https://github.com/VoltAgent/voltagent/commit/9adf876cbef4f252c2bbf94106ca7ed41d4b6056) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(server-hono): support Zod v4 record schemas in Swagger docs
+
+  The built-in tool OpenAPI schemas now use explicit record key and value schemas so Zod v4 does not
+  produce undefined record value types during Swagger document generation.
+
 ## 2.0.10
 
 ### Patch Changes
