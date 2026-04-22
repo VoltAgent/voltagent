@@ -8,9 +8,7 @@
  * accidental auth bypass on deployments that forget to set NODE_ENV.
  */
 export function isDevEnvironment(): boolean {
-  return (
-    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"
-  );
+  return process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
 }
 
 /**

@@ -60,7 +60,7 @@ describe("ElysiaServerProvider", () => {
     provider = new ElysiaServerProvider(mockDeps, { port: 3000 });
 
     // Reset mock server behavior for each test
-    mockServer.listen.mockImplementation((port, hostname, callback) => {
+    mockServer.listen.mockImplementation((_port, _hostname, callback) => {
       // Call callback synchronously to simulate successful listen
       callback();
       return mockServer;
