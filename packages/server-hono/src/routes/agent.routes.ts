@@ -1,24 +1,32 @@
-import {
-  AGENT_ROUTES,
-  AgentListSchema,
+import { AGENT_ROUTES, WORKFLOW_ROUTES, createServerCoreSchemas } from "@voltagent/server-core";
+import { createRoute, z } from "../zod-openapi-compat";
+import { createPathParam } from "./path-params";
+
+const {
+  ParamsSchema,
+  AgentParamsSchema,
+  WorkflowParamsSchema,
+  WorkflowExecutionParamsSchema,
   ErrorSchema,
+  AgentResponseSchema,
+  AgentListSchema,
+  TextRequestSchema,
+  TextResponseSchema,
+  StreamTextEventSchema,
   ObjectRequestSchema,
   ObjectResponseSchema,
   StreamObjectEventSchema,
-  StreamTextEventSchema,
-  TextRequestSchema,
-  TextResponseSchema,
-  WORKFLOW_ROUTES,
-  WorkflowCancelRequestSchema,
-  WorkflowCancelResponseSchema,
+  WorkflowResponseSchema,
+  WorkflowListSchema,
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
-  WorkflowListSchema,
+  WorkflowStreamEventSchema,
+  WorkflowCancelRequestSchema,
+  WorkflowCancelResponseSchema,
   WorkflowReplayRequestSchema,
   WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
-  WorkflowStreamEventSchema,
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
   WorkspaceFileListSchema,
@@ -26,9 +34,7 @@ import {
   WorkspaceReadFileSchema,
   WorkspaceSkillListSchema,
   WorkspaceSkillSchema,
-} from "@voltagent/server-core";
-import { createRoute, z } from "../zod-openapi-compat";
-import { createPathParam } from "./path-params";
+} = createServerCoreSchemas(z);
 
 const agentIdParam = () => createPathParam("id", "The ID of the agent", "my-agent-123");
 const conversationIdParam = () =>
@@ -37,7 +43,7 @@ const workflowIdParam = () => createPathParam("id", "The ID of the workflow", "m
 const executionIdParam = () =>
   createPathParam("executionId", "The ID of the execution to operate on", "exec_1234567890_abc123");
 
-// Re-export schemas from server-core for backward compatibility
+// Re-export schemas for backward compatibility.
 export {
   ParamsSchema,
   AgentParamsSchema,
@@ -65,7 +71,7 @@ export {
   WorkflowReplayResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
-} from "@voltagent/server-core";
+};
 
 // --- Route Definitions ---
 

@@ -1,4 +1,4 @@
-import { TOOL_ROUTES } from "@voltagent/server-core";
+import { TOOL_ROUTES, createServerCoreSchemas } from "@voltagent/server-core";
 import { cors } from "hono/cors";
 import { describe, expect, it } from "vitest";
 import { z as zodV4 } from "zod/v4";
@@ -342,6 +342,34 @@ describe("app-factory CORS configuration", () => {
 });
 
 describe("Zod v4 OpenAPI compatibility", () => {
+  it("should generate docs for server-core schemas created with the active Zod instance", () => {
+    const { AgentListSchema } = createServerCoreSchemas(zodV4 as any);
+    const route = {
+      method: "get",
+      path: "/agents",
+      responses: {
+        200: {
+          description: "Successful response",
+          content: {
+            "application/json": {
+              schema: zodV4.object({
+                success: zodV4.literal(true),
+                data: AgentListSchema,
+              }),
+            },
+          },
+        },
+      },
+    };
+
+    const doc = new OpenApiGeneratorV31([{ type: "route", route }]).generateDocument({
+      openapi: "3.1.0",
+      info: { title: "Server core schema factory regression", version: "1.0.0" },
+    });
+
+    expect(doc.paths["/agents"].get.responses[200]).toBeDefined();
+  });
+
   it("should generate docs for record schemas with explicit key and value types", () => {
     const schema = zodV4.object({
       parameters: zodV4.record(zodV4.string(), zodV4.any()).optional(),
