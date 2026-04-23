@@ -107,6 +107,7 @@ export type ConversationTitleConfig = {
   maxOutputTokens?: number;
   maxLength?: number;
   systemPrompt?: string | null;
+  temperature?: number;
 };
 
 export type ConversationTitleGenerator = (params: {

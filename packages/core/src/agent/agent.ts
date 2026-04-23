@@ -4723,6 +4723,7 @@ export class Agent {
         : DEFAULT_CONVERSATION_TITLE_MAX_CHARS;
 
     const modelOverride = normalized.model;
+    const titleTemperature = normalized.temperature;
 
     return async ({ input, context }) => {
       const inputForQuery = typeof input === "string" || Array.isArray(input) ? input : [input];
@@ -4751,7 +4752,7 @@ export class Agent {
           isStreaming: false,
           messages,
           callOptions: {
-            temperature: 0,
+            ...(titleTemperature !== undefined ? { temperature: titleTemperature } : {}),
             maxOutputTokens,
           },
           label: "Generate Conversation Title",
@@ -4764,7 +4765,7 @@ export class Agent {
             generateText({
               model: resolvedModel,
               messages,
-              temperature: 0,
+              ...(titleTemperature !== undefined ? { temperature: titleTemperature } : {}),
               maxOutputTokens,
               abortSignal: context.abortController.signal,
             }),
@@ -4787,7 +4788,7 @@ export class Agent {
           throw error;
         }
       } catch (error) {
-        context.logger.debug("[Memory] Failed to generate conversation title", {
+        context.logger.warn("[Memory] Failed to generate conversation title", {
           error: safeStringify(error),
         });
         return null;
