@@ -4789,7 +4789,10 @@ export class Agent {
         }
       } catch (error) {
         context.logger.warn("[Memory] Failed to generate conversation title", {
-          error: safeStringify(error),
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message }
+              : safeStringify(error),
         });
         return null;
       }
