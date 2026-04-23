@@ -10,6 +10,7 @@ import { VoltOpsClient } from "./voltops/client";
 import { createWorkflow } from "./workflow";
 import { WorkflowRegistry } from "./workflow/registry";
 import { andThen } from "./workflow/steps";
+import { Workspace } from "./workspace";
 
 const resetRegistries = () => {
   const agentRegistry = AgentRegistry.getInstance() as {
@@ -21,6 +22,8 @@ const resetRegistries = () => {
   AgentRegistry.getInstance().setGlobalAgentMemory(undefined);
   AgentRegistry.getInstance().setGlobalWorkflowMemory(undefined);
   AgentRegistry.getInstance().setGlobalMemory(undefined);
+  AgentRegistry.getInstance().setGlobalWorkspace(undefined);
+  AgentRegistry.getInstance().setGlobalToolRouting(undefined);
 
   const workflowRegistry = WorkflowRegistry.getInstance() as {
     workflows?: Map<string, unknown>;
@@ -54,6 +57,33 @@ describe("VoltAgent defaults", () => {
     });
 
     expect(agent.getMemory()).toBe(agentMemory);
+  });
+
+  it("applies workspace to preconstructed registered agents without explicit workspace", async () => {
+    const workspace = new Workspace({ id: "global-workspace" });
+    const agent = new Agent({
+      name: "assistant",
+      instructions: "Be helpful.",
+      model: "openai/gpt-4o-mini",
+    });
+
+    expect(agent.getWorkspace()).toBeUndefined();
+    expect(agent.getTools()).toHaveLength(0);
+
+    const voltAgent = new VoltAgent({
+      agents: { assistant: agent },
+      workspace,
+      checkDependencies: false,
+    });
+
+    expect(agent.getWorkspace()).toBe(workspace);
+    expect(agent.maxSteps).toBe(100);
+    expect(agent.getTools().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(["ls", "read_file", "execute_command", "workspace_search"]),
+    );
+
+    await voltAgent.ready;
+    await voltAgent.shutdown();
   });
 
   it("applies workflowMemory to registered workflows without explicit memory", () => {

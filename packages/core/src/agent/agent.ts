@@ -544,9 +544,14 @@ const isWorkspaceSkillsToolkitEnabled = (options: AgentOptions["workspaceToolkit
   return options.skills !== false;
 };
 
+type WorkspaceSkillsPromptResolutionOptions = Pick<
+  AgentOptions,
+  "hooks" | "workspaceSkillsPrompt" | "workspaceToolkits"
+>;
+
 const resolveWorkspaceSkillsPromptHook = (
   workspace: Workspace | undefined,
-  options: AgentOptions,
+  options: WorkspaceSkillsPromptResolutionOptions,
 ): AgentHooks["onPrepareMessages"] | undefined => {
   const existingHook = options.hooks?.onPrepareMessages;
   if (!workspace?.skills) {
@@ -973,10 +978,10 @@ export class Agent {
   readonly instructions: InstructionsDynamicValue;
   readonly model: AgentModelValue;
   readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit)[]>;
-  readonly hooks: AgentHooks;
+  hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
-  readonly maxSteps: number;
+  maxSteps: number;
   readonly maxRetries: number;
   readonly stopWhen?: StopWhen;
   readonly prepareStep?: PrepareStep;
@@ -995,7 +1000,12 @@ export class Agent {
   private conversationPersistence: ResolvedConversationPersistenceOptions;
   private readonly messageMetadataPersistence: ResolvedMessageMetadataPersistenceOptions;
   private conversationPersistenceConfigured: boolean;
-  private readonly workspace?: Workspace;
+  private workspace?: Workspace;
+  private readonly workspaceConfigured: boolean;
+  private readonly workspaceToolkitOptions: AgentOptions["workspaceToolkits"];
+  private readonly workspaceSkillsPromptOption: AgentOptions["workspaceSkillsPrompt"];
+  private readonly configuredHooks?: AgentHooks;
+  private readonly maxStepsConfigured: boolean;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
   private readonly toolPoolManager: ToolManager;
@@ -1025,6 +1035,11 @@ export class Agent {
     this.instructions = options.instructions;
     this.model = options.model;
     this.dynamicTools = typeof options.tools === "function" ? options.tools : undefined;
+    this.workspaceConfigured = options.workspace !== undefined;
+    this.workspaceToolkitOptions = options.workspaceToolkits;
+    this.workspaceSkillsPromptOption = options.workspaceSkillsPrompt;
+    this.configuredHooks = options.hooks;
+    this.maxStepsConfigured = options.maxSteps !== undefined;
     const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
     const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
     this.workspace = resolveWorkspace(workspaceOption);
@@ -8199,6 +8214,38 @@ export class Agent {
 
     this.conversationPersistence =
       this.normalizeConversationPersistenceOptions(conversationPersistence);
+  }
+
+  /**
+   * Internal: apply a default Workspace instance when none was configured explicitly.
+   */
+  public __setDefaultWorkspace(workspace: Workspace): void {
+    if (this.workspaceConfigured || this.workspace) {
+      return;
+    }
+
+    this.workspace = workspace;
+    if (!this.maxStepsConfigured) {
+      this.maxSteps = 100;
+    }
+
+    const hookOptions = {
+      hooks: this.configuredHooks,
+      workspaceToolkits: this.workspaceToolkitOptions,
+      workspaceSkillsPrompt: this.workspaceSkillsPromptOption,
+    };
+    const onPrepareMessages = resolveWorkspaceSkillsPromptHook(this.workspace, hookOptions);
+    this.hooks = onPrepareMessages
+      ? { ...(this.configuredHooks || {}), onPrepareMessages }
+      : this.configuredHooks || {};
+
+    const workspaceToolkits = buildWorkspaceToolkits(this.workspace, this.workspaceToolkitOptions);
+    if (workspaceToolkits.length > 0) {
+      this.toolManager.addItems(workspaceToolkits);
+      if (this.toolRouting && !this.toolRoutingPoolExplicit) {
+        this.toolPoolManager.addItems(workspaceToolkits);
+      }
+    }
   }
 
   /**
