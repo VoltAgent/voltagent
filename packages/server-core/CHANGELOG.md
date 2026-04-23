@@ -1,5 +1,18 @@
 # @voltagent/server-core
 
+## 2.1.15
+
+### Patch Changes
+
+- [#1229](https://github.com/VoltAgent/voltagent/pull/1229) [`39715f2`](https://github.com/VoltAgent/voltagent/commit/39715f218679c2656c5d25c8038a081224b95d56) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(server-core): publish schema factory required by server-hono
+
+  Publishes the `createServerCoreSchemas` export used by `@voltagent/server-hono` to build Swagger
+  schemas with the active Zod instance. This keeps `server-hono` releases from resolving against a
+  `server-core` package that does not provide the required runtime export.
+
+- Updated dependencies [[`ba8d7e0`](https://github.com/VoltAgent/voltagent/commit/ba8d7e07e0388d2539f77feb8e96fc6ab14064ce)]:
+  - @voltagent/core@2.7.2
+
 ## 2.1.14
 
 ### Patch Changes

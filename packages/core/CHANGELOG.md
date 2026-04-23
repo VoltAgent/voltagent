@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.7.2
+
+### Patch Changes
+
+- [#1228](https://github.com/VoltAgent/voltagent/pull/1228) [`ba8d7e0`](https://github.com/VoltAgent/voltagent/commit/ba8d7e07e0388d2539f77feb8e96fc6ab14064ce) Thanks [@omeraplak](https://github.com/omeraplak)! - Apply VoltAgent global workspace defaults to agents that are constructed before registration.
+
 ## 2.7.1
 
 ### Patch Changes
