@@ -85,6 +85,7 @@ export class VoltAgent {
           ? options.workspace
           : new Workspace(options.workspace);
       this.registry.setGlobalWorkspace(workspaceInstance);
+      this.applyDefaultWorkspaceToAgents(options.agents);
       workspaceInitPromise = workspaceInstance.init();
     }
 
@@ -519,6 +520,21 @@ export class VoltAgent {
     agent.__setDefaultConversationPersistence?.(this.defaultAgentConversationPersistence);
   }
 
+  private applyDefaultWorkspaceToAgent(agent: Agent): void {
+    const workspace = this.registry.getGlobalWorkspace();
+    if (!workspace) {
+      return;
+    }
+    agent.__setDefaultWorkspace?.(workspace);
+  }
+
+  private applyDefaultWorkspaceToAgents(agents?: Record<string, Agent>): void {
+    if (!agents) {
+      return;
+    }
+    Object.values(agents).forEach((agent) => this.applyDefaultWorkspaceToAgent(agent));
+  }
+
   private applyDefaultMemoryToWorkflow(
     workflow: Workflow<
       DangerouslyAllowAny,
@@ -540,6 +556,7 @@ export class VoltAgent {
     // Register the agent
     this.applyDefaultMemoryToAgent(agent);
     this.applyDefaultConversationPersistenceToAgent(agent);
+    this.applyDefaultWorkspaceToAgent(agent);
     agent.__setDefaultToolRouting?.(this.registry.getGlobalToolRouting());
     this.registry.registerAgent(agent);
   }
