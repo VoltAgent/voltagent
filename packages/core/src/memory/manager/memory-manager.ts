@@ -786,6 +786,13 @@ export class MemoryManager {
     }
   }
 
+  /**
+   * Replace the title generator used for this manager.
+   */
+  setTitleGenerator(titleGenerator: ConversationTitleGenerator | undefined): void {
+    this.titleGenerator = titleGenerator;
+  }
+
   // ============================================================================
   // Working Memory Proxy Methods
   // ============================================================================

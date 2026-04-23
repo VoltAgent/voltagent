@@ -8200,6 +8200,7 @@ export class Agent {
       return;
     }
     this.memoryManager.setMemory(memory);
+    this.memoryManager.setTitleGenerator(this.createConversationTitleGenerator(memory));
   }
 
   /**
