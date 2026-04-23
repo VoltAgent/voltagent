@@ -10,7 +10,7 @@
     "@voltagent/internal": "^1.0.2",
     "@voltagent/mcp-server": "^2.0.2",
     "@voltagent/resumable-streams": "^2.0.1",
-    "@voltagent/server-core": "^2.1.14",
+    "@voltagent/server-core": "^2.1.15",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.7",
     "openapi3-ts": "^4.5.0"
