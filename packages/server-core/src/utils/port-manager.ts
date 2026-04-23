@@ -81,14 +81,18 @@ class PortManager {
   /**
    * Allocate an available port
    * @param preferredPort Optional preferred port to try first
+   * @param strict If true, throw error when preferred port is unavailable instead of trying fallbacks
    * @returns The allocated port number
    */
-  public async allocatePort(preferredPort?: number): Promise<number> {
+  public async allocatePort(preferredPort?: number, strict = false): Promise<number> {
     const portsToTry = getPortsToTry(preferredPort);
 
     for (const port of portsToTry) {
       // Skip if already allocated
       if (this.allocatedPorts.has(port)) {
+        if (strict && port === preferredPort) {
+          throw new Error(`Port ${preferredPort} is already in use`);
+        }
         continue;
       }
 
@@ -97,6 +101,11 @@ class PortManager {
         // Reserve this port
         this.allocatedPorts.add(port);
         return port;
+      }
+
+      // In strict mode, throw error if preferred port is unavailable
+      if (strict && port === preferredPort) {
+        throw new Error(`Port ${preferredPort} is already in use`);
       }
     }
 

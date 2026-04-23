@@ -390,6 +390,78 @@ describe("PortManager", () => {
     });
   });
 
+  describe("Strict Mode", () => {
+    it("should throw error when strict=true and preferred port is unavailable", async () => {
+      let portBeingTested: number | undefined;
+
+      (createNetServer as any).mockImplementation(() => {
+        const mockServer = {
+          once: vi.fn(),
+          listen: vi.fn((port: number) => {
+            portBeingTested = port;
+          }),
+          close: vi.fn((callback?: () => void) => callback?.()),
+        };
+
+        const handlers: Record<string, (...args: any[]) => void> = {};
+        mockServer.once.mockImplementation((event: string, handler: (...args: any[]) => void) => {
+          handlers[event] = handler;
+          if (Object.keys(handlers).length === 2) {
+            setTimeout(() => {
+              if (portBeingTested === 3141) {
+                handlers.error({ code: "EADDRINUSE" });
+              } else {
+                handlers.listening();
+              }
+            }, 0);
+          }
+          return mockServer;
+        });
+
+        return mockServer;
+      });
+
+      await expect(portManager.allocatePort(3141, true)).rejects.toThrow(
+        "Port 3141 is already in use",
+      );
+    });
+
+    it("should fallback to other ports when strict=false (default behavior)", async () => {
+      let portBeingTested: number | undefined;
+
+      (createNetServer as any).mockImplementation(() => {
+        const mockServer = {
+          once: vi.fn(),
+          listen: vi.fn((port: number) => {
+            portBeingTested = port;
+          }),
+          close: vi.fn((callback?: () => void) => callback?.()),
+        };
+
+        const handlers: Record<string, (...args: any[]) => void> = {};
+        mockServer.once.mockImplementation((event: string, handler: (...args: any[]) => void) => {
+          handlers[event] = handler;
+          if (Object.keys(handlers).length === 2) {
+            setTimeout(() => {
+              if (portBeingTested === 3141) {
+                handlers.error({ code: "EADDRINUSE" });
+              } else {
+                handlers.listening();
+              }
+            }, 0);
+          }
+          return mockServer;
+        });
+
+        return mockServer;
+      });
+
+      const port = await portManager.allocatePort(3141, false);
+      expect(port).not.toBe(3141);
+      expect(port).toBe(4310);
+    });
+  });
+
   describe("Edge Cases", () => {
     it("should handle server close callback properly", async () => {
       let closeCalled = false;
