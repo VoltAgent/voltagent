@@ -74,8 +74,7 @@ export abstract class BaseServerProvider implements IServerProvider {
     }
 
     // Allocate port from central manager
-    // Use strict mode when user explicitly specified a port
-    const port = await portManager.allocatePort(this.config.port, this.config.port !== undefined);
+    const port = await portManager.allocatePort(this.config.port);
     this.allocatedPort = port;
 
     try {
