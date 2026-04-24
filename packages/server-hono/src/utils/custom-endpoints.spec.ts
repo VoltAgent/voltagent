@@ -76,6 +76,35 @@ describe("extractCustomEndpoints", () => {
       expect(endpoints[0].path).toBe("/api/health");
     });
 
+    it("should not double-prefix basePath when Hono already merged it into path", () => {
+      // Real Hono v4 shape for `app.route('/api', routes)` + `routes.get('/hello')`:
+      // Hono's _addRoute calls mergePath(basePath, path) and stores the merged
+      // result in route.path, while also keeping basePath on the route for
+      // metadata. Blindly prepending basePath produced /api/api/hello.
+      const app = createMockApp({
+        routes: [{ method: "GET", path: "/api/hello", basePath: "/api" }],
+      });
+
+      const endpoints = extractCustomEndpoints(app);
+
+      expect(endpoints).toHaveLength(1);
+      expect(endpoints[0].path).toBe("/api/hello");
+    });
+
+    it("should handle nested sub-apps without double-prefixing", () => {
+      // e.g. app.route('/api', sub); sub.route('/sub', inner); inner.get('/x')
+      // Hono merges all the way down, so the final route.path already holds
+      // the absolute path.
+      const app = createMockApp({
+        routes: [{ method: "GET", path: "/api/sub/inner", basePath: "/api" }],
+      });
+
+      const endpoints = extractCustomEndpoints(app);
+
+      expect(endpoints).toHaveLength(1);
+      expect(endpoints[0].path).toBe("/api/sub/inner");
+    });
+
     it("should deduplicate routes", () => {
       const app = createMockApp({
         routes: [
