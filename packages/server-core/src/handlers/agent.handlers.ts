@@ -317,9 +317,10 @@ export async function handleChatStream(
       );
     }
 
+    let controllerKey: string | null = null;
     if (resumableStreamEnabled) {
       const internalController = new AbortController();
-      const controllerKey = `${agentId}:${conversationId}:${userId}`;
+      controllerKey = `${agentId}:${conversationId}:${userId}`;
       activeAbortControllers.set(controllerKey, internalController);
       options.abortSignal = internalController.signal;
     }
@@ -335,7 +336,15 @@ export async function handleChatStream(
       }
     }
 
-    const result = await agent.streamText(input, options);
+    let result: Awaited<ReturnType<typeof agent.streamText>>;
+    try {
+      result = await agent.streamText(input, options);
+    } catch (error) {
+      if (controllerKey) {
+        activeAbortControllers.delete(controllerKey);
+      }
+      throw error;
+    }
     let activeStreamId: string | null = null;
 
     // Use the built-in toUIMessageStreamResponse - it handles errors properly
@@ -377,8 +386,9 @@ export async function handleChatStream(
         }
 
         // Clean up AbortController
-        const controllerKey = `${agentId}:${conversationId}:${userId}`;
-        activeAbortControllers.delete(controllerKey);
+        if (controllerKey) {
+          activeAbortControllers.delete(controllerKey);
+        }
       },
     });
   } catch (error) {
@@ -508,7 +518,7 @@ export async function handleCancelChat(
     if (!controller) {
       return {
         success: false,
-        error: "No active chat stream found",
+        error: "Chat stream not found",
       };
     }
 

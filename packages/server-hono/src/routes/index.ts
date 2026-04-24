@@ -166,7 +166,12 @@ export function registerAgentRoutes(
     if (!agentId || !conversationId) {
       return c.json({ success: false, error: "Missing agent or conversation id parameter" }, 400);
     }
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ success: false, error: "Invalid or missing JSON body" }, 400);
+    }
     const response = await handleCancelChat(agentId, conversationId, body, deps, logger);
     if (!response.success) {
       const status = response.error?.includes("not found") ? 404 : 500;
