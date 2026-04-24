@@ -3,6 +3,7 @@ import type { Logger } from "@voltagent/internal";
 import {
   UPDATE_ROUTES,
   handleAttachWorkflowStream,
+  handleCancelChat,
   handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
@@ -156,6 +157,22 @@ export function registerAgentRoutes(
     }
 
     return handleResumeChatStream(agentId, conversationId, deps, logger, userId);
+  });
+
+  // POST /agents/:id/chat/:conversationId/cancel - Cancel chat stream
+  app.post("/agents/:id/chat/:conversationId/cancel", async (c) => {
+    const agentId = c.req.param("id");
+    const conversationId = c.req.param("conversationId");
+    if (!agentId || !conversationId) {
+      return c.json({ success: false, error: "Missing agent or conversation id parameter" }, 400);
+    }
+    const body = await c.req.json();
+    const response = await handleCancelChat(agentId, conversationId, body, deps, logger);
+    if (!response.success) {
+      const status = response.error?.includes("not found") ? 404 : 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
   });
 
   // POST /agents/:id/object - Generate object

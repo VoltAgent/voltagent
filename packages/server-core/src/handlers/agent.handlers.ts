@@ -8,6 +8,9 @@ import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-jso
 import type { ApiResponse } from "../types";
 import { processAgentOptions } from "../utils/options";
 
+// Store active AbortControllers for resumable streams
+const activeAbortControllers = new Map<string, AbortController>();
+
 /**
  * Handler for listing all agents
  * Returns agent data array
@@ -315,7 +318,10 @@ export async function handleChatStream(
     }
 
     if (resumableStreamEnabled) {
-      options.abortSignal = undefined;
+      const internalController = new AbortController();
+      const controllerKey = `${agentId}:${conversationId}:${userId}`;
+      activeAbortControllers.set(controllerKey, internalController);
+      options.abortSignal = internalController.signal;
     }
 
     options.resumableStream = resumableStreamEnabled;
@@ -369,6 +375,10 @@ export async function handleChatStream(
         } catch (error) {
           logger.error("Failed to clear resumable chat stream", { error });
         }
+
+        // Clean up AbortController
+        const controllerKey = `${agentId}:${conversationId}:${userId}`;
+        activeAbortControllers.delete(controllerKey);
       },
     });
   } catch (error) {
@@ -468,6 +478,72 @@ export async function handleResumeChatStream(
         },
       },
     );
+  }
+}
+
+/**
+ * Handler for cancelling a chat stream
+ * Returns cancellation result
+ */
+export async function handleCancelChat(
+  agentId: string,
+  conversationId: string,
+  body: any,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    const { userId } = body || {};
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "userId is required for cancelling chat streams",
+      };
+    }
+
+    const controllerKey = `${agentId}:${conversationId}:${userId}`;
+    const controller = activeAbortControllers.get(controllerKey);
+
+    if (!controller) {
+      return {
+        success: false,
+        error: "No active chat stream found",
+      };
+    }
+
+    controller.abort();
+    activeAbortControllers.delete(controllerKey);
+
+    // Clear the resumable stream
+    if (deps.resumableStream) {
+      try {
+        await deps.resumableStream.clearActiveStream({
+          conversationId,
+          agentId,
+          userId,
+        });
+      } catch (error) {
+        logger.warn("Failed to clear resumable stream on cancel", { error });
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        agentId,
+        conversationId,
+        userId,
+        status: "cancelled" as const,
+        cancelledAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    logger.error("Failed to cancel chat stream", { error });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to cancel chat stream",
+    };
   }
 }
 
