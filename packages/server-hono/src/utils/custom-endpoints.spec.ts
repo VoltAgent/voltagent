@@ -105,6 +105,17 @@ describe("extractCustomEndpoints", () => {
       expect(endpoints[0].path).toBe("/api/sub/inner");
     });
 
+    it("should only treat basePath as present on a complete path segment", () => {
+      const app = createMockApp({
+        routes: [{ method: "GET", path: "/apiary/health", basePath: "/api" }],
+      });
+
+      const endpoints = extractCustomEndpoints(app);
+
+      expect(endpoints).toHaveLength(1);
+      expect(endpoints[0].path).toBe("/api/apiary/health");
+    });
+
     it("should deduplicate routes", () => {
       const app = createMockApp({
         routes: [

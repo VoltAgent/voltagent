@@ -42,12 +42,13 @@ export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSumm
           // Hono merges basePath into route.path when a sub-app is mounted via
           // app.route(basePath, subApp) or app.basePath(basePath), so route.path
           // can already be the full path. Only prepend basePath when path does
-          // not already include it, otherwise we end up with /api/api/hello.
-          const basePath = route.basePath && route.basePath !== "/" ? route.basePath : "";
-          const rawPath =
-            basePath && !route.path.startsWith(basePath)
-              ? `${basePath}${route.path}`
-              : route.path;
+          // not already include it as a complete path segment, otherwise we end
+          // up with /api/api/hello.
+          const basePath =
+            route.basePath && route.basePath !== "/" ? route.basePath.replace(/\/+$/, "") : "";
+          const pathHasBasePath =
+            basePath && (route.path === basePath || route.path.startsWith(`${basePath}/`));
+          const rawPath = basePath && !pathHasBasePath ? `${basePath}${route.path}` : route.path;
           const fullPath = rawPath.replace(/\/+/g, "/"); // Remove duplicate slashes
 
           // Skip built-in VoltAgent paths
