@@ -86,6 +86,19 @@ class PortManager {
   public async allocatePort(preferredPort?: number): Promise<number> {
     const portsToTry = getPortsToTry(preferredPort);
 
+    if (preferredPort !== undefined) {
+      if (!this.allocatedPorts.has(preferredPort)) {
+        const isAvailable = await this.isPortAvailable(preferredPort);
+        if (isAvailable) {
+          this.allocatedPorts.add(preferredPort);
+          return preferredPort;
+        }
+      }
+
+      const alternativePort = await this.findAvailableAlternativePort(preferredPort, portsToTry);
+      throw new Error(this.createPortInUseMessage(preferredPort, alternativePort));
+    }
+
     for (const port of portsToTry) {
       // Skip if already allocated
       if (this.allocatedPorts.has(port)) {
@@ -101,6 +114,37 @@ class PortManager {
     }
 
     throw new Error("Could not find an available port");
+  }
+
+  private async findAvailableAlternativePort(
+    unavailablePort: number,
+    portsToTry: number[],
+  ): Promise<number> {
+    const seenPorts = new Set<number>([unavailablePort]);
+
+    for (const port of portsToTry) {
+      if (seenPorts.has(port) || this.allocatedPorts.has(port)) {
+        continue;
+      }
+
+      seenPorts.add(port);
+
+      const isAvailable = await this.isPortAvailable(port);
+      if (isAvailable) {
+        return port;
+      }
+    }
+
+    throw new Error(
+      `Port ${unavailablePort} is already in use and no alternative port is available`,
+    );
+  }
+
+  private createPortInUseMessage(unavailablePort: number, alternativePort: number): string {
+    return [
+      `Port ${unavailablePort} is already in use or unavailable.`,
+      `Configure your server provider with a different port, for example: { port: ${alternativePort} }`,
+    ].join(" ");
   }
 
   /**
