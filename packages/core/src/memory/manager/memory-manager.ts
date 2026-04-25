@@ -610,8 +610,10 @@ export class MemoryManager {
         return title.trim();
       }
     } catch (error) {
-      context.logger.debug("[Memory] Failed to generate conversation title", {
+      context.logger.warn("[Memory] Failed to generate conversation title", {
         error: safeStringify(error),
+        message: error instanceof Error ? error.message : undefined,
+        hint: "If your title generation model does not support temperature, set generateTitle.temperature to null.",
       });
     }
 

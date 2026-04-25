@@ -258,6 +258,34 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   isRecord(value) && !Array.isArray(value);
 
+const stringIncludesTemperature = (value: unknown): boolean =>
+  typeof value === "string" && value.toLowerCase().includes("temperature");
+
+const isTemperatureWarning = (warning: Warning): boolean => {
+  const warningRecord: Record<string, unknown> = warning;
+  const warningType = warningRecord.type;
+
+  if (typeof warningType !== "string") {
+    return false;
+  }
+
+  if (warningType === "unsupported-setting") {
+    return stringIncludesTemperature(warningRecord.setting);
+  }
+
+  if (warningType === "unsupported" || warningType === "compatibility") {
+    return (
+      stringIncludesTemperature(warningRecord.feature) ||
+      stringIncludesTemperature(warningRecord.details)
+    );
+  }
+
+  return (
+    stringIncludesTemperature(warningRecord.details) ||
+    stringIncludesTemperature(warningRecord.message)
+  );
+};
+
 const hasNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
@@ -4721,6 +4749,12 @@ export class Agent {
       typeof normalized.maxLength === "number" && Number.isFinite(normalized.maxLength)
         ? Math.max(1, normalized.maxLength)
         : DEFAULT_CONVERSATION_TITLE_MAX_CHARS;
+    const temperature =
+      normalized.temperature === null
+        ? undefined
+        : typeof normalized.temperature === "number" && Number.isFinite(normalized.temperature)
+          ? normalized.temperature
+          : 0;
 
     const modelOverride = normalized.model;
 
@@ -4751,7 +4785,7 @@ export class Agent {
           isStreaming: false,
           messages,
           callOptions: {
-            temperature: 0,
+            ...(temperature !== undefined ? { temperature } : {}),
             maxOutputTokens,
           },
           label: "Generate Conversation Title",
@@ -4764,16 +4798,32 @@ export class Agent {
             generateText({
               model: resolvedModel,
               messages,
-              temperature: 0,
+              ...(temperature !== undefined ? { temperature } : {}),
               maxOutputTokens,
               abortSignal: context.abortController.signal,
             }),
           );
 
+          const temperatureWarning = result.warnings?.find(isTemperatureWarning);
+          if (temperatureWarning) {
+            context.logger.warn(
+              "[Memory] Conversation title generation model does not support temperature",
+              {
+                warning: safeStringify(temperatureWarning),
+                hint: "Set generateTitle.temperature to null to omit temperature for title generation.",
+              },
+            );
+          }
+
           const resolvedUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
           const title = sanitizeConversationTitle(result.text ?? "", maxLength);
           if (title) {
             llmSpan.setAttribute("output", title);
+          } else {
+            context.logger.warn("[Memory] Conversation title generation returned an empty title", {
+              text: result.text ?? "",
+              finishReason: result.finishReason,
+            });
           }
           finalizeLLMSpan(SpanStatusCode.OK, {
             usage: resolvedUsage,
@@ -4787,7 +4837,11 @@ export class Agent {
           throw error;
         }
       } catch (error) {
-        context.logger.debug("[Memory] Failed to generate conversation title", {
+        context.logger.warn("[Memory] Failed to generate conversation title", {
+          message: error instanceof Error ? error.message : undefined,
+          hint: "If your title generation model does not support temperature, set generateTitle.temperature to null.",
+        });
+        context.logger.debug("[Memory] Full error for title generation", {
           error: safeStringify(error),
         });
         return null;

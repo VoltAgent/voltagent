@@ -49,8 +49,9 @@ const memory = new Memory({
     enabled: true,
     model: "gpt-4o-mini", // default agent model
     systemPrompt: "Generate a short title (max 6 words).",
+    temperature: null, // optional; default is 0, use null to omit
     maxLength: 60,
-    maxOutputTokens: 24,
+    maxOutputTokens: 128, // optional; default is 32
   },
 });
 ```
@@ -59,6 +60,12 @@ Notes:
 
 - The agent's main model is used unless `generateTitle.model` is provided.
 - `generateTitle.model` accepts either a provider/model string or an AI SDK model instance.
+- Title generation sends `temperature: 0` by default. Set `generateTitle.temperature` to `null` to
+  omit the parameter for reasoning models such as OpenAI `o`-series and `gpt-5-mini`.
+- Reasoning models may need a higher `maxOutputTokens` value because reasoning tokens count toward
+  the output budget. Configure `generateTitle.maxOutputTokens` if the default `32` is too low.
+- If title generation fails, VoltAgent keeps the default conversation title and logs the cause at
+  `warn` level, including a hint to set `generateTitle.temperature` to `null` when appropriate.
 - Only the first user message is summarized.
 - If you create conversations manually via the Memory API, set `title` explicitly.
 
