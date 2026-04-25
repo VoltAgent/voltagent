@@ -82,6 +82,13 @@ describe("VoltAgent defaults", () => {
       expect.arrayContaining(["ls", "read_file", "execute_command", "workspace_search"]),
     );
 
+    const retrievedAgent = voltAgent.getAgent("assistant");
+    expect(retrievedAgent).toBe(agent);
+    expect(retrievedAgent?.getWorkspace()).toBe(workspace);
+    expect(retrievedAgent?.getTools().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(["ls", "read_file", "execute_command", "workspace_search"]),
+    );
+
     await voltAgent.ready;
     await voltAgent.shutdown();
   });
