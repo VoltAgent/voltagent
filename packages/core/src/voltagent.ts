@@ -129,9 +129,11 @@ export class VoltAgent {
     // Setup graceful shutdown handlers
     this.setupShutdownHandlers();
 
+    // Register agents synchronously so getAgent/getAgents can be used immediately after construction.
+    // Workspace defaults are applied before registration; workspace initialization is still awaited by ready.
+    this.registerAgents(options.agents);
+
     const finalizeInit = () => {
-      // ✅ NOW register agents - they can access global telemetry exporter
-      this.registerAgents(options.agents);
       this.registerTriggers(options.triggers);
 
       // Register workflows if provided
