@@ -1,5 +1,23 @@
 # @voltagent/server-hono
 
+## 2.0.13
+
+### Patch Changes
+
+- [#1241](https://github.com/VoltAgent/voltagent/pull/1241) [`794da98`](https://github.com/VoltAgent/voltagent/commit/794da98f8c1e1e6b7f98ed878333dda86fa58bbe) Thanks [@truffle-dev](https://github.com/truffle-dev)! - fix(server-hono): don't double-prefix basePath when Hono already merged it into route.path
+
+  When a sub-app is mounted via `app.route(basePath, subApp)` or `app.basePath(basePath)`,
+  Hono's internal `_addRoute` calls `mergePath(basePath, path)` and stores the merged
+  result in `route.path`, while still keeping `basePath` on the route as metadata.
+  `extractCustomEndpoints` blindly prepended `basePath` to `route.path`, so a route
+  registered as `/api/hello` with `basePath: "/api"` was logged as `GET /api/api/hello`
+  even though Hono served it correctly at `/api/hello`. Only prepend `basePath` when
+  `route.path` does not already include it.
+
+- Updated dependencies [[`b4cb089`](https://github.com/VoltAgent/voltagent/commit/b4cb089e2405316c3a999ae845e33b1d99d0398c), [`69b78fd`](https://github.com/VoltAgent/voltagent/commit/69b78fd881b39a3f0251a19ea4331d6abdee6309), [`832f094`](https://github.com/VoltAgent/voltagent/commit/832f094931efbb323accab9de1dfa70634c4ec7a), [`99c201b`](https://github.com/VoltAgent/voltagent/commit/99c201b18ee1bb32012dd0d1ca85803fa31b920c)]:
+  - @voltagent/core@2.7.3
+  - @voltagent/server-core@2.1.16
+
 ## 2.0.12
 
 ### Patch Changes

@@ -2,7 +2,7 @@
   "name": "@voltagent/e2e",
   "dependencies": {
     "@libsql/client": "^0.15.0",
-    "@voltagent/core": "^2.7.2",
+    "@voltagent/core": "^2.7.3",
     "@voltagent/internal": "^1.0.3",
     "@voltagent/libsql": "^2.1.2",
     "@voltagent/postgres": "^2.1.2",

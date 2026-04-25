@@ -1,5 +1,16 @@
 # @voltagent/server-core
 
+## 2.1.16
+
+### Patch Changes
+
+- [#1247](https://github.com/VoltAgent/voltagent/pull/1247) [`832f094`](https://github.com/VoltAgent/voltagent/commit/832f094931efbb323accab9de1dfa70634c4ec7a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(server-core): report requested port conflicts instead of silently switching ports
+
+  When a server provider is configured with an explicit port and that port is already in use, VoltAgent now stops with guidance for configuring a different port instead of automatically binding to another available port. Calls without an explicit port keep the previous automatic fallback behavior.
+
+- Updated dependencies [[`b4cb089`](https://github.com/VoltAgent/voltagent/commit/b4cb089e2405316c3a999ae845e33b1d99d0398c), [`69b78fd`](https://github.com/VoltAgent/voltagent/commit/69b78fd881b39a3f0251a19ea4331d6abdee6309), [`99c201b`](https://github.com/VoltAgent/voltagent/commit/99c201b18ee1bb32012dd0d1ca85803fa31b920c)]:
+  - @voltagent/core@2.7.3
+
 ## 2.1.15
 
 ### Patch Changes
