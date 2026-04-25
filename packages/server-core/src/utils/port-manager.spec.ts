@@ -106,13 +106,12 @@ describe("PortManager", () => {
         }
       });
 
-      // Try to allocate again - should get next port
-      const port2 = await portManager.allocatePort(3141);
-      expect(port2).not.toBe(3141);
-      expect(port2).toBe(4310); // Next preferred port
+      await expect(portManager.allocatePort(3141)).rejects.toThrow(
+        "Port 3141 is already in use or unavailable. Configure your server provider with a different port, for example: { port: 4310 }",
+      );
     });
 
-    it("should handle port in use (EADDRINUSE)", async () => {
+    it("should throw with guidance when preferred port is in use (EADDRINUSE)", async () => {
       let portBeingTested: number | undefined;
 
       (createNetServer as any).mockImplementation(() => {
@@ -145,9 +144,44 @@ describe("PortManager", () => {
         return mockServer;
       });
 
-      const port = await portManager.allocatePort(3141);
-      expect(port).not.toBe(3141);
-      expect(port).toBe(4310); // Should try next port after skipping duplicate 3141
+      await expect(portManager.allocatePort(3141)).rejects.toThrow(
+        "Port 3141 is already in use or unavailable. Configure your server provider with a different port, for example: { port: 4310 }",
+      );
+    });
+
+    it("should fall through to the next available port when default port is in use", async () => {
+      let portBeingTested: number | undefined;
+
+      (createNetServer as any).mockImplementation(() => {
+        const mockServer = {
+          once: vi.fn(),
+          listen: vi.fn((port: number) => {
+            portBeingTested = port;
+          }),
+          close: vi.fn((callback?: () => void) => callback?.()),
+        };
+
+        const handlers: Record<string, (...args: any[]) => void> = {};
+        mockServer.once.mockImplementation((event: string, handler: (...args: any[]) => void) => {
+          handlers[event] = handler;
+          if (Object.keys(handlers).length === 2) {
+            setTimeout(() => {
+              if (portBeingTested === 3141) {
+                handlers.error({ code: "EADDRINUSE" });
+              } else {
+                handlers.listening();
+              }
+            }, 0);
+          }
+          return mockServer;
+        });
+
+        return mockServer;
+      });
+
+      const port = await portManager.allocatePort();
+      expect(port).toBe(4310);
+      expect(portManager.isPortAllocated(4310)).toBe(true);
     });
 
     it("should handle permission denied (EACCES)", async () => {
@@ -183,9 +217,9 @@ describe("PortManager", () => {
         return mockServer;
       });
 
-      const port = await portManager.allocatePort(80); // Low port, likely EACCES
-      expect(port).not.toBe(80);
-      expect(port).toBe(3141); // Should try next port
+      await expect(portManager.allocatePort(80)).rejects.toThrow(
+        "Port 80 is already in use or unavailable. Configure your server provider with a different port, for example: { port: 3141 }",
+      );
     });
 
     it("should throw error when no ports are available", async () => {
@@ -226,13 +260,11 @@ describe("PortManager", () => {
       });
 
       // Start multiple allocations concurrently
-      const promises = [
+      const results = await Promise.all([
         portManager.allocatePort(),
         portManager.allocatePort(),
         portManager.allocatePort(),
-      ];
-
-      const results = await Promise.all(promises);
+      ]);
 
       // All ports should be different
       expect(new Set(results).size).toBe(3);
@@ -269,12 +301,13 @@ describe("PortManager", () => {
       await delay(10); // Small delay to ensure first check is in progress
       const promise2 = portManager.allocatePort(5000);
 
-      const [port1, port2] = await Promise.all([promise1, promise2]);
+      const port1 = await promise1;
+      await expect(promise2).rejects.toThrow(
+        "Port 5000 is already in use or unavailable. Configure your server provider with a different port, for example: { port: 3141 }",
+      );
 
       // First should get the requested port
       expect(port1).toBe(5000);
-      // Second should get a different port (since first is checking/allocated)
-      expect(port2).not.toBe(5000);
       expect(checkCompleted).toBe(true);
     });
   });
@@ -443,9 +476,9 @@ describe("PortManager", () => {
         return mockServer;
       });
 
-      const port = await portManager.allocatePort(3000);
-      expect(port).not.toBe(3000);
-      expect(port).toBe(3141); // Should try the first preferred port
+      await expect(portManager.allocatePort(3000)).rejects.toThrow(
+        "Port 3000 is already in use or unavailable. Configure your server provider with a different port, for example: { port: 3141 }",
+      );
     });
 
     it("should cleanup promises map even on error", async () => {
