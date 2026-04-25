@@ -141,13 +141,26 @@ export class MemoryManager {
               context.input ?? messageWithMetadata,
               "Conversation",
             );
-            await this.conversationMemory?.createConversation({
-              id: conversationId,
-              userId: userId,
-              resourceId: this.resourceId,
-              title,
-              metadata: {},
-            });
+            try {
+              await this.conversationMemory?.createConversation({
+                id: conversationId,
+                userId: userId,
+                resourceId: this.resourceId,
+                title,
+                metadata: {},
+              });
+            } catch (createError) {
+              if (this.isConversationAlreadyExistsError(createError)) {
+                context.logger.debug(
+                  "[Memory] Conversation already exists (race condition handled)",
+                  {
+                    conversationId,
+                  },
+                );
+              } else {
+                throw createError;
+              }
+            }
           }
 
           // Add message to conversation using Memory V2's saveMessageWithContext
@@ -775,14 +788,16 @@ export class MemoryManager {
   /**
    * Replace the Memory instance used for this manager.
    */
-  setMemory(memory: Memory | false): void {
+  setMemory(memory: Memory | false, titleGenerator?: ConversationTitleGenerator): void {
     if (memory === false) {
       this.conversationMemory = undefined;
+      this.titleGenerator = undefined;
       return;
     }
 
     if (memory instanceof Memory) {
       this.conversationMemory = memory;
+      this.titleGenerator = titleGenerator;
     }
   }
 

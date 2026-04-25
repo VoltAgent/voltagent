@@ -8199,7 +8199,7 @@ export class Agent {
     if (this.memoryConfigured || this.memory === false) {
       return;
     }
-    this.memoryManager.setMemory(memory);
+    this.memoryManager.setMemory(memory, this.createConversationTitleGenerator(memory));
   }
 
   /**
