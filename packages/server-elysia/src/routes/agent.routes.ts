@@ -225,7 +225,7 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
     async ({ params, body, set }) => {
       const response = await handleCancelChat(params.id, params.conversationId, body, deps, logger);
       if (!response.success) {
-        set.status = response.error?.includes("not found") ? 404 : 500;
+        set.status = response.httpStatus ?? 500;
       }
       return response;
     },

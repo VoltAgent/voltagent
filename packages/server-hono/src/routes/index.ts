@@ -174,7 +174,7 @@ export function registerAgentRoutes(
     }
     const response = await handleCancelChat(agentId, conversationId, body, deps, logger);
     if (!response.success) {
-      const status = response.error?.includes("not found") ? 404 : 500;
+      const status = response.httpStatus ?? 500;
       return c.json(response, status);
     }
     return c.json(response, 200);

@@ -8,8 +8,17 @@ import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-jso
 import type { ApiResponse } from "../types";
 import { processAgentOptions } from "../utils/options";
 
-// Store active AbortControllers for resumable streams
+// Store active AbortControllers for resumable streams.
+// NOTE: This in-memory Map only works for single-instance deployments.
+// Horizontally scaled environments need an external coordination mechanism.
 const activeAbortControllers = new Map<string, AbortController>();
+
+/**
+ * Typed body for the cancel chat endpoint.
+ */
+export interface CancelChatBody {
+  userId?: string;
+}
 
 /**
  * Handler for listing all agents
@@ -321,6 +330,11 @@ export async function handleChatStream(
     if (resumableStreamEnabled) {
       const internalController = new AbortController();
       controllerKey = `${agentId}:${conversationId}:${userId}`;
+      // Abort any existing controller for this key to prevent stale leaks
+      const existing = activeAbortControllers.get(controllerKey);
+      if (existing) {
+        existing.abort();
+      }
       activeAbortControllers.set(controllerKey, internalController);
       options.abortSignal = internalController.signal;
     }
@@ -367,6 +381,12 @@ export async function handleChatStream(
           });
         } catch (error) {
           logger.error("Failed to persist resumable chat stream", { error });
+        }
+      },
+      onError: async () => {
+        // Clean up AbortController on error (mirrors onFinish cleanup)
+        if (controllerKey) {
+          activeAbortControllers.delete(controllerKey);
         }
       },
       onFinish: async () => {
@@ -498,17 +518,18 @@ export async function handleResumeChatStream(
 export async function handleCancelChat(
   agentId: string,
   conversationId: string,
-  body: any,
+  body: CancelChatBody,
   deps: ServerProviderDeps,
   logger: Logger,
 ): Promise<ApiResponse> {
   try {
     const { userId } = body || {};
 
-    if (!userId) {
+    if (typeof userId !== "string" || userId.trim().length === 0) {
       return {
         success: false,
         error: "userId is required for cancelling chat streams",
+        httpStatus: 400,
       };
     }
 
@@ -519,6 +540,7 @@ export async function handleCancelChat(
       return {
         success: false,
         error: "Chat stream not found",
+        httpStatus: 404,
       };
     }
 
@@ -553,6 +575,7 @@ export async function handleCancelChat(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to cancel chat stream",
+      httpStatus: 500,
     };
   }
 }

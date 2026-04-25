@@ -14,3 +14,5 @@ Adds:
 - Internal AbortController management keyed by `${agentId}:${conversationId}:${userId}`
 
 The cancel endpoint aborts the stream and cleans up both the AbortController and the resumable stream adapter state.
+
+Note: The in-memory AbortController map only supports single-instance deployments; horizontally scaled environments require external coordination.
