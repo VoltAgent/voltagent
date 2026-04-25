@@ -1907,6 +1907,330 @@ Use pandas and summarize findings.`.split("\n"),
       return [...messages].reverse().find((message) => message.role === "assistant");
     };
 
+    it("should use temperature 0 by default when generating conversation titles", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        generateTitle: true,
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      const span = {
+        end: vi.fn(),
+        setStatus: vi.fn(),
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        recordException: vi.fn(),
+      };
+      const context = {
+        operationId: "test-operation-id",
+        logger: {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          trace: vi.fn(),
+          fatal: vi.fn(),
+          child: vi.fn().mockReturnThis(),
+        },
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        traceContext: {
+          createChildSpan: vi.fn().mockReturnValue(span),
+          withSpan: vi.fn().mockImplementation(async (_span, fn) => await fn()),
+        },
+        abortController: new AbortController(),
+        startTime: new Date(),
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Rome Weekend Plan",
+        content: [{ type: "text", text: "Rome Weekend Plan" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: providerUsage,
+        warnings: [
+          {
+            type: "unsupported",
+            feature: "temperature",
+            details: "temperature is not supported for reasoning models",
+          },
+        ],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: createAssistantResponseMessages("Rome Weekend Plan"),
+        },
+        steps: [],
+      } as any);
+
+      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
+      const title = await titleGenerator({
+        input: "Plan a weekend trip to Rome.",
+        context,
+        defaultTitle: "Conversation",
+      });
+
+      expect(title).toBe("Rome Weekend Plan");
+      const generateTextCall = vi.mocked(ai.generateText).mock.calls[0][0] as Record<
+        string,
+        unknown
+      >;
+      expect(generateTextCall.temperature).toBe(0);
+      expect(generateTextCall.maxOutputTokens).toBe(32);
+      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls[0][2] as {
+        attributes: Record<string, unknown>;
+      };
+      expect(createChildSpanCall.attributes["llm.temperature"]).toBe(0);
+      expect(context.logger.warn).toHaveBeenCalledWith(
+        "[Memory] Conversation title generation model does not support temperature",
+        expect.objectContaining({
+          hint: expect.stringContaining("generateTitle.temperature"),
+          warning: expect.stringContaining("temperature"),
+        }),
+      );
+    });
+
+    it("should omit temperature when title generation temperature is null", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        generateTitle: { enabled: true, temperature: null },
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      const span = {
+        end: vi.fn(),
+        setStatus: vi.fn(),
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        recordException: vi.fn(),
+      };
+      const context = {
+        operationId: "test-operation-id",
+        logger: {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          trace: vi.fn(),
+          fatal: vi.fn(),
+          child: vi.fn().mockReturnThis(),
+        },
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        traceContext: {
+          createChildSpan: vi.fn().mockReturnValue(span),
+          withSpan: vi.fn().mockImplementation(async (_span, fn) => await fn()),
+        },
+        abortController: new AbortController(),
+        startTime: new Date(),
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Rome Weekend Plan",
+        content: [{ type: "text", text: "Rome Weekend Plan" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: providerUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: createAssistantResponseMessages("Rome Weekend Plan"),
+        },
+        steps: [],
+      } as any);
+
+      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
+      const title = await titleGenerator({
+        input: "Plan a weekend trip to Rome.",
+        context,
+        defaultTitle: "Conversation",
+      });
+
+      expect(title).toBe("Rome Weekend Plan");
+      const generateTextCall = vi.mocked(ai.generateText).mock.calls[0][0] as Record<
+        string,
+        unknown
+      >;
+      expect(generateTextCall).not.toHaveProperty("temperature");
+      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls[0][2] as {
+        attributes: Record<string, unknown>;
+      };
+      expect(createChildSpanCall.attributes).not.toHaveProperty("llm.temperature");
+    });
+
+    it("should warn when conversation title generation returns an empty title", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        generateTitle: true,
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      const span = {
+        end: vi.fn(),
+        setStatus: vi.fn(),
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        recordException: vi.fn(),
+      };
+      const context = {
+        operationId: "test-operation-id",
+        logger: {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          trace: vi.fn(),
+          fatal: vi.fn(),
+          child: vi.fn().mockReturnThis(),
+        },
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        traceContext: {
+          createChildSpan: vi.fn().mockReturnValue(span),
+          withSpan: vi.fn().mockImplementation(async (_span, fn) => await fn()),
+        },
+        abortController: new AbortController(),
+        startTime: new Date(),
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "   ",
+        content: [{ type: "text", text: "   " }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: providerUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: createAssistantResponseMessages("   "),
+        },
+        providerMetadata: { provider: { reason: "empty-output" } },
+        steps: [],
+      } as any);
+
+      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
+      const title = await titleGenerator({
+        input: "Plan a weekend trip to Rome.",
+        context,
+        defaultTitle: "Conversation",
+      });
+
+      expect(title).toBeNull();
+      expect(context.logger.warn).toHaveBeenCalledWith(
+        "[Memory] Conversation title generation returned an empty title",
+        expect.objectContaining({
+          text: "   ",
+          finishReason: "stop",
+        }),
+      );
+    });
+
+    it("should keep full conversation title generation errors at debug level", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        generateTitle: true,
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      const span = {
+        end: vi.fn(),
+        setStatus: vi.fn(),
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        recordException: vi.fn(),
+      };
+      const context = {
+        operationId: "test-operation-id",
+        logger: {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          trace: vi.fn(),
+          fatal: vi.fn(),
+          child: vi.fn().mockReturnThis(),
+        },
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        traceContext: {
+          createChildSpan: vi.fn().mockReturnValue(span),
+          withSpan: vi.fn().mockImplementation(async (_span, fn) => await fn()),
+        },
+        abortController: new AbortController(),
+        startTime: new Date(),
+      };
+
+      vi.mocked(ai.generateText).mockRejectedValue(new Error("Unsupported temperature"));
+
+      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
+      const title = await titleGenerator({
+        input: "Plan a weekend trip to Rome.",
+        context,
+        defaultTitle: "Conversation",
+      });
+
+      expect(title).toBeNull();
+      expect(context.logger.warn).toHaveBeenCalledWith(
+        "[Memory] Failed to generate conversation title",
+        expect.not.objectContaining({
+          error: expect.anything(),
+        }),
+      );
+      expect(context.logger.warn).toHaveBeenCalledWith(
+        "[Memory] Failed to generate conversation title",
+        expect.objectContaining({
+          message: "Unsupported temperature",
+          hint: expect.stringContaining("generateTitle.temperature"),
+        }),
+      );
+      expect(context.logger.debug).toHaveBeenCalledWith(
+        "[Memory] Full error for title generation",
+        expect.objectContaining({
+          error: expect.any(String),
+        }),
+      );
+    });
+
     it("should initialize with memory", () => {
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),

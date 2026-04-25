@@ -104,6 +104,7 @@ export type MemoryOptions = {};
 export type ConversationTitleConfig = {
   enabled?: boolean;
   model?: AgentModelValue;
+  temperature?: number | null;
   maxOutputTokens?: number;
   maxLength?: number;
   systemPrompt?: string | null;

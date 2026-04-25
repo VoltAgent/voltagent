@@ -128,6 +128,38 @@ describe("MemoryManager", () => {
       expect(titleGenerator).toHaveBeenCalledTimes(1);
     });
 
+    it("should warn when title generation fails", async () => {
+      const context = createMockOperationContext();
+      context.input = "Plan a weekend trip to Rome.";
+      const warnSpy = vi.spyOn(context.logger, "warn");
+      const titleGenerator = vi.fn().mockRejectedValue(new Error("Unsupported temperature"));
+      const managerWithTitle = new MemoryManager(
+        "agent-1",
+        memory,
+        {},
+        getGlobalLogger().child({ test: true }),
+        titleGenerator,
+      );
+
+      const message = createTestUIMessage({
+        id: "msg-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Sure, let's plan it." }],
+      });
+
+      await managerWithTitle.saveMessage(context, message, "user-1", "conv-title-warning");
+
+      const conversation = await memory.getConversation("conv-title-warning");
+      expect(conversation?.title).toBe("Conversation");
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[Memory] Failed to generate conversation title",
+        expect.objectContaining({
+          message: "Unsupported temperature",
+          hint: expect.stringContaining("generateTitle.temperature"),
+        }),
+      );
+    });
+
     it("should handle errors gracefully", async () => {
       // Create manager with mocked memory that throws error
       const errorMemory = new Memory({
