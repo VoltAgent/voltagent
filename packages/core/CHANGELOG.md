@@ -1,5 +1,17 @@
 # @voltagent/core
 
+## 2.7.3
+
+### Patch Changes
+
+- [#1249](https://github.com/VoltAgent/voltagent/pull/1249) [`b4cb089`](https://github.com/VoltAgent/voltagent/commit/b4cb089e2405316c3a999ae845e33b1d99d0398c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(core): allow disabling conversation title temperature
+
+  Conversation title generation now keeps the existing default `temperature: 0`, while allowing `generateTitle.temperature: null` to omit the parameter for reasoning models that do not support temperature. Unsupported temperature warnings are surfaced at warn level with guidance, and title generation failures are logged at warn level instead of debug.
+
+- [#1248](https://github.com/VoltAgent/voltagent/pull/1248) [`69b78fd`](https://github.com/VoltAgent/voltagent/commit/69b78fd881b39a3f0251a19ea4331d6abdee6309) Thanks [@omeraplak](https://github.com/omeraplak)! - Fix conversation title generation when memory is supplied globally to VoltAgent.
+
+- [#1245](https://github.com/VoltAgent/voltagent/pull/1245) [`99c201b`](https://github.com/VoltAgent/voltagent/commit/99c201b18ee1bb32012dd0d1ca85803fa31b920c) Thanks [@omeraplak](https://github.com/omeraplak)! - Register agents synchronously during VoltAgent construction so getAgent and getAgents can return agents with global defaults before ready resolves.
+
 ## 2.7.2
 
 ### Patch Changes
