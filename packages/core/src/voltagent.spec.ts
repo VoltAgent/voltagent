@@ -1,3 +1,4 @@
+import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Agent } from "./agent/agent";
@@ -57,6 +58,66 @@ describe("VoltAgent defaults", () => {
     });
 
     expect(agent.getMemory()).toBe(agentMemory);
+  });
+
+  it("applies title generation when default memory is assigned to a preconstructed agent", async () => {
+    const agentMemory = new Memory({
+      storage: new InMemoryStorageAdapter(),
+      generateTitle: true,
+    });
+    const model = new MockLanguageModelV3({
+      modelId: "title-model",
+      doGenerate: async () => ({
+        content: [{ type: "text", text: "Global Memory Title" }],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 1,
+          outputTokens: 1,
+          totalTokens: 2,
+          inputTokenDetails: {
+            noCacheTokens: 1,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+          },
+          outputTokenDetails: {
+            textTokens: 1,
+            reasoningTokens: 0,
+          },
+        },
+        warnings: [],
+      }),
+    });
+    const agent = new Agent({
+      name: "assistant",
+      instructions: "Be helpful.",
+      model: model as any,
+    });
+
+    const voltAgent = new VoltAgent({
+      agents: { assistant: agent },
+      memory: agentMemory,
+      checkDependencies: false,
+    });
+
+    const operationContext = (agent as any).createOperationContext("Plan a weekend trip to Rome.", {
+      userId: "user-1",
+      conversationId: "conversation-1",
+    });
+    await (agent as any).memoryManager.saveMessage(
+      operationContext,
+      {
+        id: "message-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Sure, let's plan it." }],
+      },
+      "user-1",
+      "conversation-1",
+    );
+
+    const conversation = await agentMemory.getConversation("conversation-1");
+    expect(conversation?.title).toBe("Global Memory Title");
+
+    await voltAgent.shutdown();
   });
 
   it("applies workspace to preconstructed registered agents without explicit workspace", async () => {
