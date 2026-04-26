@@ -332,11 +332,21 @@ export const updateAllPackages = async (
     const packageManager = detectPackageManager(rootDir);
 
     // 3. Prepare the package list for updating
+    const validPkgName = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
     const packagesToUpdate = updateCheckResult.updates
       .filter((pkg) => pkg.type !== "latest")
+      .filter((pkg) => validPkgName.test(pkg.name))
       .map((pkg) => `${pkg.name}@latest`);
 
     const logger = new LoggerProxy({ component: "update-checker" });
+
+    if (packagesToUpdate.length === 0) {
+      return {
+        success: true,
+        message: "No packages to update after filtering invalid package names",
+      };
+    }
+
     logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
 
     // 4. Run the update command based on package manager
