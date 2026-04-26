@@ -244,12 +244,31 @@ export type {
 export type {
   VoltAgentError,
   AbortError,
+  ClientHttpErrorCode,
+  ExecutionValidationErrorCode,
   MiddlewareAbortError,
   MiddlewareAbortOptions,
+  ToolDeniedErrorCode,
 } from "./agent/errors";
-export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
-export { isAbortError, isMiddlewareAbortError, isVoltAgentError } from "./agent/errors";
+export { ToolDeniedError, ClientHTTPError, ExecutionValidationError } from "./agent/errors";
+export {
+  isAbortError,
+  isExecutionValidationError,
+  isMiddlewareAbortError,
+  isVoltAgentError,
+} from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
+export type {
+  AgentExecutionValidators,
+  ExecutionValidationFailure,
+  ExecutionValidationPass,
+  ExecutionValidationResult,
+  ExecutionValidator,
+  ToolExecutionValidationContext,
+  ToolExecutionValidator,
+  WorkflowExecutionValidationContext,
+  WorkflowExecutionValidator,
+} from "./execution-validation";
 export * from "./types";
 export * from "./utils";
 export { zodSchemaToJsonUI } from "./utils/toolParser";

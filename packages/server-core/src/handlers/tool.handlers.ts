@@ -1,4 +1,4 @@
-import { type Tool, zodSchemaToJsonUI } from "@voltagent/core";
+import { ClientHTTPError, type Tool, zodSchemaToJsonUI } from "@voltagent/core";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse } from "../types";
@@ -20,6 +20,13 @@ type AgentWithTools = {
   id: string;
   name?: string;
   getTools: () => Tool[];
+  validateToolExecution?: (params: {
+    tool: Tool;
+    args: unknown;
+    options?: Record<string, unknown>;
+    toolCallId?: string;
+    messages?: unknown[];
+  }) => Promise<void>;
 };
 
 function findTool(
@@ -188,6 +195,7 @@ export async function handleExecuteTool(
 
   const executionStart = Date.now();
   const abortController = new AbortController();
+  const toolCallId = generateId();
 
   try {
     const userId =
@@ -197,7 +205,7 @@ export async function handleExecuteTool(
       body?.conversationId;
 
     // Build a minimal execution context for tools
-    const result = await tool.execute(parsedInput, {
+    const executionOptions = {
       userId,
       conversationId,
       context: contextMap,
@@ -205,12 +213,22 @@ export async function handleExecuteTool(
       abortController,
       toolContext: {
         name: tool.name,
-        callId: generateId(),
+        callId: toolCallId,
         messages: [],
         abortSignal: abortController.signal,
       },
       logger,
+    };
+
+    await agent.validateToolExecution?.({
+      tool,
+      args: parsedInput,
+      options: executionOptions,
+      toolCallId,
+      messages: [],
     });
+
+    const result = await tool.execute(parsedInput, executionOptions);
 
     const executionTime = Date.now() - executionStart;
 
@@ -229,6 +247,16 @@ export async function handleExecuteTool(
       agentId: agent.id,
       error: error instanceof Error ? error.message : safeStringify(error),
     });
+
+    if (error instanceof ClientHTTPError) {
+      return {
+        success: false,
+        error: error.message,
+        code: error.code,
+        name: error.name,
+        httpStatus: error.httpStatus,
+      };
+    }
 
     return {
       success: false,

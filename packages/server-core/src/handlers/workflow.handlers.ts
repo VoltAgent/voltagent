@@ -1,10 +1,11 @@
-import type {
-  ServerProviderDeps,
-  Workflow,
-  WorkflowRunQuery,
-  WorkflowStateEntry,
+import {
+  ClientHTTPError,
+  type ServerProviderDeps,
+  type Workflow,
+  type WorkflowRunQuery,
+  type WorkflowStateEntry,
+  zodSchemaToJsonUI,
 } from "@voltagent/core";
-import { zodSchemaToJsonUI } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { z } from "zod";
 import type { WorkflowReplayRequestSchema } from "../schemas/agent.schemas";
@@ -13,6 +14,14 @@ import { processWorkflowOptions } from "../utils/options";
 import { formatSSE } from "../utils/sse";
 
 const MAX_STREAM_REPLAY_HISTORY = 500;
+
+const mapClientHTTPError = (error: ClientHTTPError): ErrorResponse => ({
+  success: false,
+  error: error.message,
+  code: error.code,
+  name: error.name,
+  httpStatus: error.httpStatus,
+});
 
 type StreamQueryValue = string | number | null | undefined;
 
@@ -483,6 +492,9 @@ export async function handleExecuteWorkflow(
     }
   } catch (error) {
     logger.error("Failed to execute workflow", { error });
+    if (error instanceof ClientHTTPError) {
+      return mapClientHTTPError(error);
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to execute workflow",
@@ -549,6 +561,9 @@ export async function handleStreamWorkflow(
     return createWorkflowSessionStream(session);
   } catch (error) {
     logger.error("Failed to initiate workflow stream", { error });
+    if (error instanceof ClientHTTPError) {
+      return mapClientHTTPError(error);
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to initiate workflow stream",
