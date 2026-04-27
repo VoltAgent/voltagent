@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Workspace } from "..";
 import type { EmbeddingAdapter } from "../../memory/adapters/embedding/types";
 import { InMemoryVectorAdapter } from "../../memory/adapters/vector/in-memory";
-import { WorkspaceFilesystem } from "../filesystem";
+import { InMemoryFilesystemBackend, WorkspaceFilesystem } from "../filesystem";
 import { WorkspaceSearch, createWorkspaceSearchToolkit } from "./index";
 
 const createExecuteOptions = () => ({
@@ -198,6 +198,109 @@ describe("WorkspaceSearch", () => {
     expect(modelOutput?.value).toContain("Found 1 result(s):");
     expect(modelOutput?.value).toContain("lines 2-3");
     expect(modelOutput?.value).toContain("bm25=");
+  });
+
+  it("defers auto-index until search provides context for tenant-aware filesystem", async () => {
+    const files = {
+      "/workspace/a.ts": buildFileData("export const tenant = 'a';"),
+    };
+    const dirs = new Set(["/workspace/"]);
+
+    let callCount = 0;
+    const tenantBackend = (ctx: any) => {
+      callCount++;
+      const cid = ctx?.operationContext?.conversationId;
+      if (!cid) {
+        throw new Error("Tenant filesystem requires operationContext.conversationId");
+      }
+      return new InMemoryFilesystemBackend(files, dirs);
+    };
+
+    const filesystem = new WorkspaceFilesystem({ backend: tenantBackend as any });
+    const search = new WorkspaceSearch({
+      filesystem,
+      autoIndexPaths: [{ path: "/workspace", glob: "**/*.ts" }],
+    });
+
+    // Constructor should NOT have called the backend
+    expect(callCount).toBe(0);
+
+    // Search with proper context should trigger auto-index and succeed
+    const results = await search.search("tenant", {
+      path: "/workspace",
+      context: {
+        operationContext: { conversationId: "conv-a" } as any,
+      },
+    });
+
+    expect(callCount).toBeGreaterThan(0);
+    expect(results.length).toBe(1);
+    expect(results[0].path).toBe("/workspace/a.ts");
+  });
+
+  it("retries auto-index when previous attempt failed without context", async () => {
+    const files = {
+      "/workspace/b.ts": buildFileData("export const value = 2;"),
+    };
+    const dirs = new Set(["/workspace/"]);
+
+    let attempt = 0;
+    const tenantBackend = (ctx: any) => {
+      attempt++;
+      const cid = ctx?.operationContext?.conversationId;
+      if (!cid) {
+        throw new Error("Missing conversationId");
+      }
+      return new InMemoryFilesystemBackend(files, dirs);
+    };
+
+    const filesystem = new WorkspaceFilesystem({ backend: tenantBackend as any });
+    const search = new WorkspaceSearch({
+      filesystem,
+      autoIndexPaths: [{ path: "/workspace", glob: "**/*.ts" }],
+    });
+
+    // First search without context — auto-index should fail and allow retry
+    const empty = await search.search("value", { path: "/workspace" });
+    expect(empty.length).toBe(0);
+
+    // Second search with context — should retry auto-index and succeed
+    const results = await search.search("value", {
+      path: "/workspace",
+      context: {
+        operationContext: { conversationId: "conv-b" } as any,
+      },
+    });
+
+    expect(results.length).toBe(1);
+    expect(results[0].path).toBe("/workspace/b.ts");
+  });
+
+  it("does not re-run auto-index after successful completion", async () => {
+    let indexCallCount = 0;
+    const filesystem = new WorkspaceFilesystem({
+      files: {
+        "/workspace/c.ts": buildFileData("export const c = 3;"),
+      },
+    });
+
+    const search = new WorkspaceSearch({
+      filesystem,
+      autoIndexPaths: [{ path: "/workspace", glob: "**/*.ts" }],
+    });
+
+    const origIndexPaths = search.indexPaths.bind(search);
+    search.indexPaths = async (...args: any[]) => {
+      indexCallCount++;
+      return origIndexPaths(...args);
+    };
+
+    await search.search("c", { path: "/workspace" });
+    const firstCount = indexCallCount;
+
+    await search.search("c", { path: "/workspace" });
+    // indexPaths should not have been called again
+    expect(indexCallCount).toBe(firstCount);
   });
 
   it("can return snippet-only output when include_content is false", async () => {
