@@ -216,6 +216,7 @@ export class WorkspaceSearch {
   private readonly defaultMode: WorkspaceSearchMode;
   private readonly defaultWeights: { lexicalWeight: number; vectorWeight: number };
   private autoIndexPromise?: Promise<void>;
+  private autoIndexDone = false;
   status: WorkspaceComponentStatus = "idle";
 
   constructor(options: WorkspaceSearchConfig & { filesystem: WorkspaceFilesystem }) {
@@ -232,14 +233,9 @@ export class WorkspaceSearch {
       vectorWeight: options.hybrid?.vectorWeight ?? DEFAULT_HYBRID_VECTOR_WEIGHT,
     };
 
-    if (this.autoIndexPaths && this.autoIndexPaths.length > 0) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths)
-        .then(() => undefined)
-        .catch((error) => {
-          console.error("Workspace search auto-index failed:", error);
-          return undefined;
-        });
-    }
+    // Auto-indexing is deferred to ensureAutoIndex() so that
+    // tenant-aware filesystems receive the operationContext
+    // supplied by the first search() or init() call.
   }
 
   async init(): Promise<void> {
@@ -275,12 +271,25 @@ export class WorkspaceSearch {
     if (!this.autoIndexPaths || this.autoIndexPaths.length === 0) {
       return;
     }
+    if (this.autoIndexDone) {
+      return;
+    }
     if (!this.autoIndexPromise) {
       this.autoIndexPromise = this.indexPaths(this.autoIndexPaths, { context })
-        .then(() => undefined)
+        .then((summary) => {
+          // Mark complete only if something was indexed or no errors occurred.
+          // When all paths error (e.g. missing context for tenant FS),
+          // allow retry on the next call with potentially valid context.
+          if (summary.indexed > 0 || summary.errors.length === 0) {
+            this.autoIndexDone = true;
+          } else {
+            this.autoIndexPromise = undefined;
+          }
+        })
         .catch((error) => {
           console.error("Workspace search auto-index failed:", error);
-          return undefined;
+          // Allow retry on next call with potentially valid context
+          this.autoIndexPromise = undefined;
         });
     }
     await this.autoIndexPromise;
