@@ -169,6 +169,9 @@ skills
 !packages/core/src/workspace/skills
 !packages/core/src/workspace/skills/**
 
+# kiro
+.kiro
+
 dev-debug.log
 node_modules/
 
