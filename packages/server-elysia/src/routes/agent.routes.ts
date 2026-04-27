@@ -1,6 +1,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  handleCancelChat,
   handleChatStream,
   handleGenerateObject,
   handleGenerateText,
@@ -37,6 +38,17 @@ import {
 // Agent ID parameter
 const AgentIdParam = t.Object({
   id: t.String(),
+});
+
+// Agent chat cancel parameters
+const ChatCancelParams = t.Object({
+  id: t.String(),
+  conversationId: t.String(),
+});
+
+// Chat cancel body
+const ChatCancelBody = t.Object({
+  userId: t.String({ minLength: 1 }),
 });
 
 // History query parameters
@@ -202,6 +214,41 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
       detail: {
         summary: "Stream chat messages",
         description: "Stream chat messages using the specified agent (UI message stream SSE)",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // POST /agents/:id/chat/:conversationId/cancel - Cancel chat stream
+  app.post(
+    "/agents/:id/chat/:conversationId/cancel",
+    async ({ params, body, set }) => {
+      const response = await handleCancelChat(params.id, params.conversationId, body, deps, logger);
+      if (!response.success) {
+        set.status = response.httpStatus ?? 500;
+      }
+      return response;
+    },
+    {
+      params: ChatCancelParams,
+      body: ChatCancelBody,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: t.Object({
+            agentId: t.String(),
+            conversationId: t.String(),
+            userId: t.String(),
+            status: t.Literal("cancelled"),
+            cancelledAt: t.String(),
+          }),
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Cancel chat stream",
+        description: "Cancel an active chat stream for the specified agent and conversation",
         tags: ["Agents"],
       },
     },
