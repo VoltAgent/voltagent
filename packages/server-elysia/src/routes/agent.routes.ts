@@ -48,7 +48,7 @@ const ChatCancelParams = t.Object({
 
 // Chat cancel body
 const ChatCancelBody = t.Object({
-  userId: t.String(),
+  userId: t.String({ minLength: 1 }),
 });
 
 // History query parameters
