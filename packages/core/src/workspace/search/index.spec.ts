@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { Workspace } from "..";
 import type { EmbeddingAdapter } from "../../memory/adapters/embedding/types";
 import { InMemoryVectorAdapter } from "../../memory/adapters/vector/in-memory";
-import { WorkspaceFilesystem } from "../filesystem";
+import { InMemoryFilesystemBackend, WorkspaceFilesystem } from "../filesystem";
+import type { FileData, FilesystemBackendContext } from "../filesystem";
 import { WorkspaceSearch, createWorkspaceSearchToolkit } from "./index";
 
 const createExecuteOptions = () => ({
@@ -20,6 +21,60 @@ const buildFileData = (content: string) => {
 };
 
 describe("WorkspaceSearch", () => {
+  it("retries auto-index with operation context for tenant-aware filesystems", async () => {
+    const timestamp = new Date().toISOString();
+    const tenantFiles = new Map<string, Record<string, FileData>>([
+      [
+        "conv-a",
+        {
+          "/workspace/a.ts": {
+            content: ["export const tenant = 'a';", "export const value = 1;"],
+            created_at: timestamp,
+            modified_at: timestamp,
+          },
+        },
+      ],
+    ]);
+    const backendCalls: Array<string | undefined> = [];
+    const filesystem = new WorkspaceFilesystem({
+      backend: (context: FilesystemBackendContext) => {
+        const conversationId = context.operationContext?.conversationId;
+        backendCalls.push(conversationId);
+        if (!conversationId) {
+          throw new Error("Tenant filesystem requires operationContext.conversationId");
+        }
+
+        return new InMemoryFilesystemBackend(
+          tenantFiles.get(conversationId) ?? {},
+          new Set(["/workspace/"]),
+        );
+      },
+    });
+    const search = new WorkspaceSearch({
+      filesystem,
+      autoIndexPaths: [{ path: "/workspace", glob: "**/*.ts" }],
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    try {
+      await search.init();
+      const results = await search.search("tenant", {
+        path: "/workspace",
+        context: {
+          operationContext: {
+            conversationId: "conv-a",
+          } as any,
+        },
+      });
+
+      expect(backendCalls).toContain(undefined);
+      expect(backendCalls).toContain("conv-a");
+      expect(results.map((result) => result.path)).toEqual(["/workspace/a.ts"]);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it("forwards operation context from toolkit to search calls", async () => {
     const indexPaths = vi.fn(async () => ({
       indexed: 0,

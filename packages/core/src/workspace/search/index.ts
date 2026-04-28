@@ -231,15 +231,6 @@ export class WorkspaceSearch {
       lexicalWeight: options.hybrid?.lexicalWeight ?? DEFAULT_HYBRID_LEXICAL_WEIGHT,
       vectorWeight: options.hybrid?.vectorWeight ?? DEFAULT_HYBRID_VECTOR_WEIGHT,
     };
-
-    if (this.autoIndexPaths && this.autoIndexPaths.length > 0) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths)
-        .then(() => undefined)
-        .catch((error) => {
-          console.error("Workspace search auto-index failed:", error);
-          return undefined;
-        });
-    }
   }
 
   async init(): Promise<void> {
@@ -276,12 +267,22 @@ export class WorkspaceSearch {
       return;
     }
     if (!this.autoIndexPromise) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths, { context })
+      const promise = this.indexPaths(this.autoIndexPaths, { context })
+        .then((summary) => {
+          if (summary.indexed === 0 && summary.errors.length > 0) {
+            throw new Error(summary.errors.join("; "));
+          }
+          return undefined;
+        })
         .then(() => undefined)
         .catch((error) => {
           console.error("Workspace search auto-index failed:", error);
+          if (this.autoIndexPromise === promise) {
+            this.autoIndexPromise = undefined;
+          }
           return undefined;
         });
+      this.autoIndexPromise = promise;
     }
     await this.autoIndexPromise;
   }
