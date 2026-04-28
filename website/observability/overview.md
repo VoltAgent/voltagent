@@ -28,5 +28,6 @@ Experience VoltOps in action with [**Live Demo**](https://console.voltagent.dev/
 
 1. [**Setup**](setup) - Connect your VoltAgent app to VoltOps in a few minutes.
 2. [**Mental Model**](mental-model) - Learn how traces, spans, and context map to the UI.
-3. [**MCP**](mcp) - Let AI coding agents inspect traces and logs through a read-only MCP server.
-4. [**Tracing Overview**](tracing/overview) - Continue with full tracing features.
+3. [**Public Trace API**](public-trace-api) - Load persisted traces in workflow testers and internal tools.
+4. [**MCP**](mcp) - Let AI coding agents inspect traces and logs through a read-only MCP server.
+5. [**Tracing Overview**](tracing/overview) - Continue with full tracing features.

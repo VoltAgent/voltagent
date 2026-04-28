@@ -61,8 +61,11 @@ import type {
   VoltOpsFeedbackCreateInput,
   VoltOpsFeedbackToken,
   VoltOpsFeedbackTokenCreateInput,
+  VoltOpsObservabilityApi,
   VoltOpsPromptManager,
   VoltOpsScorerSummary,
+  VoltOpsTraceListOptions,
+  VoltOpsTraceListResponse,
 } from "./types";
 
 /**
@@ -76,6 +79,7 @@ export class VoltOpsClient implements IVoltOpsClient {
   public readonly managedMemory: ManagedMemoryVoltOpsClient;
   public readonly actions: VoltOpsActionsClient;
   public readonly evals: VoltOpsEvalsApi;
+  public readonly observability: VoltOpsObservabilityApi;
   private readonly logger: Logger;
 
   private get fetchImpl(): typeof fetch {
@@ -113,6 +117,11 @@ export class VoltOpsClient implements IVoltOpsClient {
       },
       scorers: {
         create: this.createEvalScorer.bind(this),
+      },
+    };
+    this.observability = {
+      traces: {
+        list: this.listObservabilityTraces.bind(this),
       },
     };
 
@@ -379,6 +388,16 @@ export class VoltOpsClient implements IVoltOpsClient {
   ): Promise<VoltOpsScorerSummary> {
     const response = await this.request<unknown>("POST", "/evals/scorers", payload);
     return this.normalizeScorerSummary(response);
+  }
+
+  private async listObservabilityTraces(
+    options: VoltOpsTraceListOptions = {},
+  ): Promise<VoltOpsTraceListResponse> {
+    const query = this.buildQueryString(options as Record<string, unknown>);
+    return await this.request<VoltOpsTraceListResponse>(
+      "GET",
+      `/api/public/otel/v1/traces${query}`,
+    );
   }
 
   private async request<T>(method: string, endpoint: string, body?: unknown): Promise<T> {

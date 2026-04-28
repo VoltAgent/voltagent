@@ -956,6 +956,87 @@ export interface VoltOpsScorerSummary {
   updatedAt: string;
 }
 
+export type VoltOpsTraceSortOrder = "asc" | "desc";
+
+export interface VoltOpsTraceListOptions {
+  agentId?: string | string[];
+  model?: string | string[];
+  traceId?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: VoltOpsTraceSortOrder;
+  environments?: string | string[];
+  status?: string | string[];
+  level?: string | string[];
+  tags?: string | string[];
+  userId?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  minTokens?: number;
+  maxTokens?: number;
+  minCost?: number;
+  maxCost?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  search?: string;
+  conversationId?: string;
+  entityType?: string | string[];
+  promptId?: string;
+  promptVersion?: string;
+  feedbackKey?: string | string[];
+  feedbackScore?: number;
+  minFeedbackScore?: number;
+  maxFeedbackScore?: number;
+  feedbackValue?: string;
+  feedbackSourceType?: string | string[];
+}
+
+export interface VoltOpsObservabilityTrace {
+  trace_id: string;
+  project_id: string;
+  agent_id?: string;
+  entity_type?: string;
+  user_id?: string | null;
+  conversation_id?: string | null;
+  start_time: string;
+  end_time?: string | null;
+  status?: string | null;
+  input?: unknown;
+  output?: unknown;
+  usage?: unknown;
+  metadata?: Record<string, unknown> | null;
+  tags?: string[] | null;
+  model?: string | null;
+  level?: string | null;
+  status_message?: string | null;
+  service_name?: string;
+  service_version?: string | null;
+  span_count?: number;
+  error_count?: number;
+  duration_ms?: number | null;
+  resource_attributes?: Record<string, unknown> | null;
+  created_at?: string;
+  latest_feedback_score?: number | null;
+  latest_feedback_key?: string | null;
+  latest_feedback_comment?: string | null;
+  latest_feedback_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface VoltOpsTraceListResponse {
+  data: VoltOpsObservabilityTrace[];
+  total: number;
+  pageCount: number;
+  subscription?: unknown;
+}
+
+export interface VoltOpsObservabilityApi {
+  traces: {
+    list(options?: VoltOpsTraceListOptions): Promise<VoltOpsTraceListResponse>;
+  };
+}
+
 /**
  * Main VoltOps client interface
  */
@@ -971,6 +1052,9 @@ export interface VoltOpsClient {
 
   /** Evaluations API surface */
   evals: VoltOpsEvalsApi;
+
+  /** Observability read API surface */
+  observability: VoltOpsObservabilityApi;
 
   /** Create a feedback token for the given trace */
   createFeedbackToken(input: VoltOpsFeedbackTokenCreateInput): Promise<VoltOpsFeedbackToken>;

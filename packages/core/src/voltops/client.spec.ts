@@ -354,6 +354,46 @@ describe("VoltOpsClient", () => {
     });
   });
 
+  describe("observability client", () => {
+    it("lists traces with API keys, filters, and pagination", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            { trace_id: "trace-1", project_id: "project-1", start_time: "2026-04-27T00:00:00Z" },
+          ],
+          total: 1,
+          pageCount: 1,
+        }),
+      });
+      const observabilityClient = new VoltOpsClient({
+        ...mockOptions,
+        fetch: fetchMock as unknown as typeof fetch,
+      });
+
+      const result = await observabilityClient.observability.traces.list({
+        limit: 10,
+        offset: 20,
+        search: "checkout",
+        environments: ["dev", "prod"],
+        sortOrder: "desc",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.voltops.com/api/public/otel/v1/traces?limit=10&offset=20&search=checkout&environments=dev%2Cprod&sortOrder=desc",
+        expect.objectContaining({
+          method: "GET",
+          headers: expect.objectContaining({
+            "X-Public-Key": "pk_test_key",
+            "X-Secret-Key": "sk_test_key",
+          }),
+          body: undefined,
+        }),
+      );
+      expect(result.total).toBe(1);
+    });
+  });
+
   describe("actions client", () => {
     const originalFetch = globalThis.fetch;
     let fetchMock: ReturnType<typeof vi.fn>;

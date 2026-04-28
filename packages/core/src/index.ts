@@ -126,6 +126,13 @@ export {
   trace,
   context,
 } from "./observability";
+export type {
+  VoltOpsObservabilityApi,
+  VoltOpsObservabilityTrace,
+  VoltOpsTraceListOptions,
+  VoltOpsTraceListResponse,
+  VoltOpsTraceSortOrder,
+} from "./voltops";
 export { TRIGGER_CONTEXT_KEY } from "./observability/context-keys";
 export { SERVERLESS_ENV_CONTEXT_KEY } from "./context-keys";
 export { createTriggers } from "./triggers/dsl";

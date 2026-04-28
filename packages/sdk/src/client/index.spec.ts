@@ -347,4 +347,41 @@ describe("VoltAgentCoreAPI", () => {
       expect(response).toEqual(apiResponse);
     });
   });
+
+  describe("observability traces", () => {
+    it("requests traces with search and pagination filters", async () => {
+      const apiResponse = {
+        data: [
+          {
+            trace_id: "trace-1",
+            project_id: "project-1",
+            start_time: "2026-04-27T00:00:00Z",
+          },
+        ],
+        total: 1,
+        pageCount: 1,
+      };
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: async () => apiResponse,
+      });
+
+      const api = new VoltAgentCoreAPI(defaultOptions);
+      const response = await api.observability.traces.list({
+        limit: 25,
+        offset: 50,
+        search: "workflow",
+        environments: ["dev", "prod"],
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.voltagent.dev/api/public/otel/v1/traces?limit=25&offset=50&search=workflow&environments=dev%2Cprod",
+        expect.objectContaining({ method: "GET" }),
+      );
+      expect(response).toEqual(apiResponse);
+    });
+  });
 });

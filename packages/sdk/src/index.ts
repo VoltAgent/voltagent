@@ -38,6 +38,11 @@ export type {
   RagSearchKnowledgeBaseRequest,
   RagSearchKnowledgeBaseResponse,
   RagSearchKnowledgeBaseResult,
+  VoltOpsObservabilityApi,
+  VoltOpsObservabilityTrace,
+  VoltOpsTraceListOptions,
+  VoltOpsTraceListResponse,
+  VoltOpsTraceSortOrder,
 } from "./types";
 export type {
   VoltOpsActionExecutionResult,

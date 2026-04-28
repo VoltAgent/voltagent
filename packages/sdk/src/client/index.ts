@@ -19,6 +19,9 @@ import type {
   ListEvalDatasetItemsOptions,
   ListEvalExperimentsOptions,
   VoltAgentClientOptions,
+  VoltOpsObservabilityApi,
+  VoltOpsTraceListOptions,
+  VoltOpsTraceListResponse,
 } from "../types";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -80,6 +83,7 @@ export class VoltAgentCoreAPI {
   private readonly timeout: number;
   public readonly actions: VoltOpsActionsClient;
   public readonly evals: VoltAgentEvalsAPI;
+  public readonly observability: VoltOpsObservabilityApi;
 
   constructor(options: VoltAgentClientOptions) {
     const baseUrl = (options.baseUrl ?? DEFAULT_API_BASE_URL).trim();
@@ -118,6 +122,11 @@ export class VoltAgentCoreAPI {
         list: this.listEvalExperiments.bind(this),
         get: this.getEvalExperiment.bind(this),
         create: this.createEvalExperiment.bind(this),
+      },
+    };
+    this.observability = {
+      traces: {
+        list: this.listObservabilityTraces.bind(this),
       },
     };
   }
@@ -177,6 +186,30 @@ export class VoltAgentCoreAPI {
     return data as T;
   }
 
+  private buildQueryString(params: Record<string, unknown>): string {
+    const searchParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          continue;
+        }
+        searchParams.set(key, value.join(","));
+      } else if (value instanceof Date) {
+        searchParams.set(key, value.toISOString());
+      } else {
+        searchParams.set(key, String(value));
+      }
+    }
+
+    const query = searchParams.toString();
+    return query ? `?${query}` : "";
+  }
+
   public async sendRequest(path: string, init?: RequestInit): Promise<Response> {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     const url = `${this.baseUrl}${normalizedPath}`;
@@ -197,6 +230,13 @@ export class VoltAgentCoreAPI {
       method: "POST",
       body: safeStringify(payload),
     });
+  }
+
+  private async listObservabilityTraces(
+    options: VoltOpsTraceListOptions = {},
+  ): Promise<VoltOpsTraceListResponse> {
+    const query = this.buildQueryString(options as Record<string, unknown>);
+    return await this.request<VoltOpsTraceListResponse>(`/api/public/otel/v1/traces${query}`);
   }
 
   private async appendEvalResults(
