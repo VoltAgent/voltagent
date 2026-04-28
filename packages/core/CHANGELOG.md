@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 2.7.4
+
+### Patch Changes
+
+- [#1255](https://github.com/VoltAgent/voltagent/pull/1255) [`97226de`](https://github.com/VoltAgent/voltagent/commit/97226dee981d47c5002727d07a878539c43483bf) Thanks [@omeraplak](https://github.com/omeraplak)! - Add a VoltOps observability trace list API for loading persisted traces with project keys.
+
+- [#1257](https://github.com/VoltAgent/voltagent/pull/1257) [`faeb4ff`](https://github.com/VoltAgent/voltagent/commit/faeb4ffa5fb8dbc86489403c3eabb976750f77ea) Thanks [@omeraplak](https://github.com/omeraplak)! - Fix workspace search auto-index retry behavior for tenant-aware filesystems that require operation context.
+
 ## 2.7.3
 
 ### Patch Changes
