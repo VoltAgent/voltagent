@@ -2980,6 +2980,46 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-valkey-store:
+    dependencies:
+      '@valkey/valkey-glide':
+        specifier: ^2.3.1
+        version: 2.3.1
+      '@voltagent/a2a-server':
+        specifier: ^2.0.3
+        version: link:../../packages/a2a-server
+      '@voltagent/core':
+        specifier: ^2.7.2
+        version: link:../../packages/core
+      '@voltagent/internal':
+        specifier: ^1.0.3
+        version: link:../../packages/internal
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/resumable-streams':
+        specifier: ^2.0.2
+        version: link:../../packages/resumable-streams
+      '@voltagent/server-hono':
+        specifier: ^2.0.12
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   examples/with-vector-search:
     dependencies:
       '@ai-sdk/openai':
@@ -3636,6 +3676,9 @@ importers:
       '@a2a-js/sdk':
         specifier: ^0.2.5
         version: 0.2.5
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3646,6 +3689,9 @@ importers:
       '@voltagent/core':
         specifier: ^2.0.2
         version: link:../core
+      fast-check:
+        specifier: ^3.23.2
+        version: 3.23.2
 
   packages/ag-ui:
     dependencies:
@@ -4223,6 +4269,9 @@ importers:
 
   packages/resumable-streams:
     dependencies:
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/core':
         specifier: ^2.6.6
         version: link:../core
@@ -21358,7 +21407,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0-rc.9
+      '@rolldown/pluginutils': 1.0.0-rc.17
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)
