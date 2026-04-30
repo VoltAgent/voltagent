@@ -21422,6 +21422,69 @@ packages:
       - graphql
     dev: false
 
+  /@valkey/valkey-glide-darwin-arm64@2.3.1:
+    resolution: {integrity: sha512-S3uCwGoBqQuVieBsevftlXzy/lFkDf49wQkg0UaRGMoWhmaik8d9rwTzKky1+otLjWCblWtMDcqIWGMs5ppo8Q==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-darwin-x64@2.3.1:
+    resolution: {integrity: sha512-7F+UoyMhO0QiAHEDZApy0+PNR7v7Gct5SMiRH+8RuUk8Nf1Cc3mNVtFXk0jwwbhatiWiSNEaMDkTRPWYZN6IcQ==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-arm64-gnu@2.3.1:
+    resolution: {integrity: sha512-Aigxpq6oSxPhdX7V0JZsQrBW4pzcNibCb1m6XorGdWpG62sttV/3DKz/06V+h1dSGfqpkjWPxRJS1EmTqPYmZw==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-arm64-musl@2.3.1:
+    resolution: {integrity: sha512-vmohWbUncgH+Rz1OnXPeSDVChCFMy0MYL38qcmAS05aGwL2sgMjipsEWiAsc82IAauKsVE7Ou68YZcyYK/mhag==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-x64-gnu@2.3.1:
+    resolution: {integrity: sha512-v/pJefhNO2fjEKq7uQAked896S2N3ZymiO/ei2v8JRxbYk1M+/Ffl6NH6SG+Mo/k2dyeRN1B5PXNq79jv149Rg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-x64-musl@2.3.1:
+    resolution: {integrity: sha512-GAcWs6MrS4v6/mjoaYyd8ay+L6Zl2L9YjkuKsupWzjSsT+PEVV/3yX0ecNeK7SGMn5Wfd3InZ3gfGPEsWEhc0g==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide@2.3.1:
+    resolution: {integrity: sha512-HzKCoNRSJYG83vKrYVJk+By2a0qVt/VuQfziCtdM6Q3Lt2WUE1PqxUAwO1Br2flSgrTxNdGgaGmX8qdnM25d5w==}
+    engines: {node: '>=16'}
+    dependencies:
+      long: 5.3.2
+      protobufjs: 7.5.3
+    optionalDependencies:
+      '@valkey/valkey-glide-darwin-arm64': 2.3.1
+      '@valkey/valkey-glide-darwin-x64': 2.3.1
+      '@valkey/valkey-glide-linux-arm64-gnu': 2.3.1
+      '@valkey/valkey-glide-linux-arm64-musl': 2.3.1
+      '@valkey/valkey-glide-linux-x64-gnu': 2.3.1
+      '@valkey/valkey-glide-linux-x64-musl': 2.3.1
+    dev: false
+
   /@vercel/nft@0.29.4(supports-color@10.2.2):
     resolution: {integrity: sha512-6lLqMNX3TuycBPABycx7A9F1bHQR7kiQln6abjFbPrf5C/05qHM9M5E4PeTE59c7z8g6vHnx1Ioihb2AQl7BTA==}
     engines: {node: '>=18'}
