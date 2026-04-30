@@ -76,10 +76,17 @@ export class A2AServer {
     }
   }
 
+  /**
+   * Initializes the server with runtime dependencies.
+   *
+   * Task store precedence: `config.taskStore` (constructor) > `deps.taskStore` > `InMemoryTaskStore`.
+   * If a `taskStore` was provided in the `A2AServerConfig` constructor, it takes priority over
+   * the one supplied here in `deps`.
+   */
   initialize(deps: A2AServerDeps): void {
     this.deps = {
       ...deps,
-      taskStore: deps.taskStore ?? new InMemoryTaskStore(),
+      taskStore: this.config.taskStore ?? deps.taskStore ?? new InMemoryTaskStore(),
     } as Required<A2AServerDeps>;
   }
 

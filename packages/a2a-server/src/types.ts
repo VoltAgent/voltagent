@@ -144,6 +144,11 @@ export interface A2AServerConfig {
   };
   agents?: Record<string, Agent>;
   filterAgents?: A2AFilterFunction<Agent>;
+  /**
+   * Optional task store. When provided, takes precedence over `deps.taskStore` passed to
+   * `A2AServer.initialize()`. Falls back to an in-memory store if neither is set.
+   */
+  taskStore?: TaskStore;
 }
 
 export interface A2AServerMetadata extends BaseA2AServerMetadata {}
