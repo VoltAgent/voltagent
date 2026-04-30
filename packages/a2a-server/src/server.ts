@@ -84,6 +84,13 @@ export class A2AServer {
    * the one supplied here in `deps`.
    */
   initialize(deps: A2AServerDeps): void {
+    if (this.config.taskStore && deps.taskStore) {
+      console.debug(
+        "[A2AServer] config.taskStore is overriding deps.taskStore. " +
+          "The task store provided in A2AServerConfig takes precedence.",
+      );
+    }
+
     this.deps = {
       ...deps,
       taskStore: this.config.taskStore ?? deps.taskStore ?? new InMemoryTaskStore(),
