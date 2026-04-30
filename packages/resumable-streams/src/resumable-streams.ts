@@ -84,6 +84,7 @@ const getResumableStreamDisabledInfo = (value: unknown) => {
   return { reason, docsUrl };
 };
 
+/** @internal */
 export const markResumableStreamStoreType = <T extends object>(
   value: T,
   type: string,
@@ -201,6 +202,7 @@ const buildStreamKey = ({ conversationId, userId }: ResumableStreamContext) => {
   return `${userId}-${conversationId}`;
 };
 
+/** @internal */
 export const buildActiveStreamKey = (keyPrefix: string, context: ResumableStreamContext) =>
   `${keyPrefix}:active:${buildStreamKey(context)}`;
 
@@ -216,6 +218,7 @@ const buildActiveStreamQuery = (context: ResumableStreamContext, streamId?: stri
   return params.toString();
 };
 
+/** @internal */
 export const createActiveStreamStoreFromPublisher = (
   publisher: ResumableStreamPublisher,
   keyPrefix: string,
@@ -250,6 +253,7 @@ export const createActiveStreamStoreFromPublisher = (
   },
 });
 
+/** @internal */
 export const mergeStreamAndActiveStore = <T extends ResumableStreamStore>(
   streamStore: T,
   activeStreamStore: ResumableStreamActiveStore,

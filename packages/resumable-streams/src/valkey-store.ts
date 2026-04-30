@@ -47,17 +47,15 @@ export async function createResumableStreamValkeyStore(
   try {
     const mod = await import("@valkey/valkey-glide");
     GlideClientClass = mod.GlideClient;
-    // PubSubChannelModes isn't exported as a value type; cast to access the enum directly.
-    const configClass = mod.GlideClientConfiguration as unknown as Record<string, unknown>;
-    const pubSubModes = (configClass as { PubSubChannelModes?: { Exact?: number } })
-      ?.PubSubChannelModes;
-    if (pubSubModes?.Exact === undefined) {
+    // PubSubChannelModes isn't exported as a value type; use a single guarded access.
+    const PubSubExact = (mod as any).GlideClientConfiguration?.PubSubChannelModes?.Exact;
+    if (PubSubExact === undefined) {
       throw new Error(
         "GlideClientConfiguration.PubSubChannelModes.Exact is not available. " +
           "The installed version of @valkey/valkey-glide may be incompatible.",
       );
     }
-    GlideClientConfigurationClass = configClass as { PubSubChannelModes: { Exact: number } };
+    GlideClientConfigurationClass = { PubSubChannelModes: { Exact: PubSubExact } };
     timeUnit = mod.TimeUnit;
   } catch (err) {
     if (err instanceof Error && err.message.includes("PubSubChannelModes")) {
@@ -71,6 +69,13 @@ export async function createResumableStreamValkeyStore(
 
   const keyPrefix = options.keyPrefix ?? DEFAULT_KEY_PREFIX;
   const { client, clientConfig } = options;
+
+  if (
+    options.ttlSeconds !== undefined &&
+    (!Number.isFinite(options.ttlSeconds) || options.ttlSeconds <= 0)
+  ) {
+    throw new Error("ttlSeconds must be a positive finite number");
+  }
 
   // Publisher adapter
   const publisher = {
@@ -108,7 +113,7 @@ export async function createResumableStreamValkeyStore(
       // Close any existing client for this channel to avoid resource leaks on duplicate calls
       const existing = subscriptionClients.get(channel);
       if (existing) {
-        existing.close();
+        await existing.close();
         subscriptionClients.delete(channel);
       }
 
@@ -124,7 +129,7 @@ export async function createResumableStreamValkeyStore(
           channelsAndPatterns: {
             [GlideClientConfigurationClass.PubSubChannelModes.Exact]: new Set([channel]),
           },
-          callback: (msg: { message: unknown }, _ctx: unknown) => callback(msg.message as string),
+          callback: (msg: { message: unknown }, _ctx: unknown) => callback(String(msg.message)),
         },
       });
       subscriptionClients.set(channel, subClient);
@@ -132,7 +137,7 @@ export async function createResumableStreamValkeyStore(
     async unsubscribe(channel: string) {
       const subClient = subscriptionClients.get(channel);
       if (subClient) {
-        subClient.close();
+        await subClient.close();
         subscriptionClients.delete(channel);
       }
     },
@@ -170,6 +175,10 @@ export async function createResumableStreamValkeyStore(
 
   return {
     ...taggedStore,
+    /**
+     * Closes all internally-created subscription clients. The main `client` passed in
+     * `options` is **not** closed — the caller retains ownership of its lifecycle.
+     */
     async close() {
       const closePromises: Promise<void>[] = [];
       for (const subClient of subscriptionClients.values()) {
