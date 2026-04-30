@@ -4,7 +4,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "NodeNext",
     "target": "ES2022",
     "types": ["node"],
     "esModuleInterop": true
