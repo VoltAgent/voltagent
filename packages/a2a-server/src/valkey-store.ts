@@ -14,6 +14,13 @@ const VALKEY_GLIDE_REQUIRED =
 export async function createValkeyTaskStore(
   options: ValkeyTaskStoreOptions,
 ): Promise<ValkeyTaskStore> {
+  if (
+    options.ttlSeconds !== undefined &&
+    (!Number.isFinite(options.ttlSeconds) || options.ttlSeconds <= 0)
+  ) {
+    throw new Error("ttlSeconds must be a positive finite number");
+  }
+
   let timeUnitSeconds: TimeUnit | undefined;
   if (options.ttlSeconds !== undefined) {
     try {
@@ -26,16 +33,25 @@ export async function createValkeyTaskStore(
   return new ValkeyTaskStore(options, timeUnitSeconds);
 }
 
+/**
+ * Valkey-backed implementation of {@link TaskStore}.
+ *
+ * **Important:** `activeCancellations` is an in-process `Set` and is **not** propagated across
+ * server instances sharing the same Valkey backend. For cross-instance cancellation, `A2AServer`
+ * would need to subscribe to a Valkey pub/sub channel for cancellation events instead of relying
+ * on process-local `AbortController` signaling.
+ */
 export class ValkeyTaskStore implements TaskStore {
   private readonly client: GlideClient | GlideClusterClient;
   private readonly keyPrefix: string;
   private readonly ttlSeconds?: number;
+  /** @internal */
   private timeUnitSeconds?: TimeUnit;
 
   // In-process only, not propagated across instances via Valkey.
   readonly activeCancellations = new Set<string>();
 
-  constructor(options: ValkeyTaskStoreOptions, timeUnitSeconds?: TimeUnit) {
+  constructor(options: ValkeyTaskStoreOptions, /** @internal */ timeUnitSeconds?: TimeUnit) {
     this.client = options.client;
     this.keyPrefix = options.keyPrefix ?? "a2a-tasks";
     this.ttlSeconds = options.ttlSeconds;
