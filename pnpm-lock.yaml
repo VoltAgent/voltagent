@@ -117,7 +117,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -126,7 +126,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -154,7 +154,7 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -163,7 +163,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -191,16 +191,16 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/serverless-hono':
-        specifier: ^2.0.12
+        specifier: ^2.0.11
         version: link:../../packages/serverless-hono
       dotenv:
         specifier: ^16.4.5
@@ -267,13 +267,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
         version: link:../../packages/libsql
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@xyflow/react':
         specifier: ^12.9.2
@@ -388,7 +388,7 @@ importers:
         specifier: ^2.0.3
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -397,7 +397,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -477,7 +477,7 @@ importers:
   examples/with-agent-tool:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       ai:
         specifier: ^6.0.0
@@ -502,7 +502,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -514,7 +514,7 @@ importers:
         specifier: ^2.0.3
         version: link:../../packages/sdk
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -539,7 +539,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -548,7 +548,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -573,7 +573,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -582,7 +582,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -716,7 +716,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -725,7 +725,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -756,10 +756,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -793,7 +793,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       ai:
         specifier: ^6.0.0
@@ -842,7 +842,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -851,7 +851,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -882,10 +882,10 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
@@ -928,10 +928,10 @@ importers:
   examples/with-cloudflare-workers:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^2.0.12
+        specifier: ^2.0.11
         version: link:../../packages/serverless-hono
       ai:
         specifier: ^6.0.0
@@ -962,7 +962,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -971,7 +971,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1058,7 +1058,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1067,7 +1067,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1092,7 +1092,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1101,7 +1101,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1126,7 +1126,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1135,7 +1135,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1160,13 +1160,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1188,7 +1188,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1197,7 +1197,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1271,7 +1271,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1280,7 +1280,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../../packages/server-hono
       composio-core:
         specifier: ^0.5.33
@@ -1311,7 +1311,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1320,7 +1320,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1345,7 +1345,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1354,7 +1354,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1379,13 +1379,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1407,7 +1407,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1416,7 +1416,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1441,7 +1441,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1450,7 +1450,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1549,7 +1549,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^2.0.3
@@ -1561,7 +1561,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1611,7 +1611,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1620,7 +1620,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1645,7 +1645,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1654,7 +1654,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/mcp-server
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1676,7 +1676,7 @@ importers:
   examples/with-mcp-server:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1685,7 +1685,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/mcp-server
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1710,7 +1710,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1719,7 +1719,7 @@ importers:
         specifier: ^2.1.2
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
     devDependencies:
       '@types/node':
@@ -1741,7 +1741,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1750,7 +1750,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1781,13 +1781,13 @@ importers:
         specifier: ^11.0.0
         version: 11.1.7(@nestjs/common@11.1.7)(@nestjs/core@11.1.7)
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/server-core':
-        specifier: ^2.1.18
+        specifier: ^2.1.16
         version: link:../../packages/server-core
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       hono:
         specifier: ^4.7.7
@@ -1827,10 +1827,10 @@ importers:
   examples/with-netlify-functions:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^2.0.12
+        specifier: ^2.0.11
         version: link:../../packages/serverless-hono
       ai:
         specifier: ^6.0.0
@@ -1867,7 +1867,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -1876,7 +1876,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -1973,7 +1973,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -1985,7 +1985,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/resumable-streams
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@xyflow/react':
         specifier: ^12.9.2
@@ -2091,13 +2091,13 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.2.7)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
         version: link:../../packages/libsql
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2125,7 +2125,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/evals':
         specifier: ^2.0.4
@@ -2159,13 +2159,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2196,7 +2196,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2205,7 +2205,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2227,7 +2227,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2236,7 +2236,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2264,7 +2264,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2273,7 +2273,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2304,7 +2304,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2313,7 +2313,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2350,7 +2350,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2359,7 +2359,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2396,7 +2396,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2405,7 +2405,7 @@ importers:
         specifier: ^2.1.2
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2433,7 +2433,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2442,7 +2442,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2470,7 +2470,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2479,7 +2479,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2504,13 +2504,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2535,7 +2535,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2544,7 +2544,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       zod:
         specifier: ^3.25.76
@@ -2563,7 +2563,7 @@ importers:
   examples/with-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2572,7 +2572,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/resumable-streams
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2597,7 +2597,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2606,7 +2606,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2631,7 +2631,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2640,7 +2640,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2665,7 +2665,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2677,7 +2677,7 @@ importers:
         specifier: ^2.0.3
         version: link:../../packages/sdk
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2705,7 +2705,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2714,7 +2714,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2742,7 +2742,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2751,7 +2751,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2779,13 +2779,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/supabase':
         specifier: ^2.1.3
@@ -2813,7 +2813,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2822,7 +2822,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2847,7 +2847,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2856,7 +2856,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2884,13 +2884,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2918,7 +2918,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2927,7 +2927,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2952,7 +2952,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2961,7 +2961,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -2980,6 +2980,46 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-valkey-store:
+    dependencies:
+      '@valkey/valkey-glide':
+        specifier: ^2.3.1
+        version: 2.3.1
+      '@voltagent/a2a-server':
+        specifier: ^2.0.3
+        version: link:../../packages/a2a-server
+      '@voltagent/core':
+        specifier: ^2.7.2
+        version: link:../../packages/core
+      '@voltagent/internal':
+        specifier: ^1.0.3
+        version: link:../../packages/internal
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/resumable-streams':
+        specifier: ^2.0.2
+        version: link:../../packages/resumable-streams
+      '@voltagent/server-hono':
+        specifier: ^2.0.12
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   examples/with-vector-search:
     dependencies:
       '@ai-sdk/openai':
@@ -2989,7 +3029,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -2998,7 +3038,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3023,7 +3063,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3032,7 +3072,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3057,7 +3097,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3066,7 +3106,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3109,7 +3149,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3118,7 +3158,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^2.1.0
@@ -3146,7 +3186,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3155,7 +3195,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^2.1.0
@@ -3189,7 +3229,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3198,7 +3238,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^2.1.0
@@ -3232,7 +3272,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3241,7 +3281,7 @@ importers:
         specifier: ^2.0.3
         version: link:../../packages/sdk
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       zod:
         specifier: ^3.25.76
@@ -3263,7 +3303,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3272,7 +3312,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3297,13 +3337,13 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       '@voltagent/voltagent-memory':
         specifier: ^1.0.4
@@ -3328,7 +3368,7 @@ importers:
   examples/with-voltops-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3337,7 +3377,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/resumable-streams
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3359,7 +3399,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3368,7 +3408,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3396,7 +3436,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3405,7 +3445,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3433,7 +3473,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3442,7 +3482,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3467,7 +3507,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3476,7 +3516,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3501,7 +3541,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3510,7 +3550,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3538,7 +3578,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3547,38 +3587,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
-        version: link:../../packages/server-hono
-      ai:
-        specifier: ^6.0.0
-        version: 6.0.3(zod@3.25.76)
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.6.2
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-
-  examples/with-xquik-tools:
-    dependencies:
-      '@voltagent/cli':
-        specifier: ^0.1.21
-        version: link:../../packages/cli
-      '@voltagent/core':
-        specifier: ^2.8.0
-        version: link:../../packages/core
-      '@voltagent/logger':
-        specifier: ^2.0.2
-        version: link:../../packages/logger
-      '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3603,7 +3612,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3612,7 +3621,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3634,7 +3643,7 @@ importers:
   examples/with-zapier-mcp:
     dependencies:
       '@voltagent/core':
-        specifier: ~2.8.0
+        specifier: ~2.7.4
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -3643,7 +3652,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^2.0.14
+        specifier: ^2.0.13
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
@@ -3667,6 +3676,9 @@ importers:
       '@a2a-js/sdk':
         specifier: ^0.2.5
         version: 0.2.5
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3677,6 +3689,9 @@ importers:
       '@voltagent/core':
         specifier: ^2.0.2
         version: link:../core
+      fast-check:
+        specifier: ^3.23.2
+        version: 3.23.2
 
   packages/ag-ui:
     dependencies:
@@ -4085,7 +4100,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^2.8.0
+        specifier: ^2.7.4
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -4254,6 +4269,9 @@ importers:
 
   packages/resumable-streams:
     dependencies:
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/core':
         specifier: ^2.6.6
         version: link:../core
@@ -4269,34 +4287,6 @@ importers:
       resumable-stream:
         specifier: ^2.2.10
         version: 2.2.10
-
-  packages/sandbox-blaxel:
-    dependencies:
-      '@blaxel/core':
-        specifier: ^0.2.0
-        version: 0.2.81(@hey-api/openapi-ts@0.97.1)
-      es-toolkit:
-        specifier: ^1.46.1
-        version: 1.46.1
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.6.2
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      '@voltagent/core':
-        specifier: ^2.4.1
-        version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.6.2)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/sandbox-daytona:
     dependencies:
@@ -4374,7 +4364,7 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^2.7.6
+        specifier: ^2.7.3
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
@@ -4420,7 +4410,7 @@ importers:
         specifier: ^2.0.3
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^2.7.6
+        specifier: ^2.7.1
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
@@ -4432,7 +4422,7 @@ importers:
         specifier: ^2.0.1
         version: link:../resumable-streams
       '@voltagent/server-core':
-        specifier: ^2.1.18
+        specifier: ^2.1.14
         version: link:../server-core
       elysia:
         specifier: ^1.1.29
@@ -4460,7 +4450,7 @@ importers:
         specifier: ^2.0.3
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^2.7.6
+        specifier: ^2.7.3
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
@@ -4472,7 +4462,7 @@ importers:
         specifier: ^2.0.1
         version: link:../resumable-streams
       '@voltagent/server-core':
-        specifier: ^2.1.18
+        specifier: ^2.1.16
         version: link:../server-core
       fetch-to-node:
         specifier: ^2.1.0
@@ -4503,7 +4493,7 @@ importers:
         specifier: ^2.0.1
         version: link:../resumable-streams
       '@voltagent/server-core':
-        specifier: ^2.1.18
+        specifier: ^2.1.14
         version: link:../server-core
       hono:
         specifier: ^4.7.7
@@ -6774,7 +6764,6 @@ packages:
     hasBin: true
     dependencies:
       '@babel/types': 7.28.5
-    dev: true
 
   /@babel/parser@7.28.5:
     resolution: {integrity: sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==}
@@ -8066,7 +8055,6 @@ packages:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
-    dev: true
 
   /@babel/types@7.28.5:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
@@ -8166,32 +8154,6 @@ packages:
     os: [win32]
     requiresBuild: true
     optional: true
-
-  /@blaxel/core@0.2.81(@hey-api/openapi-ts@0.97.1):
-    resolution: {integrity: sha512-uMi58QUOXm+I/aeoUW7mNHP5SW+O6PiPqHGmKnXLKjxHe9I2Zgvw/tea87oPshAq4q6mWLhjg5QfnXghB7Op0w==}
-    engines: {node: '>=18'}
-    dependencies:
-      '@hey-api/client-fetch': 0.10.2(@hey-api/openapi-ts@0.97.1)
-      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
-      archiver: 7.0.1
-      axios: 1.13.5
-      dockerfile-ast: 0.7.1
-      dotenv: 16.6.1
-      form-data: 4.0.5
-      jwt-decode: 4.0.0
-      toml: 3.0.0
-      uuid: 11.1.0
-      ws: 8.18.3
-      yaml: 2.8.2
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - '@hey-api/openapi-ts'
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   /@borewit/text-codec@0.1.1:
     resolution: {integrity: sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA==}
@@ -9275,16 +9237,6 @@ packages:
     dependencies:
       '@emnapi/wasi-threads': 1.2.1
       tslib: 2.8.1
-    dev: false
-    optional: true
-
-  /@emnapi/core@1.11.1:
-    resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
-    requiresBuild: true
-    dependencies:
-      '@emnapi/wasi-threads': 1.2.2
-      tslib: 2.8.1
-    dev: true
     optional: true
 
   /@emnapi/core@1.4.5:
@@ -9299,14 +9251,6 @@ packages:
     requiresBuild: true
     dependencies:
       tslib: 2.8.1
-    optional: true
-
-  /@emnapi/runtime@1.11.1:
-    resolution: {integrity: sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
     optional: true
 
   /@emnapi/runtime@1.4.5:
@@ -9326,15 +9270,6 @@ packages:
     requiresBuild: true
     dependencies:
       tslib: 2.8.1
-    dev: false
-    optional: true
-
-  /@emnapi/wasi-threads@1.2.2:
-    resolution: {integrity: sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
     optional: true
 
   /@envelop/core@5.4.0:
@@ -10084,7 +10019,7 @@ packages:
       globals: 14.0.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 4.1.1
+      js-yaml: 4.1.0
       minimatch: 3.1.2
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -10426,84 +10361,6 @@ packages:
       axios: '>= 1.0.0 < 2'
     dependencies:
       axios: 1.11.0
-    dev: false
-
-  /@hey-api/client-fetch@0.10.2(@hey-api/openapi-ts@0.97.1):
-    resolution: {integrity: sha512-AGiFYDx+y8VT1wlQ3EbzzZtfU8EfV+hLLRTtr8Y/tjYZaxIECwJagVZf24YzNbtEBXONFV50bwcU1wLVGXe1ow==}
-    deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
-    peerDependencies:
-      '@hey-api/openapi-ts': < 2
-    dependencies:
-      '@hey-api/openapi-ts': 0.97.1(typescript@5.9.3)
-    dev: false
-
-  /@hey-api/codegen-core@0.8.1:
-    resolution: {integrity: sha512-Iciv2vUCJTW9lWM/ROvyZLblmcbYJHPuXfzb1SzeDVVn4xEXu2ilLU1pq3fn+09FZ/Y0P7VyvRE47UDU6om8xA==}
-    engines: {node: '>=22.13.0'}
-    dependencies:
-      '@hey-api/types': 0.1.4
-      ansi-colors: 4.1.3
-      c12: 3.3.4
-      color-support: 1.1.3
-    transitivePeerDependencies:
-      - magicast
-    dev: false
-
-  /@hey-api/json-schema-ref-parser@1.4.2:
-    resolution: {integrity: sha512-ZhCFSKI2ipZHEbgmtUHdyddvRU3wJ4elgCfYUC7T7hZa4EivSrVflTQf2w+v3TuaYxR1Y2V2kq3otqTttrrK8Q==}
-    engines: {node: '>=22.13.0'}
-    dependencies:
-      '@jsdevtools/ono': 7.1.3
-      '@types/json-schema': 7.0.15
-      js-yaml: 4.1.1
-    dev: false
-
-  /@hey-api/openapi-ts@0.97.1(typescript@5.9.3):
-    resolution: {integrity: sha512-LksUJeXAqwf6OhcCCr3/B4YjnBs5rqSqjDUKMBvkgp4OhaCQiJrOvntctFxdnugy8jUojP4yi/eJf5xYzcYzCQ==}
-    engines: {node: '>=22.13.0'}
-    hasBin: true
-    peerDependencies:
-      typescript: '>=5.5.3 || >=6.0.0 || 6.0.1-rc'
-    dependencies:
-      '@hey-api/codegen-core': 0.8.1
-      '@hey-api/json-schema-ref-parser': 1.4.2
-      '@hey-api/shared': 0.4.3
-      '@hey-api/spec-types': 0.2.0
-      '@hey-api/types': 0.1.4
-      '@lukeed/ms': 2.0.2
-      ansi-colors: 4.1.3
-      color-support: 1.1.3
-      commander: 14.0.3
-      get-tsconfig: 4.14.0
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - magicast
-    dev: false
-
-  /@hey-api/shared@0.4.3:
-    resolution: {integrity: sha512-3tHfZNXgGOt+3P3Kq9cvqmZ9i7e3jtrkip1uDpZTX1+hTNboHhYdjxnT8AbrDuvslTaQHoAOlP4/iCDdzd9Jag==}
-    engines: {node: '>=22.13.0'}
-    dependencies:
-      '@hey-api/codegen-core': 0.8.1
-      '@hey-api/json-schema-ref-parser': 1.4.2
-      '@hey-api/spec-types': 0.2.0
-      '@hey-api/types': 0.1.4
-      ansi-colors: 4.1.3
-      cross-spawn: 7.0.6
-      open: 11.0.0
-      semver: 7.7.4
-    transitivePeerDependencies:
-      - magicast
-    dev: false
-
-  /@hey-api/spec-types@0.2.0:
-    resolution: {integrity: sha512-ibQ8Is7evMavzr8GNyJCcTg975d8DpaMUyLmOrQ85UBdy1l6t1KuRAwgChAbesJsIlNV6gjmlXruWyegDX18Fg==}
-    dependencies:
-      '@hey-api/types': 0.1.4
-    dev: false
-
-  /@hey-api/types@0.1.4:
-    resolution: {integrity: sha512-thWfawrDIP7wSI9ioT13I5soaaqB5vAPIiZmgD8PbeEVKNrkonc0N/Sjj97ezl7oQgusZmaNphGdMKipPO6IBg==}
     dev: false
 
   /@hono/node-server@1.18.2(hono@4.10.8):
@@ -11760,10 +11617,6 @@ packages:
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
     dev: false
 
-  /@jsdevtools/ono@7.1.3:
-    resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
-    dev: false
-
   /@kwsites/file-exists@1.1.1:
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
     dependencies:
@@ -12193,6 +12046,7 @@ packages:
   /@lukeed/ms@2.0.2:
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
     engines: {node: '>=8'}
+    dev: true
 
   /@lukeed/uuid@2.0.1:
     resolution: {integrity: sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==}
@@ -12528,20 +12382,6 @@ packages:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
       '@tybys/wasm-util': 0.10.1
-    dev: false
-    optional: true
-
-  /@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1):
-    resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
-    requiresBuild: true
-    peerDependencies:
-      '@emnapi/core': ^1.7.1
-      '@emnapi/runtime': ^1.7.1
-    dependencies:
-      '@emnapi/core': 1.11.1
-      '@emnapi/runtime': 1.11.1
-      '@tybys/wasm-util': 0.10.2
-    dev: true
     optional: true
 
   /@neon-rs/load@0.0.4:
@@ -15442,8 +15282,8 @@ packages:
     dev: false
     optional: true
 
-  /@oxc-project/types@0.137.0:
-    resolution: {integrity: sha512-WT+Gb24i8hmvo85AIv2oEYouEXkRlKAlT9WaCa3TfLgNCN+GhrJOGZuIlMouAh38Qe4QOx26eUOVsq70qXrywA==}
+  /@oxc-project/types@0.127.0:
+    resolution: {integrity: sha512-aIYXQBo4lCbO4z0R3FHeucQHpF46l2LbMdxRvqvuRuW2OxdnSkcng5B8+K12spgLDj93rtN3+J2Vac/TIO+ciQ==}
     dev: true
 
   /@oxc-project/types@0.94.0:
@@ -17655,8 +17495,8 @@ packages:
   /@repeaterjs/repeater@3.0.6:
     resolution: {integrity: sha512-Javneu5lsuhwNCryN+pXH93VPQ8g0dBX7wItHFgYiwQmzE1sVdg5tWHiOgHywzL2W21XQopa7IwIEnNbmeUJYA==}
 
-  /@rolldown/binding-android-arm64@1.1.2:
-    resolution: {integrity: sha512-2cZ+7xRS+DBcuJBJKnfzsbleumJhBqSlJVpuzHC0nTqfd3QQ7Vx2/x5YR/D7cBamKSeWplwo82Fn9lqYUDEMfA==}
+  /@rolldown/binding-android-arm64@1.0.0-rc.17:
+    resolution: {integrity: sha512-s70pVGhw4zqGeFnXWvAzJDlvxhlRollagdCCKRgOsgUOH3N1l0LIxf83AtGzmb5SiVM4Hjl5HyarMRfdfj3DaQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [android]
@@ -17664,8 +17504,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-arm64@1.1.2:
-    resolution: {integrity: sha512-RkPMJnygxsgOYdkfqgpwY0/Fzm8d0VQe6HGU2/B00Xa9eqdLbrII+DOKAodbJAn3ZL1AJxGHkZRPYazgGY6Ljw==}
+  /@rolldown/binding-darwin-arm64@1.0.0-rc.17:
+    resolution: {integrity: sha512-4ksWc9n0mhlZpZ9PMZgTGjeOPRu8MB1Z3Tz0Mo02eWfWCHMW1zN82Qz/pL/rC+yQa+8ZnutMF0JjJe7PjwasYw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
@@ -17673,8 +17513,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-x64@1.1.2:
-    resolution: {integrity: sha512-Uiczh6vFhwyfd7WNe7Q7mCA4KxAiLdz7jPE/WGizfRpIieoyFuNVMmM8HqZ9HwudTkY6/AeMQwlNJ9NJijguWw==}
+  /@rolldown/binding-darwin-x64@1.0.0-rc.17:
+    resolution: {integrity: sha512-SUSDOI6WwUVNcWxd02QEBjLdY1VPHvlEkw6T/8nYG322iYWCTxRb1vzk4E+mWWYehTp7ERibq54LSJGjmouOsw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [darwin]
@@ -17682,8 +17522,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-freebsd-x64@1.1.2:
-    resolution: {integrity: sha512-+TpdtTRgHiJFjCVFbw311SuLk3KfytPOQQn+VlAEv+gBxYPtL7E6JS9e/tk+8CwxhIZvemJKo4rTKgfWNsKkkA==}
+  /@rolldown/binding-freebsd-x64@1.0.0-rc.17:
+    resolution: {integrity: sha512-hwnz3nw9dbJ05EDO/PvcjaaewqqDy7Y1rn1UO81l8iIK1GjenME75dl16ajbvSSMfv66WXSRCYKIqfgq2KCfxw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
@@ -17691,8 +17531,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm-gnueabihf@1.1.2:
-    resolution: {integrity: sha512-4lv1/tkmi7ueIVHnyreaOeUpiZP26BH9rRy6hoYfR9310A2B9nUEVRDvBx69vx64Nr3eTPPRkyciqJJs+j9Jmw==}
+  /@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.17:
+    resolution: {integrity: sha512-IS+W7epTcwANmFSQFrS1SivEXHtl1JtuQA9wlxrZTcNi6mx+FDOYrakGevvvTwgj2JvWiK8B29/qD9BELZPyXQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
@@ -17700,8 +17540,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-gnu@1.1.2:
-    resolution: {integrity: sha512-gBSUVO0eaWgw1JMjK3gB8BMlX2Mk148s2lTiVT3e9vjVxbl7UDfMWWY8CfIaaqiXuM9fVTMxIpUz6CAo/B6Vlw==}
+  /@rolldown/binding-linux-arm64-gnu@1.0.0-rc.17:
+    resolution: {integrity: sha512-e6usGaHKW5BMNZOymS1UcEYGowQMWcgZ71Z17Sl/h2+ZziNJ1a9n3Zvcz6LdRyIW5572wBCTH/Z+bKuZouGk9Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -17709,8 +17549,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-musl@1.1.2:
-    resolution: {integrity: sha512-LjQP/iZLBu8o8PjIfk4x3At0/mT6h282pvz8Z5LAyhGbu/kDezyO7ea62rF5uoqmgnIYqbN/MqJ3Si3Aymi7xQ==}
+  /@rolldown/binding-linux-arm64-musl@1.0.0-rc.17:
+    resolution: {integrity: sha512-b/CgbwAJpmrRLp02RPfhbudf5tZnN9nsPWK82znefso832etkem8H7FSZwxrOI9djcdTP7U6YfNhbRnh7djErg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -17718,8 +17558,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-ppc64-gnu@1.1.2:
-    resolution: {integrity: sha512-X/7bVLWelEsbyWDUSXt7zVsTniLLPIY2n1rH58qr78l9i7MNbbxBWD8gI2vRfBWf4NUXJCUuQnfZDsp32LqsfQ==}
+  /@rolldown/binding-linux-ppc64-gnu@1.0.0-rc.17:
+    resolution: {integrity: sha512-4EII1iNGRUN5WwGbF/kOh/EIkoDN9HsupgLQoXfY+D1oyJm7/F4t5PYU5n8SWZgG0FEwakyM8pGgwcBYruGTlA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ppc64]
     os: [linux]
@@ -17727,8 +17567,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-s390x-gnu@1.1.2:
-    resolution: {integrity: sha512-gb6dYKW/1KDorGXyy48glEBJs/sxVSC5pcVrox/pFGV4mvwSFeg2sK5L2tRkVsVlh7kueqOgg4GEcuipJcGuKg==}
+  /@rolldown/binding-linux-s390x-gnu@1.0.0-rc.17:
+    resolution: {integrity: sha512-AH8oq3XqQo4IibpVXvPeLDI5pzkpYn0WiZAfT05kFzoJ6tQNzwRdDYQ45M8I/gslbodRZwW8uxLhbSBbkv96rA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [s390x]
     os: [linux]
@@ -17736,8 +17576,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-gnu@1.1.2:
-    resolution: {integrity: sha512-JY4w85pU3iAiJVMh5nuk4/Mh9GjMsupe8MrIN53rwxAZW64GKrWeJBuN6SxQg9QTU5uB1cxyhDzW8jqRn1EABw==}
+  /@rolldown/binding-linux-x64-gnu@1.0.0-rc.17:
+    resolution: {integrity: sha512-cLnjV3xfo7KslbU41Z7z8BH/E1y5mzUYzAqih1d1MDaIGZRCMqTijqLv76/P7fyHuvUcfGsIpqCdddbxLLK9rA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -17745,8 +17585,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-musl@1.1.2:
-    resolution: {integrity: sha512-xvpA7o5KCYLB0Rwscmuylb1/zHHSUx4g4xilm4prC5jP76pEUlzBmMbgpbh7bVDbId4NcfT96gN5i6mE6UDaiw==}
+  /@rolldown/binding-linux-x64-musl@1.0.0-rc.17:
+    resolution: {integrity: sha512-0phclDw1spsL7dUB37sIARuis2tAgomCJXAHZlpt8PXZ4Ba0dRP1e+66lsRqrfhISeN9bEGNjQs+T/Fbd7oYGw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -17754,8 +17594,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-openharmony-arm64@1.1.2:
-    resolution: {integrity: sha512-p/ts6KBLjuk49Bp21XH77poQGt02iNz7ChgHep7tudPOaLinR/De/RHdxF8w8Yj4r/bF/bqXwH6PZrB2sA+Nvw==}
+  /@rolldown/binding-openharmony-arm64@1.0.0-rc.17:
+    resolution: {integrity: sha512-0ag/hEgXOwgw4t8QyQvUCxvEg+V0KBcA6YuOx9g0r02MprutRF5dyljgm3EmR02O292UX7UeS6HzWHAl6KgyhA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
@@ -17763,20 +17603,20 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-wasm32-wasi@1.1.2:
-    resolution: {integrity: sha512-VMu/wmrZ9hJzYlRhbw7jK5PODlugyKZ5mOdX78+lS8OvuFkWNQdz1pFLrI2p3P0pjXOmUZ7B48o5VnMH9QOGtg==}
+  /@rolldown/binding-wasm32-wasi@1.0.0-rc.17:
+    resolution: {integrity: sha512-LEXei6vo0E5wTGwpkJ4KoT3OZJRnglwldt5ziLzOlc6qqb55z4tWNq2A+PFqCJuvWWdP53CVhG1Z9NtToDPJrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@emnapi/core': 1.11.1
-      '@emnapi/runtime': 1.11.1
-      '@napi-rs/wasm-runtime': 1.1.5(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
+      '@emnapi/core': 1.10.0
+      '@emnapi/runtime': 1.10.0
+      '@napi-rs/wasm-runtime': 1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-arm64-msvc@1.1.2:
-    resolution: {integrity: sha512-xtUJqs8qEkuSviS0n1tsohaPuz3a1SPhZywOji4Oo+sgrJs8daEDMZ0QtqL0OS7dx8PoVpg2J/ZZycPY5I2+Zg==}
+  /@rolldown/binding-win32-arm64-msvc@1.0.0-rc.17:
+    resolution: {integrity: sha512-gUmyzBl3SPMa6hrqFUth9sVfcLBlYsbMzBx5PlexMroZStgzGqlZ26pYG89rBb45Mnia+oil6YAIFeEWGWhoZA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
@@ -17784,17 +17624,14 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-x64-msvc@1.1.2:
-    resolution: {integrity: sha512-85YiLQqjUKgSO/Zjnf9e0XIn5Ymrh1fLDWBeAkZqpuBR/3R8TpfoHXuyblqyQrftSSgWO9qpcHN8mkyKsLraoA==}
+  /@rolldown/binding-win32-x64-msvc@1.0.0-rc.17:
+    resolution: {integrity: sha512-3hkiolcUAvPB9FLb3UZdfjVVNWherN1f/skkGWJP/fgSQhYUZpSIRr0/I8ZK9TkF3F7kxvJAk0+IcKvPHk9qQg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
-
-  /@rolldown/pluginutils@1.0.0:
-    resolution: {integrity: sha512-aKs/3GSWyV0mrhNmt/96/Z3yczC3yvrzYATCiCXQebBsGyYzjNdUphRVLeJQ67ySKVXRfMxt2lm12pmXvbPFQQ==}
 
   /@rolldown/pluginutils@1.0.0-beta.29:
     resolution: {integrity: sha512-NIJgOsMjbxAXvoGq/X0gD7VPMQ8j9g0BiDaNjVNVjvl+iKXxL3Jre0v31RmBYeLEmkbj2s02v8vFTbUXi5XS2Q==}
@@ -17803,6 +17640,14 @@ packages:
   /@rolldown/pluginutils@1.0.0-beta.53:
     resolution: {integrity: sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ==}
     dev: true
+
+  /@rolldown/pluginutils@1.0.0-rc.17:
+    resolution: {integrity: sha512-n8iosDOt6Ig1UhJ2AYqoIhHWh/isz0xpicHTzpKBeotdVsTEcxsSA/i3EVM7gQAj0rU27OLAxCjzlj15IWY7bg==}
+    dev: true
+
+  /@rolldown/pluginutils@1.0.0-rc.9:
+    resolution: {integrity: sha512-w6oiRWgEBl04QkFZgmW+jnU1EC9b57Oihi2ot3HNWIQRqgHp5PnYDia5iZ5FF7rpa4EQdiqMDXjlqKGXBhsoXw==}
+    dev: false
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -18117,7 +17962,7 @@ packages:
       '@sap/xsenv': 6.0.0
       '@sap/xssec': 4.12.2
       async-retry: 1.3.3
-      axios: 1.13.5
+      axios: 1.13.2
       jks-js: 1.1.5
       jsonwebtoken: 9.0.3
     transitivePeerDependencies:
@@ -18131,7 +17976,7 @@ packages:
       '@sap-cloud-sdk/connectivity': 4.3.1
       '@sap-cloud-sdk/resilience': 4.3.1
       '@sap-cloud-sdk/util': 4.3.1
-      axios: 1.13.5
+      axios: 1.13.2
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -18144,7 +17989,7 @@ packages:
       '@sap-cloud-sdk/http-client': 4.3.1
       '@sap-cloud-sdk/resilience': 4.3.1
       '@sap-cloud-sdk/util': 4.3.1
-      axios: 1.13.5
+      axios: 1.13.2
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -18155,7 +18000,7 @@ packages:
     dependencies:
       '@sap-cloud-sdk/util': 4.3.1
       async-retry: 1.3.3
-      axios: 1.13.5
+      axios: 1.13.2
       opossum: 9.0.0
     transitivePeerDependencies:
       - debug
@@ -18164,7 +18009,7 @@ packages:
   /@sap-cloud-sdk/util@4.3.1:
     resolution: {integrity: sha512-ew3+RiyUAKKhb/h/M1g2di9DjoeDQ3uQIDS7a+rN9lqlaP2+mb0mbK8x1PHLJ8agvZNjFR5y5k2jKmIiHVFT3A==}
     dependencies:
-      axios: 1.13.5
+      axios: 1.13.2
       chalk: 4.1.2
       logform: 2.7.0
       voca: 1.4.1
@@ -20274,15 +20119,6 @@ packages:
     requiresBuild: true
     dependencies:
       tslib: 2.8.1
-    dev: false
-    optional: true
-
-  /@tybys/wasm-util@0.10.2:
-    resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
     optional: true
 
   /@tybys/wasm-util@0.9.0:
@@ -21571,7 +21407,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0
+      '@rolldown/pluginutils': 1.0.0-rc.17
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)
@@ -22877,6 +22713,7 @@ packages:
   /ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
     engines: {node: '>=6'}
+    dev: true
 
   /ansi-escapes@4.3.2:
     resolution: {integrity: sha512-gKXj5ALrKWQLsYG9jlTRmR/xKluxHV+Z9QEwNIgCfM1/uwPMCuzVVnh5mwTd+OuBZcwSIMbqssNWRm1lE51QaQ==}
@@ -23867,28 +23704,6 @@ packages:
       pkg-types: 2.3.0
       rc9: 2.1.2
 
-  /c12@3.3.4:
-    resolution: {integrity: sha512-cM0ApFQSBXuourJejzwv/AuPRvAxordTyParRVcHjjtXirtkzM0uK2L9TTn9s0cXZbG7E55jCivRQzoxYmRAlA==}
-    peerDependencies:
-      magicast: '*'
-    peerDependenciesMeta:
-      magicast:
-        optional: true
-    dependencies:
-      chokidar: 5.0.0
-      confbox: 0.2.4
-      defu: 6.1.7
-      dotenv: 17.4.2
-      exsolve: 1.0.8
-      giget: 3.2.0
-      jiti: 2.6.1
-      ohash: 2.0.11
-      pathe: 2.0.3
-      perfect-debounce: 2.1.0
-      pkg-types: 2.3.0
-      rc9: 3.0.1
-    dev: false
-
   /cac@6.7.14:
     resolution: {integrity: sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==}
     engines: {node: '>=8'}
@@ -24233,13 +24048,6 @@ packages:
     engines: {node: '>= 14.16.0'}
     dependencies:
       readdirp: 4.1.2
-
-  /chokidar@5.0.0:
-    resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
-    engines: {node: '>= 20.19.0'}
-    dependencies:
-      readdirp: 5.0.0
-    dev: false
 
   /chownr@1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
@@ -24658,6 +24466,7 @@ packages:
   /color-support@1.1.3:
     resolution: {integrity: sha512-qiBjkpbMLO/HL68y+lh4q0/O1MZFj2RX6X/KmMa3+gJD3z+WwI1ZzDHysvqHGS3mP6mznPckpXmw1nI9cJjyRg==}
     hasBin: true
+    dev: true
 
   /color@3.2.1:
     resolution: {integrity: sha512-aBl7dZI9ENN6fUGC7mWpMTPNHmWUSNan9tuWN6ahh5ZLNk9baLJOnSMlrQkHcrfFgz2/RigjUVAjdx36VcemKA==}
@@ -24767,11 +24576,6 @@ packages:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
     engines: {node: '>=18'}
     dev: true
-
-  /commander@14.0.3:
-    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
-    engines: {node: '>=20'}
-    dev: false
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -24923,10 +24727,6 @@ packages:
 
   /confbox@0.2.2:
     resolution: {integrity: sha512-1NB+BKqhtNipMsov4xI/NnhCKp9XG9NamYp5PVm9klAT0fsrNPjaFICsCFhNhwZJKNh7zB/3q8qXz0E9oaMNtQ==}
-
-  /confbox@0.2.4:
-    resolution: {integrity: sha512-ysOGlgTFbN2/Y6Cg3Iye8YKulHw+R2fNXHrgSmXISQdMnomY6eNDprVdW9R5xBguEqI954+S6709UyiO7B+6OQ==}
-    dev: false
 
   /config-chain@1.1.13:
     resolution: {integrity: sha512-qj+f8APARXHrM0hraqXYb2/bOVSV4PvJQlNZ/DVj0QrmNM2q2euizkeuVckQ57J+W0mRH6Hvi+k50M4Jul2VRQ==}
@@ -25973,14 +25773,6 @@ packages:
       bundle-name: 4.1.0
       default-browser-id: 5.0.0
 
-  /default-browser@5.5.0:
-    resolution: {integrity: sha512-H9LMLr5zwIbSxrmvikGuI/5KGhZ8E2zH3stkMgM5LpOWDutGM2JZaj460Udnf1a+946zc7YBgrqEWwbk7zHvGw==}
-    engines: {node: '>=18'}
-    dependencies:
-      bundle-name: 4.1.0
-      default-browser-id: 5.0.0
-    dev: false
-
   /defaults@1.0.4:
     resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
     dependencies:
@@ -26023,10 +25815,6 @@ packages:
 
   /defu@6.1.4:
     resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
-
-  /defu@6.1.7:
-    resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
-    dev: false
 
   /delaunator@5.0.1:
     resolution: {integrity: sha512-8nvh+XBe96aCESrGOqMp/84b13H9cdKbG5P2ejQCh4d4sK9RL4371qou9drQjMhvnPmhWl5hnmqbEE0fXr9Xnw==}
@@ -26378,11 +26166,6 @@ packages:
   /dotenv@17.2.2:
     resolution: {integrity: sha512-Sf2LSQP+bOlhKWWyhFsn0UsfdK/kCWRv1iuA2gXAwt3dyNabr6QSj00I2V10pidqz69soatm9ZwZvpQMTIOd5Q==}
     engines: {node: '>=12'}
-
-  /dotenv@17.4.2:
-    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
-    engines: {node: '>=12'}
-    dev: false
 
   /dotenv@8.6.0:
     resolution: {integrity: sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==}
@@ -26785,10 +26568,6 @@ packages:
       get-intrinsic: 1.3.0
       has-tostringtag: 1.0.2
       hasown: 2.0.2
-
-  /es-toolkit@1.46.1:
-    resolution: {integrity: sha512-5eNtXOs3tbfxXOj04tjjseeWkRWaoCjdEI+96DgwzZoe6c9juL49pXlzAFTI72aWC9Y8p7168g6XIKjh7k6pyQ==}
-    dev: false
 
   /es6-error@4.1.1:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
@@ -27498,10 +27277,6 @@ packages:
 
   /exsolve@1.0.7:
     resolution: {integrity: sha512-VO5fQUzZtI6C+vx4w/4BWJpg3s/5l+6pRQEHzFRM8WFi4XffSP1Z+4qi7GbjWbvRQEbdIco5mIMq+zX4rPuLrw==}
-
-  /exsolve@1.0.8:
-    resolution: {integrity: sha512-LmDxfWXwcTArk8fUEnOfSZpHOJ6zOMUJKOtFLFqJLoKJetuQG874Uc7/Kki7zFLzYybmZhp1M7+98pfMqeX8yA==}
-    dev: false
 
   /ext-list@2.2.2:
     resolution: {integrity: sha512-u+SQgsubraE6zItfVA0tBuCBhfU9ogSRnsvygI7wht9TS510oLkBRXBsqopeUG/GBOIQyKZO9wjTqIu/sf5zFA==}
@@ -28472,12 +28247,6 @@ packages:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  /get-tsconfig@4.14.0:
-    resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
-    dependencies:
-      resolve-pkg-maps: 1.0.0
-    dev: false
-
   /gh-release-fetch@4.0.3:
     resolution: {integrity: sha512-TOiP1nwLsH5shG85Yt6v6Kjq5JU/44jXyEpbcfPgmj3C829yeXIlx9nAEwQRaxtRF3SJinn2lz7XUkfG9W/U4g==}
     engines: {node: ^14.18.0 || ^16.13.0 || >=18.0.0}
@@ -28497,11 +28266,6 @@ packages:
       node-fetch-native: 1.6.7
       nypm: 0.6.1
       pathe: 2.0.3
-
-  /giget@3.2.0:
-    resolution: {integrity: sha512-GvHTWcykIR/fP8cj8dMpuMMkvaeJfPvYnhq0oW+chSeIr+ldX21ifU2Ms6KBoyKZQZmVaUAAhQ2EZ68KJF8a7A==}
-    hasBin: true
-    dev: false
 
   /git-raw-commits@2.0.11:
     resolution: {integrity: sha512-VnctFhw+xfj8Va1xtfEqCUD2XDrbAPSJx+hSrE5K7fGdjZruW7XV+QOrN7LF/RJyvspRiD2I0asWsxFp0ya26A==}
@@ -29998,11 +29762,6 @@ packages:
     hasBin: true
     dev: true
 
-  /is-in-ssh@1.0.0:
-    resolution: {integrity: sha512-jYa6Q9rH90kR1vKB6NM7qqd1mge3Fx4Dhw5TVlK1MUBqhEOuCagrEHMevNuCcbECmXZ0ThXkRm+Ymr51HwEPAw==}
-    engines: {node: '>=20'}
-    dev: false
-
   /is-inside-container@1.0.0:
     resolution: {integrity: sha512-KIYLCCJghfHZxqjYBE7rEy0OBuTd5xCHS7tHVgvCLkx7StIoaxwNW3hCALgEUjFfeRk+MG/Qxmp/vtETEF3tRA==}
     engines: {node: '>=14.16'}
@@ -30893,12 +30652,6 @@ packages:
     dependencies:
       argparse: 2.0.1
 
-  /js-yaml@4.1.1:
-    resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
-    hasBin: true
-    dependencies:
-      argparse: 2.0.1
-
   /jsdoc-type-pratt-parser@4.8.0:
     resolution: {integrity: sha512-iZ8Bdb84lWRuGHamRXFyML07r21pcwBrLkHEuHgEY5UbCouBwv7ECknDRKzsQIXMiqpPymqtIf8TC/shYKB5rw==}
     engines: {node: '>=12.0.0'}
@@ -31295,7 +31048,7 @@ packages:
       '@langchain/textsplitters': 0.1.0(@langchain/core@0.3.70)
       axios: 1.11.0
       js-tiktoken: 1.0.21
-      js-yaml: 4.1.1
+      js-yaml: 4.1.0
       jsonpointer: 5.0.1
       langsmith: 0.3.58(openai@4.104.0)
       openapi-types: 12.1.3
@@ -32162,8 +31915,8 @@ packages:
   /magicast@0.3.5:
     resolution: {integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==}
     dependencies:
-      '@babel/parser': 7.28.5
-      '@babel/types': 7.28.5
+      '@babel/parser': 7.28.4
+      '@babel/types': 7.28.4
       source-map-js: 1.2.1
 
   /make-dir@2.1.0:
@@ -34896,18 +34649,6 @@ packages:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  /open@11.0.0:
-    resolution: {integrity: sha512-smsWv2LzFjP03xmvFoJ331ss6h+jixfA4UUV/Bsiyuu4YJPfN+FIQGOIiv4w9/+MoHkfkJ22UIaQWRVFRfH6Vw==}
-    engines: {node: '>=20'}
-    dependencies:
-      default-browser: 5.5.0
-      define-lazy-prop: 3.0.0
-      is-in-ssh: 1.0.0
-      is-inside-container: 1.0.0
-      powershell-utils: 0.1.0
-      wsl-utils: 0.3.1
-    dev: false
-
   /open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
@@ -35716,10 +35457,6 @@ packages:
   /perfect-debounce@2.0.0:
     resolution: {integrity: sha512-fkEH/OBiKrqqI/yIgjR92lMfs2K8105zt/VT6+7eTjNwisrsh47CeIED9z58zI7DfKdH3uHAn25ziRZn3kgAow==}
 
-  /perfect-debounce@2.1.0:
-    resolution: {integrity: sha512-LjgdTytVFXeUgtHZr9WYViYSM/g8MkcTPYDlPa3cDqMirHjKiSZPYd6DoL7pK8AJQr+uWkQvCjHNdiMqsrJs+g==}
-    dev: false
-
   /pg-cloudflare@1.2.7:
     resolution: {integrity: sha512-YgCtzMH0ptvZJslLM1ffsY4EuGaU0cx4XSdXLRFae8bPP4dS5xL1tNB3k2o/N64cHJpwU7dxKli/nZ2lUa5fLg==}
     requiresBuild: true
@@ -36365,11 +36102,6 @@ packages:
       - debug
     dev: false
 
-  /powershell-utils@0.1.0:
-    resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
-    engines: {node: '>=20'}
-    dev: false
-
   /precinct@12.2.0(supports-color@10.2.2):
     resolution: {integrity: sha512-NFBMuwIfaJ4SocE9YXPU/n4AcNSoFMVFjP72nvl3cx69j/ke61/hPOWFREVxLkFhhEGnA8ZuVfTqJBa+PK3b5w==}
     engines: {node: '>=18'}
@@ -36761,13 +36493,6 @@ packages:
     dependencies:
       defu: 6.1.4
       destr: 2.0.5
-
-  /rc9@3.0.1:
-    resolution: {integrity: sha512-gMDyleLWVE+i6Sgtc0QbbY6pEKqYs97NGi6isHQPqYlLemPoO8dxQ3uGi0f4NiP98c+jMW6cG1Kx9dDwfvqARQ==}
-    dependencies:
-      defu: 6.1.7
-      destr: 2.0.5
-    dev: false
 
   /rc@1.2.8:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
@@ -37178,11 +36903,6 @@ packages:
   /readdirp@4.1.2:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
-
-  /readdirp@5.0.0:
-    resolution: {integrity: sha512-9u/XQ1pvrQtYyMpZe7DXKv2p5CNvyVwzUB6uhLAnQwHMSgKMBR62lc7AHljaeteeHXn11XTAaLLUVZYVZyuRBQ==}
-    engines: {node: '>= 20.19.0'}
-    dev: false
 
   /real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
@@ -37670,7 +37390,7 @@ packages:
     resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
     dev: false
 
-  /rolldown-plugin-dts@0.16.11(rolldown@1.1.2)(typescript@5.9.2):
+  /rolldown-plugin-dts@0.16.11(rolldown@1.0.0-rc.17)(typescript@5.9.2):
     resolution: {integrity: sha512-9IQDaPvPqTx3RjG2eQCK5GYZITo203BxKunGI80AGYicu1ySFTUyugicAaTZWRzFWh9DSnzkgNeMNbDWBbSs0w==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
@@ -37698,36 +37418,36 @@ packages:
       dts-resolver: 2.1.2
       get-tsconfig: 4.10.1
       magic-string: 0.30.19
-      rolldown: 1.1.2
+      rolldown: 1.0.0-rc.17
       typescript: 5.9.2
     transitivePeerDependencies:
       - oxc-resolver
       - supports-color
     dev: true
 
-  /rolldown@1.1.2:
-    resolution: {integrity: sha512-x0CrQQqCXWGeI8dTvFfN/Dnv3yMKT9hv5jFjlOreKAx9wqLq9wz7VvLLHyaAXC90/CpggTu9SisSbsJJTPSjNQ==}
+  /rolldown@1.0.0-rc.17:
+    resolution: {integrity: sha512-ZrT53oAKrtA4+YtBWPQbtPOxIbVDbxT0orcYERKd63VJTF13zPcgXTvD4843L8pcsI7M6MErt8QtON6lrB9tyA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     dependencies:
-      '@oxc-project/types': 0.137.0
-      '@rolldown/pluginutils': 1.0.0
+      '@oxc-project/types': 0.127.0
+      '@rolldown/pluginutils': 1.0.0-rc.17
     optionalDependencies:
-      '@rolldown/binding-android-arm64': 1.1.2
-      '@rolldown/binding-darwin-arm64': 1.1.2
-      '@rolldown/binding-darwin-x64': 1.1.2
-      '@rolldown/binding-freebsd-x64': 1.1.2
-      '@rolldown/binding-linux-arm-gnueabihf': 1.1.2
-      '@rolldown/binding-linux-arm64-gnu': 1.1.2
-      '@rolldown/binding-linux-arm64-musl': 1.1.2
-      '@rolldown/binding-linux-ppc64-gnu': 1.1.2
-      '@rolldown/binding-linux-s390x-gnu': 1.1.2
-      '@rolldown/binding-linux-x64-gnu': 1.1.2
-      '@rolldown/binding-linux-x64-musl': 1.1.2
-      '@rolldown/binding-openharmony-arm64': 1.1.2
-      '@rolldown/binding-wasm32-wasi': 1.1.2
-      '@rolldown/binding-win32-arm64-msvc': 1.1.2
-      '@rolldown/binding-win32-x64-msvc': 1.1.2
+      '@rolldown/binding-android-arm64': 1.0.0-rc.17
+      '@rolldown/binding-darwin-arm64': 1.0.0-rc.17
+      '@rolldown/binding-darwin-x64': 1.0.0-rc.17
+      '@rolldown/binding-freebsd-x64': 1.0.0-rc.17
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-rc.17
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-rc.17
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-rc.17
+      '@rolldown/binding-linux-ppc64-gnu': 1.0.0-rc.17
+      '@rolldown/binding-linux-s390x-gnu': 1.0.0-rc.17
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-rc.17
+      '@rolldown/binding-linux-x64-musl': 1.0.0-rc.17
+      '@rolldown/binding-openharmony-arm64': 1.0.0-rc.17
+      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.17
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.17
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.17
     dev: true
 
   /rollup-plugin-inject@3.0.2:
@@ -38036,12 +37756,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
     requiresBuild: true
-
-  /semver@7.7.4:
-    resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
-    engines: {node: '>=10'}
-    hasBin: true
-    dev: false
 
   /send@0.19.0:
     resolution: {integrity: sha512-dW41u5VfLXu8SJh5bwRmyYUbAoSB3c9uQh6L8h/KtsFREPWpbX1lrljJo186Jc4nmci/sGUZ9a0a0J2zgfq2hw==}
@@ -39618,6 +39332,7 @@ packages:
 
   /toml@3.0.0:
     resolution: {integrity: sha512-y/mWCZinnvxjTKYhJ+pYxwD0mRLVvOtdS2Awbgxln6iEnt4rk0yBxeSBHkGJcPucRiG0e55mwWp+g/05rsrd6w==}
+    dev: true
 
   /tomlify-j0.4@3.0.0:
     resolution: {integrity: sha512-2Ulkc8T7mXJ2l0W476YC/A209PR38Nw8PuaCNtk9uI3t1zzFdGQeWYGQvmj2PZkVvRC/Yoi4xQKMRnWc/N29tQ==}
@@ -39914,8 +39629,8 @@ packages:
       empathic: 2.0.0
       hookable: 5.5.3
       publint: 0.3.12
-      rolldown: 1.1.2
-      rolldown-plugin-dts: 0.16.11(rolldown@1.1.2)(typescript@5.9.2)
+      rolldown: 1.0.0-rc.17
+      rolldown-plugin-dts: 0.16.11(rolldown@1.0.0-rc.17)(typescript@5.9.2)
       semver: 7.7.2
       tinyexec: 1.0.1
       tinyglobby: 0.2.15
@@ -41357,31 +41072,6 @@ packages:
       - yaml
     dev: false
 
-  /vite-node@3.2.4(@types/node@24.6.2):
-    resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    hasBin: true
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.3(supports-color@10.2.2)
-      es-module-lexer: 1.7.0
-      pathe: 2.0.3
-      vite: 7.2.7(@types/node@24.6.2)
-    transitivePeerDependencies:
-      - '@types/node'
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-    dev: true
-
   /vite-plugin-checker@0.11.0(@biomejs/biome@1.9.4)(eslint@9.33.0)(typescript@5.9.3)(vite@7.2.7):
     resolution: {integrity: sha512-iUdO9Pl9UIBRPAragwi3as/BXXTtRu4G12L3CMrjx+WVTd9g/MsqNakreib9M/2YRVkhZYiTEwdH2j4Dm0w7lw==}
     engines: {node: '>=16.11'}
@@ -41577,57 +41267,6 @@ packages:
       fsevents: 2.3.3
     dev: false
 
-  /vite@7.2.7(@types/node@24.6.2):
-    resolution: {integrity: sha512-ITcnkFeR3+fI8P1wMgItjGrR10170d8auB4EpMLPqmx6uxElH3a/hHGQabSHKdqd4FXWO1nFIp9rRn7JQ34ACQ==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    hasBin: true
-    peerDependencies:
-      '@types/node': ^20.19.0 || >=22.12.0
-      jiti: '>=1.21.0'
-      less: ^4.0.0
-      lightningcss: ^1.21.0
-      sass: ^1.70.0
-      sass-embedded: ^1.70.0
-      stylus: '>=0.54.8'
-      sugarss: ^5.0.0
-      terser: ^5.16.0
-      tsx: ^4.8.1
-      yaml: ^2.4.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      jiti:
-        optional: true
-      less:
-        optional: true
-      lightningcss:
-        optional: true
-      sass:
-        optional: true
-      sass-embedded:
-        optional: true
-      stylus:
-        optional: true
-      sugarss:
-        optional: true
-      terser:
-        optional: true
-      tsx:
-        optional: true
-      yaml:
-        optional: true
-    dependencies:
-      '@types/node': 24.6.2
-      esbuild: 0.25.10
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
-      postcss: 8.5.6
-      rollup: 4.50.2
-      tinyglobby: 0.2.15
-    optionalDependencies:
-      fsevents: 2.3.3
-    dev: true
-
   /vitefu@1.1.1(vite@7.2.7):
     resolution: {integrity: sha512-B/Fegf3i8zh0yFbpzZ21amWzHmuNlLlmJT6n7bu5e+pCHUKQIfXSYokrqOBGEMMe9UG2sostKQF9mml/vYaWJQ==}
     peerDependencies:
@@ -41692,75 +41331,6 @@ packages:
       tinyrainbow: 2.0.0
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.21.0)
       vite-node: 3.2.4(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.21.0)
-      why-is-node-running: 2.3.0
-    transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-    dev: true
-
-  /vitest@3.2.4(@types/node@24.6.2)(@vitest/ui@1.6.1)(jsdom@22.1.0):
-    resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@types/debug': ^4.1.12
-      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
-      '@vitest/browser': 3.2.4
-      '@vitest/ui': 3.2.4
-      happy-dom: '*'
-      jsdom: '*'
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@types/debug':
-        optional: true
-      '@types/node':
-        optional: true
-      '@vitest/browser':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-    dependencies:
-      '@types/chai': 5.2.2
-      '@types/node': 24.6.2
-      '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(msw@2.11.6)(vite@7.2.7)
-      '@vitest/pretty-format': 3.2.4
-      '@vitest/runner': 3.2.4
-      '@vitest/snapshot': 3.2.4
-      '@vitest/spy': 3.2.4
-      '@vitest/ui': 1.6.1(vitest@3.2.4)
-      '@vitest/utils': 3.2.4
-      chai: 5.2.1
-      debug: 4.4.3(supports-color@10.2.2)
-      expect-type: 1.2.2
-      jsdom: 22.1.0
-      magic-string: 0.30.19
-      pathe: 2.0.3
-      picomatch: 4.0.3
-      std-env: 3.9.0
-      tinybench: 2.9.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.15
-      tinypool: 1.1.1
-      tinyrainbow: 2.0.0
-      vite: 7.2.7(@types/node@24.6.2)
-      vite-node: 3.2.4(@types/node@24.6.2)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - jiti
@@ -42430,14 +42000,6 @@ packages:
     engines: {node: '>=18'}
     dependencies:
       is-wsl: 3.1.0
-
-  /wsl-utils@0.3.1:
-    resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
-    engines: {node: '>=20'}
-    dependencies:
-      is-wsl: 3.1.0
-      powershell-utils: 0.1.0
-    dev: false
 
   /xdg-basedir@4.0.0:
     resolution: {integrity: sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==}
