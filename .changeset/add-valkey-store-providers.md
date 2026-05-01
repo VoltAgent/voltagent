@@ -1,5 +1,5 @@
 ---
-"@voltagent/a2a-server": minor
+"@voltagent/a2a-server": major
 "@voltagent/resumable-streams": minor
 ---
 
