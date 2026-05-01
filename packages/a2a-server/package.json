@@ -20,6 +20,16 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
+    },
+    "./valkey-store": {
+      "import": {
+        "types": "./dist/valkey-store.d.mts",
+        "default": "./dist/valkey-store.mjs"
+      },
+      "require": {
+        "types": "./dist/valkey-store.d.ts",
+        "default": "./dist/valkey-store.js"
+      }
     }
   },
   "files": [
