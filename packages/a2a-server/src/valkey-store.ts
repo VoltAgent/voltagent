@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { GlideClient, GlideClusterClient, TimeUnit } from "@valkey/valkey-glide";
 import { safeStringify } from "@voltagent/internal";
 import { TaskRecordSchema } from "./schemas";
@@ -154,8 +155,11 @@ export class ValkeyTaskStore implements TaskStore {
    * @param params - The agent ID and the {@link TaskRecord} to persist.
    */
   async save(params: { agentId: string; data: TaskRecord }): Promise<void> {
-    const key = this.makeKey(params.agentId, params.data.id);
-    const json = safeStringify(params.data);
+    const taskId = params.data.id ?? randomUUID();
+    const normalized: TaskRecord =
+      taskId === params.data.id ? params.data : { ...params.data, id: taskId };
+    const key = this.makeKey(params.agentId, taskId);
+    const json = safeStringify(normalized);
 
     if (this.ttlSeconds !== undefined) {
       const seconds = await this.getTimeUnitSeconds();
