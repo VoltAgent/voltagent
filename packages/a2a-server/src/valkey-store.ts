@@ -161,6 +161,12 @@ export class ValkeyTaskStore implements TaskStore {
     const key = this.makeKey(params.agentId, taskId);
     const json = safeStringify(normalized);
 
+    if (json.startsWith("SAFE_STRINGIFY_ERROR:")) {
+      throw new Error(
+        `Failed to serialize TaskRecord for agent "${params.agentId}", task "${taskId}": ${json}`,
+      );
+    }
+
     if (this.ttlSeconds !== undefined) {
       const seconds = await this.getTimeUnitSeconds();
       await this.client.set(key, json, {
