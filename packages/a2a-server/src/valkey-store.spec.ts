@@ -1,4 +1,5 @@
 import { safeStringify } from "@voltagent/internal";
+import { TaskRecordSchema } from "./schemas";
 import type { TaskRecord } from "./types";
 import { ValkeyTaskStore, createValkeyTaskStore } from "./valkey-store";
 
@@ -134,6 +135,17 @@ describe("ValkeyTaskStore", () => {
     const store = new ValkeyTaskStore({ client, keyPrefix: "pfx" } as any);
     await expect(store.load({ agentId: "agent-1", taskId: "task-1" })).rejects.toThrow(
       /Failed to parse stored TaskRecord for key "pfx:agent-1::task-1"/,
+    );
+  });
+
+  it("load() throws when stored data is valid JSON but fails schema validation", async () => {
+    const client = makeClient();
+    // Valid JSON but missing required TaskRecord fields (id, contextId, status, history)
+    client.get.mockResolvedValue(safeStringify({ bogus: true }));
+
+    const store = new ValkeyTaskStore({ client, keyPrefix: "pfx" } as any);
+    await expect(store.load({ agentId: "agent-1", taskId: "task-1" })).rejects.toThrow(
+      /Invalid TaskRecord for key "pfx:agent-1::task-1"/,
     );
   });
 
