@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { type Agent, convertUsage } from "@voltagent/core";
+import { type Agent, convertUsage, getGlobalLogger } from "@voltagent/core";
 import { buildAgentCard } from "./adapters/agent";
 import { fromVoltAgentMessage, toVoltAgentMessage } from "./adapters/message";
 import { createSuccessResponse, normalizeError } from "./protocol";
@@ -85,10 +85,12 @@ export class A2AServer {
    */
   initialize(deps: A2AServerDeps): void {
     if (this.config.taskStore && deps.taskStore) {
-      console.debug(
-        "[A2AServer] config.taskStore is overriding deps.taskStore. " +
-          "The task store provided in A2AServerConfig takes precedence.",
-      );
+      getGlobalLogger()
+        .child({ component: "a2a-server" })
+        .debug(
+          "config.taskStore is overriding deps.taskStore. " +
+            "The task store provided in A2AServerConfig takes precedence.",
+        );
     }
 
     this.deps = {
