@@ -4,6 +4,17 @@ import type {
   A2AServerLike as BaseA2AServerLike,
   A2AServerMetadata as BaseA2AServerMetadata,
 } from "@voltagent/internal/a2a";
+import type { z } from "zod";
+import type {
+  A2AMessagePartSchema,
+  A2AMessagePartTextSchema,
+  A2AMessageSchema,
+  TaskArtifactPartSchema,
+  TaskArtifactSchema,
+  TaskRecordSchema,
+  TaskStateSchema,
+  TaskStatusSchema,
+} from "./schemas";
 
 export type A2AJsonRpcId = string | number | null;
 
@@ -37,59 +48,29 @@ export interface JsonRpcRequest<Params = unknown> {
   params?: Params;
 }
 
-export type TaskState =
-  | "submitted"
-  | "working"
-  | "input-required"
-  | "completed"
-  | "failed"
-  | "canceled";
+/** The set of valid task lifecycle states. Derived from {@link TaskStateSchema}. */
+export type TaskState = z.infer<typeof TaskStateSchema>;
 
-export interface A2AMessagePartText {
-  kind: "text";
-  text: string;
-}
+/** A text-only message part. Derived from {@link A2AMessagePartTextSchema}. */
+export type A2AMessagePartText = z.infer<typeof A2AMessagePartTextSchema>;
 
-export type A2AMessagePart = A2AMessagePartText;
+/** Union of all message part kinds. Derived from {@link A2AMessagePartSchema}. */
+export type A2AMessagePart = z.infer<typeof A2AMessagePartSchema>;
 
-export interface A2AMessage {
-  kind: "message";
-  role: "user" | "agent";
-  messageId: string;
-  parts: A2AMessagePart[];
-  contextId?: string;
-  taskId?: string;
-  referenceTaskIds?: string[];
-  extensions?: string[];
-  metadata?: Record<string, unknown>;
-}
+/** A single message exchanged between user and agent. Derived from {@link A2AMessageSchema}. */
+export type A2AMessage = z.infer<typeof A2AMessageSchema>;
 
-export interface TaskStatus {
-  state: TaskState;
-  message?: A2AMessage;
-  timestamp: string;
-}
+/** Current status of a task including lifecycle state and timestamp. Derived from {@link TaskStatusSchema}. */
+export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
-export interface TaskArtifactPart {
-  kind: "text";
-  text: string;
-}
+/** A text-only artifact part. Derived from {@link TaskArtifactPartSchema}. */
+export type TaskArtifactPart = z.infer<typeof TaskArtifactPartSchema>;
 
-export interface TaskArtifact {
-  name: string;
-  parts: TaskArtifactPart[];
-  description?: string;
-  metadata?: Record<string, unknown>;
-}
+/** An artifact produced by an agent during task execution. Derived from {@link TaskArtifactSchema}. */
+export type TaskArtifact = z.infer<typeof TaskArtifactSchema>;
 
-export interface TaskRecord {
-  id: string;
-  contextId: string;
-  status: TaskStatus;
-  history: A2AMessage[];
-  artifacts?: TaskArtifact[];
-  metadata?: Record<string, unknown>;
-}
+/** A complete task record including status, history, and optional artifacts. Derived from {@link TaskRecordSchema}. */
+export type TaskRecord = z.infer<typeof TaskRecordSchema>;
 
 export interface TaskStore {
   load(params: { agentId: string; taskId: string }): Promise<TaskRecord | null>;
