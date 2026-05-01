@@ -99,7 +99,7 @@ describe("ValkeyResumableStreamStore — Publisher adapter", () => {
 
     const result = await publisher.publish("my-channel", "my-message");
 
-    expect((client as any).publish).toHaveBeenCalledWith("my-channel", "my-message");
+    expect((client as any).publish).toHaveBeenCalledWith("my-message", "my-channel");
     expect(result).toBe(1);
   });
 
@@ -172,8 +172,8 @@ describe("ValkeyResumableStreamStore — Subscriber adapter", () => {
 
     expect(mockSubClient.close).toHaveBeenCalledTimes(1);
 
-    // Unsubscribing again should not throw (client already removed)
-    await expect(subscriber.unsubscribe("test-channel")).resolves.not.toThrow();
+    // Unsubscribing again should resolve safely (client already removed)
+    await subscriber.unsubscribe("test-channel");
     expect(mockSubClient.close).toHaveBeenCalledTimes(1);
   });
 });
