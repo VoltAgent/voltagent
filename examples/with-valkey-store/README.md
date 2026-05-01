@@ -47,7 +47,7 @@ This example demonstrates how to use **Valkey** as a distributed backing store f
 
 ## Structure
 
-```
+```text
 examples/with-valkey-store
 ├── src/
 │   ├── agents/assistant.ts    # Example agent definition
