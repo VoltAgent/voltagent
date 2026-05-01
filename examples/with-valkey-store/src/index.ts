@@ -15,8 +15,18 @@ const logger = createPinoLogger({
 });
 
 const host = process.env.VALKEY_HOST ?? "localhost";
-const port = Number(process.env.VALKEY_PORT ?? 6379);
+const rawPort = process.env.VALKEY_PORT;
+const port = rawPort !== undefined ? Number(rawPort) : 6379;
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error(`Invalid VALKEY_PORT "${rawPort}": must be an integer between 1 and 65535`);
+}
 
+/**
+ * Bootstraps a VoltAgent instance backed by Valkey for both A2A task
+ * persistence and resumable streaming. Connects to the Valkey server
+ * specified by `VALKEY_HOST` / `VALKEY_PORT` environment variables
+ * (defaulting to `localhost:6379`), then starts an HTTP server on port 3141.
+ */
 async function main() {
   const valkeyClient = await GlideClient.createClient({
     addresses: [{ host, port }],
