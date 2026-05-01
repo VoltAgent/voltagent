@@ -1,13 +1,12 @@
 import { GlideClient } from "@valkey/valkey-glide";
-import { A2AServer, createValkeyTaskStore } from "@voltagent/a2a-server";
+import { A2AServer } from "@voltagent/a2a-server";
+import { createValkeyTaskStore } from "@voltagent/a2a-server/valkey-store";
 import { VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import {
-  createResumableStreamAdapter,
-  createResumableStreamValkeyStore,
-} from "@voltagent/resumable-streams";
+import { createResumableStreamAdapter } from "@voltagent/resumable-streams";
+import { createResumableStreamValkeyStore } from "@voltagent/resumable-streams/valkey-store";
 import { honoServer } from "@voltagent/server-hono";
-import { assistant } from "./agents/assistant";
+import { assistant } from "./agents/assistant.js";
 
 const logger = createPinoLogger({
   name: "with-valkey-store",
