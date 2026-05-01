@@ -24,9 +24,3 @@ export {
   type ResumableChatHandlersOptions,
 } from "./chat-handlers";
 export { createResumableChatSession, type ResumableChatSession } from "./chat-session";
-export { createResumableStreamValkeyStore } from "./valkey-store";
-export type {
-  ResumableStreamValkeyStoreOptions,
-  ValkeyConnectionConfig,
-  ValkeyResumableStreamStore,
-} from "./valkey-store";

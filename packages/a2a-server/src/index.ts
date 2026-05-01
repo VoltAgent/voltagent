@@ -2,8 +2,6 @@ export * from "./types";
 export * from "./server";
 export * from "./protocol";
 export * from "./store";
-export { createValkeyTaskStore, ValkeyTaskStore } from "./valkey-store";
-export type { ValkeyTaskStoreOptions } from "./valkey-store";
 export * from "./tasks";
 export * from "./adapters/agent";
 export * from "./adapters/message";
