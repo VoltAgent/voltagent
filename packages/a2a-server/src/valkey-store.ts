@@ -2,15 +2,33 @@ import type { GlideClient, GlideClusterClient, TimeUnit } from "@valkey/valkey-g
 import { safeStringify } from "@voltagent/internal";
 import type { TaskRecord, TaskStore } from "./types";
 
+/**
+ * Configuration options for {@link ValkeyTaskStore}.
+ */
 export interface ValkeyTaskStoreOptions {
+  /** Valkey client instance (standalone {@link GlideClient} or {@link GlideClusterClient}). */
   client: GlideClient | GlideClusterClient;
+  /** Key prefix for all task records stored in Valkey. Defaults to `"a2a-tasks"`. */
   keyPrefix?: string;
+  /** Optional TTL in seconds applied to every persisted task record. Must be a positive finite number. */
   ttlSeconds?: number;
 }
 
 const VALKEY_GLIDE_REQUIRED =
   "@valkey/valkey-glide is required for ValkeyTaskStore. Install it with: pnpm add @valkey/valkey-glide";
 
+/**
+ * Creates a {@link ValkeyTaskStore} with eagerly-resolved Valkey dependencies.
+ *
+ * Validates `ttlSeconds` and pre-resolves the `TimeUnit.Seconds` enum from
+ * `@valkey/valkey-glide` so that subsequent `save()` calls do not need to
+ * perform a dynamic import.
+ *
+ * @param options - Store configuration including the Valkey client, optional key prefix, and TTL.
+ * @returns A fully initialised {@link ValkeyTaskStore} instance.
+ * @throws If `ttlSeconds` is provided but is not a positive finite number.
+ * @throws If `@valkey/valkey-glide` is not installed when `ttlSeconds` is set.
+ */
 export async function createValkeyTaskStore(
   options: ValkeyTaskStoreOptions,
 ): Promise<ValkeyTaskStore> {
@@ -51,13 +69,34 @@ export class ValkeyTaskStore implements TaskStore {
   // In-process only, not propagated across instances via Valkey.
   readonly activeCancellations = new Set<string>();
 
+  /**
+   * Creates a new ValkeyTaskStore.
+   *
+   * Prefer {@link createValkeyTaskStore} which eagerly resolves the Valkey
+   * `TimeUnit` dependency. Direct construction is supported but the caller
+   * must supply the resolved `timeUnitSeconds` when `ttlSeconds` is used.
+   *
+   * @param options - Store configuration.
+   * @param timeUnitSeconds - Pre-resolved `TimeUnit.Seconds` value from `@valkey/valkey-glide`.
+   * @throws If `ttlSeconds` is provided but is not a positive finite number.
+   */
   constructor(options: ValkeyTaskStoreOptions, /** @internal */ timeUnitSeconds?: TimeUnit) {
+    if (
+      options.ttlSeconds !== undefined &&
+      (!Number.isFinite(options.ttlSeconds) || options.ttlSeconds <= 0)
+    ) {
+      throw new Error("ttlSeconds must be a positive finite number");
+    }
     this.client = options.client;
     this.keyPrefix = options.keyPrefix ?? "a2a-tasks";
     this.ttlSeconds = options.ttlSeconds;
     this.timeUnitSeconds = timeUnitSeconds;
   }
 
+  /**
+   * Lazily resolves and caches the `TimeUnit.Seconds` enum value from
+   * `@valkey/valkey-glide`. Called internally by {@link save} when TTL is configured.
+   */
   private async getTimeUnitSeconds(): Promise<TimeUnit> {
     if (this.timeUnitSeconds !== undefined) return this.timeUnitSeconds;
     try {
@@ -69,6 +108,13 @@ export class ValkeyTaskStore implements TaskStore {
     }
   }
 
+  /**
+   * Loads a task record from Valkey by agent and task ID.
+   *
+   * @param params - The agent ID and task ID identifying the record.
+   * @returns The deserialised {@link TaskRecord}, or `null` if not found.
+   * @throws If the stored value cannot be parsed as valid JSON.
+   */
   async load(params: { agentId: string; taskId: string }): Promise<TaskRecord | null> {
     const key = this.makeKey(params.agentId, params.taskId);
     const result = await this.client.get(key);
@@ -81,6 +127,15 @@ export class ValkeyTaskStore implements TaskStore {
     }
   }
 
+  /**
+   * Persists a task record to Valkey.
+   *
+   * The record is serialised with {@link safeStringify} and stored under a
+   * composite key derived from the agent ID and the record's task ID. When
+   * `ttlSeconds` is configured the key is set with an expiry.
+   *
+   * @param params - The agent ID and the {@link TaskRecord} to persist.
+   */
   async save(params: { agentId: string; data: TaskRecord }): Promise<void> {
     const key = this.makeKey(params.agentId, params.data.id);
     const json = safeStringify(params.data);
@@ -95,7 +150,16 @@ export class ValkeyTaskStore implements TaskStore {
     }
   }
 
+  /**
+   * Builds the Valkey key for a given agent/task pair.
+   *
+   * Colons inside `agentId` and `taskId` are escaped to prevent collisions
+   * with the `keyPrefix:agentId::taskId` delimiter scheme.
+   */
   private makeKey(agentId: string, taskId: string): string {
-    return `${this.keyPrefix}:${agentId}::${taskId}`;
+    // Escape colons in user-provided IDs to prevent key collisions with the delimiter.
+    const safeAgentId = agentId.replace(/:/g, "\\:");
+    const safeTaskId = taskId.replace(/:/g, "\\:");
+    return `${this.keyPrefix}:${safeAgentId}::${safeTaskId}`;
   }
 }
