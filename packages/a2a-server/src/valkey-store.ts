@@ -1,5 +1,6 @@
 import type { GlideClient, GlideClusterClient, TimeUnit } from "@valkey/valkey-glide";
 import { safeStringify } from "@voltagent/internal";
+import { TaskRecordSchema } from "./schemas";
 import type { TaskRecord, TaskStore } from "./types";
 
 /**
@@ -119,12 +120,23 @@ export class ValkeyTaskStore implements TaskStore {
     const key = this.makeKey(params.agentId, params.taskId);
     const result = await this.client.get(key);
     if (result === null) return null;
+
+    let parsed: unknown;
     try {
-      return JSON.parse(String(result)) as TaskRecord;
+      parsed = JSON.parse(String(result));
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
       throw new Error(`Failed to parse stored TaskRecord for key "${key}": ${detail}`);
     }
+
+    const validation = TaskRecordSchema.safeParse(parsed);
+    if (!validation.success) {
+      throw new Error(
+        `Invalid TaskRecord for key "${key}": ${safeStringify(validation.error.issues)}`,
+      );
+    }
+
+    return validation.data;
   }
 
   /**
@@ -133,6 +145,11 @@ export class ValkeyTaskStore implements TaskStore {
    * The record is serialised with {@link safeStringify} and stored under a
    * composite key derived from the agent ID and the record's task ID. When
    * `ttlSeconds` is configured the key is set with an expiry.
+   *
+   * Note: unlike {@link load}, `save` does **not** run Zod validation. The
+   * caller is trusted to supply a well-typed `TaskRecord`, and skipping
+   * validation on the write path avoids the per-call overhead. Any schema
+   * drift will surface on the next `load()`.
    *
    * @param params - The agent ID and the {@link TaskRecord} to persist.
    */
