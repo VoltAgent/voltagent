@@ -238,7 +238,7 @@ export class VoltA2AError extends Error {
       message: this.message,
       data: {
         taskId: this.taskId,
-        ...(this.data ? { details: this.data } : {}),
+        ...(this.data !== undefined ? { details: this.data } : {}),
       },
     };
   }
