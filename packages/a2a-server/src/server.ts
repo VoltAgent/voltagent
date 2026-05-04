@@ -350,7 +350,18 @@ export class A2AServer {
 
       record = appendMessage(record, failureMessage);
       record = transitionStatus(record, { state: "failed", message: failureMessage });
-      await taskStore.save({ agentId, data: record });
+
+      try {
+        await taskStore.save({ agentId, data: record });
+      } catch (saveErr) {
+        getGlobalLogger()
+          .child({ component: "a2a-server" })
+          .warn("Failed to persist task failure status", {
+            agentId,
+            taskId: record.id,
+            saveError: saveErr,
+          });
+      }
 
       throw error;
     } finally {
