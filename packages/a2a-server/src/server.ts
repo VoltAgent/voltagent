@@ -3,6 +3,7 @@ import { type Agent, convertUsage, getGlobalLogger } from "@voltagent/core";
 import { buildAgentCard } from "./adapters/agent";
 import { fromVoltAgentMessage, toVoltAgentMessage } from "./adapters/message";
 import { createSuccessResponse, normalizeError } from "./protocol";
+import { A2AMessageSchema } from "./schemas";
 import { InMemoryTaskStore } from "./store";
 import {
   appendMessage,
@@ -335,6 +336,22 @@ export class A2AServer {
       if (abortController.signal.aborted) {
         return await this.ensureCanceledRecord(agentId, record);
       }
+
+      const failureText =
+        error instanceof Error ? error.message : "Task failed with an unknown error";
+      const failureMessage: A2AMessage = {
+        kind: "message",
+        role: "agent",
+        messageId: randomUUID(),
+        taskId: record.id,
+        contextId: record.contextId,
+        parts: [{ kind: "text", text: failureText }],
+      };
+
+      record = appendMessage(record, failureMessage);
+      record = transitionStatus(record, { state: "failed", message: failureMessage });
+      await taskStore.save({ agentId, data: record });
+
       throw error;
     } finally {
       this.clearActiveOperation(agentId, record.id);
@@ -695,24 +712,16 @@ export class A2AServer {
     if (!payload || typeof payload !== "object") {
       throw VoltA2AError.invalidParams("Params must be an object");
     }
-    const candidate = payload as Partial<MessageSendParams>;
+    const candidate = payload as Record<string, unknown>;
 
-    if (!candidate.message || typeof candidate.message !== "object") {
-      throw VoltA2AError.invalidParams("'message' must be provided");
+    try {
+      A2AMessageSchema.parse(candidate.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid message payload";
+      throw VoltA2AError.invalidParams(message);
     }
 
-    if (!Array.isArray(candidate.message.parts) || candidate.message.parts.length === 0) {
-      throw VoltA2AError.invalidParams("Message must include at least one part");
-    }
-
-    const hasInvalidPart = candidate.message.parts.some(
-      (part) => part.kind !== "text" || typeof part.text !== "string",
-    );
-    if (hasInvalidPart) {
-      throw VoltA2AError.invalidParams("Only plain text message parts are supported");
-    }
-
-    return candidate as MessageSendParams;
+    return candidate as unknown as MessageSendParams;
   }
 
   private validateTaskQueryParams(payload: unknown): TaskQueryParams {
