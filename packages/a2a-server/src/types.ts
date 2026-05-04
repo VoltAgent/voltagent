@@ -16,14 +16,17 @@ import type {
   TaskStatusSchema,
 } from "./schemas";
 
+/** Identifier for a JSON-RPC request — a string, number, or `null` for notifications. */
 export type A2AJsonRpcId = string | number | null;
 
+/** Standard JSON-RPC 2.0 error object returned inside a {@link JsonRpcResponse}. */
 export interface JsonRpcError<Data = unknown> {
   code: number;
   message: string;
   data?: Data;
 }
 
+/** Standard JSON-RPC 2.0 response envelope. */
 export interface JsonRpcResponse<Result = unknown, ErrorData = unknown> {
   jsonrpc: "2.0";
   id: A2AJsonRpcId;
@@ -31,16 +34,19 @@ export interface JsonRpcResponse<Result = unknown, ErrorData = unknown> {
   error?: JsonRpcError<ErrorData> | null;
 }
 
+/** Wrapper around an async generator that yields {@link JsonRpcResponse} objects for streaming calls. */
 export interface JsonRpcStream<Result = unknown, ErrorData = unknown> {
   kind: "stream";
   id: A2AJsonRpcId;
   stream: AsyncGenerator<JsonRpcResponse<Result, ErrorData>>;
 }
 
+/** Discriminated union of a single {@link JsonRpcResponse} or a {@link JsonRpcStream}. */
 export type JsonRpcHandlerResult<Result = unknown, ErrorData = unknown> =
   | JsonRpcResponse<Result, ErrorData>
   | JsonRpcStream<Result, ErrorData>;
 
+/** Incoming JSON-RPC 2.0 request envelope. */
 export interface JsonRpcRequest<Params = unknown> {
   jsonrpc: "2.0";
   id: A2AJsonRpcId;
@@ -72,11 +78,13 @@ export type TaskArtifact = z.infer<typeof TaskArtifactSchema>;
 /** A complete task record including status, history, and optional artifacts. Derived from {@link TaskRecordSchema}. */
 export type TaskRecord = z.infer<typeof TaskRecordSchema>;
 
+/** Persistence layer for loading and saving {@link TaskRecord} instances keyed by agent and task ID. */
 export interface TaskStore {
   load(params: { agentId: string; taskId: string }): Promise<TaskRecord | null>;
   save(params: { agentId: string; data: TaskRecord }): Promise<void>;
 }
 
+/** Per-request context forwarded to agent invocations and filter functions. */
 export interface A2ARequestContext {
   userId?: string;
   sessionId?: string;
@@ -84,13 +92,16 @@ export interface A2ARequestContext {
   requestUrl?: string;
 }
 
+/** Parameters passed to an {@link A2AFilterFunction} for filtering a list of items. */
 export interface A2AFilterParams<T> {
   items: T[];
   context?: A2ARequestContext;
 }
 
+/** Callback that filters a list of items (e.g. agents) based on the current request context. */
 export type A2AFilterFunction<T> = (params: A2AFilterParams<T>) => T[];
 
+/** Parameters for the `message/send` and `message/stream` JSON-RPC methods. */
 export interface MessageSendParams {
   id?: string;
   sessionId?: string;
@@ -99,21 +110,27 @@ export interface MessageSendParams {
   message: A2AMessage;
 }
 
+/** Parameters for the `tasks/get` JSON-RPC method. */
 export interface TaskQueryParams {
   id: string;
   historyLength?: number;
   metadata?: Record<string, unknown>;
 }
 
+/** Parameters for the `tasks/cancel` JSON-RPC method. */
 export interface TaskIdParams {
   id: string;
   metadata?: Record<string, unknown>;
 }
 
+/** Result of a `message/send` or `message/stream` call — the updated {@link TaskRecord}. */
 export type MessageSendResult = TaskRecord;
+/** Result of a `tasks/get` call — the requested {@link TaskRecord}. */
 export type TaskGetResult = TaskRecord;
+/** Result of a `tasks/cancel` call — the canceled {@link TaskRecord}. */
 export type TaskCancelResult = TaskRecord;
 
+/** Configuration supplied to the {@link A2AServer} constructor. */
 export interface A2AServerConfig {
   id?: string;
   name: string;
@@ -132,12 +149,15 @@ export interface A2AServerConfig {
   taskStore?: TaskStore;
 }
 
+/** Metadata describing an {@link A2AServer} instance (name, version, etc.). */
 export interface A2AServerMetadata extends BaseA2AServerMetadata {}
 
+/** Runtime dependencies injected into {@link A2AServer} via `initialize()`. */
 export interface A2AServerDeps extends BaseA2AServerDeps<Agent, TaskStore> {
   taskStore?: TaskStore;
 }
 
+/** Minimal public surface of an A2A server, used by server-provider adapters. */
 export interface A2AServerLike extends BaseA2AServerLike<Agent> {
   getAgentCard?(agentId: string, context?: A2ARequestContext): AgentCard;
   handleRequest?(
@@ -147,8 +167,10 @@ export interface A2AServerLike extends BaseA2AServerLike<Agent> {
   ): Promise<JsonRpcHandlerResult>;
 }
 
+/** Factory function that creates a new {@link A2AServerLike} instance on demand. */
 export type A2AServerFactory<T extends A2AServerLike = A2AServerLike> = () => T;
 
+/** A single skill advertised by an agent in its {@link AgentCard}. */
 export interface AgentCardSkill {
   id: string;
   name: string;
@@ -156,6 +178,7 @@ export interface AgentCardSkill {
   tags?: string[];
 }
 
+/** Public metadata card describing an agent's capabilities, skills, and endpoint URL. */
 export interface AgentCard {
   name: string;
   description?: string;
@@ -175,6 +198,7 @@ export interface AgentCard {
   skills: AgentCardSkill[];
 }
 
+/** Standard A2A JSON-RPC error codes, extending the base JSON-RPC 2.0 error range with task-specific codes. */
 export const A2AErrorCode = {
   PARSE_ERROR: -32700,
   INVALID_REQUEST: -32600,
@@ -189,7 +213,14 @@ export const A2AErrorCode = {
 
 export type A2AErrorCode = (typeof A2AErrorCode)[keyof typeof A2AErrorCode];
 
+/**
+ * Typed error class for A2A JSON-RPC failures.
+ *
+ * Provides static factory methods for every standard error code so callers
+ * never need to remember numeric codes.
+ */
 export class VoltA2AError extends Error {
+  /** Creates a new {@link VoltA2AError} with the given code, message, and optional details. */
   constructor(
     public code: A2AErrorCode,
     message: string,
@@ -200,6 +231,7 @@ export class VoltA2AError extends Error {
     this.name = "VoltA2AError";
   }
 
+  /** Converts this error into a plain {@link JsonRpcError} object suitable for serialisation. */
   toJsonRpcError(): JsonRpcError {
     return {
       code: this.code,
@@ -211,22 +243,27 @@ export class VoltA2AError extends Error {
     };
   }
 
+  /** Creates a parse-error (-32700) for malformed JSON payloads. */
   static parseError(details?: unknown) {
     return new VoltA2AError(A2AErrorCode.PARSE_ERROR, "Invalid JSON payload", details);
   }
 
+  /** Creates an invalid-request (-32600) error. */
   static invalidRequest(message = "Invalid request", details?: unknown) {
     return new VoltA2AError(A2AErrorCode.INVALID_REQUEST, message, details);
   }
 
+  /** Creates a method-not-found (-32601) error for an unknown JSON-RPC method. */
   static methodNotFound(method: string) {
     return new VoltA2AError(A2AErrorCode.METHOD_NOT_FOUND, `Unknown method '${method}'`);
   }
 
+  /** Creates an invalid-params (-32602) error. */
   static invalidParams(message = "Invalid parameters", details?: unknown) {
     return new VoltA2AError(A2AErrorCode.INVALID_PARAMS, message, details);
   }
 
+  /** Creates a task-not-found (-32001) error for the given task ID. */
   static taskNotFound(taskId: string) {
     return new VoltA2AError(
       A2AErrorCode.TASK_NOT_FOUND,
@@ -236,6 +273,7 @@ export class VoltA2AError extends Error {
     );
   }
 
+  /** Creates a task-not-cancelable (-32002) error for a task that can no longer be canceled. */
   static taskNotCancelable(taskId: string) {
     return new VoltA2AError(
       A2AErrorCode.TASK_NOT_CANCELABLE,
@@ -245,10 +283,12 @@ export class VoltA2AError extends Error {
     );
   }
 
+  /** Creates an unsupported-operation (-32004) error. */
   static unsupportedOperation(message = "Unsupported operation") {
     return new VoltA2AError(A2AErrorCode.UNSUPPORTED_OPERATION, message);
   }
 
+  /** Creates an internal-error (-32603) error. */
   static internal(message = "Internal error", details?: unknown) {
     return new VoltA2AError(A2AErrorCode.INTERNAL_ERROR, message, details);
   }
