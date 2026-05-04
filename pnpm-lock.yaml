@@ -2980,6 +2980,46 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-valkey-store:
+    dependencies:
+      '@valkey/valkey-glide':
+        specifier: ^2.3.1
+        version: 2.3.1
+      '@voltagent/a2a-server':
+        specifier: ^2.0.3
+        version: link:../../packages/a2a-server
+      '@voltagent/core':
+        specifier: ^2.7.2
+        version: link:../../packages/core
+      '@voltagent/internal':
+        specifier: ^1.0.3
+        version: link:../../packages/internal
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/resumable-streams':
+        specifier: ^2.0.2
+        version: link:../../packages/resumable-streams
+      '@voltagent/server-hono':
+        specifier: ^2.0.12
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   examples/with-vector-search:
     dependencies:
       '@ai-sdk/openai':
@@ -3636,6 +3676,9 @@ importers:
       '@a2a-js/sdk':
         specifier: ^0.2.5
         version: 0.2.5
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3646,6 +3689,9 @@ importers:
       '@voltagent/core':
         specifier: ^2.0.2
         version: link:../core
+      fast-check:
+        specifier: ^3.23.2
+        version: 3.23.2
 
   packages/ag-ui:
     dependencies:
@@ -4223,6 +4269,9 @@ importers:
 
   packages/resumable-streams:
     dependencies:
+      '@valkey/valkey-glide':
+        specifier: '>=2.3.1'
+        version: 2.3.1
       '@voltagent/core':
         specifier: ^2.6.6
         version: link:../core
@@ -21209,6 +21258,69 @@ packages:
       - graphql
     dev: false
 
+  /@valkey/valkey-glide-darwin-arm64@2.3.1:
+    resolution: {integrity: sha512-S3uCwGoBqQuVieBsevftlXzy/lFkDf49wQkg0UaRGMoWhmaik8d9rwTzKky1+otLjWCblWtMDcqIWGMs5ppo8Q==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-darwin-x64@2.3.1:
+    resolution: {integrity: sha512-7F+UoyMhO0QiAHEDZApy0+PNR7v7Gct5SMiRH+8RuUk8Nf1Cc3mNVtFXk0jwwbhatiWiSNEaMDkTRPWYZN6IcQ==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-arm64-gnu@2.3.1:
+    resolution: {integrity: sha512-Aigxpq6oSxPhdX7V0JZsQrBW4pzcNibCb1m6XorGdWpG62sttV/3DKz/06V+h1dSGfqpkjWPxRJS1EmTqPYmZw==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-arm64-musl@2.3.1:
+    resolution: {integrity: sha512-vmohWbUncgH+Rz1OnXPeSDVChCFMy0MYL38qcmAS05aGwL2sgMjipsEWiAsc82IAauKsVE7Ou68YZcyYK/mhag==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-x64-gnu@2.3.1:
+    resolution: {integrity: sha512-v/pJefhNO2fjEKq7uQAked896S2N3ZymiO/ei2v8JRxbYk1M+/Ffl6NH6SG+Mo/k2dyeRN1B5PXNq79jv149Rg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide-linux-x64-musl@2.3.1:
+    resolution: {integrity: sha512-GAcWs6MrS4v6/mjoaYyd8ay+L6Zl2L9YjkuKsupWzjSsT+PEVV/3yX0ecNeK7SGMn5Wfd3InZ3gfGPEsWEhc0g==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@valkey/valkey-glide@2.3.1:
+    resolution: {integrity: sha512-HzKCoNRSJYG83vKrYVJk+By2a0qVt/VuQfziCtdM6Q3Lt2WUE1PqxUAwO1Br2flSgrTxNdGgaGmX8qdnM25d5w==}
+    engines: {node: '>=16'}
+    dependencies:
+      long: 5.3.2
+      protobufjs: 7.5.3
+    optionalDependencies:
+      '@valkey/valkey-glide-darwin-arm64': 2.3.1
+      '@valkey/valkey-glide-darwin-x64': 2.3.1
+      '@valkey/valkey-glide-linux-arm64-gnu': 2.3.1
+      '@valkey/valkey-glide-linux-arm64-musl': 2.3.1
+      '@valkey/valkey-glide-linux-x64-gnu': 2.3.1
+      '@valkey/valkey-glide-linux-x64-musl': 2.3.1
+    dev: false
+
   /@vercel/nft@0.29.4(supports-color@10.2.2):
     resolution: {integrity: sha512-6lLqMNX3TuycBPABycx7A9F1bHQR7kiQln6abjFbPrf5C/05qHM9M5E4PeTE59c7z8g6vHnx1Ioihb2AQl7BTA==}
     engines: {node: '>=18'}
@@ -21295,7 +21407,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0-rc.9
+      '@rolldown/pluginutils': 1.0.0-rc.17
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)
