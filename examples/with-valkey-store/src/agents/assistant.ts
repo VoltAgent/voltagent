@@ -12,6 +12,7 @@ const statusTool = createTool({
   },
 });
 
+/** Pre-configured support agent with a `status` tool that returns the current time. */
 export const assistant = new Agent({
   id: "supportagent",
   name: "SupportAgent",

@@ -264,6 +264,12 @@ export const mergeStreamAndActiveStore = <T extends ResumableStreamStore>(
   clearActiveStream: activeStreamStore.clearActiveStream,
 });
 
+/**
+ * Creates an in-memory active-stream store that tracks which stream ID is
+ * currently active for each conversation/user pair.
+ *
+ * @returns A {@link ResumableStreamActiveStore} backed by a `Map`.
+ */
 export function createMemoryResumableStreamActiveStore(): ResumableStreamActiveStore {
   const activeStreams = new Map<string, string>();
 
@@ -387,6 +393,14 @@ const createInMemoryPubSub = () => {
   return { publisher, subscriber };
 };
 
+/**
+ * Creates an in-memory resumable stream store backed by the `resumable-stream` library.
+ *
+ * Useful for development and testing. Data does not survive process restarts.
+ *
+ * @param options - Optional key prefix and `waitUntil` callback.
+ * @returns A {@link ResumableStreamStore} with active-stream tracking.
+ */
 export async function createResumableStreamMemoryStore(
   options: ResumableStreamStoreOptions = {},
 ): Promise<ResumableStreamStore> {
@@ -406,6 +420,15 @@ export async function createResumableStreamMemoryStore(
   return markResumableStreamStoreType(mergedStore, "memory", "Memory");
 }
 
+/**
+ * Creates a Redis-backed resumable stream store.
+ *
+ * If `publisher` / `subscriber` clients are not provided, they are created
+ * automatically from the `REDIS_URL` or `KV_URL` environment variable.
+ *
+ * @param options - Redis connection and key prefix options.
+ * @returns A {@link ResumableStreamStore} with active-stream tracking.
+ */
 export async function createResumableStreamRedisStore(
   options: ResumableStreamRedisStoreOptions = {},
 ): Promise<ResumableStreamStore> {
@@ -450,6 +473,13 @@ export async function createResumableStreamRedisStore(
   return markResumableStreamStoreType(mergedStore, "redis", "Redis");
 }
 
+/**
+ * Creates a resumable stream store from user-supplied publisher and subscriber instances.
+ *
+ * @param options - Must include both `publisher` and `subscriber`.
+ * @returns A {@link ResumableStreamStore} with active-stream tracking.
+ * @throws If `publisher` or `subscriber` is missing.
+ */
 export async function createResumableStreamGenericStore(
   options: ResumableStreamGenericStoreOptions,
 ): Promise<ResumableStreamStore> {
@@ -472,6 +502,14 @@ export async function createResumableStreamGenericStore(
   return markResumableStreamStoreType(mergedStore, "custom", "Custom");
 }
 
+/**
+ * Creates a resumable stream store backed by the VoltOps managed service.
+ *
+ * Returns a disabled store when the required API keys are not configured.
+ *
+ * @param options - VoltOps client or API key configuration.
+ * @returns A {@link ResumableStreamStore} with active-stream tracking, or a disabled stub.
+ */
 export async function createResumableStreamVoltOpsStore(
   options: ResumableStreamVoltOpsStoreOptions = {},
 ): Promise<ResumableStreamStore> {
@@ -575,6 +613,16 @@ export async function createResumableStreamVoltOpsStore(
   return markResumableStreamStoreType(mergedStore, "voltops", "VoltOps");
 }
 
+/**
+ * Builds a {@link ResumableStreamAdapter} from a stream store and active-stream store.
+ *
+ * If `activeStreamStore` is not provided explicitly, it is inferred from `streamStore`
+ * when the store implements the {@link ResumableStreamActiveStore} interface.
+ *
+ * @param config - Must include `streamStore`; `activeStreamStore` is inferred when possible.
+ * @returns A fully wired {@link ResumableStreamAdapter}.
+ * @throws If `streamStore` is missing or `activeStreamStore` cannot be resolved.
+ */
 export async function createResumableStreamAdapter(
   config: ResumableStreamAdapterConfig,
 ): Promise<ResumableStreamAdapter> {
@@ -628,6 +676,17 @@ export async function createResumableStreamAdapter(
   return adapter;
 }
 
+/**
+ * Merges an existing resumable stream adapter into server-provider dependencies.
+ *
+ * If `deps` already contains a `resumableStream`, the provided adapter is ignored
+ * (with a warning). Disabled adapters are also filtered out.
+ *
+ * @param deps - Current server-provider dependencies.
+ * @param adapter - Optional adapter to inject.
+ * @param logger - Optional logger for warnings.
+ * @returns Updated dependencies with the resolved adapter, if any.
+ */
 export async function resolveResumableStreamDeps(
   deps: ServerProviderDeps,
   adapter: ResumableStreamAdapter | undefined,
@@ -651,6 +710,14 @@ export async function resolveResumableStreamDeps(
   };
 }
 
+/**
+ * Validates a {@link ResumableStreamAdapter}, returning `undefined`
+ * when the adapter is disabled or invalid.
+ *
+ * @param adapter - The adapter to validate.
+ * @param logger - Optional logger for warnings.
+ * @returns The validated adapter, or `undefined`.
+ */
 export function resolveResumableStreamAdapter(
   adapter: ResumableStreamAdapter | undefined,
   logger?: Logger,

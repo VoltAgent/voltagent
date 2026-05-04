@@ -8,6 +8,7 @@ import { z } from "zod";
  * and static types can never drift apart.
  */
 
+/** Zod schema for the set of valid task lifecycle states. */
 export const TaskStateSchema = z.enum([
   "submitted",
   "working",
@@ -17,17 +18,16 @@ export const TaskStateSchema = z.enum([
   "canceled",
 ]);
 
+/** Zod schema for a text-only message part. */
 export const A2AMessagePartTextSchema = z.object({
   kind: z.literal("text"),
   text: z.string(),
 });
 
-/**
- * Currently only `text` parts exist. When new part kinds are added, extend
- * this with `z.discriminatedUnion("kind", [...])`.
- */
+/** Zod schema for a message part. Currently only `text` parts exist; extend with `z.discriminatedUnion` when new kinds are added. */
 export const A2AMessagePartSchema = A2AMessagePartTextSchema;
 
+/** Zod schema for a single A2A message (user or agent). */
 export const A2AMessageSchema = z.object({
   kind: z.literal("message"),
   role: z.enum(["user", "agent"]),
@@ -40,17 +40,20 @@ export const A2AMessageSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+/** Zod schema for a task's current status including state and timestamp. */
 export const TaskStatusSchema = z.object({
   state: TaskStateSchema,
   message: A2AMessageSchema.optional(),
   timestamp: z.string(),
 });
 
+/** Zod schema for a text-only artifact part. */
 export const TaskArtifactPartSchema = z.object({
   kind: z.literal("text"),
   text: z.string(),
 });
 
+/** Zod schema for an artifact produced by an agent during task execution. */
 export const TaskArtifactSchema = z.object({
   name: z.string(),
   parts: z.array(TaskArtifactPartSchema),
@@ -58,6 +61,7 @@ export const TaskArtifactSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+/** Zod schema for a complete task record including status, history, and optional artifacts. */
 export const TaskRecordSchema = z.object({
   id: z.string(),
   contextId: z.string(),

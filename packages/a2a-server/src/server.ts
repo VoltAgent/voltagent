@@ -55,6 +55,13 @@ function resolveAgentCardUrl(serverId: string, requestUrl?: string): string {
   }
 }
 
+/**
+ * A2A (Agent-to-Agent) protocol server.
+ *
+ * Manages agent registration, JSON-RPC request routing, task lifecycle, and
+ * streaming responses. Call {@link initialize} with runtime dependencies
+ * before handling any requests.
+ */
 export class A2AServer {
   private deps?: Required<A2AServerDeps>;
   private readonly config: A2AServerConfig;
@@ -62,6 +69,7 @@ export class A2AServer {
   private readonly configuredAgents = new Map<string, Agent>();
   private readonly agentFilter: A2AFilterFunction<Agent> | undefined;
 
+  /** Creates a new A2AServer from the given configuration, registering any pre-configured agents. */
   constructor(config: A2AServerConfig) {
     this.config = config;
     this.agentFilter = config.filterAgents;
@@ -99,6 +107,7 @@ export class A2AServer {
     } as Required<A2AServerDeps>;
   }
 
+  /** Returns the server's public metadata (id, name, version, description, provider). */
   getMetadata() {
     return {
       id: this.config.id,
@@ -109,6 +118,7 @@ export class A2AServer {
     };
   }
 
+  /** Builds and returns the {@link AgentCard} for the specified agent, including its endpoint URL. */
   getAgentCard(agentId: string, context: A2ARequestContext = {}): AgentCard {
     const agent = this.resolveAgent(agentId, context);
     const url = resolveAgentCardUrl(agentId, context.requestUrl);
@@ -124,6 +134,11 @@ export class A2AServer {
     });
   }
 
+  /**
+   * Routes an incoming JSON-RPC request to the appropriate handler.
+   *
+   * Supported methods: `message/send`, `message/stream`, `tasks/get`, `tasks/cancel`.
+   */
   async handleRequest(
     agentId: string,
     request: JsonRpcRequest,
