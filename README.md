@@ -351,6 +351,109 @@ Connect your agents to knowledge sources with built-in retrieval-augmented gener
 - **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
 - **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
 
+## ❓ FAQ
+
+### What is VoltAgent?
+
+VoltAgent is an end-to-end AI Agent Engineering Platform that combines an open-source TypeScript framework with VoltOps Console for production-ready observability, automation, and deployment.
+
+### How does VoltAgent differ from other agent frameworks?
+
+VoltAgent provides a complete platform rather than just a framework:
+- **TypeScript Framework**: Memory, RAG, Guardrails, Tools, MCP, Voice, Workflow with full code control
+- **VoltOps Console**: Real-time observability, traces, memory management, prompt builder, deployment, triggers, monitoring, evals
+- **Supervisors & Sub-Agents**: Multi-agent orchestration with supervisor coordination
+- **Resumable Streaming**: Clients can reconnect and continue receiving responses
+
+### How do I get started?
+
+```bash
+npm create voltagent-app@latest
+```
+
+This creates a project with an agent and workflow example. Run `npm run dev` and test via [VoltOps Console](https://console.voltagent.dev).
+
+### What LLM providers does VoltAgent support?
+
+VoltAgent works with OpenAI, Anthropic, Google (Gemini), and other providers. Swap providers by changing config, not rewriting agent logic:
+
+```typescript
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+
+const agent = new Agent({
+  model: openai("gpt-4o-mini"), // or anthropic("claude-3-5-sonnet")
+});
+```
+
+### How do I add memory to my agent?
+
+```typescript
+import { Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+});
+
+const agent = new Agent({ name: "my-agent", memory });
+```
+
+### What is VoltOps Console?
+
+VoltOps Console is the platform side of VoltAgent providing:
+- **Observability**: Real-time traces, logs, memory inspection
+- **Dashboard**: Performance metrics and system overview
+- **Prompt Builder**: Design and test prompts
+- **Deployment**: One-click GitHub integration
+- **Triggers & Actions**: Webhooks, schedules, automation
+- **Guardrails**: Safety boundaries and content filters
+- **Evals**: Evaluation suites for testing agent behavior
+
+[Try Live Demo](https://console.voltagent.dev/demo)
+
+### How do I create multi-agent systems?
+
+VoltAgent supports Supervisors & Sub-Agents for multi-agent orchestration:
+
+```typescript
+const supervisor = new Agent({
+  name: "supervisor",
+  instructions: "Coordinate specialized agents",
+  subAgents: [researchAgent, writerAgent, reviewAgent],
+});
+```
+
+The supervisor routes tasks and keeps sub-agents synchronized.
+
+### What are workflows?
+
+Workflows are multi-step automations with suspend/resume capabilities:
+
+```typescript
+const workflow = createWorkflowChain({ id: "approval" })
+  .andThen({ execute: async ({ data, suspend }) => {
+    if (data.amount > 500) await suspend("Manager approval required");
+    return { approved: true };\n  }})
+  .andThen({ execute: async ({ data }) => {
+    return { status: "approved" };\n  }});
+```
+
+### Does VoltAgent support MCP?
+
+Yes! VoltAgent has built-in MCP (Model Context Protocol) support:
+- Connect to MCP servers without extra glue code
+- Use `@voltagent/mcp-docs-server` to teach AI assistants about VoltAgent
+
+### Where can I find more resources?
+
+- **[Interactive Tutorial](https://voltagent.dev/tutorial/introduction/)**: Learn fundamentals
+- **[Documentation](https://voltagent.dev/docs/)**: Guides and concepts
+- **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Practical implementations
+- **[Discord](https://s.voltagent.dev/discord)**: Community support
+
+---
+
 ## Contribution
 
 We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
