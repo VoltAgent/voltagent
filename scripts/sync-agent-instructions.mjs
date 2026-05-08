@@ -3,10 +3,9 @@
 /**
  * Sync coding-agent instruction aliases across the repository.
  *
- * This script walks the repo, finds configured source instruction files, and creates
- * sibling symlinks for tools that expect a different filename. For example, Claude
- * Code reads `CLAUDE.md`, while this repo keeps the canonical instructions in
- * `AGENTS.md`.
+ * This script walks the repo, finds canonical instruction files, and creates
+ * sibling symlinks for tools that expect a different filename. `AGENTS.md`
+ * remains the source of truth; configured aliases point to it.
  *
  * Usage:
  *
@@ -80,17 +79,13 @@ function getPathStats(pathToCheck) {
   }
 }
 
-function getSymlinkTarget(linkPath) {
-  return fs.readlinkSync(linkPath);
-}
-
 function isExpectedAlias(linkPath, pathStats) {
-  return pathStats.isSymbolicLink() && getSymlinkTarget(linkPath) === "AGENTS.md";
+  return pathStats.isSymbolicLink() && fs.readlinkSync(linkPath) === "AGENTS.md";
 }
 
 function describeExistingAlias(linkPath, pathStats) {
   if (pathStats.isSymbolicLink()) {
-    return `symlink to ${getSymlinkTarget(linkPath)}`;
+    return `symlink to ${fs.readlinkSync(linkPath)}`;
   }
 
   if (pathStats.isFile()) {
