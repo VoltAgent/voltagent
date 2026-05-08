@@ -2,12 +2,17 @@
 
 Development tools and utilities used in this repository.
 
+## Quick Reference
+
 - **package manager**: pnpm
-- **monorepo**: lerna
-- **language**: typescript
-- **formatter**: biome
-- **linter**: biome
+- **monorepo**: Lerna and Nx
+- **language**: TypeScript
+- **formatter**: Biome for TS/JS, Prettier for markdown/MDX through lint-staged
+- **linter**: Biome
 - **build system**: tsup
+- **release management**: Changesets
+
+## Tools
 
 ## pnpm
 
@@ -27,7 +32,7 @@ Lerna is a tool for managing JavaScript projects with multiple packages.
 
 ## nx
 
-High-performance build system optimized for JavaScript and TypeScript monorepos with smart caching and parallel execution. Lerna and nx are integrated as nx acquired lerna.
+High-performance build system optimized for JavaScript and TypeScript monorepos with smart caching and parallel execution. Lerna delegates task orchestration to Nx.
 
 ### Links
 
@@ -35,7 +40,7 @@ High-performance build system optimized for JavaScript and TypeScript monorepos 
 
 ## Biome
 
-All-in-one toolchain for web projects, combining formatter and linter functionality (replaces ESLint + Prettier).
+All-in-one toolchain for TypeScript and JavaScript linting and formatting.
 
 ### Links
 
@@ -56,3 +61,20 @@ Builds and bundles TypeScript code into JavaScript.
 ### Links
 
 - [Documentation](https://tsup.egoist.dev/)
+
+## Changesets
+
+Manages package versioning and changelog entries for public package changes.
+
+See [Changesets](./changesets.md) for when a changeset is required.
+
+### Links
+
+- [Documentation](https://github.com/changesets/changesets)
+
+## Related Docs
+
+- [Repository structure](./structure.md)
+- [Testing](./testing.md)
+- [Linting and formatting](./linting.md)
+- [Changesets](./changesets.md)
