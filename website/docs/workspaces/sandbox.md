@@ -107,7 +107,7 @@ By default, LocalSandbox passes only `PATH` into the environment. Set `inheritPr
 
 ## Remote sandbox providers
 
-Install the provider package you need (for example `@voltagent/sandbox-e2b` or `@voltagent/sandbox-daytona`), then configure it on the workspace:
+Install the provider package you need (for example `@voltagent/sandbox-e2b`, `@voltagent/sandbox-daytona`, or `@voltagent/sandbox-blaxel`), then configure it on the workspace:
 
 ```ts
 import { E2BSandbox } from "@voltagent/sandbox-e2b";
@@ -123,6 +123,18 @@ const daytonaWorkspace = new Workspace({
   sandbox: new DaytonaSandbox({
     apiKey: process.env.DAYTONA_API_KEY,
     apiUrl: "http://localhost:3000",
+  }),
+});
+```
+
+```ts
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+const blaxelWorkspace = new Workspace({
+  sandbox: new BlaxelSandbox({
+    apiKey: process.env.BL_API_KEY,
+    workspace: process.env.BL_WORKSPACE,
+    config: { name: "voltagent-prod", region: "us-pdx-1" },
   }),
 });
 ```
@@ -154,6 +166,21 @@ const workspace = new Workspace({ sandbox });
 
 const daytonaSandbox = await sandbox.getSandbox();
 const response = await daytonaSandbox.process.executeCommand("ls -la");
+```
+
+```ts
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+const sandbox = new BlaxelSandbox({
+  apiKey: process.env.BL_API_KEY,
+  workspace: process.env.BL_WORKSPACE,
+  config: { name: "voltagent-prod" },
+});
+
+const workspace = new Workspace({ sandbox });
+
+const blaxelSandbox = await sandbox.getSandbox();
+const file = await blaxelSandbox.fs.read("/workspace/file.txt");
 ```
 
 ## Custom sandbox provider
@@ -336,6 +363,56 @@ class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
 
 const workspace = new Workspace({
   sandbox: new TenantDaytonaSandboxRouter(),
+});
+```
+
+### Tenant-aware Blaxel router example
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+class TenantBlaxelSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-blaxel-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, BlaxelSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-blaxel-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): BlaxelSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new BlaxelSandbox({
+        apiKey: process.env.BL_API_KEY,
+        workspace: process.env.BL_WORKSPACE,
+        config: { name: `tenant-${tenantId}` },
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantBlaxelSandboxRouter(),
 });
 ```
 
