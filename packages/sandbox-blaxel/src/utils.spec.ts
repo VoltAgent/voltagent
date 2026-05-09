@@ -58,7 +58,26 @@ describe("truncateOutput", () => {
     // "é" is 2 bytes in UTF-8.
     const input = "éééé"; // 8 bytes
     const { content, truncated } = truncateOutput(input, 4);
-    expect(Buffer.byteLength(content, "utf-8")).toBeLessThanOrEqual(4);
+    expect(content).toBe("éé");
+    expect(Buffer.byteLength(content, "utf-8")).toBe(4);
+    expect(truncated).toBe(true);
+    // Result round-trips as valid UTF-8 (no split codepoints).
+    expect(Buffer.from(content, "utf-8").toString("utf-8")).toBe(content);
+  });
+
+  it("walks back to a codepoint boundary instead of splitting mid-byte", () => {
+    // "h" = 1 byte, "é" = 2 bytes. maxBytes=2 would land inside "é"; the cut
+    // point should walk back to just "h".
+    const { content, truncated } = truncateOutput("hé", 2);
+    expect(content).toBe("h");
+    expect(truncated).toBe(true);
+  });
+
+  it("handles a 4-byte codepoint that doesn't fit by walking back to empty", () => {
+    // U+1F600 GRINNING FACE = 4 bytes. With maxBytes=3 there is no valid
+    // prefix that ends on a codepoint boundary, so the result is empty.
+    const { content, truncated } = truncateOutput("😀", 3);
+    expect(content).toBe("");
     expect(truncated).toBe(true);
   });
 });

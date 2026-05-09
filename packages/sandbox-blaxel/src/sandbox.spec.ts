@@ -131,6 +131,24 @@ function spyCreate(instance: BlaxelSandboxInstance) {
     .mockResolvedValue(instance as unknown as InstanceType<typeof blaxelCore.SandboxInstance>);
 }
 
+// Snapshot the inherited env values once so each test can restore them and we
+// don't leak BL_* mutations across tests (or to other workers in shared runs).
+const ORIGINAL_ENV = {
+  BL_API_KEY: process.env.BL_API_KEY,
+  BL_WORKSPACE: process.env.BL_WORKSPACE,
+  BL_REGION: process.env.BL_REGION,
+} as const;
+
+function restoreEnv(): void {
+  for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   // biome-ignore lint/performance/noDelete: removing the property; assigning undefined coerces to string "undefined".
@@ -143,6 +161,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  restoreEnv();
 });
 
 describe("BlaxelSandbox constructor", () => {
@@ -322,6 +341,16 @@ describe("BlaxelSandbox.execute (timeout, abort, truncation)", () => {
     expect(result.stdout).toBe("partial");
   });
 
+  it("re-throws non-timeout errors from wait() instead of masking them as timeouts", async () => {
+    const mock = makeMock();
+    mock.waitError = new Error("connection reset by peer");
+    const sandbox = new BlaxelSandbox({ sandbox: mock.instance });
+
+    await expect(sandbox.execute({ command: "ls" })).rejects.toThrow("connection reset by peer");
+    // wait() error wasn't a timeout, so kill should not have been invoked.
+    expect(mock.killed).not.toContain(mock.execCalls[0]?.name);
+  });
+
   it("swallows errors thrown by kill() during the timeout path", async () => {
     const mock = makeMock();
     mock.waitError = new Error("Process did not finish in time");
@@ -357,6 +386,32 @@ describe("BlaxelSandbox.execute (timeout, abort, truncation)", () => {
     expect(mock.execCalls).toHaveLength(0);
   });
 
+  it("bails before exec() when the AbortSignal fires during sandbox provisioning", async () => {
+    const mock = makeMock();
+    let resolveCreate: (instance: BlaxelSandboxInstance) => void = () => {};
+    const pending = new Promise<BlaxelSandboxInstance>((resolve) => {
+      resolveCreate = resolve;
+    });
+    vi.spyOn(blaxelCore.SandboxInstance, "createIfNotExists").mockImplementation(
+      () => pending as ReturnType<typeof blaxelCore.SandboxInstance.createIfNotExists>,
+    );
+
+    const controller = new AbortController();
+    const sandbox = new BlaxelSandbox({ config: { image: "blaxel/base:latest" } });
+    const promise = sandbox.execute({ command: "ls", signal: controller.signal });
+    // Yield so the in-flight provisioning starts and we're parked on the
+    // `await this.resolveSandbox()` inside execute().
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    controller.abort();
+    // Now resolve provisioning — execute() should detect the abort and bail
+    // before starting a process.
+    resolveCreate(mock.instance);
+
+    const result = await promise;
+    expect(result.aborted).toBe(true);
+    expect(mock.execCalls).toHaveLength(0);
+  });
+
   it("kills the process when the AbortSignal fires mid-flight", async () => {
     const mock = makeMock();
     const controller = new AbortController();
@@ -370,9 +425,10 @@ describe("BlaxelSandbox.execute (timeout, abort, truncation)", () => {
 
     const sandbox = new BlaxelSandbox({ sandbox: mock.instance });
     const promise = sandbox.execute({ command: "tail", signal: controller.signal });
-    // Let exec + wait start
-    await Promise.resolve();
-    await Promise.resolve();
+    // Yield to the event loop so the full execute chain reaches `process.exec`
+    // (signal checks + resolveSandbox + runProcess) before we abort.
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(mock.execCalls.length).toBe(1);
     controller.abort();
     waitResolve(mock.finalState);
     const result = await promise;

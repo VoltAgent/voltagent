@@ -37,8 +37,9 @@ export async function withEventListener<T>({
 }
 
 /**
- * Truncate a UTF-8 string to at most `maxBytes` bytes (not characters).
- * A trailing partial multi-byte sequence may render as a replacement character.
+ * Truncate a UTF-8 string to at most `maxBytes` bytes. The cut point is walked
+ * back to the nearest codepoint boundary so the result is always valid UTF-8
+ * (and its byte length is always `<= maxBytes`, never more).
  */
 export function truncateOutput(
   value: string,
@@ -55,5 +56,11 @@ export function truncateOutput(
     return { content: value, truncated: false };
   }
   const data = Buffer.from(value, "utf-8");
-  return { content: data.subarray(0, maxBytes).toString("utf-8"), truncated: true };
+  // UTF-8 continuation bytes match `0b10xxxxxx` (`byte & 0xc0 === 0x80`). Walk
+  // the cut point back over them so we never slice mid-codepoint.
+  let end = maxBytes;
+  while (end > 0 && (data[end] & 0xc0) === 0x80) {
+    end--;
+  }
+  return { content: data.subarray(0, end).toString("utf-8"), truncated: true };
 }

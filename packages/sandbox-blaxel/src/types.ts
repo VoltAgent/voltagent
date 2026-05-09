@@ -35,14 +35,24 @@ export interface BlaxelSandboxConfig extends SandboxCreateConfiguration {
 
 /**
  * Public constructor options for {@link BlaxelSandbox}.
+ *
+ * **Authentication note:** `apiKey` and `workspace` are written to
+ * `process.env.BL_API_KEY` / `process.env.BL_WORKSPACE` because that is the
+ * only auth path the Blaxel SDK supports. Credentials resolve through a
+ * module-level singleton — constructing two `BlaxelSandbox` instances with
+ * different credentials in the same process will last-write-win.
+ *
+ * See: https://docs.blaxel.ai/Sandboxes/Overview#learn-more-about-authentication-on-blaxel
  */
 export interface BlaxelSandboxOptions {
   /**
-   * Blaxel API key. Automatically sets `process.env.BL_API_KEY` when provided.
+   * Blaxel API key. Written to `process.env.BL_API_KEY` when provided
+   * (the only auth path the Blaxel SDK supports — see interface docs).
    */
   apiKey?: string;
   /**
-   * Blaxel workspace ID. Automatically sets `process.env.BL_WORKSPACE` when provided.
+   * Blaxel workspace ID. Written to `process.env.BL_WORKSPACE` when provided
+   * (the only auth path the Blaxel SDK supports — see interface docs).
    */
   workspace?: string;
   /**

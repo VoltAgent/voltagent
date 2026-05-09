@@ -124,6 +124,10 @@ Every provider implements `WorkspaceSandbox`, so the workspace toolkit drives th
 
 Cloud sandbox runtime with multi-region edge presence. Pre-warms HTTP/2 connections so the first `execute()` doesn't pay a cold-start penalty. Built on [`@blaxel/core`](https://www.npmjs.com/package/@blaxel/core).
 
+:::info Authentication
+`apiKey` and `workspace` passed to `BlaxelSandbox` are written to `process.env.BL_API_KEY` / `process.env.BL_WORKSPACE` — the only auth path the Blaxel SDK supports. Credentials resolve through a module-level singleton, so constructing multiple `BlaxelSandbox` instances with different credentials in the same process will last-write-win. See [Blaxel auth docs](https://docs.blaxel.ai/Sandboxes/Overview#learn-more-about-authentication-on-blaxel).
+:::
+
 Install:
 
 ```bash
@@ -206,6 +210,12 @@ class TenantBlaxelSandboxRouter implements WorkspaceSandbox {
   async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
     const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
     return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
   }
 }
 
@@ -300,6 +310,12 @@ class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
     const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
     return this.getSandboxForTenant(tenantId).execute(options);
   }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
 }
 
 const workspace = new Workspace({
@@ -389,6 +405,12 @@ class TenantE2BSandboxRouter implements WorkspaceSandbox {
   async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
     const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
     return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
   }
 }
 

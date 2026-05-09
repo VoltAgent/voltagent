@@ -54,7 +54,12 @@ export class BlaxelSandbox implements WorkspaceSandbox {
 
   /**
    * The underlying sandbox is lazily created on first `execute()` /
-   * `getSandbox()`. Sets `BL_API_KEY` / `BL_WORKSPACE` env vars when provided.
+   * `getSandbox()`. Writes `BL_API_KEY` / `BL_WORKSPACE` to `process.env` when
+   * provided — this is the only auth path the Blaxel SDK supports, so
+   * constructing multiple `BlaxelSandbox` instances with different credentials
+   * in the same process will last-write-win.
+   *
+   * See: https://docs.blaxel.ai/Sandboxes/Overview#learn-more-about-authentication-on-blaxel
    */
   constructor(options: BlaxelSandboxOptions = {}) {
     this.apiKey = options.apiKey;
@@ -82,16 +87,7 @@ export class BlaxelSandbox implements WorkspaceSandbox {
     }
 
     if (options.signal?.aborted) {
-      return {
-        stdout: "",
-        stderr: "",
-        exitCode: null,
-        durationMs: 0,
-        timedOut: false,
-        aborted: true,
-        stdoutTruncated: false,
-        stderrTruncated: false,
-      };
+      return abortedResult(0);
     }
 
     const processName = `voltagent-${randomUUID()}`;
@@ -102,6 +98,14 @@ export class BlaxelSandbox implements WorkspaceSandbox {
         void this.killProcess({ processName });
       },
       run: async () => {
+        // Provisioning can take seconds. Check the signal after it completes
+        // so we don't start a process for a call that was cancelled mid-flight
+        // (covers both the listener-attach race and abort-during-provisioning).
+        await this.resolveSandbox();
+        if (options.signal?.aborted) {
+          return abortedResult(Date.now() - startTime);
+        }
+
         const { timedOut } = await this.runProcess({
           parsed,
           processName,
@@ -213,18 +217,24 @@ export class BlaxelSandbox implements WorkspaceSandbox {
       onStderr: options.onStderr,
     });
     try {
-      // wait() throws "Process did not finish in time" on timeout.
+      // wait() throws "Process did not finish in time" on timeout. Other
+      // rejections (network failures, SDK teardown, etc.) are real errors and
+      // must surface to the caller — only the timeout-message match is
+      // treated as `timedOut: true`.
       const [waitError] = await attemptAsync(() => {
         return sandbox.process.wait(processName, {
           maxWait: timeoutMs > 0 ? timeoutMs : NO_TIMEOUT_MAX_WAIT_MS,
           interval: pollIntervalMs,
         });
       });
-      const timedOut = isNotNil(waitError);
-      if (timedOut) {
+      if (isNotNil(waitError)) {
+        if (!isWaitTimeoutError(waitError)) {
+          throw waitError;
+        }
         await this.killProcess({ processName });
+        return { timedOut: true };
       }
-      return { timedOut };
+      return { timedOut: false };
     } finally {
       if ("close" in started) {
         attempt(() => started.close());
@@ -361,4 +371,35 @@ async function withAbort<T>({
     options: { once: true },
     run,
   });
+}
+
+/**
+ * Is this error the SDK's "wait exceeded `maxWait`" timeout signal? The SDK
+ * surfaces it as a plain `Error` with the message "Process did not finish in
+ * time" — anything else is a real failure (network, teardown, malformed
+ * response) and must propagate.
+ *
+ * @private
+ */
+function isWaitTimeoutError(error: unknown): boolean {
+  return error instanceof Error && /did not finish in time/i.test(error.message);
+}
+
+/**
+ * Empty `aborted: true` result returned when the call's `AbortSignal` fires
+ * before the sandbox process is started.
+ *
+ * @private
+ */
+function abortedResult(durationMs: number): WorkspaceSandboxResult {
+  return {
+    stdout: "",
+    stderr: "",
+    exitCode: null,
+    durationMs,
+    timedOut: false,
+    aborted: true,
+    stdoutTruncated: false,
+    stderrTruncated: false,
+  };
 }
