@@ -38,11 +38,11 @@ export interface BlaxelSandboxConfig extends SandboxCreateConfiguration {
  */
 export interface BlaxelSandboxOptions {
   /**
-   * Blaxel API key. Sets `process.env.BL_API_KEY` when provided.
+   * Blaxel API key. Automatically sets `process.env.BL_API_KEY` when provided.
    */
   apiKey?: string;
   /**
-   * Blaxel workspace ID. Sets `process.env.BL_WORKSPACE` when provided.
+   * Blaxel workspace ID. Automatically sets `process.env.BL_WORKSPACE` when provided.
    */
   workspace?: string;
   /**

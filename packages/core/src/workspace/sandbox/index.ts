@@ -18,3 +18,4 @@ export type {
   WorkspaceSandboxToolName,
 } from "./toolkit";
 export { normalizeCommandAndArgs } from "./command-normalization";
+export type { NormalizedCommand } from "./command-normalization";

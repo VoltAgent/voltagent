@@ -1,29 +1,35 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./",
+    // Node 22+ targets — supports all of ES2023 natively.
+    "target": "ES2023",
+    "lib": ["ES2023"],
+
+    // tsup handles emission; "Preserve" + "Bundler" lets us write extension-less
+    // imports and keeps `import`/`export` syntax intact for the bundler.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+
+    // Server-only library — no DOM globals.
+    "types": ["node", "vitest/globals"],
+
+    // Strict TypeScript.
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    // Modern module ergonomics.
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "resolveJsonModule": true,
+
+    // tsup emits; tsc is typecheck-only.
+    "noEmit": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

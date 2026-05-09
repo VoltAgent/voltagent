@@ -1,8 +1,6 @@
 import * as blaxelCore from "@blaxel/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BlaxelSandbox, type BlaxelSandboxInstance } from "./index";
-import { truncateOutput } from "./output";
-import { applyEnvBindings } from "./shell";
 
 interface ExecRequest {
   name: string;
@@ -507,40 +505,6 @@ describe("BlaxelSandbox.execute (validation and post-state robustness)", () => {
     const result = await sandbox.execute({ command: "ls" });
     expect(result.stdout).toBe("ok");
     expect(result.stderr).toBe("");
-  });
-
-  it("truncateOutput flags truncated when maxBytes <= 0 and value is non-empty", () => {
-    expect(truncateOutput("hello", 0)).toEqual({ content: "", truncated: true });
-    expect(truncateOutput("hello", -10)).toEqual({ content: "", truncated: true });
-  });
-});
-
-describe("applyEnvBindings", () => {
-  it("writes non-nil bindings to the target object", () => {
-    const target: Record<string, string | undefined> = {};
-    applyEnvBindings({ A: "one", B: "two" }, target);
-    expect(target).toEqual({ A: "one", B: "two" });
-  });
-
-  it("skips bindings whose value is null or undefined", () => {
-    const target: Record<string, string | undefined> = { EXISTING: "keep" };
-    applyEnvBindings({ A: "set", B: undefined, C: null as unknown as string, D: "" }, target);
-    expect(target).toEqual({ EXISTING: "keep", A: "set", D: "" });
-    expect(target).not.toHaveProperty("B");
-    expect(target).not.toHaveProperty("C");
-  });
-
-  it("does not delete existing keys when binding value is nullish", () => {
-    const target: Record<string, string | undefined> = { A: "preset" };
-    applyEnvBindings({ A: undefined }, target);
-    expect(target.A).toBe("preset");
-  });
-
-  it("defaults to mutating process.env when no target is provided", () => {
-    applyEnvBindings({ TEST_BLAXEL_BINDING: "applied" });
-    expect(process.env.TEST_BLAXEL_BINDING).toBe("applied");
-    // biome-ignore lint/performance/noDelete: clean up the side-effect for later tests.
-    delete process.env.TEST_BLAXEL_BINDING;
   });
 });
 

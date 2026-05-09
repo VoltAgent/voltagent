@@ -7,7 +7,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: false,
-  target: "es2022",
+  target: "es2023",
   outDir: "dist",
   dts: true,
   esbuildPlugins: [markAsExternalPlugin],
