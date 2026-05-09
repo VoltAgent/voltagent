@@ -5,8 +5,9 @@ slug: /workspaces
 
 # Workspace
 
-> **Note: Workspace is Experimental**
-> The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::warning Experimental
+The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::
 
 Workspace gives agents a persistent home base with filesystem, sandbox execution, search, and skills. It keeps tool usage structured and observable while staying configurable per agent or conversation.
 

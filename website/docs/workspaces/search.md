@@ -5,8 +5,9 @@ slug: /workspaces/search
 
 # Workspace Search
 
-> **Note: Workspace Search is Experimental**
-> The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::warning Experimental
+The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::
 
 Workspace search supports BM25, vector, and hybrid modes over indexed workspace content.
 
