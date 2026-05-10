@@ -43,14 +43,6 @@
     "pnpm": ">=8"
   },
   "license": "MIT",
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "biome check --write --no-errors-on-unmatched"
-    ],
-    "*.{md,mdx}": [
-      "prettier --config ./.prettierrc --write"
-    ]
-  },
   "nx": {},
   "packageManager": "pnpm@8.10.5",
   "private": true,

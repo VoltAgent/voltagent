@@ -3,3 +3,11 @@
 /coverage
 /.nx/cache
 /.nx/workspace-data
+
+# Coding-agent instruction files. AGENTS.md is the canonical doc; CLAUDE.md
+# (and any future aliases configured in scripts/sync-agent-instructions.mjs)
+# are symlinks to it. Skipping both avoids two problems:
+#  1. Prettier 3.x errors on symlink paths passed via lint-staged.
+#  2. Mechanical reformatting churn on docs that are hand-curated for agents.
+AGENTS.md
+CLAUDE.md
