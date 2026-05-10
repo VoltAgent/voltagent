@@ -91,27 +91,39 @@ export class BlaxelSandbox implements WorkspaceSandbox {
     }
 
     const processName = `voltagent-${randomUUID()}`;
+    // Captured once after resolveSandbox() and threaded through every
+    // sub-operation in this execute() so a concurrent destroy() can't
+    // resurrect a fresh sandbox via re-entrant resolveSandbox() calls.
+    let resolvedSandbox: BlaxelSandboxInstance | undefined;
 
     return await withAbort({
       signal: options.signal,
       onAbort: () => {
-        void this.killProcess({ processName });
+        // Skip if the sandbox hasn't resolved yet — there is no remote
+        // process to kill, and re-resolving here would defeat the threading.
+        if (resolvedSandbox) {
+          void this.killProcess({ sandbox: resolvedSandbox, processName });
+        }
       },
       run: async () => {
         // Provisioning can take seconds. Check the signal after it completes
         // so we don't start a process for a call that was cancelled mid-flight
         // (covers both the listener-attach race and abort-during-provisioning).
-        await this.resolveSandbox();
+        const sandbox = await this.resolveSandbox();
+        resolvedSandbox = sandbox;
         if (options.signal?.aborted) {
           return abortedResult(Date.now() - startTime);
         }
 
         const { timedOut } = await this.runProcess({
+          sandbox,
           parsed,
           processName,
+          signal: options.signal,
           options,
         });
         const output = await this.fetchProcessOutput({
+          sandbox,
           processName,
           maxOutputBytes: parsed.maxOutputBytes,
         });
@@ -170,13 +182,18 @@ export class BlaxelSandbox implements WorkspaceSandbox {
    * Best-effort kill of a process inside the sandbox by name. Errors are
    * swallowed via `attemptAsync` — kill is wired to abort listeners and timeout
    * paths where we can't surface a failure to the caller.
+   *
+   * Takes the sandbox as a param (rather than calling `resolveSandbox()`)
+   * so concurrent `destroy()` can't cause this kill to land on a freshly
+   * provisioned sandbox instead of the one that owns `processName`.
    */
   private async killProcess({
+    sandbox,
     processName,
   }: {
+    sandbox: BlaxelSandboxInstance;
     processName: string;
   }): Promise<{ status: "success" | "failure"; error?: Error }> {
-    const sandbox = await this.resolveSandbox();
     const [err] = await attemptAsync(() => {
       return sandbox.process.kill(processName);
     });
@@ -194,18 +211,26 @@ export class BlaxelSandbox implements WorkspaceSandbox {
    * Caller owns abort wiring (see {@link withAbort}). On `wait()` rejection we
    * treat it as a timeout, fire {@link killProcess}, and surface `{ timedOut: true }`.
    *
+   * Re-checks `signal.aborted` immediately after `exec()` returns to close the
+   * window where the abort listener fires while exec is in-flight (its kill
+   * lands before the remote process exists) and `exec()` then leaves the
+   * just-launched process running unchecked.
+   *
    * @returns `{ timedOut }` — `true` iff `wait()` rejected.
    */
   private async runProcess({
+    sandbox,
     parsed,
     processName,
+    signal,
     options,
   }: {
+    sandbox: BlaxelSandboxInstance;
     parsed: ParsedExecuteOptions;
     processName: string;
+    signal: AbortSignal | undefined;
     options: Pick<WorkspaceSandboxExecuteOptions, "onStdout" | "onStderr">;
   }): Promise<{ timedOut: boolean }> {
-    const sandbox = await this.resolveSandbox();
     const { command, env, cwd, timeoutMs, pollIntervalMs } = parsed;
     const started = await sandbox.process.exec({
       name: processName,
@@ -217,6 +242,13 @@ export class BlaxelSandbox implements WorkspaceSandbox {
       onStderr: options.onStderr,
     });
     try {
+      // Late abort: a signal that fired during exec() may have caused the
+      // listener's kill to land before the remote process existed. Now that
+      // exec() has returned, fire kill ourselves and skip the wait().
+      if (signal?.aborted) {
+        await this.killProcess({ sandbox, processName });
+        return { timedOut: false };
+      }
       // wait() throws "Process did not finish in time" on timeout. Other
       // rejections (network failures, SDK teardown, etc.) are real errors and
       // must surface to the caller — only the timeout-message match is
@@ -231,7 +263,11 @@ export class BlaxelSandbox implements WorkspaceSandbox {
         if (!isWaitTimeoutError(waitError)) {
           throw waitError;
         }
-        await this.killProcess({ processName });
+        // Best-effort cleanup. We intentionally swallow kill failures here to
+        // match the e2b provider's posture (e2b: `requestKill().catch(() => undefined)`).
+        // Callers see `timedOut: true` and can `destroy()` the sandbox if they
+        // suspect the remote process is still running.
+        await this.killProcess({ sandbox, processName });
         return { timedOut: true };
       }
       return { timedOut: false };
@@ -256,9 +292,11 @@ export class BlaxelSandbox implements WorkspaceSandbox {
    * exit code rather than throwing.
    */
   private async fetchProcessOutput({
+    sandbox,
     processName,
     maxOutputBytes,
   }: {
+    sandbox: BlaxelSandboxInstance;
     processName: string;
     maxOutputBytes: number;
   }): Promise<
@@ -267,7 +305,6 @@ export class BlaxelSandbox implements WorkspaceSandbox {
       "stdout" | "stderr" | "exitCode" | "stdoutTruncated" | "stderrTruncated"
     >
   > {
-    const sandbox = await this.resolveSandbox();
     if (maxOutputBytes <= 0) {
       const [, finalState] = await attemptAsync(() => {
         return sandbox.process.get(processName);
