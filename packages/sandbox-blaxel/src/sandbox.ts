@@ -359,7 +359,10 @@ export class BlaxelSandbox implements WorkspaceSandbox {
    * `this.config` with voltagent-specific extras stripped — what gets
    * forwarded to `SandboxInstance.createIfNotExists()`.
    */
-  private getSdkConfig() {
+  private getSdkConfig(): Omit<
+    BlaxelSandboxConfig,
+    "cwd" | "defaultTimeoutMs" | "maxOutputBytes" | "pollIntervalMs"
+  > {
     return omit(this.config ?? {}, ["cwd", "defaultTimeoutMs", "maxOutputBytes", "pollIntervalMs"]);
   }
 }
