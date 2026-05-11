@@ -182,6 +182,9 @@ node_modules/
 # serena
 .serena
 
+# joggr
+.joggr
+
 
 # example skills
 !examples/with-workspace/workspace/skills

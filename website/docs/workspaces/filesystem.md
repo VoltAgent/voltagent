@@ -5,8 +5,9 @@ slug: /workspaces/filesystem
 
 # Workspace Filesystem
 
-> **Note: Workspace Filesystem is Experimental**
-> The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::warning Experimental
+The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::
 
 Workspace filesystem provides a persistent (or in-memory) file layer for agents. Use it to store notes, datasets, and intermediate outputs.
 

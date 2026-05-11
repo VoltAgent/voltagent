@@ -5,10 +5,13 @@ slug: /workspaces/sandbox
 
 # Workspace Sandbox
 
-> **Note: Workspace Sandbox is Experimental**
-> The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::warning Experimental
+The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::
 
-The sandbox toolkit adds `execute_command` with timeout/env/cwd control and automatic stdout/stderr eviction when output is large.
+A sandbox is an isolated environment where an agent can run shell commands without touching the host. Usually a container, a remote VM, or an OS-level jail. VoltAgent reaches them through the `WorkspaceSandbox` interface. First-party providers exist for [Blaxel](#blaxel), [Daytona](#daytona), and [E2B](#e2b), plus `LocalSandbox` for running things locally.
+
+Agents interact with the sandbox through a tool called `execute_command`. They pass a command (plus optional env vars, working directory, and timeout), and the workspace runs it in the sandbox and returns the result. Large stdout or stderr gets truncated so the model doesn't drown in logs.
 
 ## LocalSandbox basics
 
@@ -107,19 +110,139 @@ By default, LocalSandbox passes only `PATH` into the environment. Set `inheritPr
 
 ## Remote sandbox providers
 
-Install the provider package you need (for example `@voltagent/sandbox-e2b` or `@voltagent/sandbox-daytona`), then configure it on the workspace:
+Every provider implements `WorkspaceSandbox`, so the workspace toolkit drives them all the same way. Need something the abstraction doesn't expose? `sandbox.getSandbox()` returns the underlying client.
+
+### Available providers
+
+| Provider | Package                      | Upstream docs                                  |
+| -------- | ---------------------------- | ---------------------------------------------- |
+| Blaxel   | `@voltagent/sandbox-blaxel`  | [docs.blaxel.ai](https://docs.blaxel.ai)       |
+| Daytona  | `@voltagent/sandbox-daytona` | [daytona.io/docs](https://www.daytona.io/docs) |
+| E2B      | `@voltagent/sandbox-e2b`     | [e2b.dev/docs](https://e2b.dev/docs)           |
+
+### Blaxel
+
+Cloud sandbox runtime with multi-region edge presence. Pre-warms HTTP/2 connections so the first `execute()` doesn't pay a cold-start penalty. Built on [`@blaxel/core`](https://www.npmjs.com/package/@blaxel/core).
+
+:::info Authentication
+`apiKey` and `workspace` passed to `BlaxelSandbox` are written to `process.env.BL_API_KEY` / `process.env.BL_WORKSPACE` — the only auth path the Blaxel SDK supports. Credentials resolve through a module-level singleton, so constructing multiple `BlaxelSandbox` instances with different credentials in the same process will last-write-win. See [Blaxel auth docs](https://docs.blaxel.ai/Sandboxes/Overview#learn-more-about-authentication-on-blaxel).
+:::
+
+Install:
+
+```bash
+pnpm add @voltagent/sandbox-blaxel
+```
+
+_Pulls in `@blaxel/core` automatically. No separate install._
+
+Configure it on a workspace:
 
 ```ts
-import { E2BSandbox } from "@voltagent/sandbox-e2b";
+import { Workspace } from "@voltagent/core";
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+const workspace = new Workspace({
+  sandbox: new BlaxelSandbox({
+    apiKey: process.env.BL_API_KEY,
+    workspace: process.env.BL_WORKSPACE,
+    config: { name: "voltagent-prod", region: "us-pdx-1" },
+  }),
+});
+```
+
+When you want filesystem, previews, or sessions APIs, grab the underlying client:
+
+```ts
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+const sandbox = new BlaxelSandbox({
+  apiKey: process.env.BL_API_KEY,
+  workspace: process.env.BL_WORKSPACE,
+  config: { name: "voltagent-prod" },
+});
+
+const workspace = new Workspace({ sandbox });
+
+const blaxelSandbox = await sandbox.getSandbox();
+const file = await blaxelSandbox.fs.read("/workspace/file.txt");
+```
+
+Multi-tenant routing: one Blaxel sandbox per tenant, picked from `operationContext`.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
+
+class TenantBlaxelSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-blaxel-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, BlaxelSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-blaxel-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): BlaxelSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new BlaxelSandbox({
+        apiKey: process.env.BL_API_KEY,
+        workspace: process.env.BL_WORKSPACE,
+        config: { name: `tenant-${tenantId}` },
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantBlaxelSandboxRouter(),
+});
+```
+
+### Daytona
+
+Sandbox plus dev-environment platform. Hosted or self-hosted. Built on [`@daytonaio/sdk`](https://www.npmjs.com/package/@daytonaio/sdk).
+
+Install:
+
+```bash
+pnpm add @voltagent/sandbox-daytona
+```
+
+_Pulls in `@daytonaio/sdk` automatically. No separate install._
+
+Configure it on a workspace:
+
+```ts
+import { Workspace } from "@voltagent/core";
 import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
 
 const workspace = new Workspace({
-  sandbox: new E2BSandbox({
-    apiKey: process.env.E2B_API_KEY,
-  }),
-});
-
-const daytonaWorkspace = new Workspace({
   sandbox: new DaytonaSandbox({
     apiKey: process.env.DAYTONA_API_KEY,
     apiUrl: "http://localhost:3000",
@@ -127,7 +250,105 @@ const daytonaWorkspace = new Workspace({
 });
 ```
 
-If you need provider-specific APIs, keep a reference to the provider and access its native SDK instance:
+For Daytona-specific APIs, grab the underlying client:
+
+```ts
+import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
+
+const sandbox = new DaytonaSandbox({
+  apiKey: process.env.DAYTONA_API_KEY,
+  apiUrl: "http://localhost:3000",
+});
+
+const workspace = new Workspace({ sandbox });
+
+const daytonaSandbox = await sandbox.getSandbox();
+const response = await daytonaSandbox.process.executeCommand("ls -la");
+```
+
+Multi-tenant routing: one Daytona sandbox per tenant, dispatched via `operationContext`.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
+
+class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-daytona-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, DaytonaSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-daytona-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): DaytonaSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new DaytonaSandbox({
+        apiKey: process.env.DAYTONA_API_KEY,
+        apiUrl: process.env.DAYTONA_API_URL,
+        // Example strategy: pass tenant metadata to your Daytona create params
+        createParams: { name: `tenant-${tenantId}` },
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantDaytonaSandboxRouter(),
+});
+```
+
+### E2B
+
+Cloud sandboxes built for AI agent workloads: code interpreters, browser automation, that kind of thing. Built on [`e2b`](https://www.npmjs.com/package/e2b).
+
+Install:
+
+```bash
+pnpm add @voltagent/sandbox-e2b
+```
+
+_Pulls in `e2b` automatically. No separate install._
+
+Configure it on a workspace:
+
+```ts
+import { Workspace } from "@voltagent/core";
+import { E2BSandbox } from "@voltagent/sandbox-e2b";
+
+const workspace = new Workspace({
+  sandbox: new E2BSandbox({
+    apiKey: process.env.E2B_API_KEY,
+  }),
+});
+```
+
+For E2B-specific APIs (filesystem, code interpreter sessions, etc.), grab the underlying client:
 
 ```ts
 import { E2BSandbox } from "@voltagent/sandbox-e2b";
@@ -142,18 +363,60 @@ const e2bSandbox = await sandbox.getSandbox();
 const bytes = await e2bSandbox.files.read("/workspace/file.txt", { format: "bytes" });
 ```
 
+Multi-tenant routing: one E2B sandbox per tenant, keyed on `operationContext`.
+
 ```ts
-import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { E2BSandbox } from "@voltagent/sandbox-e2b";
 
-const sandbox = new DaytonaSandbox({
-  apiKey: process.env.DAYTONA_API_KEY,
-  apiUrl: "http://localhost:3000",
+class TenantE2BSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-e2b-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, E2BSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-e2b-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): E2BSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new E2BSandbox({
+        apiKey: process.env.E2B_API_KEY,
+        // Example strategy: map tenant to a template/session naming scheme
+        template: `tenant-${tenantId}`,
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantE2BSandboxRouter(),
 });
-
-const workspace = new Workspace({ sandbox });
-
-const daytonaSandbox = await sandbox.getSandbox();
-const response = await daytonaSandbox.process.executeCommand("ls -la");
 ```
 
 ## Custom sandbox provider
@@ -238,106 +501,7 @@ class TenantAwareSandbox implements WorkspaceSandbox {
 
 If you call `workspace.sandbox.execute(...)` directly (outside the toolkit), pass `operationContext` yourself if you need it.
 
-### Tenant-aware E2B router example
-
-```ts
-import type {
-  WorkspaceSandbox,
-  WorkspaceSandboxExecuteOptions,
-  WorkspaceSandboxResult,
-} from "@voltagent/core";
-import { Workspace } from "@voltagent/core";
-import { E2BSandbox } from "@voltagent/sandbox-e2b";
-
-class TenantE2BSandboxRouter implements WorkspaceSandbox {
-  name = "tenant-e2b-router";
-  status = "ready" as const;
-  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
-  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
-  private readonly sandboxes = new Map<string, E2BSandbox>();
-
-  getInfo() {
-    return {
-      provider: "tenant-e2b-router",
-      status: this.status,
-      sandboxCount: this.sandboxes.size,
-    };
-  }
-
-  private getSandboxForTenant(tenantId: string): E2BSandbox {
-    let sandbox = this.sandboxes.get(tenantId);
-    if (!sandbox) {
-      sandbox = new E2BSandbox({
-        apiKey: process.env.E2B_API_KEY,
-        // Example strategy: map tenant to a template/session naming scheme
-        template: `tenant-${tenantId}`,
-      });
-      this.sandboxes.set(tenantId, sandbox);
-    }
-    return sandbox;
-  }
-
-  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
-    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
-    return this.getSandboxForTenant(tenantId).execute(options);
-  }
-}
-
-const workspace = new Workspace({
-  sandbox: new TenantE2BSandboxRouter(),
-});
-```
-
-### Tenant-aware Daytona router example
-
-```ts
-import type {
-  WorkspaceSandbox,
-  WorkspaceSandboxExecuteOptions,
-  WorkspaceSandboxResult,
-} from "@voltagent/core";
-import { Workspace } from "@voltagent/core";
-import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
-
-class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
-  name = "tenant-daytona-router";
-  status = "ready" as const;
-  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
-  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
-  private readonly sandboxes = new Map<string, DaytonaSandbox>();
-
-  getInfo() {
-    return {
-      provider: "tenant-daytona-router",
-      status: this.status,
-      sandboxCount: this.sandboxes.size,
-    };
-  }
-
-  private getSandboxForTenant(tenantId: string): DaytonaSandbox {
-    let sandbox = this.sandboxes.get(tenantId);
-    if (!sandbox) {
-      sandbox = new DaytonaSandbox({
-        apiKey: process.env.DAYTONA_API_KEY,
-        apiUrl: process.env.DAYTONA_API_URL,
-        // Example strategy: pass tenant metadata to your Daytona create params
-        createParams: { name: `tenant-${tenantId}` },
-      });
-      this.sandboxes.set(tenantId, sandbox);
-    }
-    return sandbox;
-  }
-
-  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
-    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
-    return this.getSandboxForTenant(tenantId).execute(options);
-  }
-}
-
-const workspace = new Workspace({
-  sandbox: new TenantDaytonaSandboxRouter(),
-});
-```
+For full per-provider tenant routing examples, see the [Remote sandbox providers](#remote-sandbox-providers) section above.
 
 Notes:
 

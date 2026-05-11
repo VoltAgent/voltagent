@@ -5,8 +5,9 @@ slug: /workspaces/security
 
 # Workspace Security
 
-> **Note: Workspace Security is Experimental**
-> The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::warning Experimental
+The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
+:::
 
 Workspace is powerful; treat it like a production capability. Recommended practices:
 

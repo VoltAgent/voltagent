@@ -5,8 +5,9 @@ slug: /workspaces/skills
 
 # Workspace Skills
 
-> **Note: Workspace Skills are Experimental**
-> The Skills API is experimental and may change as the ecosystem evolves.
+:::warning Experimental
+The Skills API is experimental and may change as the ecosystem evolves.
+:::
 
 Workspace skills are reusable instructions stored as `SKILL.md` files. They can be discovered, searched, activated, and injected into the agent prompt.
 
