@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/sandbox-blaxel",
   "description": "VoltAgent Blaxel sandbox provider",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "dependencies": {
     "@blaxel/core": "^0.2.0",
     "es-toolkit": "^1.46.1"
