@@ -2,6 +2,7 @@ import { type Logger, safeStringify } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
 import type { UsageInfo } from "../agent/providers";
+import { runExecutionValidators } from "../execution-validation";
 import { LoggerProxy } from "../logger";
 import { Memory as MemoryV2 } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
@@ -922,6 +923,7 @@ export function createWorkflow<
     resumeSchema,
     inputGuardrails: workflowInputGuardrails,
     outputGuardrails: workflowOutputGuardrails,
+    executionValidators: workflowExecutionValidators,
     guardrailAgent: workflowGuardrailAgent,
     memory: workflowMemory,
     observability: workflowObservability,
@@ -1216,6 +1218,28 @@ export function createWorkflow<
         traceId: rootSpan.spanContext().traceId,
         spanId: rootSpan.spanContext().spanId,
       });
+
+      const executionValidators = [
+        ...(workflowExecutionValidators ?? []),
+        ...(options?.executionValidators ?? []),
+      ];
+      await runExecutionValidators(
+        executionValidators,
+        {
+          type: "workflow",
+          workflowId: id,
+          workflowName: name,
+          input,
+          options,
+          executionId,
+          context: contextMap,
+          workflowState: workflowStateStore,
+          timestamp: new Date(),
+          logger: runLogger,
+        },
+        `Workflow ${id} execution blocked by validation.`,
+        "WORKFLOW_VALIDATION_FAILED",
+      );
 
       // Check if resuming an existing execution
       if (options?.resumeFrom?.executionId && !options?.replayFrom) {

@@ -1,6 +1,12 @@
-import type { ServerProviderDeps, WorkflowStateEntry } from "@voltagent/core";
+import { ClientHTTPError, type ServerProviderDeps, type WorkflowStateEntry } from "@voltagent/core";
 import { describe, expect, it, vi } from "vitest";
-import { handleListWorkflowRuns } from "./workflow.handlers";
+import { handleExecuteWorkflow, handleListWorkflowRuns } from "./workflow.handlers";
+
+class TestExecutionValidationError extends ClientHTTPError {
+  constructor(message: string) {
+    super("ExecutionValidationError", 412, "PAYLOAD_EXPIRED", message);
+  }
+}
 
 function createWorkflowState(
   id: string,
@@ -188,5 +194,61 @@ describe("handleListWorkflowRuns", () => {
         metadata: undefined,
       }),
     );
+  });
+});
+
+describe("handleExecuteWorkflow", () => {
+  const logger = {
+    debug: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    trace: vi.fn(),
+    child: vi.fn(() => logger),
+  } as any;
+
+  it("maps execution validation failures from workflow execution", async () => {
+    const run = vi
+      .fn()
+      .mockRejectedValue(new TestExecutionValidationError("Workflow payload expired"));
+    const suspendController = {
+      signal: new AbortController().signal,
+      suspend: vi.fn(),
+      cancel: vi.fn(),
+      isSuspended: vi.fn(() => false),
+      isCancelled: vi.fn(() => false),
+      getReason: vi.fn(),
+      getCancelReason: vi.fn(),
+    };
+    const deps = {
+      agentRegistry: {} as any,
+      workflowRegistry: {
+        getWorkflow: vi.fn(() => ({
+          workflow: {
+            createSuspendController: vi.fn(() => suspendController),
+            run,
+          },
+        })),
+        on: vi.fn(),
+        off: vi.fn(),
+        activeExecutions: new Map(),
+      },
+    } as any;
+
+    const response = await handleExecuteWorkflow(
+      "wf-1",
+      { input: { value: "test" } },
+      deps,
+      logger,
+    );
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(response).toMatchObject({
+      success: false,
+      error: "Workflow payload expired",
+      code: "PAYLOAD_EXPIRED",
+      name: "ExecutionValidationError",
+      httpStatus: 412,
+    });
   });
 });

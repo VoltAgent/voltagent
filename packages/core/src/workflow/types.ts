@@ -7,6 +7,7 @@ import type { Agent } from "../agent/agent";
 import type { BaseMessage } from "../agent/providers";
 import type { UsageInfo } from "../agent/providers";
 import type { InputGuardrail, OutputGuardrail, UserContext } from "../agent/types";
+import type { WorkflowExecutionValidator } from "../execution-validation";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { WorkflowExecutionContext } from "./context";
@@ -375,6 +376,10 @@ export interface WorkflowRunOptions {
    */
   outputGuardrails?: OutputGuardrail<any>[];
   /**
+   * Deterministic validators to run immediately before workflow execution starts
+   */
+  executionValidators?: WorkflowExecutionValidator[];
+  /**
    * Optional agent instance to supply to workflow guardrails
    */
   guardrailAgent?: Agent;
@@ -662,6 +667,10 @@ export type WorkflowConfig<
    */
   outputGuardrails?: OutputGuardrail<any>[];
   /**
+   * Deterministic validators to run immediately before workflow execution starts
+   */
+  executionValidators?: WorkflowExecutionValidator[];
+  /**
    * Optional agent instance to supply to workflow guardrails
    */
   guardrailAgent?: Agent;
@@ -739,6 +748,10 @@ export type Workflow<
    * Output guardrails configured for this workflow
    */
   outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Execution validators configured for this workflow
+   */
+  executionValidators?: WorkflowExecutionValidator[];
   /**
    * Optional agent instance supplied to workflow guardrails
    */
