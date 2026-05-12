@@ -5738,6 +5738,30 @@ export class Agent {
     return true;
   }
 
+  private getRetryAfterDelayMs(error: unknown): number | undefined {
+    const headers = (error as { headers?: Headers | Record<string, string> } | undefined)?.headers;
+    const retryAfter =
+      headers instanceof Headers
+        ? headers.get("retry-after")
+        : (headers?.["retry-after"] ?? headers?.["Retry-After"]);
+
+    if (!retryAfter) {
+      return undefined;
+    }
+
+    const seconds = Number.parseInt(retryAfter, 10);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return seconds * 1000;
+    }
+
+    const retryAt = Date.parse(retryAfter);
+    if (Number.isFinite(retryAt)) {
+      return Math.max(retryAt - Date.now(), 0);
+    }
+
+    return undefined;
+  }
+
   private async executeWithModelFallback<T>({
     oc,
     operation,
@@ -5885,7 +5909,8 @@ export class Agent {
           const canRetry = retryEligible && !isLastAttempt;
 
           if (canRetry) {
-            const retryDelayMs = Math.min(1000 * 2 ** attemptIndex, 10000);
+            const retryDelayMs =
+              this.getRetryAfterDelayMs(error) ?? Math.min(1000 * 2 ** attemptIndex, 10000);
             logger.debug(`[Agent:${this.name}] - Model attempt failed, retrying`, {
               operation,
               modelName,
