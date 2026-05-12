@@ -3765,6 +3765,19 @@ Use pandas and summarize findings.`.split("\n"),
       }
     });
 
+    it("should clamp oversized Retry-After values to Node's max timer delay", async () => {
+      const agent = new Agent({
+        name: "RetryAfterClampAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const error = new Error("Rate limited");
+      (error as any).headers = new Headers({ "retry-after": "9999999999" });
+
+      expect((agent as any).getRetryAfterDelayMs(error)).toBe(2_147_483_647);
+    });
+
     it("should handle model errors gracefully", async () => {
       const agent = new Agent({
         name: "TestAgent",

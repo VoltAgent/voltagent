@@ -227,6 +227,7 @@ const DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS = 32;
 const DEFAULT_CONVERSATION_TITLE_MAX_CHARS = 80;
 const CONVERSATION_TITLE_INPUT_MAX_CHARS = 2000;
 const DEFAULT_TOOL_SEARCH_TOP_K = 1;
+const MAX_NODE_TIMER_MS = 2_147_483_647;
 
 type ResolvedConversationPersistenceOptions = {
   mode: AgentConversationPersistenceMode;
@@ -5751,12 +5752,12 @@ export class Agent {
 
     const seconds = Number.parseInt(retryAfter, 10);
     if (Number.isFinite(seconds) && seconds > 0) {
-      return seconds * 1000;
+      return Math.min(seconds * 1000, MAX_NODE_TIMER_MS);
     }
 
     const retryAt = Date.parse(retryAfter);
     if (Number.isFinite(retryAt)) {
-      return Math.max(retryAt - Date.now(), 0);
+      return Math.min(Math.max(retryAt - Date.now(), 0), MAX_NODE_TIMER_MS);
     }
 
     return undefined;
@@ -5909,8 +5910,10 @@ export class Agent {
           const canRetry = retryEligible && !isLastAttempt;
 
           if (canRetry) {
-            const retryDelayMs =
-              this.getRetryAfterDelayMs(error) ?? Math.min(1000 * 2 ** attemptIndex, 10000);
+            const retryDelayMs = Math.min(
+              this.getRetryAfterDelayMs(error) ?? Math.min(1000 * 2 ** attemptIndex, 10000),
+              MAX_NODE_TIMER_MS,
+            );
             logger.debug(`[Agent:${this.name}] - Model attempt failed, retrying`, {
               operation,
               modelName,
