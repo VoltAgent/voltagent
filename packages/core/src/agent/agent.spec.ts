@@ -3689,6 +3689,95 @@ Use pandas and summarize findings.`.split("\n"),
       }
     });
 
+    it("should honor Retry-After when retrying provider rate limits", async () => {
+      vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+
+      let resolveRetry!: () => void;
+      const retrySeen = new Promise<void>((resolve) => {
+        resolveRetry = resolve;
+      });
+      const onRetry = vi.fn(() => {
+        resolveRetry();
+      });
+      const agent = new Agent({
+        name: "RetryAfterAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        maxRetries: 1,
+        hooks: createHooks({ onRetry }),
+      });
+
+      const mockResponse = {
+        text: "Retry response",
+        content: [{ type: "text", text: "Retry response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "retry-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      let callCount = 0;
+      vi.mocked(ai.generateText).mockImplementation(async () => {
+        callCount += 1;
+        if (callCount === 1) {
+          const error = new Error("Rate limited");
+          (error as any).isRetryable = true;
+          (error as any).statusCode = 429;
+          (error as any).headers = new Headers({ "retry-after": "3" });
+          throw error;
+        }
+        return mockResponse as any;
+      });
+
+      const resultPromise = agent.generateText("Test");
+
+      try {
+        await retrySeen;
+        await Promise.resolve();
+
+        expect(onRetry).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(1);
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 3000);
+
+        await vi.advanceTimersByTimeAsync(3000);
+        await expect(resultPromise).resolves.toMatchObject({ text: "Retry response" });
+        expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
+      } finally {
+        setTimeoutSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it("should clamp oversized Retry-After values to Node's max timer delay", async () => {
+      const agent = new Agent({
+        name: "RetryAfterClampAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const error = new Error("Rate limited");
+      (error as any).headers = new Headers({ "retry-after": "9999999999" });
+
+      expect((agent as any).getRetryAfterDelayMs(error)).toBe(2_147_483_647);
+    });
+
     it("should handle model errors gracefully", async () => {
       const agent = new Agent({
         name: "TestAgent",
