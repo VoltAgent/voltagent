@@ -363,6 +363,157 @@ VoltAgent is a community effort, and it keeps getting better because of people l
 
 ![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=500&columns=20&anon=1)
 
+## ❓ FAQ
+
+### What is VoltAgent?
+
+VoltAgent is an end-to-end **AI Agent Engineering Platform** that provides:
+- **Open-Source TypeScript Framework**: Build agents with memory, tools, workflows, voice, and RAG
+- **VoltOps Console**: Production-ready observability, automation, deployment, and evaluations
+
+### How is VoltAgent different from other agent frameworks?
+
+| Feature | VoltAgent | LangChain | CrewAI |
+|---------|-----------|-----------|--------|
+| **Architecture** | TypeScript-first | Python-first | Python-first |
+| **Workflow Engine** | Declarative workflows | Sequential chains | Role-playing teams |
+| **Memory** | Multiple adapters | In-memory + options | Shared memory |
+| **Observability** | Built-in VoltOps Console | External tools | Limited |
+| **Deployment** | One-click cloud | Manual setup | Manual setup |
+| **Voice Support** | Built-in TTS/STT | External providers | No |
+
+### How do I install VoltAgent?
+
+```bash
+npm create voltagent-app@latest
+```
+
+This creates a new project with starter code and examples.
+
+### Which LLM providers are supported?
+
+VoltAgent supports all major providers through AI SDK:
+- **OpenAI**: GPT-4, GPT-4o, o1, o3-mini
+- **Anthropic**: Claude 3.5, Claude Sonnet 4
+- **Google**: Gemini 1.5 Pro, Gemini 2.0 Flash
+- **Groq**: Llama, Mixtral (fast inference)
+- **Custom**: Any provider supported by AI SDK
+
+### What are Supervisors and Sub-Agents?
+
+VoltAgent supports **multi-agent systems** where:
+- **Supervisor**: Routes tasks to specialized sub-agents
+- **Sub-Agents**: Handle specific tasks (e.g., weather, expenses, research)
+
+Example: A supervisor agent coordinates weather lookup and expense approval agents.
+
+### How do I add custom tools?
+
+Use the `@voltagent/core` tool registry:
+
+```typescript
+import { VoltAgent, Agent } from "@voltagent/core";
+import { weatherTool } from "./tools";
+
+const agent = new Agent({
+  name: "Weather Agent",
+  tools: [weatherTool],
+});
+```
+
+### What is MCP support?
+
+VoltAgent supports **Model Context Protocol (MCP)** servers:
+- Connect to MCP servers without extra glue code
+- Use existing MCP tools and resources
+- Example: File system MCP, database MCP, custom MCP
+
+### How does memory work?
+
+VoltAgent provides **durable memory adapters**:
+- **LibSQL**: SQLite-based persistent storage
+- **In-Memory**: Default, no persistence
+- Custom adapters possible
+
+### What is VoltOps Console?
+
+VoltOps Console is the **production operations platform**:
+- **Observability**: Trace agent runs, view logs
+- **Automation**: Schedule workflows, set triggers
+- **Deployment**: One-click cloud deployment
+- **Evals**: Run evaluation suites
+- **Guardrails**: Enforce content policies
+
+Options: Cloud (managed) or Self-Hosted.
+
+### How do I use RAG?
+
+VoltAgent provides built-in RAG capabilities:
+
+```typescript
+import { VoltAgent, Agent } from "@voltagent/core";
+import { retrieverAgent } from "./retriever";
+
+const agent = new Agent({
+  name: "RAG Agent",
+  retriever: retrieverAgent,
+});
+```
+
+Or use **VoltAgent Knowledge Base** for managed RAG service.
+
+### How do I add voice support?
+
+VoltAgent provides built-in voice providers:
+
+```typescript
+import { VoltAgent, Agent } from "@voltagent/core";
+import { openai } from "@voltagent/voice-openai";
+
+const agent = new Agent({
+  name: "Voice Agent",
+  voice: { provider: openai() },
+});
+```
+
+### How do I run evaluations?
+
+Use the Evals system:
+
+```typescript
+import { EvalSuite } from "@voltagent/evals";
+
+const suite = new EvalSuite({
+  name: "Weather Agent Eval",
+  tests: [...],
+});
+
+await suite.run();
+```
+
+### What guardrails are available?
+
+VoltAgent provides runtime guardrails:
+- **Input Guardrails**: Validate agent input
+- **Output Guardrails**: Validate agent output
+- Content policy enforcement
+- Custom validation rules
+
+### Can I use VoltAgent without VoltOps Console?
+
+Yes! The **core framework** is open-source and works standalone:
+- Build agents with all features
+- Deploy manually or use VoltOps Console later
+- Console is optional for production operations
+
+### Where can I get help?
+
+- 📖 [Documentation](https://voltagent.dev/docs/)
+- 💬 [Discord Community](https://s.voltagent.dev/discord)
+- 🐛 [GitHub Issues](https://github.com/voltagent/voltagent/issues)
+- 📧 [Twitter](https://x.com/voltagent_dev)
+
+
 ## License
 
 Licensed under the MIT License, Copyright © 2026-present VoltAgent.
