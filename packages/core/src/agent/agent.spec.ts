@@ -3689,6 +3689,71 @@ Use pandas and summarize findings.`.split("\n"),
       }
     });
 
+    it("should honor the Retry-After header on retried model calls", async () => {
+      const agent = new Agent({
+        name: "RetryAfterAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        maxRetries: 1,
+      });
+
+      const mockResponse = {
+        text: "Retry response",
+        content: [{ type: "text", text: "Retry response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "retry-after-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      const observedDelays: number[] = [];
+      const originalSetTimeout = global.setTimeout;
+      const setTimeoutSpy = vi.spyOn(global, "setTimeout").mockImplementation(((
+        cb: any,
+        delay: any,
+        ...args: any[]
+      ) => {
+        if (typeof delay === "number") observedDelays.push(delay);
+        return originalSetTimeout(cb, 0, ...args);
+      }) as typeof setTimeout);
+
+      let callCount = 0;
+      vi.mocked(ai.generateText).mockImplementation(async () => {
+        callCount += 1;
+        if (callCount < 2) {
+          const error = new Error("Rate limited");
+          (error as any).isRetryable = true;
+          (error as any).statusCode = 429;
+          (error as any).responseHeaders = { "retry-after": "30" };
+          throw error;
+        }
+        return mockResponse as any;
+      });
+
+      try {
+        const result = await agent.generateText("Test");
+
+        expect(result.text).toBe("Retry response");
+        expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
+        // attemptIndex=0: exponential floor=1000ms, server hint=30000ms ⇒ delay=30000.
+        expect(observedDelays).toContain(30_000);
+      } finally {
+        setTimeoutSpy.mockRestore();
+      }
+    });
+
     it("should handle model errors gracefully", async () => {
       const agent = new Agent({
         name: "TestAgent",

@@ -120,6 +120,7 @@ import type {
   ToolExecuteOptions,
   UsageInfo,
 } from "./providers/base/types";
+import { computeRetryDelayMs } from "./retry-after";
 import { coerceStringifiedJsonToolArgs } from "./tool-input-coercion";
 export type { AgentHooks } from "./hooks";
 export type {
@@ -5885,7 +5886,7 @@ export class Agent {
           const canRetry = retryEligible && !isLastAttempt;
 
           if (canRetry) {
-            const retryDelayMs = Math.min(1000 * 2 ** attemptIndex, 10000);
+            const retryDelayMs = computeRetryDelayMs(error, attemptIndex);
             logger.debug(`[Agent:${this.name}] - Model attempt failed, retrying`, {
               operation,
               modelName,
