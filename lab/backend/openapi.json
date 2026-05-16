@@ -1,0 +1,64 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VoltAgent Lab Backend Interfaces",
+    "version": "1.0.0",
+    "description": "Complete interface contracts mapped from website/docs/api/api-reference.md"
+  },
+  "servers": [
+    { "url": "http://localhost:3141" }
+  ],
+  "paths": {
+    "/": { "get": { "summary": "Landing page with links" } },
+    "/doc": { "get": { "summary": "OpenAPI 3.1 specification" } },
+    "/ui": { "get": { "summary": "Swagger UI interactive docs" } },
+    "/agents": { "get": { "summary": "List all registered agents" } },
+    "/agents/{id}": { "get": { "summary": "Get agent details" } },
+    "/agents/{id}/text": { "post": { "summary": "Generate text response" } },
+    "/agents/{id}/stream": { "post": { "summary": "Stream text response (SSE)" } },
+    "/agents/{id}/object": { "post": { "summary": "Generate structured object" } },
+    "/agents/{id}/stream-object": { "post": { "summary": "Stream object generation (SSE)" } },
+    "/agents/{id}/history": { "get": { "summary": "Get agent execution history" } },
+    "/tools": { "get": { "summary": "List all registered tools" } },
+    "/tools/{name}/execute": { "post": { "summary": "Execute a tool directly over HTTP" } },
+    "/workflows": { "get": { "summary": "List all workflows" } },
+    "/workflows/{id}": { "get": { "summary": "Get workflow details" } },
+    "/workflows/executions": { "get": { "summary": "List workflow executions" } },
+    "/workflows/{id}/execute": { "post": { "summary": "Execute workflow" } },
+    "/workflows/{id}/stream": { "post": { "summary": "Stream workflow execution (SSE)" } },
+    "/workflows/{id}/executions/{executionId}/suspend": { "post": { "summary": "Suspend execution" } },
+    "/workflows/{id}/executions/{executionId}/resume": { "post": { "summary": "Resume execution" } },
+    "/workflows/{id}/executions/{executionId}/state": { "get": { "summary": "Get execution state" } },
+    "/api/memory/conversations": {
+      "get": { "summary": "List conversations" },
+      "post": { "summary": "Create conversation" }
+    },
+    "/api/memory/conversations/{conversationId}": {
+      "get": { "summary": "Get conversation" },
+      "patch": { "summary": "Update conversation" },
+      "delete": { "summary": "Delete conversation" }
+    },
+    "/api/memory/conversations/{conversationId}/messages": { "get": { "summary": "List messages" } },
+    "/api/memory/conversations/{conversationId}/working-memory": {
+      "get": { "summary": "Get working memory" },
+      "post": { "summary": "Update working memory" }
+    },
+    "/api/memory/save-messages": { "post": { "summary": "Save messages" } },
+    "/api/memory/conversations/{conversationId}/clone": { "post": { "summary": "Clone conversation" } },
+    "/api/memory/messages/delete": { "post": { "summary": "Delete messages" } },
+    "/api/memory/search": { "get": { "summary": "Search memory" } },
+    "/api/logs": { "get": { "summary": "Query system logs (filters)" } },
+    "/observability/status": { "get": { "summary": "Observability status" } },
+    "/observability/traces": { "get": { "summary": "List traces" } },
+    "/observability/traces/{traceId}": { "get": { "summary": "Get trace by ID" } },
+    "/observability/spans/{spanId}": { "get": { "summary": "Get span by ID" } },
+    "/observability/traces/{traceId}/logs": { "get": { "summary": "Logs for a trace" } },
+    "/observability/spans/{spanId}/logs": { "get": { "summary": "Logs for a span" } },
+    "/observability/logs": { "get": { "summary": "Query logs (filters)" } },
+    "/setup-observability": { "post": { "summary": "Configure VoltAgent keys" } },
+    "/updates": {
+      "get": { "summary": "Check available updates" },
+      "post": { "summary": "Install updates" }
+    }
+  }
+}
