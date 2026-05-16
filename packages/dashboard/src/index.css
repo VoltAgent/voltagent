@@ -1,0 +1,22 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* END TAILWIND IMPORTS - ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Custom animation for dashed line animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
