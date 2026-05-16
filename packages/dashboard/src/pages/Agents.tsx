@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Bot, Activity, Clock, MoreVertical } from 'lucide-react'
 
