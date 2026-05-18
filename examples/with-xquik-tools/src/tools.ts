@@ -16,10 +16,16 @@ type XquikResult = {
 
 const queryTypeSchema = z.enum(["Latest", "Top"]);
 
+/**
+ * Returns the configured Xquik API base URL without a trailing slash.
+ */
 function getXquikBaseUrl(): string {
   return (process.env.XQUIK_BASE_URL ?? DEFAULT_XQUIK_BASE_URL).replace(/\/+$/, "");
 }
 
+/**
+ * Normalizes an X username or user ID for use in URL path segments.
+ */
 function encodeXIdentifier(value: string): string {
   const identifier = value.trim().replace(/^@+/, "");
   if (!identifier) {
@@ -28,6 +34,9 @@ function encodeXIdentifier(value: string): string {
   return encodeURIComponent(identifier);
 }
 
+/**
+ * Adds defined query parameters to a request URL.
+ */
 function appendQueryParams(url: URL, params: XquikQueryParams): void {
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === "") {
@@ -38,6 +47,9 @@ function appendQueryParams(url: URL, params: XquikQueryParams): void {
   }
 }
 
+/**
+ * Calls a read-only Xquik REST endpoint and returns a tool-friendly result.
+ */
 async function callXquik(path: string, params: XquikQueryParams = {}): Promise<XquikResult> {
   const apiKey = process.env.XQUIK_API_KEY;
   if (!apiKey) {
@@ -86,6 +98,9 @@ async function callXquik(path: string, params: XquikQueryParams = {}): Promise<X
   }
 }
 
+/**
+ * Searches public X/Twitter posts with Xquik query operators.
+ */
 export const searchXPostsTool = createTool({
   name: "searchXPosts",
   description:
@@ -112,6 +127,9 @@ export const searchXPostsTool = createTool({
     }),
 });
 
+/**
+ * Looks up a public X/Twitter post by ID.
+ */
 export const getXPostTool = createTool({
   name: "getXPost",
   description:
@@ -122,6 +140,9 @@ export const getXPostTool = createTool({
   execute: async ({ postId }) => callXquik(`/x/tweets/${encodeURIComponent(postId.trim())}`),
 });
 
+/**
+ * Looks up a public X/Twitter user profile by username or ID.
+ */
 export const getXUserTool = createTool({
   name: "getXUser",
   description: "Look up a public X/Twitter user profile by username or user ID.",
@@ -131,6 +152,9 @@ export const getXUserTool = createTool({
   execute: async ({ user }) => callXquik(`/x/users/${encodeXIdentifier(user)}`),
 });
 
+/**
+ * Fetches recent public posts for an X/Twitter user.
+ */
 export const getXUserPostsTool = createTool({
   name: "getXUserPosts",
   description: "Fetch recent public posts from an X/Twitter user by username or user ID.",
@@ -148,6 +172,9 @@ export const getXUserPostsTool = createTool({
     }),
 });
 
+/**
+ * Fetches public X/Twitter trends for a WOEID region.
+ */
 export const getXTrendsTool = createTool({
   name: "getXTrends",
   description: "Fetch public X/Twitter trending topics by WOEID region.",
