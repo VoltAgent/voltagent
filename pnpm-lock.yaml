@@ -3566,6 +3566,37 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  examples/with-xquik-tools:
+    dependencies:
+      '@voltagent/cli':
+        specifier: ^0.1.21
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^2.7.4
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^2.0.13
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   examples/with-youtube-to-blog:
     dependencies:
       '@voltagent/cli':
