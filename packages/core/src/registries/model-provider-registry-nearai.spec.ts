@@ -2,9 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let createOpenAICompatibleCalls: unknown[][] = [];
 
-vi.mock("@voltagent/internal", () => ({
-  safeStringify: (value: unknown) => JSON.stringify(value),
-}));
+vi.mock("@voltagent/internal", async () => {
+  const actual = await vi.importActual<typeof import("@voltagent/internal")>("@voltagent/internal");
+  return {
+    ...actual,
+    safeStringify: actual.safeStringify,
+  };
+});
 
 vi.mock("@ai-sdk/openai-compatible", () => ({
   createOpenAICompatible: (...args: unknown[]) => {
