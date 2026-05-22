@@ -135,6 +135,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Sub‑agents](./with-subagents) — Supervisor orchestrates focused sub‑agents to divide tasks.
 - [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.
+- [Xquik Tools](./with-xquik-tools) — Research public X/Twitter posts, users, and trends with Xquik tools.
 - [Thinking Tool](./with-thinking-tool) — Structured reasoning via a dedicated “thinking” tool and schema.
 - [Tool Routing](./with-tool-routing) — Route large tool pools through a small set of router tools.
 - [Tools](./with-tools) — Author Zod‑typed tools with cancellation and streaming support.
