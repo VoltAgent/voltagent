@@ -67,6 +67,12 @@ describe("getRetryAfterMs", () => {
     expect(getRetryAfterMs(err)).toBe(5_000);
   });
 
+  it("matches the header name case-insensitively", () => {
+    expect(getRetryAfterMs({ responseHeaders: { "Retry-after": "7" } })).toBe(7_000);
+    expect(getRetryAfterMs({ responseHeaders: { "RETRY-AFTER": "8" } })).toBe(8_000);
+    expect(getRetryAfterMs({ responseHeaders: { "rEtRy-AfTeR": "9" } })).toBe(9_000);
+  });
+
   it("returns null when the header is absent", () => {
     expect(getRetryAfterMs({ responseHeaders: {} })).toBeNull();
     expect(getRetryAfterMs({ responseHeaders: { "x-foo": "bar" } })).toBeNull();

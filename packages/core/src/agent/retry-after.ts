@@ -62,9 +62,9 @@ export function parseRetryAfter(
  * Read the `Retry-After` header off an error's `responseHeaders` bag and return
  * its parsed value in milliseconds, or `null` when absent.
  *
- * AI SDK populates `responseHeaders` on `APICallError` and similar provider errors
- * with lowercased header names. Both lowercase and canonical-case forms are
- * accepted to stay robust against providers that don't normalize.
+ * HTTP header field names are case-insensitive (RFC 7230 §3.2). AI SDK normalizes
+ * its own bag to lowercase, but providers that build `responseHeaders` from a raw
+ * fetch can leak any casing through, so we match the key case-insensitively.
  */
 export function getRetryAfterMs(error: unknown, nowMs: number = Date.now()): number | null {
   const headers = (error as { responseHeaders?: Record<string, string> } | undefined)
@@ -72,7 +72,13 @@ export function getRetryAfterMs(error: unknown, nowMs: number = Date.now()): num
   if (!headers || typeof headers !== "object") {
     return null;
   }
-  const raw = headers["retry-after"] ?? headers["Retry-After"];
+  let raw: string | undefined;
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === "retry-after") {
+      raw = headers[key];
+      break;
+    }
+  }
   return parseRetryAfter(raw, nowMs);
 }
 
