@@ -6,6 +6,9 @@ type ExecutableTool = {
   name: string;
   execute?: (args: JsonRecord) => Promise<unknown> | unknown;
 };
+type RequiredExecutableTool = ExecutableTool & {
+  execute: (args: JsonRecord) => Promise<unknown> | unknown;
+};
 
 const expectedToolSuffixes = [
   "list_sheets",
@@ -58,13 +61,13 @@ function toolSuffix(toolName: string): string {
   return toolName.startsWith(prefix) ? toolName.slice(prefix.length) : toolName;
 }
 
-function findTool(tools: readonly ExecutableTool[], suffix: string): ExecutableTool {
+function findTool(tools: readonly ExecutableTool[], suffix: string): RequiredExecutableTool {
   const tool = tools.find((candidate) => toolSuffix(candidate.name) === suffix);
   if (!tool || typeof tool.execute !== "function") {
     throw new Error(`Missing executable Bilig MCP tool: ${suffix}`);
   }
 
-  return tool;
+  return tool as RequiredExecutableTool;
 }
 
 function parseToolText(text: string, label: string): JsonRecord {
@@ -104,12 +107,7 @@ async function callTool(
   args: JsonRecord,
 ): Promise<JsonRecord> {
   const tool = findTool(tools, suffix);
-  const execute = tool.execute;
-  if (typeof execute !== "function") {
-    throw new Error(`Missing executable Bilig MCP tool: ${suffix}`);
-  }
-
-  return structuredContent(await execute(args), suffix);
+  return structuredContent(await tool.execute(args), suffix);
 }
 
 function cellValue(cell: JsonRecord, label: string): number {

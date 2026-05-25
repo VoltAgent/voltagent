@@ -22,7 +22,7 @@ Expected result:
 ```json
 {
   "ok": true,
-  "package": "@bilig/workpaper@0.90.8",
+  "package": "@bilig/workpaper@0.93.0",
   "recalculated": {
     "summaryB3": 96000
   },
@@ -38,4 +38,3 @@ pnpm dev
 ```
 
 Open the VoltAgent console and ask the agent to inspect the workbook, set `Inputs!B3` to `0.4`, and verify `Summary!B3`. The important pattern is read, edit, recalculate, read back, and export the persisted WorkPaper document.
-
