@@ -1,5 +1,13 @@
 # @voltagent/server-core
 
+## 2.1.17
+
+### Patch Changes
+
+- [#1301](https://github.com/VoltAgent/voltagent/pull/1301) [`738e7b0`](https://github.com/VoltAgent/voltagent/commit/738e7b057aafd22d5521b1f442de498ee3da1c34) Thanks [@ruanchaves](https://github.com/ruanchaves)! - fix(server-core): return workflow execute result status
+
+  Fixes #1300
+
 ## 2.1.16
 
 ### Patch Changes
