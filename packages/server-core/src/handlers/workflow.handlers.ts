@@ -468,7 +468,7 @@ export async function handleExecuteWorkflow(
           executionId: result.executionId,
           startAt: result.startAt instanceof Date ? result.startAt.toISOString() : result.startAt,
           endAt: result.endAt instanceof Date ? result.endAt.toISOString() : result.endAt,
-          status: "completed",
+          status: result.status,
           result: result.result,
         },
       };
