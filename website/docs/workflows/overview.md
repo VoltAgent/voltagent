@@ -560,6 +560,55 @@ const workflow = createWorkflowChain({
 Input guardrails only accept string or message inputs. For structured data, use output guardrails.
 If your guardrails rely on agent APIs or metadata, pass `guardrailAgent` in the workflow config or run options.
 
+### Pre-execution Workflow Validators
+
+Use `executionValidators` for deterministic checks that must run before any workflow step starts.
+Validators can be sync or async. Return `false` or `{ pass: false }` to block the run with an
+`ExecutionValidationError`.
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "tenant-report",
+  input: z.object({ tenantId: z.string() }),
+  result: z.object({ ok: z.boolean() }),
+  executionValidators: [
+    async ({ input, context }) => {
+      const allowedTenants = context.get("allowedTenants");
+
+      if (
+        Array.isArray(allowedTenants) &&
+        typeof input === "object" &&
+        input !== null &&
+        "tenantId" in input &&
+        !(await checkTenantWorkflowAccess({
+          tenantId: input.tenantId,
+          allowedTenants,
+        }))
+      ) {
+        return {
+          pass: false,
+          message: "Tenant is not allowed for this workflow.",
+          code: "WORKFLOW_TENANT_DENIED",
+          httpStatus: 403,
+        };
+      }
+    },
+  ],
+}).andThen({
+  id: "finish",
+  execute: async () => ({ ok: true }),
+});
+
+await workflow.run(
+  { tenantId: "tenant-a" },
+  {
+    context: new Map([["allowedTenants", ["tenant-b"]]]),
+  }
+);
+```
+
+You can also pass validators per run with `workflow.run(input, { executionValidators: [...] })`.
+
 ### Workflow History & Observability
 
 ![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)

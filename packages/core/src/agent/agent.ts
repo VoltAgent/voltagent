@@ -48,6 +48,11 @@ import {
   validateUIMessages,
 } from "ai";
 import { z } from "zod";
+import {
+  type AgentExecutionValidators,
+  type ToolExecutionValidationContext,
+  runExecutionValidators,
+} from "../execution-validation";
 import { LogEvents, LoggerProxy } from "../logger";
 import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
 import { Memory } from "../memory";
@@ -97,6 +102,7 @@ import {
   createVoltAgentError,
   isBailError,
   isClientHTTPError,
+  isExecutionValidationError,
   isMiddlewareAbortError,
   isToolDeniedError,
   isVoltAgentError,
@@ -306,6 +312,20 @@ const firstDefined = <T>(...values: Array<T | null | undefined>): T | undefined 
     }
   }
   return undefined;
+};
+
+const normalizeAgentExecutionValidators = (
+  validators?: AgentExecutionValidators,
+): AgentExecutionValidators | undefined => {
+  const tools = validators?.tools?.filter((validator) => typeof validator === "function") ?? [];
+  return tools.length > 0 ? { tools: [...tools] } : undefined;
+};
+
+const mergeAgentExecutionValidators = (
+  ...configs: Array<AgentExecutionValidators | undefined>
+): AgentExecutionValidators | undefined => {
+  const tools = configs.flatMap((config) => config?.tools ?? []);
+  return tools.length > 0 ? { tools } : undefined;
 };
 
 type OpenRouterUsageCost = {
@@ -936,6 +956,9 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   // Hooks (can override agent hooks)
   hooks?: AgentHooks;
 
+  // Execution validators (can add per-call validators)
+  executionValidators?: AgentExecutionValidators;
+
   // Guardrails (can override agent-level guardrails)
   inputGuardrails?: InputGuardrail[];
   outputGuardrails?: OutputGuardrail<any>[];
@@ -1043,6 +1066,7 @@ export class Agent {
   private readonly prompts?: PromptHelper;
   private readonly evalConfig?: AgentEvalConfig;
   private readonly feedbackOptions?: AgentFeedbackOptions | boolean;
+  private readonly executionValidators?: AgentExecutionValidators;
   private readonly inputGuardrails: NormalizedInputGuardrail[];
   private readonly outputGuardrails: NormalizedOutputGuardrail[];
   private readonly inputMiddlewares: NormalizedInputMiddleware[];
@@ -1092,6 +1116,7 @@ export class Agent {
     this.voltOpsClient = options.voltOpsClient;
     this.evalConfig = options.eval;
     this.feedbackOptions = options.feedback;
+    this.executionValidators = normalizeAgentExecutionValidators(options.executionValidators);
     this.inputGuardrails = normalizeInputGuardrailList(options.inputGuardrails || []);
     this.outputGuardrails = normalizeOutputGuardrailList(options.outputGuardrails || []);
     this.inputMiddlewares = normalizeInputMiddlewareList(options.inputMiddlewares || []);
@@ -1183,6 +1208,53 @@ export class Agent {
   // ============================================================================
   // Public API Methods
   // ============================================================================
+
+  async validateToolExecution({
+    tool,
+    args,
+    options,
+    toolCallId,
+    messages,
+    operationContext,
+  }: {
+    tool: Tool<any, any> | ProviderTool;
+    args: unknown;
+    options?: ToolExecuteOptions;
+    toolCallId?: string;
+    messages?: unknown[];
+    operationContext?: OperationContext;
+  }): Promise<void> {
+    const validators = options?.executionValidators?.tools ?? this.executionValidators?.tools;
+    if (!validators || validators.length === 0) {
+      return;
+    }
+
+    const resolvedToolCallId = toolCallId ?? options?.toolContext?.callId ?? randomUUID();
+    const resolvedOperationContext =
+      operationContext ??
+      (options?.operationId && options.context && options.systemContext
+        ? (options as OperationContext)
+        : undefined);
+    const context: ToolExecutionValidationContext = {
+      type: "tool",
+      agent: this,
+      tool,
+      toolName: tool.name,
+      args,
+      options,
+      operationContext: resolvedOperationContext,
+      toolCallId: resolvedToolCallId,
+      messages: messages ?? options?.toolContext?.messages ?? [],
+      timestamp: new Date(),
+    };
+
+    await runExecutionValidators(
+      validators,
+      context,
+      `Tool ${tool.name} execution blocked by validation.`,
+      "TOOL_VALIDATION_FAILED",
+    );
+  }
 
   /**
    * Generate text response
@@ -4115,6 +4187,11 @@ export class Agent {
       operationId,
       context,
       requestHeaders: options?.requestHeaders ?? options?.parentOperationContext?.requestHeaders,
+      executionValidators: mergeAgentExecutionValidators(
+        options?.parentOperationContext?.executionValidators,
+        this.executionValidators,
+        options?.executionValidators,
+      ),
       systemContext,
       isActive: true,
       logger,
@@ -6421,7 +6498,7 @@ export class Agent {
           options: executionOptions,
         });
 
-        if (isToolDeniedError(errorValue)) {
+        if (isToolDeniedError(errorValue) || isExecutionValidationError(errorValue)) {
           oc.abortController.abort(errorValue);
         }
 
@@ -6437,6 +6514,14 @@ export class Agent {
         return async function* (this: Agent): AsyncGenerator<any, void, void> {
           try {
             await oc.traceContext.withSpan(toolSpan, async () => {
+              await this.validateToolExecution({
+                tool: tool as Tool<any, any>,
+                args,
+                options: executionOptions,
+                toolCallId,
+                messages,
+                operationContext: oc,
+              });
               await runToolStartHooks();
             });
 
@@ -6496,6 +6581,14 @@ export class Agent {
 
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
+          await this.validateToolExecution({
+            tool: tool as Tool<any, any>,
+            args,
+            options: executionOptions,
+            toolCallId,
+            messages,
+            operationContext: oc,
+          });
           // Call tool start hook - can throw ToolDeniedError
           await runToolStartHooks();
 
@@ -7015,6 +7108,15 @@ export class Agent {
       executionOptions,
       executionOptions.toolContext?.callId ?? randomUUID(),
     );
+
+    await this.validateToolExecution({
+      tool,
+      args,
+      options: executionOptions,
+      toolCallId: executionOptions.toolContext?.callId,
+      messages: executionOptions.toolContext?.messages ?? [],
+      operationContext: oc,
+    });
 
     const tools: Record<string, any> = {
       [tool.name]: tool,

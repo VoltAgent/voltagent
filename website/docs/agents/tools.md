@@ -865,6 +865,72 @@ Allowed `code` values:
 - `TOOL_QUOTA_EXCEEDED`
 - Custom codes (e.g., `"TOOL_REGION_BLOCKED"`)
 
+### Pre-execution Tool Validators
+
+Use `executionValidators.tools` when a policy must run before any tool hook or tool execution.
+Validators are useful for deterministic checks such as tenant policy, region restrictions, quotas,
+or request-scoped allow lists. Validators can be sync or async. Return `false` or
+`{ pass: false }` to block the tool call.
+
+```ts
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({
+  name: "Policy Controlled Assistant",
+  instructions: "You are a controlled assistant.",
+  model: "openai/gpt-4o",
+  tools: [queryTool, updateTool],
+  executionValidators: {
+    tools: [
+      async ({ toolName, operationContext }) => {
+        const tenant = operationContext?.requestHeaders?.["x-tenant-id"];
+        const allowed = await checkTenantToolAccess({ tenant, toolName });
+
+        if (!allowed) {
+          return {
+            pass: false,
+            message: "This tenant cannot update records.",
+            code: "TOOL_TENANT_DENIED",
+            httpStatus: 403,
+          };
+        }
+      },
+    ],
+  },
+});
+```
+
+You can also add request-scoped validators:
+
+```ts
+await agent.generateText("Update this record", {
+  executionValidators: {
+    tools: [
+      async ({ tool, operationContext }) => {
+        const userId = operationContext?.userId;
+        const canRunDestructiveTool = await checkUserToolPermission({
+          userId,
+          toolName: tool.name,
+        });
+
+        if (tool.tags?.includes("destructive") && !canRunDestructiveTool) {
+          return {
+            pass: false,
+            code: "TOOL_REQUIRES_APPROVAL",
+            httpStatus: 409,
+          };
+        }
+
+        return true;
+      },
+    ],
+  },
+});
+```
+
+When a validator blocks execution, VoltAgent throws an `ExecutionValidationError`. Server handlers
+that surface this error preserve the validator's `message`, `code`, and `httpStatus`.
+
 ### Multi-modal Tool Results
 
 Tools can return images and media content to the LLM using the `toModelOutput` function. This enables visual workflows where tools can provide screenshots, generated images, or other media for the LLM to analyze.

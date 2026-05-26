@@ -32,6 +32,7 @@ import type { VoltAgentTextStreamPart } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
 import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
+import type { AgentExecutionValidators } from "../execution-validation";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
@@ -695,6 +696,9 @@ export type AgentOptions = {
   // Hooks
   hooks?: AgentHooks;
 
+  // Execution validators
+  executionValidators?: AgentExecutionValidators;
+
   // Guardrails
   inputGuardrails?: InputGuardrail[];
   outputGuardrails?: OutputGuardrail<any>[];
@@ -1083,6 +1087,9 @@ export interface CommonGenerateOptions {
 
   // Optional hooks to be included only during the operation call and not persisted in the agent
   hooks?: AgentHooks;
+
+  // Optional execution validators to include only during this operation
+  executionValidators?: AgentExecutionValidators;
 }
 
 /**
@@ -1311,6 +1318,9 @@ export type OperationContext = {
 
   /** HTTP request headers associated with this operation, when available */
   readonly requestHeaders?: Record<string, string>;
+
+  /** Execution validators active for this operation */
+  readonly executionValidators?: AgentExecutionValidators;
 
   /** System-managed context map for internal operation tracking */
   readonly systemContext: Map<string | symbol, unknown>;

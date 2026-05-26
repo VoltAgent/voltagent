@@ -1,6 +1,7 @@
 import { Output, type UIMessageChunk } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { ExecutionValidationError } from "../agent/errors";
 import { createTestAgent } from "../agent/test-utils";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
@@ -78,6 +79,58 @@ describe.sequential("workflow.run", () => {
       error: undefined,
       resume: expect.any(Function),
     });
+  });
+
+  it("runs execution validators before executing workflow steps", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const validator = vi.fn(() => ({
+      pass: false as const,
+      message: "Workflow payload expired",
+      code: "PAYLOAD_EXPIRED",
+      httpStatus: 412 as const,
+    }));
+    const stepExecute = vi.fn(async ({ data }) => data);
+
+    const workflow = createWorkflow(
+      {
+        id: "validated-workflow",
+        name: "Validated Workflow",
+        input: z.object({ value: z.string() }),
+        result: z.object({ value: z.string() }),
+        memory,
+        executionValidators: [validator],
+      },
+      andThen({
+        id: "step-1",
+        execute: stepExecute,
+      }),
+    );
+
+    let caughtError: unknown;
+    try {
+      await workflow.run({ value: "test" });
+    } catch (error) {
+      caughtError = error;
+    }
+
+    expect(caughtError).toBeInstanceOf(ExecutionValidationError);
+    expect(caughtError).toMatchObject({
+      message: "Workflow payload expired",
+      code: "PAYLOAD_EXPIRED",
+      httpStatus: 412,
+    });
+
+    expect(validator).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "workflow",
+        workflowId: "validated-workflow",
+        workflowName: "Validated Workflow",
+        input: { value: "test" },
+        executionId: expect.any(String),
+        timestamp: expect.any(Date),
+      }),
+    );
+    expect(stepExecute).not.toHaveBeenCalled();
   });
 
   it("should persist workflowState across steps", async () => {
