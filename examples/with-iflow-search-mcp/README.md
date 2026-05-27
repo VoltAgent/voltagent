@@ -84,6 +84,13 @@ The three tools below come straight from `@iflow-ai/search-mcp`; the agent recei
 ## How the Wiring Works
 
 ```ts
+const iflowApiKey = process.env.IFLOW_API_KEY;
+if (!iflowApiKey) {
+  throw new Error(
+    "IFLOW_API_KEY is required. Copy .env.example to .env and set your iFlow API key."
+  );
+}
+
 const mcpConfig = new MCPConfiguration({
   servers: {
     "iflow-search": {
@@ -91,7 +98,7 @@ const mcpConfig = new MCPConfiguration({
       command: "npx",
       args: ["-y", "@iflow-ai/search-mcp"],
       env: {
-        IFLOW_API_KEY: process.env.IFLOW_API_KEY ?? "",
+        IFLOW_API_KEY: iflowApiKey,
         IFLOW_MCP_CLIENT: "voltagent",
       },
     },
@@ -108,7 +115,7 @@ Setting `IFLOW_MCP_CLIENT=voltagent` lets iFlow's analytics distinguish traffic 
 ## Security
 
 - **Do not commit your `.env`.** The populated file contains a live `IFLOW_API_KEY` (and `OPENAI_API_KEY`). The `.gitignore` shipped with this example already excludes it; keep it that way.
-- The MCP server process reads `IFLOW_API_KEY` from its own environment only. It never touches the filesystem and never reads `~/.npmrc`, dotfiles, or keychains.
+- The MCP server process receives `IFLOW_API_KEY` only through environment variables that this example forwards. Because the example starts the server via `npx`, npm itself may load its normal configuration (user `~/.npmrc`, project `.npmrc`, environment overrides) before executing the package — so do not store iFlow API keys in npm config or committed dotfiles. The iFlow MCP server's own code only reads `IFLOW_API_KEY` / `IFLOW_MCP_CLIENT` from its `process.env`.
 - Tool results contain untrusted web content. The agent instructions tell the model to treat them as data only and never to follow embedded instructions — preserve that wording when you adapt this example.
 - Recommended starting point: leave the agent's auto-approve / auto-execute settings off until you have verified the wiring end-to-end with a known-safe query. iFlow Search makes outbound HTTPS calls on every tool invocation.
 

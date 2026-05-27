@@ -7,6 +7,13 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+const iflowApiKey = process.env.IFLOW_API_KEY;
+if (!iflowApiKey) {
+  throw new Error(
+    "IFLOW_API_KEY is required. Copy .env.example to .env and set your iFlow API key (get one at https://platform.iflow.cn).",
+  );
+}
+
 const mcpConfig = new MCPConfiguration({
   servers: {
     "iflow-search": {
@@ -14,7 +21,7 @@ const mcpConfig = new MCPConfiguration({
       command: "npx",
       args: ["-y", "@iflow-ai/search-mcp"],
       env: {
-        IFLOW_API_KEY: process.env.IFLOW_API_KEY ?? "",
+        IFLOW_API_KEY: iflowApiKey,
         IFLOW_MCP_CLIENT: "voltagent",
       },
     },
