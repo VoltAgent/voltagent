@@ -356,6 +356,18 @@ describe("workflow stream attach handler", () => {
       expect(controller[method]).not.toHaveBeenCalled();
       expect(deps.workflowRegistry.activeExecutions?.has(executionId)).toBe(true);
 
+      const missingRouteResponse = await handler(
+        executionId,
+        { reason: "missing route id" } as any,
+        deps,
+        logger,
+      );
+
+      expect(missingRouteResponse.success).toBe(false);
+      expect((missingRouteResponse as ErrorResponse).error).toContain(error);
+      expect(controller[method]).not.toHaveBeenCalled();
+      expect(deps.workflowRegistry.activeExecutions?.has(executionId)).toBe(true);
+
       const correctRouteResponse = await handler(
         executionId,
         { __workflowId: "wf-1", reason: "correct route" },

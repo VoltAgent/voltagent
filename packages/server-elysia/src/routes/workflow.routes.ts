@@ -1,6 +1,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  createWorkflowControlRequestBody,
   handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleExecuteWorkflow,
@@ -287,8 +288,12 @@ export function registerWorkflowRoutes(
   app.post(
     "/workflows/:id/executions/:executionId/suspend",
     async ({ params, body, set }) => {
-      (body as Record<string, unknown>).__workflowId = params.id;
-      const response = await handleSuspendWorkflow(params.executionId, body, deps, logger);
+      const response = await handleSuspendWorkflow(
+        params.executionId,
+        createWorkflowControlRequestBody(body, params.id),
+        deps,
+        logger,
+      );
       if (!response.success) {
         const errorMessage = response.error || "";
         set.status = errorMessage.includes("not found")
@@ -321,8 +326,12 @@ export function registerWorkflowRoutes(
   app.post(
     "/workflows/:id/executions/:executionId/cancel",
     async ({ params, body, set }) => {
-      (body as Record<string, unknown>).__workflowId = params.id;
-      const response = await handleCancelWorkflow(params.executionId, body, deps, logger);
+      const response = await handleCancelWorkflow(
+        params.executionId,
+        createWorkflowControlRequestBody(body, params.id),
+        deps,
+        logger,
+      );
       if (!response.success) {
         const errorMessage = response.error || "";
         set.status = errorMessage.includes("not found")

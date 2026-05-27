@@ -2,6 +2,7 @@ import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
   UPDATE_ROUTES,
+  createWorkflowControlRequestBody,
   handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleChatStream,
@@ -412,8 +413,7 @@ export function registerWorkflowRoutes(
     if (!executionId) {
       throw new Error("Missing execution id parameter");
     }
-    const body = await c.req.json();
-    body.__workflowId = c.req.param("id");
+    const body = createWorkflowControlRequestBody(await c.req.json(), c.req.param("id"));
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
@@ -427,8 +427,7 @@ export function registerWorkflowRoutes(
     if (!executionId) {
       throw new Error("Missing execution id parameter");
     }
-    const body = await c.req.json();
-    body.__workflowId = c.req.param("id");
+    const body = createWorkflowControlRequestBody(await c.req.json(), c.req.param("id"));
     const response = await handleCancelWorkflow(executionId, body, deps, logger);
     if (!response.success) {
       const errorMessage = response.error || "";

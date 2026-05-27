@@ -1,6 +1,6 @@
 import type { ServerProviderDeps, WorkflowStateEntry } from "@voltagent/core";
 import { describe, expect, it, vi } from "vitest";
-import { handleListWorkflowRuns } from "./workflow.handlers";
+import { createWorkflowControlRequestBody, handleListWorkflowRuns } from "./workflow.handlers";
 
 function createWorkflowState(
   id: string,
@@ -188,5 +188,17 @@ describe("handleListWorkflowRuns", () => {
         metadata: undefined,
       }),
     );
+  });
+});
+
+describe("createWorkflowControlRequestBody", () => {
+  it("rejects primitive JSON bodies and annotates object bodies with the route workflow id", () => {
+    expect(createWorkflowControlRequestBody("invalid", "wf-1")).toBeUndefined();
+    expect(createWorkflowControlRequestBody(1, "wf-1")).toBeUndefined();
+    expect(createWorkflowControlRequestBody(["invalid"], "wf-1")).toBeUndefined();
+    expect(createWorkflowControlRequestBody({ reason: "pause" }, "wf-1")).toEqual({
+      __workflowId: "wf-1",
+      reason: "pause",
+    });
   });
 });
