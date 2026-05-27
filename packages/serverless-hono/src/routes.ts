@@ -27,6 +27,7 @@ import {
   A2A_ROUTES,
   AGENT_ROUTES,
   MEMORY_ROUTES,
+  type MemoryAuthenticatedUser,
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
   TOOL_ROUTES,
@@ -126,6 +127,13 @@ function parseDate(value?: string): Date | undefined {
   }
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function getAuthenticatedUser(c: { get?: (key: string) => unknown }):
+  | MemoryAuthenticatedUser
+  | undefined {
+  const user = c.get?.("authenticatedUser");
+  return user && typeof user === "object" ? (user as MemoryAuthenticatedUser) : undefined;
 }
 
 type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
@@ -672,6 +680,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
       agentId: query.agentId,
       resourceId: query.resourceId,
       userId: query.userId,
+      authenticatedUser: getAuthenticatedUser(c),
       limit: parseNumber(query.limit),
       offset: parseNumber(query.offset),
       orderBy: query.orderBy as "created_at" | "updated_at" | "title" | undefined,
@@ -685,6 +694,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const query = c.req.query();
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -699,6 +709,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
       after: parseDate(query.after),
       roles: query.roles ? query.roles.split(",") : undefined,
       userId: query.userId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -710,6 +721,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
       agentId: query.agentId,
       scope: query.scope === "user" ? "user" : "conversation",
       userId: query.userId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -723,6 +735,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleSaveMemoryMessages(deps, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -736,6 +749,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleCreateMemoryConversation(deps, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -750,6 +764,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -759,6 +774,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const query = c.req.query();
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -773,6 +789,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleCloneMemoryConversation(deps, conversationId, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -787,6 +804,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleUpdateMemoryWorkingMemory(deps, conversationId, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -800,6 +818,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
     const response = await handleDeleteMemoryMessages(deps, {
       ...body,
       agentId: (body.agentId as string | undefined) ?? query.agentId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -813,6 +832,7 @@ export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger
       threshold: parseFloatValue(query.threshold),
       conversationId: query.conversationId,
       userId: query.userId,
+      authenticatedUser: getAuthenticatedUser(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
