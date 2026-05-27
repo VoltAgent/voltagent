@@ -532,6 +532,7 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
+    (body as Record<string, unknown>).__workflowId = c.req.param("id");
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     if (response.success) {
       return c.json(response, 200);
@@ -551,6 +552,7 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
+    (body as Record<string, unknown>).__workflowId = c.req.param("id");
     const response = await handleCancelWorkflow(executionId, body, deps, logger);
     if (response.success) {
       return c.json(response, 200);

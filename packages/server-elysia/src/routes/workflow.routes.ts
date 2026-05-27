@@ -287,6 +287,7 @@ export function registerWorkflowRoutes(
   app.post(
     "/workflows/:id/executions/:executionId/suspend",
     async ({ params, body, set }) => {
+      (body as Record<string, unknown>).__workflowId = params.id;
       const response = await handleSuspendWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
         const errorMessage = response.error || "";
@@ -320,6 +321,7 @@ export function registerWorkflowRoutes(
   app.post(
     "/workflows/:id/executions/:executionId/cancel",
     async ({ params, body, set }) => {
+      (body as Record<string, unknown>).__workflowId = params.id;
       const response = await handleCancelWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
         const errorMessage = response.error || "";

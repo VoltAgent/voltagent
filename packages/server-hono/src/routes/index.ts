@@ -413,6 +413,7 @@ export function registerWorkflowRoutes(
       throw new Error("Missing execution id parameter");
     }
     const body = await c.req.json();
+    body.__workflowId = c.req.param("id");
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
@@ -427,6 +428,7 @@ export function registerWorkflowRoutes(
       throw new Error("Missing execution id parameter");
     }
     const body = await c.req.json();
+    body.__workflowId = c.req.param("id");
     const response = await handleCancelWorkflow(executionId, body, deps, logger);
     if (!response.success) {
       const errorMessage = response.error || "";

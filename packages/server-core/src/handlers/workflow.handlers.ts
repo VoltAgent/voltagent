@@ -630,6 +630,22 @@ export async function handleAttachWorkflowStream(
   }
 }
 
+async function isWorkflowExecutionOwnedByRoute(
+  body: any,
+  executionId: string,
+  deps: ServerProviderDeps,
+) {
+  const workflowId = body?.__workflowId;
+  return (
+    typeof workflowId !== "string" ||
+    (
+      await deps.workflowRegistry
+        .getWorkflow(workflowId)
+        ?.workflow.memory.getWorkflowState(executionId)
+    )?.workflowId === workflowId
+  );
+}
+
 /**
  * Handler for suspending a workflow
  * Returns suspension result
@@ -647,6 +663,13 @@ export async function handleSuspendWorkflow(
       return {
         success: false,
         error: "Workflow suspension not supported",
+      };
+    }
+
+    if (!(await isWorkflowExecutionOwnedByRoute(body, executionId, deps))) {
+      return {
+        success: false,
+        error: "Workflow execution not found or already completed",
       };
     }
 
@@ -705,6 +728,13 @@ export async function handleCancelWorkflow(
       return {
         success: false,
         error: "Workflow cancellation not supported",
+      };
+    }
+
+    if (!(await isWorkflowExecutionOwnedByRoute(body, executionId, deps))) {
+      return {
+        success: false,
+        error: "No active execution found or workflow already completed",
       };
     }
 
