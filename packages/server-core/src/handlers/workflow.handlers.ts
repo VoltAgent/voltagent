@@ -630,13 +630,51 @@ export async function handleAttachWorkflowStream(
   }
 }
 
+async function isWorkflowExecutionOwnedByRoute(
+  body: WorkflowControlRequestBody | undefined,
+  executionId: string,
+  deps: ServerProviderDeps,
+) {
+  const workflowId = body?.__workflowId;
+  if (typeof workflowId !== "string" || workflowId.trim().length === 0) {
+    return false;
+  }
+
+  return (
+    (
+      await deps.workflowRegistry
+        .getWorkflow(workflowId)
+        ?.workflow.memory.getWorkflowState(executionId)
+    )?.workflowId === workflowId
+  );
+}
+
+export type WorkflowControlRequestBody = Record<string, unknown> & {
+  __workflowId: string;
+  reason?: string;
+};
+
+export function createWorkflowControlRequestBody(
+  body: unknown,
+  workflowId: string,
+): WorkflowControlRequestBody | undefined {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return undefined;
+  }
+
+  return {
+    ...(body as Record<string, unknown>),
+    __workflowId: workflowId,
+  };
+}
+
 /**
  * Handler for suspending a workflow
  * Returns suspension result
  */
 export async function handleSuspendWorkflow(
   executionId: string,
-  body: any,
+  body: WorkflowControlRequestBody | undefined,
   deps: ServerProviderDeps,
   logger: Logger,
 ): Promise<ApiResponse> {
@@ -647,6 +685,13 @@ export async function handleSuspendWorkflow(
       return {
         success: false,
         error: "Workflow suspension not supported",
+      };
+    }
+
+    if (!(await isWorkflowExecutionOwnedByRoute(body, executionId, deps))) {
+      return {
+        success: false,
+        error: "Workflow execution not found or already completed",
       };
     }
 
@@ -694,7 +739,7 @@ export async function handleSuspendWorkflow(
  */
 export async function handleCancelWorkflow(
   executionId: string,
-  body: any,
+  body: WorkflowControlRequestBody | undefined,
   deps: ServerProviderDeps,
   logger: Logger,
 ): Promise<ApiResponse> {
@@ -705,6 +750,13 @@ export async function handleCancelWorkflow(
       return {
         success: false,
         error: "Workflow cancellation not supported",
+      };
+    }
+
+    if (!(await isWorkflowExecutionOwnedByRoute(body, executionId, deps))) {
+      return {
+        success: false,
+        error: "No active execution found or workflow already completed",
       };
     }
 

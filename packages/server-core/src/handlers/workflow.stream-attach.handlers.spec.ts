@@ -3,7 +3,12 @@ import type { Logger } from "@voltagent/internal";
 import { describe, expect, it, vi } from "vitest";
 import type { ErrorResponse } from "../types/responses";
 import { isErrorResponse } from "../types/responses";
-import { handleAttachWorkflowStream, handleStreamWorkflow } from "./workflow.handlers";
+import {
+  handleAttachWorkflowStream,
+  handleCancelWorkflow,
+  handleStreamWorkflow,
+  handleSuspendWorkflow,
+} from "./workflow.handlers";
 
 type ParsedSSEEvent = {
   id?: string;
@@ -48,7 +53,7 @@ function createDeps(options?: {
   const stream = options?.streamFactory ? options.streamFactory : vi.fn();
 
   const workflow = {
-    createSuspendController: vi.fn().mockReturnValue(createSuspendController()),
+    createSuspendController: vi.fn().mockImplementation(createSuspendController),
     stream,
     memory: {
       getWorkflowState,
@@ -118,6 +123,65 @@ function assertErrorResponse(
   value: ReadableStream | ErrorResponse,
 ): asserts value is ErrorResponse {
   expect(isErrorResponse(value)).toBe(true);
+}
+
+async function startBlockingWorkflowExecution(action: string) {
+  const logger = createLogger();
+  let releaseStream = () => {};
+  const streamBlocked = new Promise<void>((resolve) => {
+    releaseStream = resolve;
+  });
+  const executionId = `exec-${action}-1`;
+  const { deps } = createDeps({
+    workflowState: {
+      id: executionId,
+      workflowId: "wf-1",
+      workflowName: "Workflow 1",
+      status: "running",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    streamFactory: () => ({
+      executionId,
+      [Symbol.asyncIterator]: async function* () {
+        yield {
+          type: "workflow-start",
+          executionId,
+          from: "Workflow 1",
+          status: "running",
+          timestamp: new Date().toISOString(),
+        };
+        await streamBlocked;
+      },
+      result: Promise.resolve({ ok: true }),
+      status: Promise.resolve("completed"),
+      endAt: Promise.resolve(new Date("2026-01-01T00:00:00.000Z")),
+    }),
+  });
+
+  const streamResponse = await handleStreamWorkflow("wf-1", { input: {} }, deps, logger);
+  expect(isErrorResponse(streamResponse)).toBe(false);
+
+  if (isErrorResponse(streamResponse)) {
+    throw new Error("Expected active workflow stream");
+  }
+
+  const streamReader = streamResponse.getReader();
+  await readSSEEvent(streamReader);
+
+  const controller = deps.workflowRegistry.activeExecutions?.get(executionId) as ReturnType<
+    typeof createSuspendController
+  >;
+  expect(controller).toBeDefined();
+
+  return {
+    controller,
+    deps,
+    executionId,
+    logger,
+    releaseStream,
+    streamReader,
+  };
 }
 
 describe("workflow stream attach handler", () => {
@@ -260,4 +324,63 @@ describe("workflow stream attach handler", () => {
     const attachedFinal = await readSSEEvent(attachedReader);
     expect(attachedFinal.data.type).toBe("workflow-result");
   });
+
+  it.each([
+    {
+      action: "suspend",
+      error: "not found",
+      handler: handleSuspendWorkflow,
+      method: "suspend",
+    },
+    {
+      action: "cancel",
+      error: "No active execution found",
+      handler: handleCancelWorkflow,
+      method: "cancel",
+    },
+  ])(
+    "rejects $action requests on the wrong workflow route",
+    async ({ action, error, handler, method }) => {
+      const { controller, deps, executionId, logger, releaseStream, streamReader } =
+        await startBlockingWorkflowExecution(action);
+
+      const wrongRouteResponse = await handler(
+        executionId,
+        { __workflowId: "wf-2", reason: "wrong route" },
+        deps,
+        logger,
+      );
+
+      expect(wrongRouteResponse.success).toBe(false);
+      expect((wrongRouteResponse as ErrorResponse).error).toContain(error);
+      expect(controller[method]).not.toHaveBeenCalled();
+      expect(deps.workflowRegistry.activeExecutions?.has(executionId)).toBe(true);
+
+      const missingRouteResponse = await handler(
+        executionId,
+        { reason: "missing route id" } as any,
+        deps,
+        logger,
+      );
+
+      expect(missingRouteResponse.success).toBe(false);
+      expect((missingRouteResponse as ErrorResponse).error).toContain(error);
+      expect(controller[method]).not.toHaveBeenCalled();
+      expect(deps.workflowRegistry.activeExecutions?.has(executionId)).toBe(true);
+
+      const correctRouteResponse = await handler(
+        executionId,
+        { __workflowId: "wf-1", reason: "correct route" },
+        deps,
+        logger,
+      );
+
+      expect(correctRouteResponse.success).toBe(true);
+      expect(controller[method]).toHaveBeenCalledWith("correct route");
+      expect(deps.workflowRegistry.activeExecutions?.has(executionId)).toBe(false);
+
+      releaseStream();
+      await streamReader.cancel();
+    },
+  );
 });

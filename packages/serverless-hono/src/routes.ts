@@ -33,6 +33,7 @@ import {
   type TriggerHttpRequestContext,
   UPDATE_ROUTES,
   WORKFLOW_ROUTES,
+  createWorkflowControlRequestBody,
   executeA2ARequest,
   executeTriggerHandler,
   getConversationMessagesHandler,
@@ -528,7 +529,7 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
 
   app.post(WORKFLOW_ROUTES.suspendWorkflow.path, async (c) => {
     const executionId = c.req.param("executionId");
-    const body = await readJsonBody(c, logger);
+    const body = createWorkflowControlRequestBody(await readJsonBody(c, logger), c.req.param("id"));
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
@@ -547,7 +548,7 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
 
   app.post(WORKFLOW_ROUTES.cancelWorkflow.path, async (c) => {
     const executionId = c.req.param("executionId");
-    const body = await readJsonBody(c, logger);
+    const body = createWorkflowControlRequestBody(await readJsonBody(c, logger), c.req.param("id"));
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
