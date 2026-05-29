@@ -250,8 +250,8 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 
 有关更多示例，请访问我们的[示例仓库](https://github.com/VoltAgent/voltagent/tree/main/examples)。
 
-- **[Airtable 代理](https://voltagent.dev/examples/guides/airtable-agent)** - 响应新记录并通过 VoltOps 操作将更新写回 Airtable。
-- **[Slack 代理](https://voltagent.dev/examples/guides/slack-agent)** - 响应频道消息并通过 VoltOps Slack 操作进行回复。
+- **[Airtable 代理](https://voltagent.dev/recipes-and-guides/airtable-agent)** - 响应新记录并通过 VoltOps 操作将更新写回 Airtable。
+- **[Slack 代理](https://voltagent.dev/recipes-and-guides/slack-agent)** - 响应频道消息并通过 VoltOps Slack 操作进行回复。
 - **[ChatGPT 应用与 VoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - 通过 MCP 部署 VoltAgent 并连接到 ChatGPT 应用。
 - **[WhatsApp 订单代理](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 构建一个 WhatsApp 聊天机器人，通过自然对话处理食品订单。([源代码](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp))
 - **[YouTube 转博客代理](https://voltagent.dev/examples/agents/youtube-blog-agent)** - 使用主管代理与 MCP 工具将 YouTube 视频转换为 Markdown 博客文章。([源代码](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog))
