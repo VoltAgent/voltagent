@@ -250,8 +250,8 @@ VoltOps 콘솔에서 직접 사전 구축된 `expenseApprovalWorkflow`를 테스
 
 더 많은 예제는 [예제 리포지토리](https://github.com/VoltAgent/voltagent/tree/main/examples)를 방문하세요.
 
-- **[Airtable 에이전트](https://voltagent.dev/examples/guides/airtable-agent)** - 새 레코드에 반응하고 VoltOps 액션으로 Airtable에 업데이트를 작성합니다.
-- **[Slack 에이전트](https://voltagent.dev/examples/guides/slack-agent)** - 채널 메시지에 응답하고 VoltOps Slack 액션으로 답장합니다.
+- **[Airtable 에이전트](https://voltagent.dev/recipes-and-guides/airtable-agent)** - 새 레코드에 반응하고 VoltOps 액션으로 Airtable에 업데이트를 작성합니다.
+- **[Slack 에이전트](https://voltagent.dev/recipes-and-guides/slack-agent)** - 채널 메시지에 응답하고 VoltOps Slack 액션으로 답장합니다.
 - **[ChatGPT 앱과 VoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - VoltAgent를 MCP를 통해 배포하고 ChatGPT 앱에 연결합니다.
 - **[WhatsApp 주문 에이전트](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 자연스러운 대화로 음식 주문을 처리하는 WhatsApp 챗봇을 구축합니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp))
 - **[YouTube to 블로그 에이전트](https://voltagent.dev/examples/agents/youtube-blog-agent)** - MCP 도구를 사용한 감독자 에이전트로 YouTube 비디오를 Markdown 블로그 게시물로 변환합니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog))

@@ -251,8 +251,8 @@ You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps c
 
 For more examples, visit our [examples repository](https://github.com/VoltAgent/voltagent/tree/main/examples).
 
-- **[Airtable Agent](https://voltagent.dev/examples/guides/airtable-agent)** - React to new records and write updates back into Airtable with VoltOps actions.
-- **[Slack Agent](https://voltagent.dev/examples/guides/slack-agent)** - Respond to channel messages and reply via VoltOps Slack actions.
+- **[Airtable Agent](https://voltagent.dev/recipes-and-guides/airtable-agent)** - React to new records and write updates back into Airtable with VoltOps actions.
+- **[Slack Agent](https://voltagent.dev/recipes-and-guides/slack-agent)** - Respond to channel messages and reply via VoltOps Slack actions.
 - **[ChatGPT App With VoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - Deploy VoltAgent over MCP and connect to ChatGPT Apps.
 - **[WhatsApp Order Agent](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - Build a WhatsApp chatbot that handles food orders through natural conversation. ([Source](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp))
 - **[YouTube to Blog Agent](https://voltagent.dev/examples/agents/youtube-blog-agent)** - Convert YouTube videos into Markdown blog posts using a supervisor agent with MCP tools. ([Source](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog))

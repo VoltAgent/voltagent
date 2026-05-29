@@ -250,8 +250,8 @@ VoltOpsコンソールから直接、事前構築された`expenseApprovalWorkfl
 
 より多くのサンプルについては、[サンプルリポジトリ](https://github.com/VoltAgent/voltagent/tree/main/examples)をご覧ください。
 
-- **[Airtableエージェント](https://voltagent.dev/examples/guides/airtable-agent)** - 新しいレコードに反応し、VoltOpsアクションでAirtableに更新を書き戻します。
-- **[Slackエージェント](https://voltagent.dev/examples/guides/slack-agent)** - チャンネルメッセージに応答し、VoltOps Slackアクションで返信します。
+- **[Airtableエージェント](https://voltagent.dev/recipes-and-guides/airtable-agent)** - 新しいレコードに反応し、VoltOpsアクションでAirtableに更新を書き戻します。
+- **[Slackエージェント](https://voltagent.dev/recipes-and-guides/slack-agent)** - チャンネルメッセージに応答し、VoltOps Slackアクションで返信します。
 - **[ChatGPTアプリとVoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - VoltAgentをMCP経由でデプロイし、ChatGPTアプリに接続します。
 - **[WhatsApp注文エージェント](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 自然な会話で食品注文を処理するWhatsAppチャットボットを構築します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)）
 - **[YouTubeからブログエージェント](https://voltagent.dev/examples/agents/youtube-blog-agent)** - MCPツールを使用したスーパーバイザーエージェントでYouTube動画をMarkdownブログ投稿に変換します。（[ソースコード](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)）
