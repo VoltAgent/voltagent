@@ -72,7 +72,7 @@ Framework-agnostic handler functions. Each handler receives a `ServerProviderDep
 - **Workflow handlers** — `handleGetWorkflows`, `handleGetWorkflow`, `handleExecuteWorkflow`, `handleStreamWorkflow`, `handleAttachWorkflowStream`, `handleSuspendWorkflow`, `handleResumeWorkflow`, `handleListWorkflowRuns`, `handleGetWorkflowState`
 - **Tool handlers** — `handleListTools`, `handleExecuteTool`
 - **Memory handlers** — `handleListMemoryConversations`, `handleCreateMemoryConversation`, `handleSaveMemoryMessages`, and more
-- **Observability handlers** — `handleGetTraces`, `handleGetTraceById`, `handleGetObservabilityStatus`, and more
+- **Observability handlers** — `getTracesHandler`, `getTraceByIdHandler`, `getObservabilityStatusHandler`, and more
 - **Log handlers** — `handleGetLogs`
 
 ### Authentication
@@ -89,8 +89,8 @@ import { jwtAuth, createJWT } from "@voltagent/server-core";
 
 ### MCP & A2A Protocol Helpers
 
-- `McpRegistry`, `buildMcpRoutePaths` — register and resolve MCP servers
-- `A2ARegistry`, `resolveAgentCard`, `executeA2ARequest` — Agent-to-Agent protocol support
+- `MCPServerRegistry`, `listMcpServers`, `lookupMcpServer` — register and resolve MCP servers
+- `A2AServerRegistry`, `listA2AServers`, `lookupA2AServer`, `executeA2ARequest` — Agent-to-Agent protocol support
 
 ### App Setup Utilities
 
