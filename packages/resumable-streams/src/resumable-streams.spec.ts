@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createMemoryResumableStreamActiveStore,
@@ -61,7 +62,7 @@ vi.mock("@voltagent/core", () => ({
   getGlobalVoltOpsClient: vi.fn(() => null),
   VoltOpsClient: vi.fn().mockImplementation(() => ({
     sendRequest: vi.fn(
-      async () => new Response(JSON.stringify({ streamId: "test-id" }), { status: 200 }),
+      async () => new Response(safeStringify({ streamId: "test-id" }), { status: 200 }),
     ),
   })),
 }));
@@ -253,6 +254,15 @@ describe("createResumableStreamVoltOpsStore", () => {
 // ---------------------------------------------------------------------------
 
 describe("createResumableStreamAdapter", () => {
+  beforeEach(() => {
+    vi.stubEnv("VOLTAGENT_PUBLIC_KEY", "");
+    vi.stubEnv("VOLTAGENT_SECRET_KEY", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("throws when no streamStore is provided", async () => {
     await expect(createResumableStreamAdapter({ streamStore: undefined as never })).rejects.toThrow(
       "Resumable stream store is required",
@@ -311,6 +321,15 @@ describe("createResumableStreamAdapter", () => {
 // ---------------------------------------------------------------------------
 
 describe("resolveResumableStreamAdapter", () => {
+  beforeEach(() => {
+    vi.stubEnv("VOLTAGENT_PUBLIC_KEY", "");
+    vi.stubEnv("VOLTAGENT_SECRET_KEY", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("returns undefined when no adapter is provided", () => {
     const result = resolveResumableStreamAdapter(undefined);
     expect(result).toBeUndefined();
