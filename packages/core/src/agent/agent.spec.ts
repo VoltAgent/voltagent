@@ -1008,6 +1008,82 @@ Use pandas and summarize findings.`.split("\n"),
       expect(text).toBe("Streamed response");
     });
 
+    it("does not eagerly materialize lazy stream result promises", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const getterAccesses = {
+        text: 0,
+        usage: 0,
+        finishReason: 0,
+      };
+
+      const mockStream = {
+        get text() {
+          getterAccesses.text += 1;
+          return Promise.resolve("Streamed response");
+        },
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        fullStream: toAsyncIterableStream(
+          convertArrayToReadableStream([
+            {
+              type: "text-delta" as const,
+              id: "text-1",
+              delta: "Streamed response",
+              text: "Streamed response",
+            },
+          ]),
+        ),
+        get usage() {
+          getterAccesses.usage += 1;
+          return Promise.resolve({
+            inputTokens: 10,
+            outputTokens: 5,
+            totalTokens: 15,
+          });
+        },
+        get finishReason() {
+          getterAccesses.finishReason += 1;
+          return Promise.resolve("stop");
+        },
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Stream this");
+
+      expect(getterAccesses).toEqual({
+        text: 0,
+        usage: 0,
+        finishReason: 0,
+      });
+
+      await expect(result.text).resolves.toBe("Streamed response");
+      await expect(result.usage).resolves.toEqual({
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+      });
+      await expect(result.finishReason).resolves.toBe("stop");
+      expect(getterAccesses).toEqual({
+        text: 1,
+        usage: 1,
+        finishReason: 1,
+      });
+    });
+
     it("pre-creates streaming message ids and forwards them to UI streams", async () => {
       const agent = new Agent({
         name: "TestAgent",
