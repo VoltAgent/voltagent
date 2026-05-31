@@ -1,7 +1,7 @@
 import path from "node:path";
 import { MCPConfiguration } from "@voltagent/core";
 
-export const biligWorkPaperPackage = "@bilig/workpaper@latest";
+export const biligWorkPaperPackage = "@bilig/workpaper@0.131.1";
 
 export function createBiligWorkPaperMcpConfig(
   workpaperPath = path.resolve("pricing.workpaper.json"),
