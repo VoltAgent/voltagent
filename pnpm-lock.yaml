@@ -4269,6 +4269,13 @@ importers:
       resumable-stream:
         specifier: ^2.2.10
         version: 2.2.10
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
 
   packages/sandbox-blaxel:
     dependencies:
