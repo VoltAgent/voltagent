@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
 jobs:
   test-packages:
     runs-on: ubuntu-latest
