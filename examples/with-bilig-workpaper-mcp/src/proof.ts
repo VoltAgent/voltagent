@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { safeStringify } from "@voltagent/internal/utils";
 import { biligWorkPaperPackage, createBiligWorkPaperMcpConfig } from "./mcp.js";
 
@@ -119,8 +122,8 @@ function cellValue(cell: JsonRecord, label: string): number {
   return requireNumber(taggedValue.value, `${label}.value.value`);
 }
 
-async function runProof() {
-  const mcpConfig = createBiligWorkPaperMcpConfig();
+async function runProofWithWorkpaper(workpaperPath: string) {
+  const mcpConfig = createBiligWorkPaperMcpConfig(workpaperPath);
   let tools: ExecutableTool[] = [];
   let afterValue = 0;
 
@@ -210,7 +213,7 @@ async function runProof() {
     await mcpConfig.disconnect();
   }
 
-  const restartedConfig = createBiligWorkPaperMcpConfig();
+  const restartedConfig = createBiligWorkPaperMcpConfig(workpaperPath);
   try {
     const restartedTools = (await restartedConfig.getTools()) as ExecutableTool[];
     const restarted = await callTool(restartedTools, "read_cell", {
@@ -243,6 +246,17 @@ async function runProof() {
     );
   } finally {
     await restartedConfig.disconnect();
+  }
+}
+
+async function runProof() {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "voltagent-bilig-workpaper-"));
+  const workpaperPath = path.join(tempDir, "pricing.workpaper.json");
+
+  try {
+    await runProofWithWorkpaper(workpaperPath);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
   }
 }
 

@@ -22,7 +22,7 @@ Expected result:
 ```json
 {
   "ok": true,
-  "package": "@bilig/workpaper@0.131.2",
+  "package": "@bilig/workpaper@0.154.0",
   "recalculated": {
     "summaryB3": 96000
   },
