@@ -42,6 +42,6 @@ You can override the base URL by setting `MINIMAX_BASE_URL`.
 
 | Model                  | Context   | Description           |
 | ---------------------- | --------- | --------------------- |
-| MiniMax-M3             | 1M tokens | Latest flagship model |
-| MiniMax-M2.7           | 1M tokens | Previous generation   |
-| MiniMax-M2.7-highspeed | 1M tokens | Optimized for speed   |
+| MiniMax-M3             | 512K context | Latest flagship model |
+| MiniMax-M2.7           | 192K context | Previous generation   |
+| MiniMax-M2.7-highspeed | 192K context | Optimized for speed   |
