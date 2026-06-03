@@ -1,4 +1,4 @@
-import type { UIMessage } from "ai";
+import { type UIMessage, convertToModelMessages } from "ai";
 import { describe, expect, it } from "vitest";
 
 import { sanitizeMessageForModel, sanitizeMessagesForModel } from "./message-normalizer";
@@ -91,6 +91,31 @@ describe("message-normalizer", () => {
       type: "json",
       value: { feelsLike: 24, unit: "C" },
     });
+  });
+
+  it("sanitizes legacy non-object tool inputs before model replay", async () => {
+    const malformedInput = `{"prompts":["Full body portrait of a 5'7" woman"]}`;
+    const message = baseMessage([
+      {
+        type: "tool-createImageFromText",
+        toolCallId: "call-malformed",
+        state: "output-available",
+        input: malformedInput,
+        output: { error: "invalid input" },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessagesForModel([message], { filterIncompleteToolCalls: false });
+
+    expect(sanitized).toHaveLength(1);
+    const toolPart = sanitized[0].parts[0] as any;
+    expect(toolPart.input).toEqual({});
+    expect((message.parts[0] as any).input).toBe(malformedInput);
+
+    const modelMessages = await convertToModelMessages(sanitized);
+    const assistantMessage = modelMessages.find((item) => item.role === "assistant");
+    const toolCall = (assistantMessage?.content as any[]).find((part) => part.type === "tool-call");
+    expect(toolCall.input).toEqual({});
   });
 
   it("preserves provider metadata on text parts", () => {

@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",
+    "repro:1336": "tsx --env-file=.env ./src/repro-1336.ts",
     "start": "node dist/index.js",
     "volt": "volt"
   },
