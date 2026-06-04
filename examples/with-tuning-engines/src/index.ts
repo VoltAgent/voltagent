@@ -37,12 +37,17 @@ new VoltAgent({
 });
 
 (async () => {
-  const result = await agent.generateText(
-    "Explain how policy, traces, and usage reporting help production AI agents.",
-  );
+  try {
+    const result = await agent.generateText(
+      "Explain how policy, traces, and usage reporting help production AI agents.",
+    );
 
-  logger.info("Tuning Engines example request completed", {
-    text: result.text,
-    usage: result.usage,
-  });
+    logger.info("Tuning Engines example request completed", {
+      text: result.text,
+      usage: result.usage,
+    });
+  } catch (error) {
+    logger.error("Tuning Engines example request failed", { error });
+    process.exitCode = 1;
+  }
 })();
