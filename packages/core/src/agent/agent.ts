@@ -2575,11 +2575,54 @@ export class Agent {
           return result.textStream;
         };
 
+        const stripProviderMetadataFromToolOutputChunk = (chunk: UIStreamChunk): UIStreamChunk => {
+          if (chunk === null || typeof chunk !== "object") {
+            return chunk;
+          }
+
+          const type = (chunk as { type?: unknown }).type;
+          if (type !== "tool-output-available" && type !== "tool-output-error") {
+            return chunk;
+          }
+
+          if (!("providerMetadata" in chunk)) {
+            return chunk;
+          }
+
+          const { providerMetadata: _providerMetadata, ...sanitizedChunk } = chunk as Record<
+            string,
+            unknown
+          >;
+          return sanitizedChunk as UIStreamChunk;
+        };
+
+        const stripProviderMetadataFromDirectUIStream = (
+          baseStream: ToUIMessageStreamReturn,
+        ): ToUIMessageStreamReturn => {
+          return createAsyncIterableReadable<UIStreamChunk>(async (controller) => {
+            const reader = (baseStream as ReadableStream<UIStreamChunk>).getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value !== undefined) {
+                  controller.enqueue(stripProviderMetadataFromToolOutputChunk(value));
+                }
+              }
+              controller.close();
+            } catch (error) {
+              controller.error(error);
+            } finally {
+              reader.releaseLock();
+            }
+          });
+        };
+
         const getGuardrailAwareUIStream = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
-            return result.toUIMessageStream(streamOptions);
+            return stripProviderMetadataFromDirectUIStream(result.toUIMessageStream(streamOptions));
           }
           return guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn;
         };

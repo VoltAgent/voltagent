@@ -1160,6 +1160,111 @@ Use pandas and summarize findings.`.split("\n"),
       expect(parts[1]).toEqual(expect.objectContaining({ type: "text-delta", id: "text-1" }));
     });
 
+    it("strips providerMetadata from direct UI stream tool output chunks", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const providerMetadata = {
+        anthropic: {
+          caller: {
+            type: "direct",
+          },
+        },
+      };
+
+      const mockStream = {
+        text: Promise.resolve("Streamed response"),
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed response",
+            text: "Streamed response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn().mockReturnValue(
+          toAsyncIterableStream(
+            convertArrayToReadableStream([
+              {
+                type: "tool-input-available",
+                toolCallId: "tool-1",
+                toolName: "lookup",
+                input: { query: "weather" },
+                providerMetadata,
+              },
+              {
+                type: "tool-output-available",
+                toolCallId: "tool-1",
+                output: { ok: true },
+                providerMetadata,
+              },
+              {
+                type: "tool-output-error",
+                toolCallId: "tool-2",
+                errorText: "failed",
+                providerMetadata,
+              },
+              {
+                type: "text-delta",
+                id: "text-1",
+                delta: "Done",
+                providerMetadata,
+              },
+            ]),
+          ),
+        ),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Stream this");
+      const uiChunks: any[] = [];
+      for await (const chunk of result.toUIMessageStream() as AsyncIterable<any>) {
+        uiChunks.push(chunk);
+      }
+
+      expect(uiChunks[0]).toEqual(
+        expect.objectContaining({
+          type: "tool-input-available",
+          providerMetadata,
+        }),
+      );
+      expect(uiChunks[1]).toEqual({
+        type: "tool-output-available",
+        toolCallId: "tool-1",
+        output: { ok: true },
+      });
+      expect(uiChunks[2]).toEqual({
+        type: "tool-output-error",
+        toolCallId: "tool-2",
+        errorText: "failed",
+      });
+      expect(uiChunks[3]).toEqual(
+        expect.objectContaining({
+          type: "text-delta",
+          providerMetadata,
+        }),
+      );
+    });
+
     it("uses last-step usage for finish events when provider is anthropic", async () => {
       const agent = new Agent({
         name: "TestAgent",
