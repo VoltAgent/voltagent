@@ -142,6 +142,49 @@ describe("convertResponseMessagesToUIMessages", () => {
     });
   });
 
+  it("sanitizes non-object tool call inputs when converting response messages", async () => {
+    const malformedInput = `{"prompts":["Full body portrait of a 5'7" woman"]}`;
+    const messages: (AssistantModelMessage | ToolModelMessage)[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-malformed",
+            toolName: "createImageFromText",
+            input: malformedInput,
+          } as any,
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "call-malformed",
+            toolName: "createImageFromText",
+            output: { error: "invalid input" },
+          },
+        ],
+      },
+    ];
+
+    const result = await convertResponseMessagesToUIMessages(messages);
+    const toolPart = result[0].parts[0] as any;
+
+    expect(toolPart).toMatchObject({
+      type: "tool-createImageFromText",
+      toolCallId: "call-malformed",
+      state: "output-available",
+      input: {},
+    });
+
+    const modelMessages = await convertToModelMessages(result);
+    const assistantMessage = modelMessages.find((message) => message.role === "assistant");
+    const toolCall = (assistantMessage?.content as any[]).find((part) => part.type === "tool-call");
+    expect(toolCall.input).toEqual({});
+  });
+
   it("should map tool approval requests to tool parts", async () => {
     const messages: AssistantModelMessage[] = [
       {
@@ -705,6 +748,31 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
       input: { query: "news" },
       output: { results: ["item"] },
       providerExecuted: true,
+    });
+  });
+
+  it("sanitizes non-object tool call inputs when converting model messages", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-string-input",
+            toolName: "createImageFromText",
+            input: `{"prompts":["Full body portrait of a 5'7" woman"]}`,
+          } as any,
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "tool-createImageFromText",
+      toolCallId: "call-string-input",
+      state: "input-available",
+      input: {},
     });
   });
 
