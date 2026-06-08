@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.7.7
+
+### Patch Changes
+
+- [#1337](https://github.com/VoltAgent/voltagent/pull/1337) [`685f8e4`](https://github.com/VoltAgent/voltagent/commit/685f8e4e7d484c712e35814c21e3f682afab2a1b) Thanks [@omeraplak](https://github.com/omeraplak)! - Sanitize tool call inputs before model replay so malformed or non-object values cannot break provider history conversion.
+
 ## 2.7.6
 
 ### Patch Changes
