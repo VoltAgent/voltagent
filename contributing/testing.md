@@ -1,12 +1,12 @@
 # Testing
 
-VoltAgent uses `vitest` for testing, with the naming convention of `*.spec.ts` for unit tests, and `*.spec-d.ts` for type tests.
+VoltAgent uses Vitest for testing, with `*.spec.ts` for runtime tests and `*.spec-d.ts` for type tests.
 
-## Overview
+## Quick Reference
 
-- **Framework**: vitest
-- **Test Files**: `*.spec.ts`
-- **Type Test Files**: `*.spec-d.ts`
+- **Framework**: Vitest
+- **Runtime test files**: `*.spec.ts`
+- **Type test files**: `*.spec-d.ts`
 - **Coverage**: V8 provider
 - **Environment**: Node.js
 
@@ -19,16 +19,16 @@ pnpm test:all
 # Run tests with coverage
 pnpm test:all:coverage
 
-# Run tests for specific package
-pnpm test --filter @voltagent/core
+# Run tests for a specific package
+pnpm --dir packages/core test
 
 # Run single test file
-cd packages/core && pnpm vitest run src/tool/index.spec.ts
+pnpm --dir packages/core test:single -- src/tool/index.spec.ts
 ```
 
 ## Writing Tests
 
-All tests are using the `vitest` framework, and use the format of `*.spec.ts` for unit tests, and `*.spec-d.ts` for type tests. Tests should be co-located with the code they are testing, using the same naming convention (i.e. `tool.spec.ts` is testing the `tool.ts` file).
+Tests should be co-located with the code they cover. Use matching names where possible, such as `tool.spec.ts` for `tool.ts`.
 
 ### Basic Structure
 
@@ -52,7 +52,7 @@ describe("yourFunction", () => {
 
 ### Type Tests
 
-Type tests are used to test the types of the codebase. They are located in the `*.spec-d.ts` files, and are used to test the types of the codebase.
+Type tests verify public inference and type compatibility. Add or update `*.spec-d.ts` files when changing exported types, generics, or overload behavior.
 
 ```typescript
 import { describe, expectTypeOf, it } from "vitest";
@@ -65,7 +65,7 @@ describe("YourType", () => {
 });
 ```
 
-[Type Test Documentation](https://vitest.dev/guide/testing-types.html
+[Type Test Documentation](https://vitest.dev/guide/testing-types.html)
 
 ### Mocking
 
@@ -148,3 +148,8 @@ describe("Tool", () => {
   });
 });
 ```
+
+## Related Docs
+
+- [Development tooling](./tooling.md)
+- [Linting and formatting](./linting.md)
