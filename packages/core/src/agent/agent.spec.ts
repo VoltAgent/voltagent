@@ -1265,6 +1265,73 @@ Use pandas and summarize findings.`.split("\n"),
       );
     });
 
+    it("propagates cancellation when stripping providerMetadata from direct UI stream chunks", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const cancelSpy = vi.fn();
+      const baseStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue({
+            type: "tool-output-available",
+            toolCallId: "tool-1",
+            output: { ok: true },
+            providerMetadata: { anthropic: { caller: { type: "direct" } } },
+          });
+        },
+        cancel: cancelSpy,
+      });
+
+      const mockStream = {
+        text: Promise.resolve("Streamed response"),
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed response",
+            text: "Streamed response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn().mockReturnValue(toAsyncIterableStream(baseStream)),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Stream this");
+      const reader = (result.toUIMessageStream() as ReadableStream<any>).getReader();
+
+      await expect(reader.read()).resolves.toEqual({
+        done: false,
+        value: {
+          type: "tool-output-available",
+          toolCallId: "tool-1",
+          output: { ok: true },
+        },
+      });
+
+      await reader.cancel("client disconnected");
+
+      expect(cancelSpy).toHaveBeenCalledWith("client disconnected");
+    });
+
     it("uses last-step usage for finish events when provider is anthropic", async () => {
       const agent = new Agent({
         name: "TestAgent",
