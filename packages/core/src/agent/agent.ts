@@ -2599,23 +2599,13 @@ export class Agent {
         const stripProviderMetadataFromDirectUIStream = (
           baseStream: ToUIMessageStreamReturn,
         ): ToUIMessageStreamReturn => {
-          return createAsyncIterableReadable<UIStreamChunk>(async (controller) => {
-            const reader = (baseStream as ReadableStream<UIStreamChunk>).getReader();
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                if (value !== undefined) {
-                  controller.enqueue(stripProviderMetadataFromToolOutputChunk(value));
-                }
-              }
-              controller.close();
-            } catch (error) {
-              controller.error(error);
-            } finally {
-              reader.releaseLock();
-            }
-          });
+          return (baseStream as ReadableStream<UIStreamChunk>).pipeThrough(
+            new TransformStream<UIStreamChunk, UIStreamChunk>({
+              transform(chunk, controller) {
+                controller.enqueue(stripProviderMetadataFromToolOutputChunk(chunk));
+              },
+            }),
+          ) as ToUIMessageStreamReturn;
         };
 
         const getGuardrailAwareUIStream = (
