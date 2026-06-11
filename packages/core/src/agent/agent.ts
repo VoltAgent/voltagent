@@ -2575,11 +2575,44 @@ export class Agent {
           return result.textStream;
         };
 
+        const stripProviderMetadataFromToolOutputChunk = (chunk: UIStreamChunk): UIStreamChunk => {
+          if (chunk === null || typeof chunk !== "object") {
+            return chunk;
+          }
+
+          const type = (chunk as { type?: unknown }).type;
+          if (type !== "tool-output-available" && type !== "tool-output-error") {
+            return chunk;
+          }
+
+          if (!("providerMetadata" in chunk)) {
+            return chunk;
+          }
+
+          const { providerMetadata: _providerMetadata, ...sanitizedChunk } = chunk as Record<
+            string,
+            unknown
+          >;
+          return sanitizedChunk as UIStreamChunk;
+        };
+
+        const stripProviderMetadataFromDirectUIStream = (
+          baseStream: ToUIMessageStreamReturn,
+        ): ToUIMessageStreamReturn => {
+          return (baseStream as ReadableStream<UIStreamChunk>).pipeThrough(
+            new TransformStream<UIStreamChunk, UIStreamChunk>({
+              transform(chunk, controller) {
+                controller.enqueue(stripProviderMetadataFromToolOutputChunk(chunk));
+              },
+            }),
+          ) as ToUIMessageStreamReturn;
+        };
+
         const getGuardrailAwareUIStream = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
-            return result.toUIMessageStream(streamOptions);
+            return stripProviderMetadataFromDirectUIStream(result.toUIMessageStream(streamOptions));
           }
           return guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn;
         };
