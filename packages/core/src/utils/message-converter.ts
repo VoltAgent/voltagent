@@ -6,6 +6,7 @@ import type { AssistantModelMessage, ModelMessage, ToolModelMessage } from "@ai-
 import type { FileUIPart, ReasoningUIPart, TextUIPart, ToolUIPart, UIMessage } from "ai";
 import { bytesToBase64 } from "./base64";
 import { randomUUID } from "./id";
+import { normalizeToolInputForModel } from "./tool-input";
 
 const hasOpenAIReasoningProviderOptions = (providerOptions: unknown): boolean => {
   if (!providerOptions || typeof providerOptions !== "object") {
@@ -112,7 +113,7 @@ export async function convertResponseMessagesToUIMessages(
               type: `tool-${contentPart.toolName}` as const,
               toolCallId: contentPart.toolCallId,
               state: "input-available" as const,
-              input: contentPart.input || {},
+              input: normalizeToolInputForModel(contentPart.input),
               ...(contentPart.providerOptions
                 ? { callProviderMetadata: contentPart.providerOptions }
                 : {}),
@@ -480,7 +481,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             type: `tool-${contentPart.toolName}` as const,
             toolCallId: contentPart.toolCallId,
             state: "input-available" as const,
-            input: contentPart.input || {},
+            input: normalizeToolInputForModel(contentPart.input),
             ...(contentPart.providerOptions
               ? { callProviderMetadata: contentPart.providerOptions as any }
               : {}),

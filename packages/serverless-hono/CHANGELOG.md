@@ -1,5 +1,16 @@
 # @voltagent/serverless-hono
 
+## 2.0.12
+
+### Patch Changes
+
+- [#1318](https://github.com/VoltAgent/voltagent/pull/1318) [`91abbb4`](https://github.com/VoltAgent/voltagent/commit/91abbb450312d92dc3dd690c0579b5f0325370d9) Thanks [@ruanchaves](https://github.com/ruanchaves)! - Validate workflow ownership before suspend and cancel control routes act on an execution.
+
+  Fixes #1316.
+
+- Updated dependencies [[`91abbb4`](https://github.com/VoltAgent/voltagent/commit/91abbb450312d92dc3dd690c0579b5f0325370d9)]:
+  - @voltagent/server-core@2.1.18
+
 ## 2.0.11
 
 ### Patch Changes

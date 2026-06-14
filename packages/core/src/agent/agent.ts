@@ -1961,7 +1961,7 @@ export class Agent {
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
 
         let guardrailPipeline: GuardrailPipeline | null = null;
-        let sanitizedTextPromise!: PromiseLike<string>;
+        let sanitizedTextPromise: Promise<string> | undefined;
         const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
           oc,
           operation: "streamText",
@@ -2190,7 +2190,7 @@ export class Agent {
                     finalText = bailedResult.response;
                   }
                 } else if (guardrailPipeline) {
-                  finalText = await sanitizedTextPromise;
+                  finalText = await getSanitizedTextPromise();
                 } else if (guardrailSet.output.length > 0) {
                   finalText = await executeOutputGuardrails({
                     output: finalResult.text,
@@ -2512,31 +2512,28 @@ export class Agent {
           ? createBaseFullStream()
           : undefined;
 
-        if (guardrailStreamingEnabled) {
-          guardrailPipeline = createGuardrailPipeline(
-            baseFullStreamForPipeline as AsyncIterable<VoltAgentTextStreamPart>,
-            result.textStream,
-            guardrailContext,
-          );
-          sanitizedTextPromise = guardrailPipeline.finalizePromise.then(async () => {
-            const sanitized = guardrailPipeline?.runner?.getSanitizedText();
-            if (typeof sanitized === "string" && sanitized.length > 0) {
-              return sanitized;
-            }
-            // Wait for AI SDK text first (stream must complete)
-            const aiSdkText = await result.text;
+        const createSanitizedTextPromise = (): Promise<string> => {
+          if (guardrailPipeline) {
+            return guardrailPipeline.finalizePromise.then(async () => {
+              const sanitized = guardrailPipeline?.runner?.getSanitizedText();
+              if (typeof sanitized === "string" && sanitized.length > 0) {
+                return sanitized;
+              }
+              // Wait for AI SDK text first (stream must complete)
+              const aiSdkText = await result.text;
 
-            // NOW check for bailed result (set during stream processing)
-            const bailedResult = oc.systemContext.get("bailedResult") as
-              | { agentName: string; response: string }
-              | undefined;
-            return bailedResult?.response || aiSdkText;
-          });
-        } else {
+              // NOW check for bailed result (set during stream processing)
+              const bailedResult = oc.systemContext.get("bailedResult") as
+                | { agentName: string; response: string }
+                | undefined;
+              return bailedResult?.response || aiSdkText;
+            });
+          }
+
           // Wrap result.text with a bail check
           // IMPORTANT: Wait for AI SDK text first (stream must complete/abort)
           // This ensures createStepHandler has processed tool results and set bailedResult
-          sanitizedTextPromise = result.text.then((aiSdkText) => {
+          return Promise.resolve(result.text).then((aiSdkText) => {
             // NOW check if bailed (set by createStepHandler during stream processing)
             const bailedResult = oc.systemContext.get("bailedResult") as
               | { agentName: string; response: string }
@@ -2544,6 +2541,23 @@ export class Agent {
 
             // Return bailed subagent's result instead of supervisor's (if bailed)
             return bailedResult?.response || aiSdkText;
+          });
+        };
+
+        const getSanitizedTextPromise = (): Promise<string> => {
+          sanitizedTextPromise ??= createSanitizedTextPromise();
+          return sanitizedTextPromise;
+        };
+
+        if (guardrailStreamingEnabled) {
+          guardrailPipeline = createGuardrailPipeline(
+            baseFullStreamForPipeline as AsyncIterable<VoltAgentTextStreamPart>,
+            result.textStream,
+            guardrailContext,
+          );
+          void guardrailPipeline.finalizePromise.catch(() => {
+            // The guarded streams surface this error to their consumers. Keep the
+            // internal finalizer promise from leaking when text is never requested.
           });
         }
 
@@ -2676,15 +2690,21 @@ export class Agent {
 
         // Create a wrapper that includes context and delegates to the original result
         const resultWithContext: StreamTextResultWithContext = {
-          text: sanitizedTextPromise,
+          get text() {
+            return getSanitizedTextPromise();
+          },
           get textStream() {
             return getGuardrailAwareTextStream();
           },
           get fullStream() {
             return getGuardrailAwareFullStream();
           },
-          usage: result.usage,
-          finishReason: result.finishReason,
+          get usage() {
+            return result.usage;
+          },
+          get finishReason() {
+            return result.finishReason;
+          },
           get partialOutputStream() {
             return result.partialOutputStream;
           },

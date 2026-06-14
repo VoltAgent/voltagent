@@ -1,6 +1,7 @@
 import { safeStringify } from "@voltagent/internal";
 import type { UIMessage, UIMessagePart } from "ai";
 
+import { normalizeToolInputForModel } from "../utils/tool-input";
 import {
   hasOpenAIItemIdForPart as hasOpenAIItemIdForPartBase,
   isObject,
@@ -329,7 +330,9 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
 
   if (part.toolCallId) normalized.toolCallId = part.toolCallId;
   if (part.state) normalized.state = part.state;
-  if (part.input !== undefined) normalized.input = safeClone(part.input);
+  if (part.input !== undefined || isToolInputState(part.state) || isToolOutputState(part.state)) {
+    normalized.input = safeClone(normalizeToolInputForModel(part.input));
+  }
   if (part.output !== undefined) {
     normalized.output = safeClone(normalizeToolOutputPayload(part.output));
   }
