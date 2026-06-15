@@ -34,7 +34,7 @@ Then set your keys:
 ```env
 OPENAI_API_KEY=your_actual_openai_api_key
 BOCHA_SEARCH_API_KEY=your_actual_bocha_search_api_key
-BOCHA_SEARCH_API_URL=https://api.bochaai.com/v1/web-search?utm_source=voltagent
+BOCHA_SEARCH_API_URL=https://api.bochaai.com/v1/web-search
 ```
 
 `BOCHA_SEARCH_API_URL` is optional. The example defaults to the URL shown above.

@@ -1,5 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildBochaSearchRequest, mapBochaSearchResponse } from "./bocha";
+import { bochaSearchTool } from "./tools";
+
+const originalApiKey = process.env.BOCHA_SEARCH_API_KEY;
+const originalApiUrl = process.env.BOCHA_SEARCH_API_URL;
+
+afterEach(() => {
+  if (originalApiKey === undefined) {
+    Reflect.deleteProperty(process.env, "BOCHA_SEARCH_API_KEY");
+  } else {
+    process.env.BOCHA_SEARCH_API_KEY = originalApiKey;
+  }
+
+  if (originalApiUrl === undefined) {
+    Reflect.deleteProperty(process.env, "BOCHA_SEARCH_API_URL");
+  } else {
+    process.env.BOCHA_SEARCH_API_URL = originalApiUrl;
+  }
+
+  vi.restoreAllMocks();
+});
 
 describe("Bocha search tool helpers", () => {
   it("builds a conservative Bocha search request", () => {
@@ -59,5 +79,39 @@ describe("Bocha search tool helpers", () => {
         publishedDate: null,
       },
     ]);
+  });
+
+  it("uses the Bocha web search endpoint by default", async () => {
+    process.env.BOCHA_SEARCH_API_KEY = "test-key";
+    Reflect.deleteProperty(process.env, "BOCHA_SEARCH_API_URL");
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            webPages: {
+              value: [
+                {
+                  name: "Bocha result",
+                  url: "https://example.com/result",
+                  summary: "Result summary.",
+                },
+              ],
+            },
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    expect(bochaSearchTool.execute).toBeDefined();
+    await bochaSearchTool.execute?.({ query: "agent search", count: 1 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.bochaai.com/v1/web-search",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
   });
 });

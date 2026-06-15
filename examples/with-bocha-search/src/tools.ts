@@ -3,7 +3,7 @@ import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import { type BochaSearchResponse, buildBochaSearchRequest, mapBochaSearchResponse } from "./bocha";
 
-const DEFAULT_BOCHA_SEARCH_API_URL = "https://api.bochaai.com/v1/web-search?utm_source=voltagent";
+const DEFAULT_BOCHA_SEARCH_API_URL = "https://api.bochaai.com/v1/web-search";
 const MAX_RESULT_COUNT = 10;
 
 const bochaSearchResultSchema = z.object({
