@@ -17,13 +17,14 @@ import {
 import { createApp } from "./app-factory";
 import type { HonoServerConfig } from "./types";
 import { extractCustomEndpoints } from "./utils/custom-endpoints";
+import type { OpenAPIHonoType } from "./zod-openapi-compat";
 
 /**
  * Hono server provider class
  */
 export class HonoServerProvider extends BaseServerProvider {
   private honoConfig: HonoServerConfig;
-  private app?: any; // Store app instance to extract custom endpoints
+  private app?: OpenAPIHonoType;
 
   constructor(deps: ServerProviderDeps, config: HonoServerConfig = {}) {
     super(deps, config);
