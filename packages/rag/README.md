@@ -277,11 +277,22 @@ type Chunk = {
 Pass a custom tokenizer to any chunker via constructor or options:
 
 ```typescript
+import { TokenChunker } from "@voltagent/rag";
 import type { Tokenizer } from "@voltagent/rag";
 
 const myTokenizer: Tokenizer = {
-  tokenize: (text) => text.split(/\s+/).map((v, i) => ({ value: v, start: i, end: i + v.length })),
-  countTokens: (text) => text.split(/\s+/).length,
+  tokenize: (text) => {
+    const tokens = [];
+    let pos = 0;
+    for (const part of text.split(/(\s+)/)) {
+      if (/\S/.test(part)) {
+        tokens.push({ value: part, start: pos, end: pos + part.length });
+      }
+      pos += part.length;
+    }
+    return tokens;
+  },
+  countTokens: (text) => text.split(/\s+/).filter(Boolean).length,
 };
 
 const chunker = new TokenChunker(myTokenizer);
