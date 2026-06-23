@@ -36,10 +36,6 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 </div>
 
-<h3 align="center">
-⭐ Like what we're doing? Give us a star ⬆️
-</h3>
-
 VoltAgent is an end-to-end AI Agent Engineering Platform that consists of two main parts:
 
 - **[Open-Source TypeScript Framework](#core-framework)** – Memory, RAG, Guardrails, Tools, MCP, Voice, Workflow, and more.
@@ -69,6 +65,12 @@ With the open-source framework, you can build intelligent agents with memory, to
 You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent for AI-powered coding assistants like Claude, Cursor, or Windsurf. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly while you code.
 
 📖 [How to setup MCP docs server](https://voltagent.dev/docs/getting-started/mcp-docs-server/)
+
+## 💛 Sponsors
+
+|                                                                                                                                                                                                                                                                                             |                                                                                                                                                                                                                                      |
+| :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a href="https://www.testmuai.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-white.png"><img alt="TestMu AI" src="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-black.png" width="425"></picture></a> | [TestMu AI (formerly LambdaTest)](https://www.testmuai.com) is an AI-native testing cloud platform built for modern engineering teams. Covering everything from autonomous test creation and fast execution to testing AI agents, chatbots and voice assistants. |
 
 ## ⚡ Quick Start
 
