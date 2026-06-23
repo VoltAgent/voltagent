@@ -11,6 +11,22 @@ import { createAsyncIterableReadable } from "./guardrail-stream";
 const DEFAULT_INPUT_GUARDRAIL_BLOCK_MESSAGE = "Input blocked by guardrail.";
 export const INPUT_GUARDRAIL_BLOCKED_FULL_STREAM_PART_TYPE = "input-guardrail-blocked" as const;
 export const INPUT_GUARDRAIL_BLOCKED_UI_EVENT_TYPE = "data-input-guardrail-blocked" as const;
+const ZERO_USAGE = {
+  inputTokens: 0,
+  outputTokens: 0,
+  totalTokens: 0,
+} as const;
+
+type InputGuardrailBlockedUIStreamChunk =
+  | { type: "start"; messageId?: string }
+  | {
+      type: typeof INPUT_GUARDRAIL_BLOCKED_UI_EVENT_TYPE;
+      data: InputGuardrailBlockedEventData;
+    }
+  | { type: "text-start"; id: string }
+  | { type: "text-delta"; id: string; delta: string }
+  | { type: "text-end"; id: string }
+  | { type: "finish"; finishReason: "error" };
 
 export type SpeculativeInputGuardrailDecision =
   | { status: "passed" }
@@ -249,13 +265,14 @@ export function createInputGuardrailBlockedFullStreamParts(
     {
       type: "text-delta",
       id: textId,
-      delta: data.message,
       text: data.message,
     } as VoltAgentTextStreamPart,
     { type: "text-end", id: textId } as VoltAgentTextStreamPart,
     {
       type: "finish",
       finishReason: "error",
+      rawFinishReason: "guardrail_input_blocked",
+      totalUsage: ZERO_USAGE,
     } as VoltAgentTextStreamPart,
   ];
 }
@@ -263,7 +280,7 @@ export function createInputGuardrailBlockedFullStreamParts(
 export function createInputGuardrailBlockedUIStreamChunks(
   data: InputGuardrailBlockedEventData,
   responseMessageId?: string,
-): UIMessageChunk[] {
+): InputGuardrailBlockedUIStreamChunk[] {
   const textId = "input-guardrail-blocked";
   return [
     {
@@ -278,7 +295,7 @@ export function createInputGuardrailBlockedUIStreamChunks(
     { type: "text-delta", id: textId, delta: data.message },
     { type: "text-end", id: textId },
     { type: "finish", finishReason: "error" },
-  ];
+  ] satisfies UIMessageChunk[];
 }
 
 function createInputGuardrailBlockedEventData(

@@ -13,7 +13,7 @@ import type {
 } from "../agent/providers/base/types";
 import type { PrepareStep, StopWhen } from "../ai-types";
 
-import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
+import type { LanguageModel, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
@@ -317,10 +317,9 @@ export type ProviderOptions = LegacyProviderCallOptions & {
  * Configuration for supervisor agents that have subagents
  */
 /**
- * StreamEventType derived from AI SDK's TextStreamPart
- * Includes all event types from AI SDK
+ * StreamEventType derived from VoltAgent's extended AI SDK stream parts.
  */
-export type StreamEventType = TextStreamPart<any>["type"];
+export type StreamEventType = VoltAgentTextStreamPart<any>["type"];
 
 /**
  * Configuration for forwarding events from subagents to the parent agent's stream
@@ -328,14 +327,15 @@ export type StreamEventType = TextStreamPart<any>["type"];
 export type FullStreamEventForwardingConfig = {
   /**
    * Array of event types to forward from subagents
-   * Uses AI SDK's TextStreamPart types:
+   * Uses VoltAgent's extended AI SDK stream part types:
    * - Text: 'text-start', 'text-end', 'text-delta'
    * - Reasoning: 'reasoning-start', 'reasoning-end', 'reasoning-delta'
    * - Tool: 'tool-input-start', 'tool-input-end', 'tool-input-delta',
    *         'tool-call', 'tool-result', 'tool-error'
+   * - Guardrails: 'input-guardrail-blocked'
    * - Other: 'source', 'file', 'start-step', 'finish-step',
    *          'start', 'finish', 'abort', 'error', 'raw'
-   * @default ['tool-call', 'tool-result']
+   * @default ['tool-call', 'tool-result', 'input-guardrail-blocked']
    * @example ['tool-call', 'tool-result', 'text-delta']
    */
   types?: StreamEventType[];
@@ -363,7 +363,7 @@ export type SupervisorConfig = {
   /**
    * Configuration for forwarding events from subagents to the parent agent's full stream
    * Controls which event types are forwarded
-   * @default { types: ['tool-call', 'tool-result'] }
+   * @default { types: ['tool-call', 'tool-result', 'input-guardrail-blocked'] }
    */
   fullStreamEventForwarding?: FullStreamEventForwardingConfig;
 

@@ -2,7 +2,7 @@
  * Stream transformer that adds metadata to all parts in a UI message stream
  */
 
-import type { TextStreamPart } from "ai";
+import type { VoltAgentTextStreamPart } from "./types";
 
 /**
  * Type for AI SDK's AsyncIterableStream (both AsyncIterable and ReadableStream)
@@ -10,9 +10,9 @@ import type { TextStreamPart } from "ai";
 export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
 
 /**
- * Stream event type from AI SDK
+ * Stream event type from VoltAgent's extended AI SDK stream parts
  */
-export type StreamEventType = TextStreamPart<any>["type"];
+export type StreamEventType = VoltAgentTextStreamPart<any>["type"];
 
 /**
  * Metadata to be added to stream parts

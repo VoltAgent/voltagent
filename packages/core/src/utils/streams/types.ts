@@ -1,16 +1,15 @@
-import type { TextStreamPart } from "ai";
+import type { VoltAgentTextStreamPart } from "../../agent/subagent/types";
 
 /**
- * StreamEventType derived from AI SDK's TextStreamPart
- * This gives us all event types from AI SDK
+ * StreamEventType derived from VoltAgent's extended AI SDK stream parts.
  */
-export type StreamEventType = TextStreamPart<any>["type"];
+export type StreamEventType = VoltAgentTextStreamPart<any>["type"];
 
 /**
- * StreamEvent is an extended version of TextStreamPart that includes subagent metadata
+ * StreamEvent is an extended version of VoltAgentTextStreamPart that includes subagent metadata
  * for event forwarding in supervisor agents
  */
-export type StreamEvent = TextStreamPart<any> & {
+export type StreamEvent = VoltAgentTextStreamPart<any> & {
   // Additional metadata for subagent event forwarding
   subAgentId?: string;
   subAgentName?: string;
