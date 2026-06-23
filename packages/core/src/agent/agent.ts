@@ -178,6 +178,7 @@ import {
 import {
   SpeculativeInputGuardrailRun,
   applySpeculativeInputGuardrailToFullStream,
+  applySpeculativeInputGuardrailToPartialOutputStream,
   applySpeculativeInputGuardrailToTextStream,
   applySpeculativeInputGuardrailToUIStream,
 } from "./streaming/input-guardrail-stream";
@@ -1743,6 +1744,7 @@ export class Agent {
     let feedbackResolved = false;
     let feedbackFinalizeRequested = false;
     let feedbackApplied = false;
+    let feedbackCancelled = false;
     let latestResponseMessages: ModelMessage[] | undefined;
     const resolveFeedbackDeferred = (value: AgentFeedbackMetadata | null) => {
       if (!feedbackDeferred || feedbackResolved) {
@@ -1789,6 +1791,10 @@ export class Agent {
       if (feedbackPromise) {
         feedbackPromise
           .then((metadata) => {
+            if (feedbackCancelled) {
+              resolveFeedbackDeferred(null);
+              return;
+            }
             feedbackMetadataValue = metadata;
             feedbackValue = metadata
               ? createFeedbackHandleHelper({
@@ -1884,6 +1890,9 @@ export class Agent {
             agent: this,
             buffer,
             onBlock: () => {
+              feedbackCancelled = true;
+              feedbackMetadataValue = null;
+              feedbackValue = null;
               resolveFeedbackDeferred(null);
             },
           });
@@ -2656,6 +2665,17 @@ export class Agent {
           });
         };
 
+        const getGuardrailAwarePartialOutputStream = (): typeof result.partialOutputStream => {
+          const partialOutputStream = result.partialOutputStream;
+          if (!partialOutputStream) {
+            return partialOutputStream;
+          }
+          return applySpeculativeInputGuardrailToPartialOutputStream({
+            baseStream: partialOutputStream,
+            guardrail: speculativeInputGuardrail,
+          }) as typeof result.partialOutputStream;
+        };
+
         const createMergedUIStream = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
@@ -2778,7 +2798,7 @@ export class Agent {
             return result.finishReason;
           },
           get partialOutputStream() {
-            return result.partialOutputStream;
+            return getGuardrailAwarePartialOutputStream();
           },
           toUIMessageStream: toUIMessageStreamSanitized as typeof result.toUIMessageStream,
           toUIMessageStreamResponse:
@@ -4958,6 +4978,9 @@ export class Agent {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
+    const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
+    const shouldPersistInputImmediately =
+      shouldPersistMemory && (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed());
     const memoryContextMessages: UIMessage[] = [];
 
     // Load memory context if available (already returns UIMessages)
@@ -5037,7 +5060,7 @@ export class Agent {
               oc.userId,
               oc.conversationId,
               resolvedMemory.contextLimit,
-              { persistInput: shouldPersistMemory },
+              { persistInput: shouldPersistInputImmediately },
             );
 
             // Update conversation ID
@@ -5047,6 +5070,18 @@ export class Agent {
             }
 
             buffer.ingestUIMessages(result.messages, true);
+
+            if (
+              shouldPersistMemory &&
+              speculativeInputGuardrail &&
+              !shouldPersistInputImmediately
+            ) {
+              this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+                speculativeInputGuardrail,
+                oc,
+                inputForMemory,
+              );
+            }
 
             return result.messages;
           });
@@ -5080,7 +5115,15 @@ export class Agent {
                   : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
                     ? (resolvedInput as UIMessage[])
                     : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
-              this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+              if (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed()) {
+                this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+              } else {
+                this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+                  speculativeInputGuardrail,
+                  oc,
+                  inputForMemory,
+                );
+              }
             } catch (_e) {
               // Non-fatal: background persistence should not block message preparation
             }
@@ -5229,6 +5272,24 @@ export class Agent {
       oc.logger?.error?.("Invalid UI messages", { error });
       throw error;
     }
+  }
+
+  private queueSaveInputWhenSpeculativeInputGuardrailPasses(
+    guardrail: SpeculativeInputGuardrailRun,
+    oc: OperationContext,
+    inputForMemory: string | UIMessage[],
+  ): void {
+    void guardrail
+      .wait()
+      .then((decision) => {
+        if (decision.status !== "passed" || !oc.userId || !oc.conversationId) {
+          return;
+        }
+        this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+      })
+      .catch((error) => {
+        oc.logger?.debug?.("Failed to persist input after speculative guardrail", { error });
+      });
   }
 
   /**
@@ -7350,7 +7411,10 @@ export class Agent {
         conversationPersistence.flushOnToolResult &&
         (shouldFlushForToolCompletion || Boolean(bailedResult));
 
-      if (conversationPersistence.mode === "step") {
+      if (
+        conversationPersistence.mode === "step" &&
+        (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed())
+      ) {
         await this.recordStepResults(undefined, oc, {
           awaitPersistence: shouldFlushStepPersistence,
         });

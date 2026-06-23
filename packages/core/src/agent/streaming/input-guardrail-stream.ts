@@ -16,6 +16,7 @@ const ZERO_USAGE = {
   outputTokens: 0,
   totalTokens: 0,
 } as const;
+const DEFAULT_MAX_BUFFERED_CHUNKS = 1024;
 
 type InputGuardrailBlockedUIStreamChunk =
   | { type: "start"; messageId?: string }
@@ -138,11 +139,11 @@ export function applySpeculativeInputGuardrailToFullStream(params: {
 }
 
 export function applySpeculativeInputGuardrailToTextStream(params: {
-  baseStream: AsyncIterable<string>;
+  baseStream: AsyncIterableStream<string>;
   guardrail: SpeculativeInputGuardrailRun | null;
 }): AsyncIterableStream<string> {
   if (!params.guardrail) {
-    return params.baseStream as AsyncIterableStream<string>;
+    return params.baseStream;
   }
   return iterableToStream(
     gateIterableUntilSpeculativeInputPass({
@@ -178,10 +179,31 @@ export function applySpeculativeInputGuardrailToUIStream<
   ) as unknown as TStream;
 }
 
+export function applySpeculativeInputGuardrailToPartialOutputStream<
+  TStream extends AsyncIterableStream<any>,
+>(params: {
+  baseStream: TStream;
+  guardrail: SpeculativeInputGuardrailRun | null;
+}): TStream {
+  if (!params.guardrail) {
+    return params.baseStream;
+  }
+  type StreamChunk = TStream extends AsyncIterable<infer Chunk> ? Chunk : never;
+
+  return iterableToStream(
+    gateIterableUntilSpeculativeInputPass<StreamChunk>({
+      source: params.baseStream as AsyncIterable<StreamChunk>,
+      guardrail: params.guardrail,
+      replacement: () => [],
+    }),
+  ) as unknown as TStream;
+}
+
 export async function* gateIterableUntilSpeculativeInputPass<T>(params: {
   source: AsyncIterable<T>;
   guardrail: SpeculativeInputGuardrailRun;
   replacement: (decision: Extract<SpeculativeInputGuardrailDecision, { status: "blocked" }>) => T[];
+  maxBufferedChunks?: number;
 }): AsyncIterable<T> {
   const immediateDecision = params.guardrail.getDecision();
   if (immediateDecision?.status === "passed") {
@@ -195,6 +217,7 @@ export async function* gateIterableUntilSpeculativeInputPass<T>(params: {
 
   const iterator = params.source[Symbol.asyncIterator]();
   const buffered: T[] = [];
+  const maxBufferedChunks = params.maxBufferedChunks ?? DEFAULT_MAX_BUFFERED_CHUNKS;
   let nextPromise = iterator.next();
 
   while (true) {
@@ -242,6 +265,20 @@ export async function* gateIterableUntilSpeculativeInputPass<T>(params: {
     }
 
     buffered.push(result.value.value);
+    if (maxBufferedChunks > 0 && buffered.length >= maxBufferedChunks) {
+      const decision = await params.guardrail.wait();
+      if (decision.status === "blocked") {
+        await iterator.return?.();
+        yield* params.replacement(decision);
+        return;
+      }
+      for (const item of buffered) {
+        yield item;
+      }
+      yield* continueIterator(iterator, iterator.next());
+      return;
+    }
+
     nextPromise = iterator.next();
   }
 }

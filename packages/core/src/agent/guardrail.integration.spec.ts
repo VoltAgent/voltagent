@@ -357,7 +357,7 @@ describe("Agent guardrail integration", () => {
     });
 
     const uiStreamResult = await agent.streamText("hello");
-    const uiChunks = await collectStream<any>(uiStreamResult.toUIMessageStream());
+    const uiChunks = await collectStream(uiStreamResult.toUIMessageStream());
     const uiStreamText = uiChunks
       .filter((chunk) => chunk.type === "text-delta")
       .map((chunk) => chunk.delta ?? "")
