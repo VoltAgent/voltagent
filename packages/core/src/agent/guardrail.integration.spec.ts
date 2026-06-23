@@ -342,6 +342,8 @@ describe("Agent guardrail integration", () => {
     expect(fullStreamText).toBe("Input blocked before display.");
     expect(fullStreamText).not.toContain("unsafe model output");
     expect(fullChunks.some((chunk) => chunk.type === "finish")).toBe(true);
+    const fullFinish = fullChunks.find((chunk) => chunk.type === "finish");
+    expect(fullFinish).toMatchObject({ finishReason: "error" });
     const fullBlockEvent = fullChunks.find(
       (chunk) => chunk.type === "input-guardrail-blocked",
     ) as any;
@@ -363,6 +365,8 @@ describe("Agent guardrail integration", () => {
     expect(uiStreamText).toBe("Input blocked before display.");
     expect(uiStreamText).not.toContain("unsafe model output");
     expect(uiChunks.some((chunk) => chunk.type === "finish")).toBe(true);
+    const uiFinish = uiChunks.find((chunk) => chunk.type === "finish");
+    expect(uiFinish).toMatchObject({ finishReason: "error" });
     const uiBlockEvent = uiChunks.find((chunk) => chunk.type === "data-input-guardrail-blocked");
     expect(uiBlockEvent?.data).toMatchObject({
       code: "GUARDRAIL_INPUT_BLOCKED",

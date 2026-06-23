@@ -510,13 +510,21 @@ export async function POST(req: Request) {
 
 ```tsx
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import type { InputGuardrailBlockedEventData } from "@voltagent/core";
+import { DefaultChatTransport, type UIMessage } from "ai";
+
+type ChatMessage = UIMessage<
+  unknown,
+  {
+    "input-guardrail-blocked": InputGuardrailBlockedEventData;
+  }
+>;
 
 const translations = {
   "errors.inputBlocked": "Your request cannot be processed.",
 };
 
-function messageState(message: { parts?: Array<{ type: string; text?: string; data?: any }> }) {
+function messageState(message: ChatMessage) {
   const blocked = message.parts?.some((part) => part.type === "data-input-guardrail-blocked");
   const text =
     message.parts
@@ -531,7 +539,7 @@ function messageState(message: { parts?: Array<{ type: string; text?: string; da
 }
 
 export function Chat() {
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 

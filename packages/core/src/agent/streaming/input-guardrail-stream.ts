@@ -1,4 +1,4 @@
-import type { AsyncIterableStream, UIMessage } from "ai";
+import type { AsyncIterableStream, UIMessage, UIMessageChunk } from "ai";
 import type { Agent } from "../agent";
 import type { ConversationBuffer } from "../conversation-buffer";
 import { createVoltAgentError } from "../errors";
@@ -263,7 +263,7 @@ export function createInputGuardrailBlockedFullStreamParts(
 export function createInputGuardrailBlockedUIStreamChunks(
   data: InputGuardrailBlockedEventData,
   responseMessageId?: string,
-): any[] {
+): UIMessageChunk[] {
   const textId = "input-guardrail-blocked";
   return [
     {
@@ -277,7 +277,7 @@ export function createInputGuardrailBlockedUIStreamChunks(
     { type: "text-start", id: textId },
     { type: "text-delta", id: textId, delta: data.message },
     { type: "text-end", id: textId },
-    { type: "finish" },
+    { type: "finish", finishReason: "error" },
   ];
 }
 
