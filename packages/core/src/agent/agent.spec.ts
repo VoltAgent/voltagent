@@ -16,6 +16,7 @@ import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { Tool } from "../tool";
 import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
+import { SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY } from "./context-keys";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
 import { createHooks } from "./hooks";
@@ -1656,6 +1657,87 @@ Use pandas and summarize findings.`.split("\n"),
           error: undefined,
         }),
       );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("waits for parallel input guardrails before executing server-side tools", async () => {
+      let releaseGuardrail!: () => void;
+      const guardrailWait = new Promise<{ status: "passed" }>((resolve) => {
+        releaseGuardrail = () => resolve({ status: "passed" });
+      });
+      const toolExecute = vi.fn(async () => "tool output");
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+      const tool = new Tool({
+        name: "guarded-tool",
+        description: "Must wait for input guardrail.",
+        parameters: z.object({}),
+        execute: toolExecute,
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      operationContext.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
+        wait: vi.fn(() => guardrailWait),
+        hasPassed: vi.fn(() => false),
+      });
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const resultPromise = executeFactory(tool)({});
+      await Promise.resolve();
+
+      expect(toolExecute).not.toHaveBeenCalled();
+      releaseGuardrail();
+
+      await expect(resultPromise).resolves.toBe("tool output");
+      expect(toolExecute).toHaveBeenCalledTimes(1);
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("does not execute server-side tools when a parallel input guardrail blocks", async () => {
+      const toolExecute = vi.fn(async () => "tool output");
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+      const tool = new Tool({
+        name: "blocked-tool",
+        description: "Must not run after input block.",
+        parameters: z.object({}),
+        execute: toolExecute,
+      });
+      const guardrailError = new Error("Input blocked by policy.");
+
+      const operationContext = (agent as any).createOperationContext("input");
+      operationContext.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
+        wait: vi.fn(async () => ({
+          status: "blocked",
+          error: guardrailError,
+          message: guardrailError.message,
+        })),
+        hasPassed: vi.fn(() => false),
+      });
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const result = await executeFactory(tool)({});
+
+      expect(toolExecute).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        error: true,
+        message: "Input blocked by policy.",
+        toolName: "blocked-tool",
+      });
 
       operationContext.traceContext.end("completed");
     });

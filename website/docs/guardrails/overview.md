@@ -491,6 +491,70 @@ Parallel input guardrails buffer stream output until they pass. If one blocks, V
 
 Parallel input guardrails can only allow or block. Use the default blocking mode when a guardrail needs to return `action: "modify"` with `modifiedInput`.
 
+#### UI Handling for Parallel Input Blocks
+
+When you return `agent.streamText(...).toUIMessageStreamResponse()`, blocked parallel input guardrails are delivered as replacement assistant text. The UI does not need a separate stream error path, and `useChat` can render the message like any other assistant response.
+
+```ts
+// app/api/chat/route.ts
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = await agent.streamText(messages, {
+    userId: "user-123",
+    conversationId: "support-thread",
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+```tsx
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+
+const INPUT_BLOCKED_MESSAGE = "This request cannot be answered.";
+
+function messageText(message: { parts?: Array<{ type: string; text?: string }> }) {
+  return (
+    message.parts
+      ?.filter((part) => part.type === "text")
+      .map((part) => part.text ?? "")
+      .join("") ?? ""
+  );
+}
+
+export function Chat() {
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+  });
+
+  return (
+    <div>
+      {messages.map((message) => {
+        const text = messageText(message);
+        const blocked = message.role === "assistant" && text === INPUT_BLOCKED_MESSAGE;
+
+        return (
+          <div key={message.id} data-blocked={blocked || undefined}>
+            {blocked ? <strong>Request blocked</strong> : null}
+            <p>{text}</p>
+          </div>
+        );
+      })}
+
+      <button
+        disabled={status !== "ready"}
+        onClick={() => sendMessage({ text: "Can you help me with my account?" })}
+      >
+        Send
+      </button>
+    </div>
+  );
+}
+```
+
+For custom `fullStream` consumers, handle the replacement like normal text deltas. Blocked full streams finish with `finishReason: "error"` after emitting the guardrail message.
+
 ### Step-by-Step Tutorial
 
 #### 1. Simple Blocking Guardrail: Content Filter

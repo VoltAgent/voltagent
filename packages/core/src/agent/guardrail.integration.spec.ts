@@ -15,6 +15,30 @@ import {
 import type { OutputGuardrailStreamArgs } from "./types";
 
 describe("Agent guardrail integration", () => {
+  const createStreamingModel = (text: string) =>
+    createMockLanguageModel({
+      doStream: () => ({
+        stream: convertArrayToReadableStream([
+          { type: "text-start" as const, id: "text-1" },
+          {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: text,
+            text,
+          },
+          {
+            type: "finish" as const,
+            finishReason: "stop",
+            usage: defaultMockResponse.usage,
+            totalUsage: defaultMockResponse.usage,
+          },
+        ]),
+        rawCall: { rawPrompt: null, rawSettings: {} },
+        usage: Promise.resolve(defaultMockResponse.usage),
+        warnings: [],
+      }),
+    });
+
   it("sanitizes generateText output and forwards metadata to guardrails", async () => {
     const primaryGuardrail = createOutputGuardrail({
       id: "funding-filter",
@@ -285,6 +309,47 @@ describe("Agent guardrail integration", () => {
     );
     const savedMessages = await memory.getMessages("user-1", "conv-1");
     expect(savedMessages.some((message) => message.role === "assistant")).toBe(false);
+  });
+
+  it("replaces blocked parallel input full and UI streams", async () => {
+    const inputGuardrail = createInputGuardrail({
+      name: "async-stream-blocker",
+      execution: "parallel",
+      handler: vi.fn(async () => ({
+        pass: false,
+        action: "block",
+        message: "Input blocked before display.",
+      })),
+    });
+
+    const agent = new Agent({
+      name: "Blocked Stream Surfaces Agent",
+      instructions: "Stream response.",
+      model: createStreamingModel("unsafe model output"),
+      inputGuardrails: [inputGuardrail],
+    });
+
+    const fullStreamResult = await agent.streamText("hello");
+    const fullChunks = await collectStream<VoltAgentTextStreamPart<string>>(
+      fullStreamResult.fullStream,
+    );
+    const fullStreamText = fullChunks
+      .filter((chunk) => chunk.type === "text-delta")
+      .map((chunk) => chunk.delta ?? chunk.text ?? "")
+      .join("");
+    expect(fullStreamText).toBe("Input blocked before display.");
+    expect(fullStreamText).not.toContain("unsafe model output");
+    expect(fullChunks.some((chunk) => chunk.type === "finish")).toBe(true);
+
+    const uiStreamResult = await agent.streamText("hello");
+    const uiChunks = await collectStream<any>(uiStreamResult.toUIMessageStream());
+    const uiStreamText = uiChunks
+      .filter((chunk) => chunk.type === "text-delta")
+      .map((chunk) => chunk.delta ?? "")
+      .join("");
+    expect(uiStreamText).toBe("Input blocked before display.");
+    expect(uiStreamText).not.toContain("unsafe model output");
+    expect(uiChunks.some((chunk) => chunk.type === "finish")).toBe(true);
   });
 
   it("keeps parallel input block messages ahead of output guardrail transforms", async () => {
