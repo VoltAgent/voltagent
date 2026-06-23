@@ -619,7 +619,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       const enrichedStream = createMetadataEnrichedStream(
         subagentUIStream,
         forwardingMetadata,
-        this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+        this.supervisorConfig?.fullStreamEventForwarding?.types || [
+          "tool-call",
+          "tool-result",
+          "input-guardrail-blocked",
+        ],
       );
 
       // Use the writer to merge the enriched stream
@@ -650,6 +654,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
       "tool-call",
       "tool-result",
+      "input-guardrail-blocked",
     ];
 
     // Write subagent's fullStream events with metadata

@@ -12,6 +12,12 @@ interface PendingMessage {
   message: UIMessage;
 }
 
+export interface ConversationBufferCheckpoint {
+  messages: UIMessage[];
+  pendingMessageIds: string[];
+  activeAssistantMessageId?: string;
+}
+
 const extractOpenAIItemId = (metadata: unknown): string => {
   if (!metadata || typeof metadata !== "object") {
     return "";
@@ -109,6 +115,25 @@ export class ConversationBuffer {
     for (const message of messages) {
       this.appendExistingMessage(message, { markAsSaved });
     }
+  }
+
+  createCheckpoint(): ConversationBufferCheckpoint {
+    return {
+      messages: this.messages.map((message) => this.cloneMessage(message)),
+      pendingMessageIds: Array.from(this.pendingMessageIds),
+      activeAssistantMessageId: this.activeAssistantMessageId,
+    };
+  }
+
+  restoreCheckpoint(checkpoint: ConversationBufferCheckpoint): void {
+    this.messages = checkpoint.messages.map((message) => this.cloneMessage(message));
+    this.pendingMessageIds = new Set(checkpoint.pendingMessageIds);
+    this.activeAssistantMessageId = checkpoint.activeAssistantMessageId;
+    this.rebuildToolPartIndex();
+    this.log("restore-checkpoint", {
+      count: this.messages.length,
+      pending: this.pendingMessageIds.size,
+    });
   }
 
   drainPendingMessages(): UIMessage[] {
@@ -368,6 +393,13 @@ export class ConversationBuffer {
           partIndex: index,
         });
       }
+    }
+  }
+
+  private rebuildToolPartIndex(): void {
+    this.toolPartIndex.clear();
+    for (let index = 0; index < this.messages.length; index++) {
+      this.registerToolParts(index);
     }
   }
 

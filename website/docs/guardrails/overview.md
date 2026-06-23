@@ -460,6 +460,131 @@ Input guardrails receive input in three possible formats:
 
 The `inputText` property contains the extracted plain text from any of these formats.
 
+#### Execution Modes
+
+Input guardrails run in `blocking` mode by default. Blocking guardrails complete before the model starts and can allow, modify, or block the input.
+
+For `streamText`, you can opt into parallel execution for async checks that should run while the model starts:
+
+```ts
+const policyGuardrail = createInputGuardrail({
+  id: "policy-check",
+  name: "Policy Check",
+  execution: "parallel",
+  streamPolicy: "holdUntilPass",
+  handler: async ({ inputText }) => {
+    const allowed = await checkInputWithPolicyModel(inputText);
+    if (!allowed) {
+      return {
+        pass: false,
+        action: "block",
+        message: "This request cannot be answered.",
+      };
+    }
+
+    return { pass: true };
+  },
+});
+```
+
+Parallel input guardrails buffer stream output until they pass. If one blocks, VoltAgent stops the stream, returns the guardrail message instead, and prevents the generated assistant output from being persisted to conversation memory.
+
+Parallel input guardrails can only allow or block. Use the default blocking mode when a guardrail needs to return `action: "modify"` with `modifiedInput`.
+
+#### UI Handling for Parallel Input Blocks
+
+When you return `agent.streamText(...).toUIMessageStreamResponse()`, blocked parallel input guardrails emit a structured `data-input-guardrail-blocked` event and then send replacement assistant text. The UI does not need a separate stream error path, and `useChat` can render the message like any other assistant response.
+
+```ts
+// app/api/chat/route.ts
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  const result = await agent.streamText(messages, {
+    userId: "user-123",
+    conversationId: "support-thread",
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+```tsx
+import { useChat } from "@ai-sdk/react";
+import type { InputGuardrailBlockedEventData } from "@voltagent/core";
+import { DefaultChatTransport, type UIMessage } from "ai";
+
+type ChatMessage = UIMessage<
+  unknown,
+  {
+    "input-guardrail-blocked": InputGuardrailBlockedEventData;
+  }
+>;
+
+const translations = {
+  "errors.inputBlocked": "Your request cannot be processed.",
+};
+
+function messageState(message: ChatMessage) {
+  const blocked = message.parts?.some((part) => part.type === "data-input-guardrail-blocked");
+  const text =
+    message.parts
+      ?.filter((part) => part.type === "text")
+      .map((part) => part.text ?? "")
+      .join("") ?? "";
+
+  return {
+    blocked,
+    text: blocked ? translations["errors.inputBlocked"] : text,
+  };
+}
+
+export function Chat() {
+  const { messages, sendMessage, status } = useChat<ChatMessage>({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+  });
+
+  return (
+    <div>
+      {messages.map((message) => {
+        const { blocked, text } = messageState(message);
+
+        return (
+          <div key={message.id} data-blocked={blocked || undefined}>
+            {blocked ? <strong>Request blocked</strong> : null}
+            <p>{text}</p>
+          </div>
+        );
+      })}
+
+      <button
+        disabled={status !== "ready"}
+        onClick={() => sendMessage({ text: "Can you help me with my account?" })}
+      >
+        Send
+      </button>
+    </div>
+  );
+}
+```
+
+The data event contains a stable `code` and `reason`, plus the fallback message and optional guardrail identifiers:
+
+```ts
+{
+  type: "data-input-guardrail-blocked",
+  data: {
+    code: "GUARDRAIL_INPUT_BLOCKED",
+    reason: "input_guardrail_blocked",
+    message: "This request cannot be answered.",
+    guardrailId: "policy-check",
+    guardrailName: "Policy Check",
+    severity: "critical"
+  }
+}
+```
+
+For custom `fullStream` consumers, listen for the `input-guardrail-blocked` part for structured metadata and handle the replacement like normal text deltas. Blocked full streams finish with `finishReason: "error"` after emitting the guardrail message.
+
 ### Step-by-Step Tutorial
 
 #### 1. Simple Blocking Guardrail: Content Filter
@@ -606,7 +731,7 @@ const agent = new Agent({
 });
 ```
 
-Input guardrails execute in order before the input reaches the model. If any guardrail blocks the input, execution stops and an error is thrown.
+Input guardrails execute in order before the input reaches the model unless a guardrail opts into `execution: "parallel"` for `streamText`. If any blocking guardrail blocks the input, execution stops and an error is thrown.
 
 ### Testing Input Guardrails
 
@@ -652,6 +777,17 @@ interface InputGuardrailResult {
   modifiedInput?: string | UIMessage[] | BaseMessage[]; // Replacement input when action is "modify"
   message?: string; // Description of the action taken
   metadata?: Record<string, unknown>; // Additional data for observability
+}
+```
+
+#### InputGuardrailDefinition
+
+Additional options supported by `createInputGuardrail()`:
+
+```ts
+interface InputGuardrailDefinition {
+  execution?: "blocking" | "parallel"; // Default: "blocking"
+  streamPolicy?: "holdUntilPass"; // Default: "holdUntilPass"
 }
 ```
 

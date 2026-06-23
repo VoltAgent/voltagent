@@ -136,6 +136,7 @@ import { applySummarization } from "./apply-summarization";
 import {
   AGENT_REF_CONTEXT_KEY,
   FORCED_TOOL_CHOICE_CONTEXT_KEY,
+  SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY,
   TOOL_ROUTING_CONTEXT_KEY,
   TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY,
 } from "./context-keys";
@@ -174,6 +175,13 @@ import {
   createAsyncIterableReadable,
   createGuardrailPipeline,
 } from "./streaming/guardrail-stream";
+import {
+  SpeculativeInputGuardrailRun,
+  applySpeculativeInputGuardrailToFullStream,
+  applySpeculativeInputGuardrailToPartialOutputStream,
+  applySpeculativeInputGuardrailToTextStream,
+  applySpeculativeInputGuardrailToUIStream,
+} from "./streaming/input-guardrail-stream";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
@@ -1736,6 +1744,7 @@ export class Agent {
     let feedbackResolved = false;
     let feedbackFinalizeRequested = false;
     let feedbackApplied = false;
+    let feedbackCancelled = false;
     let latestResponseMessages: ModelMessage[] | undefined;
     const resolveFeedbackDeferred = (value: AgentFeedbackMetadata | null) => {
       if (!feedbackDeferred || feedbackResolved) {
@@ -1782,6 +1791,10 @@ export class Agent {
       if (feedbackPromise) {
         feedbackPromise
           .then((metadata) => {
+            if (feedbackCancelled) {
+              resolveFeedbackDeferred(null);
+              return;
+            }
             feedbackMetadataValue = metadata;
             feedbackValue = metadata
               ? createFeedbackHandleHelper({
@@ -1803,6 +1816,7 @@ export class Agent {
         resolveFeedbackDeferred(null);
       }
       let effectiveInput: typeof input = input;
+      let speculativeInputGuardrail: SpeculativeInputGuardrailRun | null = null;
       try {
         while (true) {
           try {
@@ -1852,13 +1866,38 @@ export class Agent {
           }
         }
 
+        const blockingInputGuardrails = guardrailSet.input.filter(
+          (guardrail) => guardrail.execution !== "parallel",
+        );
+        const parallelInputGuardrails = guardrailSet.input.filter(
+          (guardrail) => guardrail.execution === "parallel",
+        );
+
         effectiveInput = await executeInputGuardrails(
           effectiveInput,
           oc,
-          guardrailSet.input,
+          blockingInputGuardrails,
           "streamText",
           this,
         );
+
+        if (parallelInputGuardrails.length > 0) {
+          speculativeInputGuardrail = new SpeculativeInputGuardrailRun({
+            input: effectiveInput,
+            operationContext: oc,
+            guardrails: parallelInputGuardrails,
+            operation: "streamText",
+            agent: this,
+            buffer,
+            onBlock: () => {
+              feedbackCancelled = true;
+              feedbackMetadataValue = null;
+              feedbackValue = null;
+              resolveFeedbackDeferred(null);
+            },
+          });
+          oc.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, speculativeInputGuardrail);
+        }
 
         // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
@@ -2137,6 +2176,13 @@ export class Agent {
                   finishReason: finalResult.finishReason,
                   providerMetadata: finalResult.providerMetadata,
                 });
+
+                if (speculativeInputGuardrail) {
+                  const inputGuardrailDecision = await speculativeInputGuardrail.wait();
+                  if (inputGuardrailDecision.status === "blocked") {
+                    return;
+                  }
+                }
 
                 const usage = convertUsage(usageForFinish);
                 const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
@@ -2513,6 +2559,19 @@ export class Agent {
           : undefined;
 
         const createSanitizedTextPromise = (): Promise<string> => {
+          if (speculativeInputGuardrail) {
+            return speculativeInputGuardrail.wait().then((decision) => {
+              if (decision.status === "blocked") {
+                return decision.message;
+              }
+              return createSanitizedTextPromiseWithoutInputGate();
+            });
+          }
+
+          return createSanitizedTextPromiseWithoutInputGate();
+        };
+
+        const createSanitizedTextPromiseWithoutInputGate = (): Promise<string> => {
           if (guardrailPipeline) {
             return guardrailPipeline.finalizePromise.then(async () => {
               const sanitized = guardrailPipeline?.runner?.getSanitizedText();
@@ -2563,25 +2622,58 @@ export class Agent {
 
         const getGuardrailAwareFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
           if (guardrailPipeline) {
-            return guardrailPipeline.fullStream;
+            return applySpeculativeInputGuardrailToFullStream({
+              baseStream: guardrailPipeline.fullStream,
+              guardrail: speculativeInputGuardrail,
+              responseMessageId: responseMessageId ?? undefined,
+            });
           }
-          return createBaseFullStream();
+          return applySpeculativeInputGuardrailToFullStream({
+            baseStream: createBaseFullStream(),
+            guardrail: speculativeInputGuardrail,
+            responseMessageId: responseMessageId ?? undefined,
+          });
         };
 
         const getGuardrailAwareTextStream = (): AsyncIterableStream<string> => {
           if (guardrailPipeline) {
-            return guardrailPipeline.textStream;
+            return applySpeculativeInputGuardrailToTextStream({
+              baseStream: guardrailPipeline.textStream,
+              guardrail: speculativeInputGuardrail,
+            });
           }
-          return result.textStream;
+          return applySpeculativeInputGuardrailToTextStream({
+            baseStream: result.textStream,
+            guardrail: speculativeInputGuardrail,
+          });
         };
 
         const getGuardrailAwareUIStream = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
-            return result.toUIMessageStream(streamOptions);
+            return applySpeculativeInputGuardrailToUIStream({
+              baseStream: result.toUIMessageStream(streamOptions),
+              guardrail: speculativeInputGuardrail,
+              responseMessageId: responseMessageId ?? undefined,
+            });
           }
-          return guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn;
+          return applySpeculativeInputGuardrailToUIStream({
+            baseStream: guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn,
+            guardrail: speculativeInputGuardrail,
+            responseMessageId: responseMessageId ?? undefined,
+          });
+        };
+
+        const getGuardrailAwarePartialOutputStream = (): typeof result.partialOutputStream => {
+          const partialOutputStream = result.partialOutputStream;
+          if (!partialOutputStream) {
+            return partialOutputStream;
+          }
+          return applySpeculativeInputGuardrailToPartialOutputStream({
+            baseStream: partialOutputStream,
+            guardrail: speculativeInputGuardrail,
+          }) as typeof result.partialOutputStream;
         };
 
         const createMergedUIStream = (
@@ -2706,7 +2798,7 @@ export class Agent {
             return result.finishReason;
           },
           get partialOutputStream() {
-            return result.partialOutputStream;
+            return getGuardrailAwarePartialOutputStream();
           },
           toUIMessageStream: toUIMessageStreamSanitized as typeof result.toUIMessageStream,
           toUIMessageStreamResponse:
@@ -4886,6 +4978,9 @@ export class Agent {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
+    const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
+    const shouldPersistInputImmediately =
+      shouldPersistMemory && (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed());
     const memoryContextMessages: UIMessage[] = [];
 
     // Load memory context if available (already returns UIMessages)
@@ -4965,7 +5060,7 @@ export class Agent {
               oc.userId,
               oc.conversationId,
               resolvedMemory.contextLimit,
-              { persistInput: shouldPersistMemory },
+              { persistInput: shouldPersistInputImmediately },
             );
 
             // Update conversation ID
@@ -4975,6 +5070,18 @@ export class Agent {
             }
 
             buffer.ingestUIMessages(result.messages, true);
+
+            if (
+              shouldPersistMemory &&
+              speculativeInputGuardrail &&
+              !shouldPersistInputImmediately
+            ) {
+              this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+                speculativeInputGuardrail,
+                oc,
+                inputForMemory,
+              );
+            }
 
             return result.messages;
           });
@@ -5008,7 +5115,15 @@ export class Agent {
                   : Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts
                     ? (resolvedInput as UIMessage[])
                     : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
-              this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+              if (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed()) {
+                this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+              } else {
+                this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+                  speculativeInputGuardrail,
+                  oc,
+                  inputForMemory,
+                );
+              }
             } catch (_e) {
               // Non-fatal: background persistence should not block message preparation
             }
@@ -5157,6 +5272,24 @@ export class Agent {
       oc.logger?.error?.("Invalid UI messages", { error });
       throw error;
     }
+  }
+
+  private queueSaveInputWhenSpeculativeInputGuardrailPasses(
+    guardrail: SpeculativeInputGuardrailRun,
+    oc: OperationContext,
+    inputForMemory: string | UIMessage[],
+  ): void {
+    void guardrail
+      .wait()
+      .then((decision) => {
+        if (decision.status !== "passed" || !oc.userId || !oc.conversationId) {
+          return;
+        }
+        this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+      })
+      .catch((error) => {
+        oc.logger?.debug?.("Failed to persist input after speculative guardrail", { error });
+      });
   }
 
   /**
@@ -6456,6 +6589,7 @@ export class Agent {
       if (execute && isAsyncGeneratorFunction(execute)) {
         return async function* (this: Agent): AsyncGenerator<any, void, void> {
           try {
+            await this.waitForSpeculativeInputGuardrail(oc);
             await oc.traceContext.withSpan(toolSpan, async () => {
               await runToolStartHooks();
             });
@@ -6516,6 +6650,7 @@ export class Agent {
 
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
+          await this.waitForSpeculativeInputGuardrail(oc);
           // Call tool start hook - can throw ToolDeniedError
           await runToolStartHooks();
 
@@ -7229,6 +7364,26 @@ export class Agent {
     }
   }
 
+  private getSpeculativeInputGuardrail(oc: OperationContext): SpeculativeInputGuardrailRun | null {
+    return (
+      (oc.systemContext.get(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY) as
+        | SpeculativeInputGuardrailRun
+        | undefined) ?? null
+    );
+  }
+
+  private async waitForSpeculativeInputGuardrail(oc: OperationContext): Promise<void> {
+    const guardrail = this.getSpeculativeInputGuardrail(oc);
+    if (!guardrail) {
+      return;
+    }
+
+    const decision = await guardrail.wait();
+    if (decision.status === "blocked") {
+      throw decision.error;
+    }
+  }
+
   /**
    * Create step handler for memory and hooks
    */
@@ -7239,6 +7394,7 @@ export class Agent {
     const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
 
     return async (event: StepResult<ToolSet>) => {
+      const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
       const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(oc, event);
 
       const responseMessages = this.normalizeStepResponseMessages(
@@ -7255,7 +7411,10 @@ export class Agent {
         conversationPersistence.flushOnToolResult &&
         (shouldFlushForToolCompletion || Boolean(bailedResult));
 
-      if (conversationPersistence.mode === "step") {
+      if (
+        conversationPersistence.mode === "step" &&
+        (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed())
+      ) {
         await this.recordStepResults(undefined, oc, {
           awaitPersistence: shouldFlushStepPersistence,
         });
@@ -7264,6 +7423,7 @@ export class Agent {
       if (
         shouldPersistMemory &&
         persistQueue &&
+        (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed()) &&
         conversationPersistence.mode === "step" &&
         (hasResponseMessages || shouldFlushStepPersistence)
       ) {

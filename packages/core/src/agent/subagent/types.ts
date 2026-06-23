@@ -131,52 +131,72 @@ export function createSubagent<TAgent extends Agent>(
   return config;
 }
 
+export interface InputGuardrailBlockedEventData {
+  code: "GUARDRAIL_INPUT_BLOCKED";
+  reason: "input_guardrail_blocked";
+  message: string;
+  guardrailId?: string;
+  guardrailName?: string;
+  severity?: "info" | "warning" | "critical";
+}
+
+export interface InputGuardrailBlockedStreamPart {
+  type: "input-guardrail-blocked";
+  data: InputGuardrailBlockedEventData;
+  messageId?: string;
+}
+
+type VoltAgentStreamMetadata = {
+  /**
+   * Optional response message identifier (carried on start/step chunks).
+   */
+  messageId?: string;
+
+  /**
+   * Optional identifier for the subagent that generated this event
+   */
+  subAgentId?: string;
+
+  /**
+   * Optional identifier for the agent that actually executed the step
+   * (same as subAgentId for first-level handoffs)
+   */
+  executingAgentId?: string;
+
+  /**
+   * Optional name of the subagent that generated this event
+   */
+  subAgentName?: string;
+
+  /**
+   * Optional name of the agent that actually executed the step
+   * (same as subAgentName for first-level handoffs)
+   */
+  executingAgentName?: string;
+
+  /**
+   * Parent agent reference when forwarded through supervisors
+   */
+  parentAgentId?: string;
+  parentAgentName?: string;
+
+  /**
+   * Ordered list of agent names from supervisor -> executing agent
+   */
+  agentPath?: string[];
+};
+
 /**
- * Extended TextStreamPart type that includes optional subagent metadata.
- * This type extends ai-sdk's TextStreamPart to support subagent event forwarding.
+ * Extended TextStreamPart type that includes optional VoltAgent metadata and
+ * custom VoltAgent stream events.
  *
  * @template TOOLS - The tool set type parameter from ai-sdk
  */
-export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> =
-  TextStreamPart<TOOLS> & {
-    /**
-     * Optional response message identifier (carried on start/step chunks).
-     */
-    messageId?: string;
-
-    /**
-     * Optional identifier for the subagent that generated this event
-     */
-    subAgentId?: string;
-
-    /**
-     * Optional identifier for the agent that actually executed the step
-     * (same as subAgentId for first-level handoffs)
-     */
-    executingAgentId?: string;
-
-    /**
-     * Optional name of the subagent that generated this event
-     */
-    subAgentName?: string;
-
-    /**
-     * Optional name of the agent that actually executed the step
-     * (same as subAgentName for first-level handoffs)
-     */
-    executingAgentName?: string;
-
-    /**
-     * Parent agent reference when forwarded through supervisors
-     */
-    parentAgentId?: string;
-    parentAgentName?: string;
-
-    /**
-     * Ordered list of agent names from supervisor -> executing agent
-     */
-    agentPath?: string[];
-  };
+export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> = (
+  | TextStreamPart<TOOLS>
+  | InputGuardrailBlockedStreamPart
+) &
+  VoltAgentStreamMetadata;
 
 /**
  * Extended StreamTextResult that uses VoltAgentTextStreamPart for fullStream.

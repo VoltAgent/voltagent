@@ -572,6 +572,14 @@ describe("SubAgentManager", () => {
       const mockStream = createMockStream([
         mockStreamEvents.toolCall("call-1", "toolA", { foo: "bar" }),
         mockStreamEvents.toolResult("call-1", "toolA", { ok: true }),
+        {
+          type: "input-guardrail-blocked" as const,
+          data: {
+            code: "GUARDRAIL_INPUT_BLOCKED" as const,
+            reason: "input_guardrail_blocked" as const,
+            message: "Blocked by policy",
+          },
+        },
       ]);
 
       vi.spyOn(subAgent, "streamText").mockResolvedValue({
@@ -599,6 +607,14 @@ describe("SubAgentManager", () => {
       expect(toolCallPart.parentAgentId).toBe("parent-agent");
       expect(toolCallPart.parentAgentName).toBe("Parent Agent");
       expect(toolCallPart.agentPath).toEqual(["Parent Agent", "Sub-Agent A"]);
+
+      const guardrailPart = forwarded.find((part) => part.type === "input-guardrail-blocked");
+      expect(guardrailPart?.data).toMatchObject({
+        code: "GUARDRAIL_INPUT_BLOCKED",
+        reason: "input_guardrail_blocked",
+        message: "Blocked by policy",
+      });
+      expect(guardrailPart?.subAgentId).toBe("sub-agent-a");
     });
   });
 
