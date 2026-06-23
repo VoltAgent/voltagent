@@ -313,7 +313,9 @@ describe("Agent guardrail integration", () => {
 
   it("replaces blocked parallel input full and UI streams", async () => {
     const inputGuardrail = createInputGuardrail({
+      id: "input-policy",
       name: "async-stream-blocker",
+      severity: "critical",
       execution: "parallel",
       handler: vi.fn(async () => ({
         pass: false,
@@ -340,6 +342,17 @@ describe("Agent guardrail integration", () => {
     expect(fullStreamText).toBe("Input blocked before display.");
     expect(fullStreamText).not.toContain("unsafe model output");
     expect(fullChunks.some((chunk) => chunk.type === "finish")).toBe(true);
+    const fullBlockEvent = fullChunks.find(
+      (chunk) => chunk.type === "input-guardrail-blocked",
+    ) as any;
+    expect(fullBlockEvent?.data).toMatchObject({
+      code: "GUARDRAIL_INPUT_BLOCKED",
+      reason: "input_guardrail_blocked",
+      message: "Input blocked before display.",
+      guardrailId: "input-policy",
+      guardrailName: "async-stream-blocker",
+      severity: "critical",
+    });
 
     const uiStreamResult = await agent.streamText("hello");
     const uiChunks = await collectStream<any>(uiStreamResult.toUIMessageStream());
@@ -350,6 +363,15 @@ describe("Agent guardrail integration", () => {
     expect(uiStreamText).toBe("Input blocked before display.");
     expect(uiStreamText).not.toContain("unsafe model output");
     expect(uiChunks.some((chunk) => chunk.type === "finish")).toBe(true);
+    const uiBlockEvent = uiChunks.find((chunk) => chunk.type === "data-input-guardrail-blocked");
+    expect(uiBlockEvent?.data).toMatchObject({
+      code: "GUARDRAIL_INPUT_BLOCKED",
+      reason: "input_guardrail_blocked",
+      message: "Input blocked before display.",
+      guardrailId: "input-policy",
+      guardrailName: "async-stream-blocker",
+      severity: "critical",
+    });
   });
 
   it("keeps parallel input block messages ahead of output guardrail transforms", async () => {

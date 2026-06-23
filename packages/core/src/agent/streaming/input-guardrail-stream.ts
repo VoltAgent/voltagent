@@ -4,15 +4,22 @@ import type { ConversationBuffer } from "../conversation-buffer";
 import { createVoltAgentError } from "../errors";
 import { type NormalizedInputGuardrail, runInputGuardrails } from "../guardrail";
 import type { BaseMessage } from "../providers/base/types";
-import type { VoltAgentTextStreamPart } from "../subagent/types";
+import type { InputGuardrailBlockedEventData, VoltAgentTextStreamPart } from "../subagent/types";
 import type { AgentEvalOperationType, OperationContext } from "../types";
 import { createAsyncIterableReadable } from "./guardrail-stream";
 
 const DEFAULT_INPUT_GUARDRAIL_BLOCK_MESSAGE = "Input blocked by guardrail.";
+export const INPUT_GUARDRAIL_BLOCKED_FULL_STREAM_PART_TYPE = "input-guardrail-blocked" as const;
+export const INPUT_GUARDRAIL_BLOCKED_UI_EVENT_TYPE = "data-input-guardrail-blocked" as const;
 
 export type SpeculativeInputGuardrailDecision =
   | { status: "passed" }
-  | { status: "blocked"; error: Error; message: string };
+  | {
+      status: "blocked";
+      error: Error;
+      message: string;
+      data: InputGuardrailBlockedEventData;
+    };
 
 export class SpeculativeInputGuardrailRun {
   private decision: SpeculativeInputGuardrailDecision | null = null;
@@ -56,6 +63,7 @@ export class SpeculativeInputGuardrailRun {
           status: "blocked",
           error,
           message,
+          data: createInputGuardrailBlockedEventData(error, message),
         };
         this.decision = decision;
         this.handleBlock(decision, checkpoint);
@@ -109,7 +117,7 @@ export function applySpeculativeInputGuardrailToFullStream(params: {
     source: params.baseStream,
     guardrail: params.guardrail,
     replacement: (decision) =>
-      createInputGuardrailBlockedFullStreamParts(decision.message, params.responseMessageId),
+      createInputGuardrailBlockedFullStreamParts(decision.data, params.responseMessageId),
   });
 }
 
@@ -147,7 +155,7 @@ export function applySpeculativeInputGuardrailToUIStream<
       guardrail: params.guardrail,
       replacement: (decision) =>
         createInputGuardrailBlockedUIStreamChunks(
-          decision.message,
+          decision.data,
           params.responseMessageId,
         ) as UIStreamChunk[],
     }),
@@ -223,7 +231,7 @@ export async function* gateIterableUntilSpeculativeInputPass<T>(params: {
 }
 
 export function createInputGuardrailBlockedFullStreamParts(
-  message: string,
+  data: InputGuardrailBlockedEventData,
   responseMessageId?: string,
 ): VoltAgentTextStreamPart[] {
   const textId = "input-guardrail-blocked";
@@ -232,12 +240,17 @@ export function createInputGuardrailBlockedFullStreamParts(
       type: "start",
       ...(responseMessageId ? { messageId: responseMessageId } : {}),
     } as VoltAgentTextStreamPart,
+    {
+      type: INPUT_GUARDRAIL_BLOCKED_FULL_STREAM_PART_TYPE,
+      data,
+      ...(responseMessageId ? { messageId: responseMessageId } : {}),
+    } as VoltAgentTextStreamPart,
     { type: "text-start", id: textId } as VoltAgentTextStreamPart,
     {
       type: "text-delta",
       id: textId,
-      delta: message,
-      text: message,
+      delta: data.message,
+      text: data.message,
     } as VoltAgentTextStreamPart,
     { type: "text-end", id: textId } as VoltAgentTextStreamPart,
     {
@@ -248,7 +261,7 @@ export function createInputGuardrailBlockedFullStreamParts(
 }
 
 export function createInputGuardrailBlockedUIStreamChunks(
-  message: string,
+  data: InputGuardrailBlockedEventData,
   responseMessageId?: string,
 ): any[] {
   const textId = "input-guardrail-blocked";
@@ -257,11 +270,44 @@ export function createInputGuardrailBlockedUIStreamChunks(
       type: "start",
       ...(responseMessageId ? { messageId: responseMessageId } : {}),
     },
+    {
+      type: INPUT_GUARDRAIL_BLOCKED_UI_EVENT_TYPE,
+      data,
+    },
     { type: "text-start", id: textId },
-    { type: "text-delta", id: textId, delta: message },
+    { type: "text-delta", id: textId, delta: data.message },
     { type: "text-end", id: textId },
     { type: "finish" },
   ];
+}
+
+function createInputGuardrailBlockedEventData(
+  error: Error,
+  message: string,
+): InputGuardrailBlockedEventData {
+  const metadata =
+    "metadata" in error && error.metadata && typeof error.metadata === "object"
+      ? (error.metadata as Record<string, unknown>)
+      : {};
+
+  return {
+    code: "GUARDRAIL_INPUT_BLOCKED",
+    reason: "input_guardrail_blocked",
+    message,
+    ...stringProperty(metadata.guardrailId, "guardrailId"),
+    ...stringProperty(metadata.guardrailName, "guardrailName"),
+    ...severityProperty(metadata.guardrailSeverity),
+  };
+}
+
+function stringProperty(value: unknown, key: "guardrailId" | "guardrailName") {
+  return typeof value === "string" && value.length > 0 ? { [key]: value } : {};
+}
+
+function severityProperty(
+  value: unknown,
+): Pick<InputGuardrailBlockedEventData, "severity"> | Record<string, never> {
+  return value === "info" || value === "warning" || value === "critical" ? { severity: value } : {};
 }
 
 async function* continueIterator<T>(

@@ -64,6 +64,8 @@ export type {
   GenerateTextSubAgentConfig,
   StreamObjectSubAgentConfig,
   GenerateObjectSubAgentConfig,
+  InputGuardrailBlockedEventData,
+  InputGuardrailBlockedStreamPart,
   VoltAgentTextStreamPart,
   VoltAgentStreamTextResult,
 } from "./agent/subagent/types";

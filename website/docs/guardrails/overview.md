@@ -493,7 +493,7 @@ Parallel input guardrails can only allow or block. Use the default blocking mode
 
 #### UI Handling for Parallel Input Blocks
 
-When you return `agent.streamText(...).toUIMessageStreamResponse()`, blocked parallel input guardrails are delivered as replacement assistant text. The UI does not need a separate stream error path, and `useChat` can render the message like any other assistant response.
+When you return `agent.streamText(...).toUIMessageStreamResponse()`, blocked parallel input guardrails emit a structured `data-input-guardrail-blocked` event and then send replacement assistant text. The UI does not need a separate stream error path, and `useChat` can render the message like any other assistant response.
 
 ```ts
 // app/api/chat/route.ts
@@ -512,15 +512,22 @@ export async function POST(req: Request) {
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 
-const INPUT_BLOCKED_MESSAGE = "This request cannot be answered.";
+const translations = {
+  "errors.inputBlocked": "Your request cannot be processed.",
+};
 
-function messageText(message: { parts?: Array<{ type: string; text?: string }> }) {
-  return (
+function messageState(message: { parts?: Array<{ type: string; text?: string; data?: any }> }) {
+  const blocked = message.parts?.some((part) => part.type === "data-input-guardrail-blocked");
+  const text =
     message.parts
       ?.filter((part) => part.type === "text")
       .map((part) => part.text ?? "")
-      .join("") ?? ""
-  );
+      .join("") ?? "";
+
+  return {
+    blocked,
+    text: blocked ? translations["errors.inputBlocked"] : text,
+  };
 }
 
 export function Chat() {
@@ -531,8 +538,7 @@ export function Chat() {
   return (
     <div>
       {messages.map((message) => {
-        const text = messageText(message);
-        const blocked = message.role === "assistant" && text === INPUT_BLOCKED_MESSAGE;
+        const { blocked, text } = messageState(message);
 
         return (
           <div key={message.id} data-blocked={blocked || undefined}>
@@ -553,7 +559,23 @@ export function Chat() {
 }
 ```
 
-For custom `fullStream` consumers, handle the replacement like normal text deltas. Blocked full streams finish with `finishReason: "error"` after emitting the guardrail message.
+The data event contains a stable `code` and `reason`, plus the fallback message and optional guardrail identifiers:
+
+```ts
+{
+  type: "data-input-guardrail-blocked",
+  data: {
+    code: "GUARDRAIL_INPUT_BLOCKED",
+    reason: "input_guardrail_blocked",
+    message: "This request cannot be answered.",
+    guardrailId: "policy-check",
+    guardrailName: "Policy Check",
+    severity: "critical"
+  }
+}
+```
+
+For custom `fullStream` consumers, listen for the `input-guardrail-blocked` part for structured metadata and handle the replacement like normal text deltas. Blocked full streams finish with `finishReason: "error"` after emitting the guardrail message.
 
 ### Step-by-Step Tutorial
 

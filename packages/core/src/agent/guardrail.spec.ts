@@ -249,14 +249,24 @@ describe("guardrail helpers", () => {
     it("throws when guardrail blocks input", async () => {
       const guardrails: NormalizedInputGuardrail[] = [
         {
+          id: "policy",
           name: "block",
+          severity: "critical",
           handler: vi.fn(async () => ({ pass: false, action: "block", message: "Blocked" })),
         },
       ];
 
       await expect(
         runInputGuardrails("bad", oc, guardrails, "generateText", agent),
-      ).rejects.toThrow(/Blocked/);
+      ).rejects.toMatchObject({
+        message: "Blocked",
+        code: "GUARDRAIL_INPUT_BLOCKED",
+        metadata: {
+          guardrailId: "policy",
+          guardrailName: "block",
+          guardrailSeverity: "critical",
+        },
+      });
       expect(oc.isActive).toBe(false);
       expect(oc.traceContext.end).toHaveBeenCalledWith("error", expect.any(Error));
     });

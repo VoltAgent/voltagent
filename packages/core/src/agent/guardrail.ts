@@ -362,7 +362,14 @@ export async function runInputGuardrails(
 
       if (!pass || action === "block") {
         const message = resolvedDecision.message ?? "Input blocked by guardrail";
-        const guardrailError = createVoltAgentError(message, { code: "GUARDRAIL_INPUT_BLOCKED" });
+        const guardrailError = createVoltAgentError(message, {
+          code: "GUARDRAIL_INPUT_BLOCKED",
+          metadata: {
+            ...(guardrail.id ? { guardrailId: guardrail.id } : {}),
+            guardrailName: guardrail.name,
+            ...(guardrail.severity ? { guardrailSeverity: guardrail.severity } : {}),
+          },
+        });
         span.setStatus({ code: SpanStatusCode.ERROR, message });
         span.end();
         oc.isActive = false;
