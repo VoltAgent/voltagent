@@ -15,7 +15,10 @@ import type {
   GuardrailSeverity,
   InputGuardrail,
   InputGuardrailArgs,
+  InputGuardrailDefinition,
+  InputGuardrailExecution,
   InputGuardrailResult,
+  InputGuardrailStreamPolicy,
   OperationContext,
   OutputGuardrail,
   OutputGuardrailArgs,
@@ -50,7 +53,11 @@ type CreateGuardrailDefinition<
 
 export type CreateInputGuardrailOptions = CreateGuardrailDefinition<
   InputGuardrailArgs,
-  InputGuardrailResult
+  InputGuardrailResult,
+  {
+    execution?: InputGuardrailExecution;
+    streamPolicy?: InputGuardrailStreamPolicy;
+  }
 >;
 
 export type CreateOutputGuardrailOptions<TOutput = unknown> = CreateGuardrailDefinition<
@@ -67,6 +74,8 @@ export function createInputGuardrail(options: CreateInputGuardrailOptions): Inpu
     tags: options.tags,
     severity: options.severity,
     metadata: options.metadata,
+    execution: options.execution,
+    streamPolicy: options.streamPolicy,
     handler: options.handler,
   };
 }
@@ -91,7 +100,10 @@ export function createOutputGuardrail<TOutput = unknown>(
 export type NormalizedInputGuardrail = NormalizedGuardrail<
   InputGuardrailArgs,
   InputGuardrailResult
->;
+> & {
+  execution?: InputGuardrailExecution;
+  streamPolicy?: InputGuardrailStreamPolicy;
+};
 
 export type NormalizedOutputGuardrail = NormalizedGuardrail<
   OutputGuardrailArgs<any>,
@@ -153,13 +165,20 @@ export function normalizeInputGuardrailList(
   guardrails: InputGuardrail[],
   startIndex = 0,
 ): NormalizedInputGuardrail[] {
-  return guardrails.map((guardrail, index) =>
-    normalizeGuardrailDefinition<InputGuardrailArgs, InputGuardrailResult>(
+  return guardrails.map((guardrail, index) => {
+    const normalized = normalizeGuardrailDefinition<InputGuardrailArgs, InputGuardrailResult>(
       guardrail,
       "input",
       startIndex + index,
-    ),
-  );
+    ) as NormalizedInputGuardrail;
+    const descriptor =
+      typeof guardrail === "function" ? undefined : (guardrail as InputGuardrailDefinition);
+
+    normalized.execution = descriptor?.execution ?? "blocking";
+    normalized.streamPolicy = descriptor?.streamPolicy ?? "holdUntilPass";
+
+    return normalized;
+  });
 }
 
 export function normalizeOutputGuardrailList<TOutput = any>(
@@ -271,6 +290,7 @@ export async function runInputGuardrails(
   guardrails: NormalizedInputGuardrail[],
   operation: AgentEvalOperationType,
   agent: Agent,
+  options: { allowModify?: boolean } = {},
 ): Promise<string | UIMessage[] | BaseMessage[]> {
   if (!guardrails.length) {
     return input;
@@ -351,6 +371,17 @@ export async function runInputGuardrails(
       }
 
       if (action === "modify" && resolvedDecision.modifiedInput !== undefined) {
+        if (options.allowModify === false) {
+          const message = `Input guardrail "${guardrail.name}" returned a modified input during parallel execution. Parallel input guardrails can only allow or block.`;
+          const guardrailError = createVoltAgentError(message, {
+            code: "GUARDRAIL_INPUT_MODIFY_UNSUPPORTED",
+          });
+          span.setStatus({ code: SpanStatusCode.ERROR, message });
+          span.end();
+          oc.isActive = false;
+          oc.traceContext.end("error", guardrailError);
+          throw guardrailError;
+        }
         currentInput = resolvedDecision.modifiedInput;
         currentInputText = await extractInputTextForGuardrail(currentInput);
       }

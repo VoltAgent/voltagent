@@ -393,6 +393,10 @@ export type GuardrailSeverity = "info" | "warning" | "critical";
 
 export type GuardrailAction = "allow" | "modify" | "block";
 
+export type InputGuardrailExecution = "blocking" | "parallel";
+
+export type InputGuardrailStreamPolicy = "holdUntilPass";
+
 export interface GuardrailBaseResult {
   pass: boolean;
   action?: GuardrailAction;
@@ -487,6 +491,23 @@ export interface InputGuardrailResult extends GuardrailBaseResult {
   modifiedInput?: string | UIMessage[] | BaseMessage[];
 }
 
+export interface InputGuardrailDefinition
+  extends GuardrailDefinition<InputGuardrailArgs, InputGuardrailResult> {
+  /**
+   * Controls when the input guardrail runs.
+   *
+   * - `blocking` runs before the agent starts, preserving support for modified input.
+   * - `parallel` starts with the agent stream and may only allow or block.
+   */
+  execution?: InputGuardrailExecution;
+  /**
+   * Streaming policy for parallel input guardrails.
+   *
+   * `holdUntilPass` buffers model stream chunks until all parallel input guardrails pass.
+   */
+  streamPolicy?: InputGuardrailStreamPolicy;
+}
+
 export interface OutputGuardrailArgs<TOutput = unknown> extends GuardrailContext {
   /**
    * The latest value after any previous guardrail modifications.
@@ -522,7 +543,9 @@ export interface OutputGuardrailResult<TOutput = unknown> extends GuardrailBaseR
   modifiedOutput?: TOutput;
 }
 
-export type InputGuardrail = GuardrailConfig<InputGuardrailArgs, InputGuardrailResult>;
+export type InputGuardrail =
+  | GuardrailFunction<InputGuardrailArgs, InputGuardrailResult>
+  | InputGuardrailDefinition;
 
 export type OutputGuardrailFunction<TOutput = unknown> = GuardrailFunction<
   OutputGuardrailArgs<TOutput>,

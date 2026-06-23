@@ -253,4 +253,35 @@ describe("ConversationBuffer", () => {
     const historyMessage = all.find((message) => message.id === "assistant-1");
     expect(historyMessage?.metadata).toBeUndefined();
   });
+
+  it("restores response messages and pending state from a checkpoint", () => {
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages(
+      [
+        {
+          id: "user-1",
+          role: "user",
+          parts: [{ type: "text", text: "hello" }],
+        },
+      ],
+      false,
+    );
+    const checkpoint = buffer.createCheckpoint();
+
+    buffer.addModelMessages([assistantToolCall, toolResult, assistantText], "response");
+    expect(buffer.getAllMessages().some((message) => message.role === "assistant")).toBe(true);
+
+    buffer.restoreCheckpoint(checkpoint);
+
+    expect(buffer.getAllMessages()).toEqual([
+      {
+        id: "user-1",
+        role: "user",
+        parts: [{ type: "text", text: "hello" }],
+      },
+    ]);
+    const pending = buffer.drainPendingMessages();
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.id).toBe("user-1");
+  });
 });

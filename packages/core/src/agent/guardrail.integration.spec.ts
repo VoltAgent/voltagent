@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+import { Memory } from "../memory";
+import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { convertUsage } from "../utils/usage-converter";
 import { Agent } from "./agent";
-import { createOutputGuardrail } from "./guardrail";
+import { createInputGuardrail, createOutputGuardrail } from "./guardrail";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import {
   collectStream,
@@ -156,5 +158,209 @@ describe("Agent guardrail integration", () => {
         : callArgs.usage;
     expect(normalizedUsage).toEqual(convertUsage(defaultMockResponse.usage));
     expect(callArgs.finishReason).toBe("stop");
+  });
+
+  it("holds streamed output until parallel input guardrails pass", async () => {
+    let releaseGuardrail!: () => void;
+    let markGuardrailStarted!: () => void;
+    const guardrailStarted = new Promise<void>((resolve) => {
+      markGuardrailStarted = resolve;
+    });
+    const inputGuardrail = createInputGuardrail({
+      name: "async-input-check",
+      execution: "parallel",
+      handler: vi.fn(async () => {
+        markGuardrailStarted();
+        await new Promise<void>((release) => {
+          releaseGuardrail = release;
+        });
+        return { pass: true };
+      }),
+    });
+
+    const model = createMockLanguageModel({
+      doStream: {
+        stream: convertArrayToReadableStream([
+          { type: "text-start" as const, id: "text-1" },
+          {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "guarded output",
+            text: "guarded output",
+          },
+          {
+            type: "finish" as const,
+            finishReason: "stop",
+            usage: defaultMockResponse.usage,
+            totalUsage: defaultMockResponse.usage,
+          },
+        ]),
+        rawCall: { rawPrompt: null, rawSettings: {} },
+        usage: Promise.resolve(defaultMockResponse.usage),
+        warnings: [],
+      },
+    });
+
+    const agent = new Agent({
+      name: "Parallel Guardrail Agent",
+      instructions: "Stream response.",
+      model,
+      inputGuardrails: [inputGuardrail],
+    });
+
+    const streamResult = await agent.streamText("hello");
+    const textPromise = collectTextStream(streamResult.textStream);
+    await guardrailStarted;
+    releaseGuardrail();
+    await expect(textPromise).resolves.toBe("guarded output");
+  });
+
+  it("replaces blocked parallel input streams and skips assistant memory persistence", async () => {
+    let releaseGuardrail!: () => void;
+    let markGuardrailStarted!: () => void;
+    const guardrailStarted = new Promise<void>((resolve) => {
+      markGuardrailStarted = resolve;
+    });
+    const inputGuardrail = createInputGuardrail({
+      name: "async-blocker",
+      execution: "parallel",
+      handler: vi.fn(async () => {
+        markGuardrailStarted();
+        await new Promise<void>((release) => {
+          releaseGuardrail = release;
+        });
+        return { pass: false, action: "block", message: "Blocked by async input guardrail." };
+      }),
+    });
+
+    const model = createMockLanguageModel({
+      doStream: {
+        stream: convertArrayToReadableStream([
+          { type: "text-start" as const, id: "text-1" },
+          {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "unsafe model output",
+            text: "unsafe model output",
+          },
+          {
+            type: "finish" as const,
+            finishReason: "stop",
+            usage: defaultMockResponse.usage,
+            totalUsage: defaultMockResponse.usage,
+          },
+        ]),
+        rawCall: { rawPrompt: null, rawSettings: {} },
+        usage: Promise.resolve(defaultMockResponse.usage),
+        warnings: [],
+      },
+    });
+
+    const memory = new Memory({
+      storage: new InMemoryStorageAdapter(),
+    });
+    const saveSpy = vi.spyOn(memory, "saveMessageWithContext");
+    const agent = new Agent({
+      name: "Blocking Parallel Guardrail Agent",
+      instructions: "Stream response.",
+      model,
+      memory,
+      inputGuardrails: [inputGuardrail],
+    });
+
+    const streamResult = await agent.streamText("hello", {
+      userId: "user-1",
+      conversationId: "conv-1",
+    });
+    const textPromise = collectTextStream(streamResult.textStream);
+
+    await guardrailStarted;
+    releaseGuardrail();
+
+    await expect(textPromise).resolves.toBe("Blocked by async input guardrail.");
+    await expect(streamResult.text).resolves.toBe("Blocked by async input guardrail.");
+    expect(saveSpy).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ role: "assistant" }),
+    );
+    const savedMessages = await memory.getMessages("user-1", "conv-1");
+    expect(savedMessages.some((message) => message.role === "assistant")).toBe(false);
+  });
+
+  it("keeps parallel input block messages ahead of output guardrail transforms", async () => {
+    let releaseGuardrail!: () => void;
+    let markGuardrailStarted!: () => void;
+    const guardrailStarted = new Promise<void>((resolve) => {
+      markGuardrailStarted = resolve;
+    });
+    const inputGuardrail = createInputGuardrail({
+      name: "async-input-blocker",
+      execution: "parallel",
+      handler: vi.fn(async () => {
+        markGuardrailStarted();
+        await new Promise<void>((release) => {
+          releaseGuardrail = release;
+        });
+        return { pass: false, action: "block", message: "Input policy blocked this request." };
+      }),
+    });
+    const outputGuardrail = createOutputGuardrail({
+      name: "output-transform",
+      handler: vi.fn(async ({ outputText }) => ({
+        pass: true,
+        action: "modify",
+        modifiedOutput: `output transformed: ${outputText}`,
+      })),
+      streamHandler: ({ part }: OutputGuardrailStreamArgs<string>) => {
+        if (part.type !== "text-delta") {
+          return part;
+        }
+        return {
+          ...part,
+          text: "output transformed",
+          delta: "output transformed",
+        };
+      },
+    });
+
+    const model = createMockLanguageModel({
+      doStream: {
+        stream: convertArrayToReadableStream([
+          { type: "text-start" as const, id: "text-1" },
+          {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "model output",
+            text: "model output",
+          },
+          {
+            type: "finish" as const,
+            finishReason: "stop",
+            usage: defaultMockResponse.usage,
+            totalUsage: defaultMockResponse.usage,
+          },
+        ]),
+        rawCall: { rawPrompt: null, rawSettings: {} },
+        usage: Promise.resolve(defaultMockResponse.usage),
+        warnings: [],
+      },
+    });
+
+    const agent = new Agent({
+      name: "Input Override Agent",
+      instructions: "Stream response.",
+      model,
+      inputGuardrails: [inputGuardrail],
+      outputGuardrails: [outputGuardrail],
+    });
+
+    const streamResult = await agent.streamText("hello");
+    const textPromise = collectTextStream(streamResult.textStream);
+
+    await guardrailStarted;
+    releaseGuardrail();
+
+    await expect(textPromise).resolves.toBe("Input policy blocked this request.");
+    await expect(streamResult.text).resolves.toBe("Input policy blocked this request.");
   });
 });

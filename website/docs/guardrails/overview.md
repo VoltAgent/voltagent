@@ -460,6 +460,37 @@ Input guardrails receive input in three possible formats:
 
 The `inputText` property contains the extracted plain text from any of these formats.
 
+#### Execution Modes
+
+Input guardrails run in `blocking` mode by default. Blocking guardrails complete before the model starts and can allow, modify, or block the input.
+
+For `streamText`, you can opt into parallel execution for async checks that should run while the model starts:
+
+```ts
+const policyGuardrail = createInputGuardrail({
+  id: "policy-check",
+  name: "Policy Check",
+  execution: "parallel",
+  streamPolicy: "holdUntilPass",
+  handler: async ({ inputText }) => {
+    const allowed = await checkInputWithPolicyModel(inputText);
+    if (!allowed) {
+      return {
+        pass: false,
+        action: "block",
+        message: "This request cannot be answered.",
+      };
+    }
+
+    return { pass: true };
+  },
+});
+```
+
+Parallel input guardrails buffer stream output until they pass. If one blocks, VoltAgent stops the stream, returns the guardrail message instead, and prevents the generated assistant output from being persisted to conversation memory.
+
+Parallel input guardrails can only allow or block. Use the default blocking mode when a guardrail needs to return `action: "modify"` with `modifiedInput`.
+
 ### Step-by-Step Tutorial
 
 #### 1. Simple Blocking Guardrail: Content Filter
@@ -606,7 +637,7 @@ const agent = new Agent({
 });
 ```
 
-Input guardrails execute in order before the input reaches the model. If any guardrail blocks the input, execution stops and an error is thrown.
+Input guardrails execute in order before the input reaches the model unless a guardrail opts into `execution: "parallel"` for `streamText`. If any blocking guardrail blocks the input, execution stops and an error is thrown.
 
 ### Testing Input Guardrails
 
@@ -652,6 +683,17 @@ interface InputGuardrailResult {
   modifiedInput?: string | UIMessage[] | BaseMessage[]; // Replacement input when action is "modify"
   message?: string; // Description of the action taken
   metadata?: Record<string, unknown>; // Additional data for observability
+}
+```
+
+#### InputGuardrailDefinition
+
+Additional options supported by `createInputGuardrail()`:
+
+```ts
+interface InputGuardrailDefinition {
+  execution?: "blocking" | "parallel"; // Default: "blocking"
+  streamPolicy?: "holdUntilPass"; // Default: "holdUntilPass"
 }
 ```
 

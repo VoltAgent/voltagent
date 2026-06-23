@@ -127,6 +127,25 @@ describe("guardrail helpers", () => {
         2,
       );
       expect(guardrails[0].name).toBe("Input Guardrail #3");
+      expect(guardrails[0].execution).toBe("blocking");
+      expect(guardrails[0].streamPolicy).toBe("holdUntilPass");
+    });
+
+    it("normalizes parallel input guardrail settings", () => {
+      const guardrails = normalizeInputGuardrailList([
+        createInputGuardrail({
+          name: "parallel",
+          execution: "parallel",
+          streamPolicy: "holdUntilPass",
+          handler: vi.fn(async () => ({ pass: true })),
+        }),
+      ]);
+
+      expect(guardrails[0]).toMatchObject({
+        name: "parallel",
+        execution: "parallel",
+        streamPolicy: "holdUntilPass",
+      });
     });
 
     it("normalizes output guardrail list", () => {
@@ -240,6 +259,27 @@ describe("guardrail helpers", () => {
       ).rejects.toThrow(/Blocked/);
       expect(oc.isActive).toBe(false);
       expect(oc.traceContext.end).toHaveBeenCalledWith("error", expect.any(Error));
+    });
+
+    it("throws when parallel input guardrail tries to modify input", async () => {
+      const guardrails: NormalizedInputGuardrail[] = [
+        {
+          name: "parallel-modify",
+          execution: "parallel",
+          handler: vi.fn(async () => ({
+            pass: true,
+            action: "modify",
+            modifiedInput: "changed",
+          })),
+        },
+      ];
+
+      await expect(
+        runInputGuardrails("original", oc, guardrails, "streamText", agent, {
+          allowModify: false,
+        }),
+      ).rejects.toThrow(/Parallel input guardrails can only allow or block/);
+      expect(oc.isActive).toBe(false);
     });
   });
 
@@ -390,12 +430,14 @@ describe("guardrail helpers", () => {
         id: "helper-input",
         name: "Helper Input Guardrail",
         severity: "warning",
+        execution: "parallel",
         handler: vi.fn(async () => ({ pass: true })),
       });
 
       const [normalized] = normalizeInputGuardrailList([helperGuardrail]);
       expect(normalized.name).toBe("Helper Input Guardrail");
       expect(normalized.severity).toBe("warning");
+      expect(normalized.execution).toBe("parallel");
       expect(normalized.handler).toBe(helperGuardrail.handler);
     });
 

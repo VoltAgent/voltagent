@@ -218,7 +218,9 @@ const ABORT_LISTENER_ATTACHED_KEY = Symbol("abortListenerAttached");
 const MIDDLEWARE_RETRY_FEEDBACK_KEY = Symbol("middlewareRetryFeedback");
 const STREAM_RESPONSE_MESSAGE_ID_KEY = Symbol("streamResponseMessageId");
 const STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY = Symbol("stepResponseMessageFingerprints");
+const SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY = Symbol("speculativeInputGuardrail");
 const DEFAULT_FEEDBACK_KEY = "satisfaction";
+const DEFAULT_INPUT_GUARDRAIL_BLOCK_MESSAGE = "Input blocked by guardrail.";
 const DEFAULT_CONVERSATION_TITLE_PROMPT = [
   "You generate concise titles for new conversations.",
   "Summarize the user's first message in a short phrase.",
@@ -240,6 +242,214 @@ const DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS: ResolvedConversationPersistenceO
   debounceMs: 200,
   flushOnToolResult: true,
 };
+
+type SpeculativeInputGuardrailDecision =
+  | { status: "passed" }
+  | { status: "blocked"; error: Error; message: string };
+
+class SpeculativeInputGuardrailRun {
+  private decision: SpeculativeInputGuardrailDecision | null = null;
+  private blockHandled = false;
+  private readonly promise: Promise<SpeculativeInputGuardrailDecision>;
+
+  constructor(
+    private readonly params: {
+      input: string | UIMessage[] | BaseMessage[];
+      operationContext: OperationContext;
+      guardrails: NormalizedInputGuardrail[];
+      operation: AgentEvalOperationType;
+      agent: Agent;
+      buffer: ConversationBuffer;
+      onBlock?: (
+        decision: Extract<SpeculativeInputGuardrailDecision, { status: "blocked" }>,
+      ) => void;
+    },
+  ) {
+    const checkpoint = params.buffer.createCheckpoint();
+
+    this.promise = executeInputGuardrails(
+      params.input,
+      params.operationContext,
+      params.guardrails,
+      params.operation,
+      params.agent,
+      { allowModify: false },
+    )
+      .then(() => {
+        this.decision = { status: "passed" };
+        return this.decision;
+      })
+      .catch((errorValue) => {
+        const error =
+          errorValue instanceof Error
+            ? errorValue
+            : createVoltAgentError(String(errorValue), { code: "GUARDRAIL_INPUT_BLOCKED" });
+        const message = error.message || DEFAULT_INPUT_GUARDRAIL_BLOCK_MESSAGE;
+        const decision: SpeculativeInputGuardrailDecision = {
+          status: "blocked",
+          error,
+          message,
+        };
+        this.decision = decision;
+        this.handleBlock(decision, checkpoint);
+        return decision;
+      });
+  }
+
+  wait(): Promise<SpeculativeInputGuardrailDecision> {
+    return this.promise;
+  }
+
+  getDecision(): SpeculativeInputGuardrailDecision | null {
+    return this.decision;
+  }
+
+  hasPassed(): boolean {
+    return this.decision?.status === "passed";
+  }
+
+  hasBlocked(): boolean {
+    return this.decision?.status === "blocked";
+  }
+
+  private handleBlock(
+    decision: Extract<SpeculativeInputGuardrailDecision, { status: "blocked" }>,
+    checkpoint: ReturnType<ConversationBuffer["createCheckpoint"]>,
+  ): void {
+    if (this.blockHandled) {
+      return;
+    }
+
+    this.blockHandled = true;
+    this.params.buffer.restoreCheckpoint(checkpoint);
+    this.params.onBlock?.(decision);
+
+    if (!this.params.operationContext.abortController.signal.aborted) {
+      this.params.operationContext.abortController.abort(decision.error);
+    }
+  }
+}
+
+async function* gateIterableUntilSpeculativeInputPass<T>(params: {
+  source: AsyncIterable<T>;
+  guardrail: SpeculativeInputGuardrailRun;
+  replacement: (decision: Extract<SpeculativeInputGuardrailDecision, { status: "blocked" }>) => T[];
+}): AsyncIterable<T> {
+  const immediateDecision = params.guardrail.getDecision();
+  if (immediateDecision?.status === "passed") {
+    yield* params.source;
+    return;
+  }
+  if (immediateDecision?.status === "blocked") {
+    yield* params.replacement(immediateDecision);
+    return;
+  }
+
+  const iterator = params.source[Symbol.asyncIterator]();
+  const buffered: T[] = [];
+  let nextPromise = iterator.next();
+
+  while (true) {
+    const result = await Promise.race([
+      nextPromise.then(
+        (value) => ({ type: "chunk" as const, value }),
+        (error) => ({ type: "source-error" as const, error }),
+      ),
+      params.guardrail.wait().then((decision) => ({ type: "decision" as const, decision })),
+    ]);
+
+    if (result.type === "decision") {
+      if (result.decision.status === "blocked") {
+        await iterator.return?.();
+        yield* params.replacement(result.decision);
+        return;
+      }
+
+      for (const item of buffered) {
+        yield item;
+      }
+      yield* continueIterator(iterator, nextPromise);
+      return;
+    }
+
+    if (result.type === "source-error") {
+      const decision = params.guardrail.getDecision();
+      if (decision?.status === "blocked") {
+        yield* params.replacement(decision);
+        return;
+      }
+      throw result.error;
+    }
+
+    if (result.value.done) {
+      const decision = await params.guardrail.wait();
+      if (decision.status === "blocked") {
+        yield* params.replacement(decision);
+        return;
+      }
+      for (const item of buffered) {
+        yield item;
+      }
+      return;
+    }
+
+    buffered.push(result.value.value);
+    nextPromise = iterator.next();
+  }
+}
+
+async function* continueIterator<T>(
+  iterator: AsyncIterator<T>,
+  firstNextPromise: Promise<IteratorResult<T>>,
+): AsyncIterable<T> {
+  let next = await firstNextPromise;
+  while (!next.done) {
+    yield next.value;
+    next = await iterator.next();
+  }
+}
+
+function createInputGuardrailBlockedFullStreamParts(
+  message: string,
+  responseMessageId?: string,
+): VoltAgentTextStreamPart[] {
+  const textId = "input-guardrail-blocked";
+  return [
+    {
+      type: "start",
+      ...(responseMessageId ? { messageId: responseMessageId } : {}),
+    } as VoltAgentTextStreamPart,
+    { type: "text-start", id: textId } as VoltAgentTextStreamPart,
+    {
+      type: "text-delta",
+      id: textId,
+      delta: message,
+      text: message,
+    } as VoltAgentTextStreamPart,
+    { type: "text-end", id: textId } as VoltAgentTextStreamPart,
+    {
+      type: "finish",
+      finishReason: "error",
+    } as VoltAgentTextStreamPart,
+  ];
+}
+
+function createInputGuardrailBlockedUIStreamChunks(
+  message: string,
+  responseMessageId?: string,
+): any[] {
+  const textId = "input-guardrail-blocked";
+  return [
+    {
+      type: "start",
+      ...(responseMessageId ? { messageId: responseMessageId } : {}),
+    },
+    { type: "text-start", id: textId },
+    { type: "text-delta", id: textId, delta: message },
+    { type: "text-end", id: textId },
+    { type: "finish" },
+  ];
+}
 
 type ResolvedMessageMetadataPersistenceOptions = {
   usage: boolean;
@@ -1803,6 +2013,7 @@ export class Agent {
         resolveFeedbackDeferred(null);
       }
       let effectiveInput: typeof input = input;
+      let speculativeInputGuardrail: SpeculativeInputGuardrailRun | null = null;
       try {
         while (true) {
           try {
@@ -1852,13 +2063,35 @@ export class Agent {
           }
         }
 
+        const blockingInputGuardrails = guardrailSet.input.filter(
+          (guardrail) => guardrail.execution !== "parallel",
+        );
+        const parallelInputGuardrails = guardrailSet.input.filter(
+          (guardrail) => guardrail.execution === "parallel",
+        );
+
         effectiveInput = await executeInputGuardrails(
           effectiveInput,
           oc,
-          guardrailSet.input,
+          blockingInputGuardrails,
           "streamText",
           this,
         );
+
+        if (parallelInputGuardrails.length > 0) {
+          speculativeInputGuardrail = new SpeculativeInputGuardrailRun({
+            input: effectiveInput,
+            operationContext: oc,
+            guardrails: parallelInputGuardrails,
+            operation: "streamText",
+            agent: this,
+            buffer,
+            onBlock: () => {
+              resolveFeedbackDeferred(null);
+            },
+          });
+          oc.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, speculativeInputGuardrail);
+        }
 
         // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
@@ -2137,6 +2370,13 @@ export class Agent {
                   finishReason: finalResult.finishReason,
                   providerMetadata: finalResult.providerMetadata,
                 });
+
+                if (speculativeInputGuardrail) {
+                  const inputGuardrailDecision = await speculativeInputGuardrail.wait();
+                  if (inputGuardrailDecision.status === "blocked") {
+                    return;
+                  }
+                }
 
                 const usage = convertUsage(usageForFinish);
                 const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
@@ -2508,11 +2748,87 @@ export class Agent {
             }
           : null;
 
+        const toAsyncIterableStreamFromIterable = <T>(iterable: AsyncIterable<T>) =>
+          createAsyncIterableReadable<T>(async (controller) => {
+            try {
+              for await (const item of iterable) {
+                controller.enqueue(item);
+              }
+              controller.close();
+            } catch (error) {
+              controller.error(error);
+            }
+          });
+
+        const applySpeculativeInputGuardrailToFullStream = (
+          baseStream: AsyncIterable<VoltAgentTextStreamPart>,
+        ): AsyncIterable<VoltAgentTextStreamPart> => {
+          if (!speculativeInputGuardrail) {
+            return baseStream;
+          }
+          return gateIterableUntilSpeculativeInputPass({
+            source: baseStream,
+            guardrail: speculativeInputGuardrail,
+            replacement: (decision) =>
+              createInputGuardrailBlockedFullStreamParts(
+                decision.message,
+                responseMessageId ?? undefined,
+              ),
+          });
+        };
+
+        const applySpeculativeInputGuardrailToTextStream = (
+          baseStream: AsyncIterable<string>,
+        ): AsyncIterableStream<string> => {
+          if (!speculativeInputGuardrail) {
+            return baseStream as AsyncIterableStream<string>;
+          }
+          return toAsyncIterableStreamFromIterable(
+            gateIterableUntilSpeculativeInputPass({
+              source: baseStream,
+              guardrail: speculativeInputGuardrail,
+              replacement: (decision) => [decision.message],
+            }),
+          );
+        };
+
+        const applySpeculativeInputGuardrailToUIStream = (
+          baseStream: ToUIMessageStreamReturn,
+        ): ToUIMessageStreamReturn => {
+          if (!speculativeInputGuardrail) {
+            return baseStream;
+          }
+          return toAsyncIterableStreamFromIterable(
+            gateIterableUntilSpeculativeInputPass<UIStreamChunk>({
+              source: baseStream as AsyncIterable<UIStreamChunk>,
+              guardrail: speculativeInputGuardrail,
+              replacement: (decision) =>
+                createInputGuardrailBlockedUIStreamChunks(
+                  decision.message,
+                  responseMessageId ?? undefined,
+                ) as UIStreamChunk[],
+            }),
+          ) as ToUIMessageStreamReturn;
+        };
+
         const baseFullStreamForPipeline = guardrailStreamingEnabled
           ? createBaseFullStream()
           : undefined;
 
         const createSanitizedTextPromise = (): Promise<string> => {
+          if (speculativeInputGuardrail) {
+            return speculativeInputGuardrail.wait().then((decision) => {
+              if (decision.status === "blocked") {
+                return decision.message;
+              }
+              return createSanitizedTextPromiseWithoutInputGate();
+            });
+          }
+
+          return createSanitizedTextPromiseWithoutInputGate();
+        };
+
+        const createSanitizedTextPromiseWithoutInputGate = (): Promise<string> => {
           if (guardrailPipeline) {
             return guardrailPipeline.finalizePromise.then(async () => {
               const sanitized = guardrailPipeline?.runner?.getSanitizedText();
@@ -2563,25 +2879,29 @@ export class Agent {
 
         const getGuardrailAwareFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
           if (guardrailPipeline) {
-            return guardrailPipeline.fullStream;
+            return applySpeculativeInputGuardrailToFullStream(guardrailPipeline.fullStream);
           }
-          return createBaseFullStream();
+          return applySpeculativeInputGuardrailToFullStream(createBaseFullStream());
         };
 
         const getGuardrailAwareTextStream = (): AsyncIterableStream<string> => {
           if (guardrailPipeline) {
-            return guardrailPipeline.textStream;
+            return applySpeculativeInputGuardrailToTextStream(guardrailPipeline.textStream);
           }
-          return result.textStream;
+          return applySpeculativeInputGuardrailToTextStream(result.textStream);
         };
 
         const getGuardrailAwareUIStream = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
-            return result.toUIMessageStream(streamOptions);
+            return applySpeculativeInputGuardrailToUIStream(
+              result.toUIMessageStream(streamOptions),
+            );
           }
-          return guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn;
+          return applySpeculativeInputGuardrailToUIStream(
+            guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn,
+          );
         };
 
         const createMergedUIStream = (
@@ -6456,6 +6776,7 @@ export class Agent {
       if (execute && isAsyncGeneratorFunction(execute)) {
         return async function* (this: Agent): AsyncGenerator<any, void, void> {
           try {
+            await this.waitForSpeculativeInputGuardrail(oc);
             await oc.traceContext.withSpan(toolSpan, async () => {
               await runToolStartHooks();
             });
@@ -6516,6 +6837,7 @@ export class Agent {
 
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
+          await this.waitForSpeculativeInputGuardrail(oc);
           // Call tool start hook - can throw ToolDeniedError
           await runToolStartHooks();
 
@@ -7229,6 +7551,26 @@ export class Agent {
     }
   }
 
+  private getSpeculativeInputGuardrail(oc: OperationContext): SpeculativeInputGuardrailRun | null {
+    return (
+      (oc.systemContext.get(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY) as
+        | SpeculativeInputGuardrailRun
+        | undefined) ?? null
+    );
+  }
+
+  private async waitForSpeculativeInputGuardrail(oc: OperationContext): Promise<void> {
+    const guardrail = this.getSpeculativeInputGuardrail(oc);
+    if (!guardrail) {
+      return;
+    }
+
+    const decision = await guardrail.wait();
+    if (decision.status === "blocked") {
+      throw decision.error;
+    }
+  }
+
   /**
    * Create step handler for memory and hooks
    */
@@ -7239,6 +7581,7 @@ export class Agent {
     const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
 
     return async (event: StepResult<ToolSet>) => {
+      const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
       const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(oc, event);
 
       const responseMessages = this.normalizeStepResponseMessages(
@@ -7264,6 +7607,7 @@ export class Agent {
       if (
         shouldPersistMemory &&
         persistQueue &&
+        (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed()) &&
         conversationPersistence.mode === "step" &&
         (hasResponseMessages || shouldFlushStepPersistence)
       ) {
