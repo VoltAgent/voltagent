@@ -98,6 +98,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and model IDs in VoltAgent.
 - [Anthropic](./with-anthropic) — Use Claude models as your agent’s LLM via the AI SDK.
 - [OpenRouter](./with-openrouter) — Use OpenRouter through VoltAgent's built-in `openrouter/<model>` routing.
+- [Tuning Engines](./with-tuning-engines) — Route VoltAgent model calls through a governed OpenAI-compatible endpoint for policy, traces, and usage/cost reporting.
 - [Chroma](./with-chroma) — RAG with Chroma vectors showing automatic vs tool‑driven retrieval patterns.
 - [Client‑side Tools](./with-client-side-tools) — Next.js UI triggers typed client‑side tools safely, VoltAgent on the server.
 - [Cloudflare Workers](./with-cloudflare-workers) — Deploy your agent on Workers using the Hono server adapter.
