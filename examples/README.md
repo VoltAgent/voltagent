@@ -112,6 +112,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Guardrails](./with-guardrails) — Add output validation and schema enforcement to keep responses on spec.
 - [Hooks](./with-hooks) — Demonstrates lifecycle hooks/middleware for logging, auth, or customization.
 - [Hugging Face (MCP)](./with-hugging-face-mcp) — Access HF tools and models through MCP from agents.
+- [iFlow Search (MCP)](./with-iflow-search-mcp) — Web search, image search, and page fetch via the iFlow Search MCP stdio server.
 - [JWT Auth](./with-jwt-auth) — Protect agent endpoints with JWT verification and helpers.
 - [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
 - [Feedback Templates](./with-feedback) — Configure per-agent feedback templates for thumbs, numeric, and categorical feedback.
