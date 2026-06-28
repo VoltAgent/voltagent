@@ -76,6 +76,8 @@ This starts an HTTP server exposing the agent/workflow/tool/memory/observability
 | `enableSwaggerUI` | `boolean`                      | `true` in development | Enable the `/ui` Swagger UI route                                                                                                 |
 | `resumableStream` | `{ adapter, defaultEnabled? }` | —                     | Configure a [`@voltagent/resumable-streams`](https://github.com/VoltAgent/voltagent/tree/main/packages/resumable-streams) adapter |
 | `configureApp`    | `(app: Hono) => void`          | —                     | Register custom routes/middleware directly on the Hono app                                                                        |
+| `auth`            | `AuthProvider`                 | —                     | Authentication provider for protecting execution endpoints. **Deprecated** — use `authNext` instead                               |
+| `authNext`        | `AuthNextConfig`               | —                     | Next-gen authentication policy. All routes are protected by default; configure `publicRoutes` and console access via the config   |
 
 ```typescript
 new VoltAgent({
@@ -117,8 +119,25 @@ new VoltAgent({
 
 ```typescript
 import { createVoltAgentApp } from "@voltagent/server-hono";
+import type { ServerProviderDeps } from "@voltagent/core";
 
-const app = createVoltAgentApp(deps, config);
+// `deps` is the ServerProviderDeps object passed in by VoltAgent (agents, workflows, etc.)
+// `config` is a HonoServerConfig — same options as honoServer()
+// The function is async and returns { app } — a configured Hono instance
+
+// Example: embed into an existing Node.js server
+async function bootstrap(deps: ServerProviderDeps) {
+  const { app } = await createVoltAgentApp(deps, {
+    port: 3141,
+    enableSwaggerUI: false,
+    configureApp: (honoApp) => {
+      honoApp.get("/healthz", (c) => c.text("ok"));
+    },
+  });
+
+  // `app` is a plain Hono app — mount it, serve it, or pass it to your framework
+  return app;
+}
 ```
 
 ## Documentation
