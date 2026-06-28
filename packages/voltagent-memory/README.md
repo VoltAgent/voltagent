@@ -83,7 +83,7 @@ const agent = new Agent({
 | `voltOpsClient` | `VoltOpsClient` | —       | Explicit VoltOps client; falls back to the globally registered client |
 | `debug`         | `boolean`       | `false` | Enable debug logging                                                  |
 
-If neither `databaseId` nor `databaseName` is provided, the adapter uses the first managed database returned for your VoltOps credentials.
+Both `databaseId` and `databaseName` are optional individually, but at least one must be provided. If neither is given, `initialize()` throws an error because `findTargetDatabase()` cannot locate a target database and returns `undefined`.
 
 ## Vector Adapter
 
