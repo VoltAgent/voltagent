@@ -36,11 +36,11 @@ Experiment orchestration utilities for VoltAgent. Define a dataset, a runner, an
 ## Install
 
 ```bash
-npm install @voltagent/evals @voltagent/scorers @voltagent/sdk
+npm install @voltagent/core @voltagent/evals @voltagent/scorers @voltagent/sdk
 # or
-yarn add @voltagent/evals @voltagent/scorers @voltagent/sdk
+yarn add @voltagent/core @voltagent/evals @voltagent/scorers @voltagent/sdk
 # or
-pnpm add @voltagent/evals @voltagent/scorers @voltagent/sdk
+pnpm add @voltagent/core @voltagent/evals @voltagent/scorers @voltagent/sdk
 ```
 
 ## Usage
