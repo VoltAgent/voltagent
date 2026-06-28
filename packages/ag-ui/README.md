@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 <a href="https://voltagent.dev/">
 <img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/d9ad69bd-b905-42a3-81af-99a0581348c0" />
 </a>
@@ -36,11 +36,11 @@ An [AG-UI](https://github.com/ag-ui-protocol/ag-ui) adapter for VoltAgent. Wrap 
 ## Install
 
 ```bash
-npm install @voltagent/ag-ui @ag-ui/client @ag-ui/core
+npm install @voltagent/ag-ui @voltagent/core @ai-sdk/openai @ag-ui/client @ag-ui/core
 # or
-yarn add @voltagent/ag-ui @ag-ui/client @ag-ui/core
+yarn add @voltagent/ag-ui @voltagent/core @ai-sdk/openai @ag-ui/client @ag-ui/core
 # or
-pnpm add @voltagent/ag-ui @ag-ui/client @ag-ui/core
+pnpm add @voltagent/ag-ui @voltagent/core @ai-sdk/openai @ag-ui/client @ag-ui/core
 ```
 
 Add `@copilotkit/runtime` as well if you plan to use the CopilotKit handlers below.
@@ -106,8 +106,8 @@ registerCopilotKitRoutes({
 
 | Option           | Type                                                                            | Default                    | Description                                 |
 | ---------------- | ------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------- |
-| `agents`         | `Record<string, AbstractAgent>`                                                 | —                          | Static map of AG-UI agents                  |
-| `loadAgents`     | `() => Promise<Record<string, AbstractAgent>> \| Record<string, AbstractAgent>` | —                          | Lazy loader; overrides `agents` if provided |
+| `agents`         | `Record<string, AbstractAgent>`                                                 | â€”                        | Static map of AG-UI agents                  |
+| `loadAgents`     | `() => Promise<Record<string, AbstractAgent>> \| Record<string, AbstractAgent>` | â€”                        | Lazy loader; overrides `agents` if provided |
 | `serviceAdapter` | `CopilotServiceAdapter`                                                         | `ExperimentalEmptyAdapter` | CopilotKit service adapter                  |
 | `endpoint`       | `string`                                                                        | `"/copilotkit"`            | Endpoint path used by CopilotKit clients    |
 
@@ -115,8 +115,8 @@ registerCopilotKitRoutes({
 
 | Option        | Type                                  | Default               | Description                                                                              |
 | ------------- | ------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| `app`         | Hono-style app (`all(path, handler)`) | —                     | App instance to register the route on                                                    |
-| `agents`      | `Record<string, Agent>`               | —                     | VoltAgent agents to expose, wrapped lazily with `createVoltAgentAGUI`                    |
+| `app`         | Hono-style app (`all(path, handler)`) | â€”                   | App instance to register the route on                                                    |
+| `agents`      | `Record<string, Agent>`               | â€”                   | VoltAgent agents to expose, wrapped lazily with `createVoltAgentAGUI`                    |
 | `resourceIds` | `string[]`                            | all registered agents | Filter which agents from the global `AgentRegistry` are exposed (if `agents` is omitted) |
 | `path`        | `string`                              | `"/copilotkit"`       | Path to mount the CopilotKit endpoint                                                    |
 
@@ -128,4 +128,4 @@ registerCopilotKitRoutes({
 
 ## License
 
-Licensed under the MIT License, Copyright © 2026-present VoltAgent.
+Licensed under the MIT License, Copyright Â© 2026-present VoltAgent.
