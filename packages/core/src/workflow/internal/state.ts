@@ -167,7 +167,6 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
 
   finish() {
     assertCanMutate(this.#state);
-    this.#input = this.#state.data as DATA;
     this.#internalUpdate({
       endAt: new Date(),
       status: "completed",

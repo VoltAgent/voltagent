@@ -128,6 +128,17 @@ describe("WorkflowStateManager", () => {
       expect(result.status).toBe("completed");
     });
 
+    it("should preserve the original input after the workflow finishes", () => {
+      stateManager.start({ value: "original" });
+      stateManager.update({ data: { value: "final" } });
+      stateManager.finish();
+
+      // `input` is documented as the initial input and must survive completion;
+      // only `data` should reflect the final value.
+      expect(stateManager.state.input).toEqual({ value: "original" });
+      expect(stateManager.state.data).toEqual({ value: "final" });
+    });
+
     it("should transition from suspended to failed", () => {
       stateManager.start({ data: "test" });
       stateManager.suspend("Pause");
