@@ -17,7 +17,7 @@ const toAsync = async function* <T>(items: T[]): AsyncIterable<T> {
 };
 
 describe("resolveFinishUsage", () => {
-  it("prefers last-step usage when provider metadata indicates anthropic", () => {
+  it("prefers total usage when provider metadata indicates anthropic", () => {
     const lastStepUsage: LanguageModelUsage = {
       inputTokens: 5,
       outputTokens: 6,
@@ -35,10 +35,10 @@ describe("resolveFinishUsage", () => {
       totalUsage,
     });
 
-    expect(resolved).toBe(lastStepUsage);
+    expect(resolved).toBe(totalUsage);
   });
 
-  it("prefers last-step usage when usage includes cache fields", () => {
+  it("prefers total usage when usage includes cache fields", () => {
     const lastStepUsage = {
       inputTokens: 5,
       outputTokens: 6,
@@ -56,7 +56,7 @@ describe("resolveFinishUsage", () => {
       totalUsage,
     });
 
-    expect(resolved).toBe(lastStepUsage);
+    expect(resolved).toBe(totalUsage);
   });
 
   it("prefers total usage when provider is not anthropic", () => {
@@ -98,7 +98,7 @@ describe("resolveFinishUsage", () => {
 });
 
 describe("normalizeFinishUsageStream", () => {
-  it("overrides finish totalUsage with last-step usage for anthropic streams", async () => {
+  it("keeps finish totalUsage unchanged for anthropic streams", async () => {
     const lastStepUsage: LanguageModelUsage = {
       inputTokens: 10,
       outputTokens: 5,
@@ -121,10 +121,10 @@ describe("normalizeFinishUsageStream", () => {
 
     const normalized = await collectStream(normalizeFinishUsageStream(toAsync(parts)));
 
-    expect(normalized[2].totalUsage).toEqual(lastStepUsage);
+    expect(normalized[2].totalUsage).toEqual(totalUsage);
   });
 
-  it("uses finish metadata to override totalUsage when finish-step metadata is missing", async () => {
+  it("keeps finish totalUsage unchanged when finish-step metadata is missing", async () => {
     const lastStepUsage: LanguageModelUsage = {
       inputTokens: 9,
       outputTokens: 4,
@@ -147,10 +147,10 @@ describe("normalizeFinishUsageStream", () => {
 
     const normalized = await collectStream(normalizeFinishUsageStream(toAsync(parts)));
 
-    expect(normalized[1].totalUsage).toEqual(lastStepUsage);
+    expect(normalized[1].totalUsage).toEqual(totalUsage);
   });
 
-  it("overrides totalUsage when cache fields indicate anthropic usage", async () => {
+  it("keeps finish totalUsage unchanged when cache fields are present", async () => {
     const lastStepUsage = {
       inputTokens: 8,
       outputTokens: 4,
@@ -169,7 +169,7 @@ describe("normalizeFinishUsageStream", () => {
 
     const normalized = await collectStream(normalizeFinishUsageStream(toAsync(parts)));
 
-    expect(normalized[1].totalUsage).toEqual(lastStepUsage);
+    expect(normalized[1].totalUsage).toEqual(totalUsage);
   });
 
   it("keeps finish totalUsage unchanged for non-anthropic streams", async () => {
