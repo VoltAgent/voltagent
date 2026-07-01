@@ -1161,7 +1161,7 @@ Use pandas and summarize findings.`.split("\n"),
       expect(parts[1]).toEqual(expect.objectContaining({ type: "text-delta", id: "text-1" }));
     });
 
-    it("uses last-step usage for finish events when provider is anthropic", async () => {
+    it("keeps aggregate total usage for finish events when provider is anthropic", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
@@ -1223,7 +1223,7 @@ Use pandas and summarize findings.`.split("\n"),
       }
 
       const finishPart = parts.find((part) => part.type === "finish");
-      expect(finishPart?.totalUsage).toEqual(lastStepUsage);
+      expect(finishPart?.totalUsage).toEqual(summedUsage);
     });
 
     it("keeps fullStream intact after probe for ReadableStream-based providers", async () => {
