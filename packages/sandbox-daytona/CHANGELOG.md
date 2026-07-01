@@ -1,5 +1,11 @@
 # @voltagent/sandbox-daytona
 
+## 2.0.3
+
+### Patch Changes
+
+- [#1355](https://github.com/VoltAgent/voltagent/pull/1355) [`743d8af`](https://github.com/VoltAgent/voltagent/commit/743d8af0ec67d73a2b42ab525e761b6806c2a1ef) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 2.0.2
 
 ### Patch Changes

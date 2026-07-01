@@ -1,5 +1,11 @@
 # @voltagent/sandbox-e2b
 
+## 2.0.3
+
+### Patch Changes
+
+- [#1356](https://github.com/VoltAgent/voltagent/pull/1356) [`2b66ae3`](https://github.com/VoltAgent/voltagent/commit/2b66ae37a9578f77e13b992fcc72b307cff5b6ab) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 2.0.2
 
 ### Patch Changes

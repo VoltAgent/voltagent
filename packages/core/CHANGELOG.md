@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 2.8.1
+
+### Patch Changes
+
+- [#1366](https://github.com/VoltAgent/voltagent/pull/1366) [`6b26a8f`](https://github.com/VoltAgent/voltagent/commit/6b26a8fbfc6d648b129b3043fc7e76fe68bd064a) Thanks [@omeraplak](https://github.com/omeraplak)! - Use aggregate finish usage consistently across providers.
+
+- [#1362](https://github.com/VoltAgent/voltagent/pull/1362) [`9dc0314`](https://github.com/VoltAgent/voltagent/commit/9dc0314cbc71fb035cf8d71e41d243680ae43c38) Thanks [@VihaanAgarwal](https://github.com/VihaanAgarwal)! - Fixed workflow `state.input` being overwritten with the final output once a workflow finished. `finish()` reassigned the stored input to the current data, so reading `state.input` after completion returned the final result instead of the initial input it documents. The initial input is now preserved through completion; `state.data` still reflects the final value.
+
 ## 2.8.0
 
 ### Minor Changes

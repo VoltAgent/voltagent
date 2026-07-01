@@ -1,5 +1,11 @@
 # @voltagent/sandbox-blaxel
 
+## 2.1.1
+
+### Patch Changes
+
+- [#1354](https://github.com/VoltAgent/voltagent/pull/1354) [`af4f6f2`](https://github.com/VoltAgent/voltagent/commit/af4f6f23726edf4afda698bcf35828779ce96a60) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 2.1.0
 
 ### Minor Changes

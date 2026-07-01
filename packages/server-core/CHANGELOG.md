@@ -1,5 +1,14 @@
 # @voltagent/server-core
 
+## 2.1.19
+
+### Patch Changes
+
+- [#1331](https://github.com/VoltAgent/voltagent/pull/1331) [`887213b`](https://github.com/VoltAgent/voltagent/commit/887213b7913f1900b35c17a1b5005d1cb8e8a2e6) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
+- Updated dependencies [[`6b26a8f`](https://github.com/VoltAgent/voltagent/commit/6b26a8fbfc6d648b129b3043fc7e76fe68bd064a), [`9dc0314`](https://github.com/VoltAgent/voltagent/commit/9dc0314cbc71fb035cf8d71e41d243680ae43c38)]:
+  - @voltagent/core@2.8.1
+
 ## 2.1.18
 
 ### Patch Changes

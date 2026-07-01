@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/sandbox-blaxel",
   "description": "VoltAgent Blaxel sandbox provider",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "dependencies": {
     "@blaxel/core": "^0.2.0",
     "es-toolkit": "^1.46.1"
@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/node": "^24.2.1",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^2.4.1",
+    "@voltagent/core": "^2.8.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
