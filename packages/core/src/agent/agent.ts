@@ -7453,7 +7453,7 @@ export class Agent {
 
       // Determine if this is the final step
       const hasToolCalls = event.toolCalls && event.toolCalls.length > 0;
-      const isContinued = event.isContinued === true;
+      const isContinued = event.stepType === "continue";
       const conversationSteps =
         (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[]) || [];
       const stepCount = Math.max(1, conversationSteps.length);
