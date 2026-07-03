@@ -1380,6 +1380,8 @@ export class Agent {
                 const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
                 try {
+                  const effectiveStopWhen =
+                    options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps);
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
                     generateText({
                       model: resolvedModel,
@@ -1388,7 +1390,7 @@ export class Agent {
                       // Default values
                       temperature: this.temperature,
                       maxOutputTokens: this.maxOutputTokens,
-                      stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+                      stopWhen: effectiveStopWhen,
                       // User overrides from AI SDK options
                       ...aiSDKOptions,
                       maxRetries: 0,
@@ -1398,7 +1400,7 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepFinish: this.createStepHandler(oc, options, maxSteps),
+                      onStepFinish: this.createStepHandler(oc, options, effectiveStopWhen),
                     }),
                   );
 
@@ -2038,6 +2040,8 @@ export class Agent {
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
+            const effectiveStopWhen = options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps);
+
             const streamResult = streamText({
               model: resolvedModel,
               messages,
@@ -2045,7 +2049,7 @@ export class Agent {
               // Default values
               temperature: this.temperature,
               maxOutputTokens: this.maxOutputTokens,
-              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              stopWhen: effectiveStopWhen,
               // User overrides from AI SDK options
               ...aiSDKOptions,
               maxRetries: 0,
@@ -2055,7 +2059,7 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepFinish: this.createStepHandler(oc, options, maxSteps),
+              onStepFinish: this.createStepHandler(oc, options, effectiveStopWhen),
               onError: async (errorData) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
@@ -7389,8 +7393,8 @@ export class Agent {
    */
   private createStepHandler(
     oc: OperationContext,
-    options?: BaseGenerationOptions,
-    maxSteps?: number,
+    options: BaseGenerationOptions | undefined,
+    stopWhen: StopWhen,
   ) {
     const buffer = this.getConversationBuffer(oc);
     const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
@@ -7454,12 +7458,10 @@ export class Agent {
       // Determine if this is the final step
       const hasToolCalls = event.toolCalls && event.toolCalls.length > 0;
       const isContinued = event.stepType === "continue";
-      const conversationSteps =
-        (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[]) || [];
-      const stepCount = Math.max(1, conversationSteps.length);
+      const isStopped = await stopWhen(event);
 
       let isFinalStep = false;
-      if (maxSteps !== undefined && stepCount >= maxSteps) {
+      if (isStopped) {
         isFinalStep = true;
       } else if (!hasToolCalls && !isContinued) {
         isFinalStep = true;

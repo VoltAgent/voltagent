@@ -31,7 +31,9 @@ vi.mock("ai", async () => {
     streamText: vi.fn(),
     generateObject: vi.fn(),
     streamObject: vi.fn(),
-    stepCountIs: vi.fn(() => vi.fn(() => false)),
+    stepCountIs: vi.fn((maxSteps: number) =>
+      vi.fn((event: any) => (event?.stepCount ?? 0) >= maxSteps),
+    ),
   };
 });
 
@@ -3279,6 +3281,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       // Step 1: Tool call, not continued
       await capturedStepHandler({
+        stepCount: 1,
         stepType: "initial",
         text: "Thinking",
         toolCalls: [{ type: "tool-call", toolCallId: "1", toolName: "test", args: {} }],
@@ -3295,6 +3298,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       // Step 2: Continued, no tool calls
       await capturedStepHandler({
+        stepCount: 2,
         stepType: "continue",
         text: "Part 1...",
         toolCalls: [],
@@ -3311,6 +3315,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       // Step 3: Final step (maxSteps reached = 3)
       await capturedStepHandler({
+        stepCount: 3,
         stepType: "continue",
         text: "Part 2",
         toolCalls: [{ type: "tool-call", toolCallId: "2", toolName: "test", args: {} }],
@@ -3331,6 +3336,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       // Step 1 of new flow: no tool calls, not continued -> should be final
       await capturedStepHandler({
+        stepCount: 1,
         stepType: "initial",
         text: "Final answer right away",
         toolCalls: [],
