@@ -1398,7 +1398,7 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepFinish: this.createStepHandler(oc, options),
+                      onStepFinish: this.createStepHandler(oc, options, maxSteps),
                     }),
                   );
 
@@ -2055,7 +2055,7 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepFinish: this.createStepHandler(oc, options),
+              onStepFinish: this.createStepHandler(oc, options, maxSteps),
               onError: async (errorData) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
@@ -7387,7 +7387,11 @@ export class Agent {
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
+  private createStepHandler(
+    oc: OperationContext,
+    options?: BaseGenerationOptions,
+    maxSteps?: number,
+  ) {
     const buffer = this.getConversationBuffer(oc);
     const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
@@ -7447,9 +7451,23 @@ export class Agent {
         return;
       }
 
+      // Determine if this is the final step
+      const hasToolCalls = event.toolCalls && event.toolCalls.length > 0;
+      const isContinued = event.isContinued === true;
+      const conversationSteps =
+        (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[]) || [];
+      const stepCount = Math.max(1, conversationSteps.length);
+
+      let isFinalStep = false;
+      if (maxSteps !== undefined && stepCount >= maxSteps) {
+        isFinalStep = true;
+      } else if (!hasToolCalls && !isContinued) {
+        isFinalStep = true;
+      }
+
       // Call hooks
       const hooks = this.getMergedHooks(options);
-      await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
+      await hooks.onStepFinish?.({ agent: this, step: event, context: oc, isFinalStep });
     };
   }
 

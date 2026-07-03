@@ -136,6 +136,7 @@ export interface OnStepFinishHookArgs {
   agent: Agent;
   step: any;
   context: OperationContext;
+  isFinalStep?: boolean;
 }
 
 export type RetrySource = "llm" | "middleware";

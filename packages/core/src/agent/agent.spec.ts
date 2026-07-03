@@ -3253,6 +3253,102 @@ Use pandas and summarize findings.`.split("\n"),
       // Just verify the test doesn't throw
       expect(onStepFinish.mock.calls.length).toBeGreaterThanOrEqual(0);
     });
+
+    it("should accurately pass isFinalStep flag to onStepFinish hook", async () => {
+      const onStepFinish = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: { onStepFinish },
+        maxSteps: 3,
+      });
+
+      let capturedStepHandler: any;
+      vi.mocked(ai.generateText).mockImplementation(async (options: any) => {
+        capturedStepHandler = options.onStepFinish;
+        return {
+          text: "Final response",
+          steps: [],
+        } as any;
+      });
+
+      await agent.generateText("Test");
+
+      expect(capturedStepHandler).toBeDefined();
+
+      // Step 1: Tool call, not continued
+      await capturedStepHandler({
+        stepType: "initial",
+        text: "Thinking",
+        toolCalls: [{ type: "tool-call", toolCallId: "1", toolName: "test", args: {} }],
+        toolResults: [],
+        finishReason: "tool-calls",
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        warnings: [],
+        isContinued: false,
+        response: { id: "1", timestamp: new Date(), messages: [] },
+        content: [{ type: "text", text: "Thinking" }],
+      });
+
+      expect(onStepFinish).toHaveBeenCalledTimes(1);
+      expect(onStepFinish.mock.calls[0][0].isFinalStep).toBe(false);
+
+      // Step 2: Continued, no tool calls
+      await capturedStepHandler({
+        stepType: "continue",
+        text: "Part 1...",
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "length",
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        warnings: [],
+        isContinued: true,
+        response: { id: "2", timestamp: new Date(), messages: [] },
+        content: [{ type: "text", text: "Part 1..." }],
+      });
+
+      expect(onStepFinish).toHaveBeenCalledTimes(2);
+      expect(onStepFinish.mock.calls[1][0].isFinalStep).toBe(false);
+
+      // Step 3: Final step (maxSteps reached = 3)
+      await capturedStepHandler({
+        stepType: "continue",
+        text: "Part 2",
+        toolCalls: [{ type: "tool-call", toolCallId: "2", toolName: "test", args: {} }],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        warnings: [],
+        isContinued: false,
+        response: { id: "3", timestamp: new Date(), messages: [] },
+        content: [{ type: "text", text: "Part 2" }],
+      });
+
+      expect(onStepFinish).toHaveBeenCalledTimes(3);
+      expect(onStepFinish.mock.calls[2][0].isFinalStep).toBe(true);
+
+      // Clear steps by resetting context (by initiating a new request)
+      onStepFinish.mockClear();
+      await agent.generateText("Test 2");
+
+      // Step 1 of new flow: no tool calls, not continued -> should be final
+      await capturedStepHandler({
+        stepType: "initial",
+        text: "Final answer right away",
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        warnings: [],
+        isContinued: false,
+        response: { id: "4", timestamp: new Date(), messages: [] },
+        content: [{ type: "text", text: "Final answer right away" }],
+      });
+
+      expect(onStepFinish).toHaveBeenCalledTimes(1);
+      expect(onStepFinish.mock.calls[0][0].isFinalStep).toBe(true);
+    });
   });
 
   describe("SubAgent Management", () => {
