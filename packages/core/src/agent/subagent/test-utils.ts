@@ -249,6 +249,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         textStream: textStream as any,
         text: Promise.resolve(textContent),
         usage: Promise.resolve(createMockUsage()),
+        totalUsage: Promise.resolve(createMockUsage()),
+        steps: Promise.resolve([]),
         finishReason: Promise.resolve("stop"),
         context: new Map(),
         partialOutputStream: undefined,
