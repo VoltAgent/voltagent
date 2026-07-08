@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.9.0
+
+### Minor Changes
+
+- [#1372](https://github.com/VoltAgent/voltagent/pull/1372) [`4a3100b`](https://github.com/VoltAgent/voltagent/commit/4a3100b1999459f5b9b722f14516539aaaa96a5d) Thanks [@omeraplak](https://github.com/omeraplak)! - Expose AI SDK usage semantics in agent `onEnd` outputs: `usage` now represents final-step usage, `totalUsage` represents aggregate usage across all steps, and `steps` is included when available.
+
 ## 2.8.1
 
 ### Patch Changes
