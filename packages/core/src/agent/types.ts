@@ -13,7 +13,7 @@ import type {
 } from "../agent/providers/base/types";
 import type { PrepareStep, StopWhen } from "../ai-types";
 
-import type { LanguageModel, UIMessage } from "ai";
+import type { LanguageModel, LanguageModelUsage, StepResult, ToolSet, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
@@ -1407,8 +1407,14 @@ export interface StreamTextFinishResult {
   /** The final, consolidated text output from the stream. */
   text: string;
 
-  /** Token usage information (if available). */
-  usage?: UsageInfo;
+  /** Token usage for the final model step (if available). */
+  usage?: LanguageModelUsage;
+
+  /** Aggregate token usage across all model steps (if available). */
+  totalUsage?: LanguageModelUsage;
+
+  /** AI SDK step results for the generation (if available). */
+  steps?: ReadonlyArray<StepResult<ToolSet>>;
 
   /** Feedback metadata for the trace, if enabled. */
   feedback?: AgentFeedbackMetadata | null;
@@ -1440,8 +1446,14 @@ export interface StreamObjectFinishResult<TObject> {
   /** The final, fully formed object from the stream. */
   object: TObject;
 
-  /** Token usage information (if available). */
-  usage?: UsageInfo;
+  /** Token usage for the final model step (if available). */
+  usage?: LanguageModelUsage;
+
+  /** Aggregate token usage across all model steps (if available). */
+  totalUsage?: LanguageModelUsage;
+
+  /** AI SDK step results for the generation (if available). */
+  steps?: ReadonlyArray<StepResult<ToolSet>>;
 
   /** The original completion response object from the provider (if available). */
   providerResponse?: unknown;
@@ -1470,8 +1482,12 @@ export type StreamObjectOnFinishCallback<TObject> = (
 export interface StandardizedTextResult {
   /** The generated text. */
   text: string;
-  /** Token usage information (if available). */
-  usage?: UsageInfo;
+  /** Token usage for the final model step (if available). */
+  usage?: LanguageModelUsage;
+  /** Aggregate token usage across all model steps (if available). */
+  totalUsage?: LanguageModelUsage;
+  /** AI SDK step results for the generation (if available). */
+  steps?: ReadonlyArray<StepResult<ToolSet>>;
   /** Feedback metadata for the trace, if enabled. */
   feedback?: AgentFeedbackMetadata | null;
   /** Original provider response (if needed). */
@@ -1491,8 +1507,12 @@ export interface StandardizedTextResult {
 export interface StandardizedObjectResult<TObject> {
   /** The generated object. */
   object: TObject;
-  /** Token usage information (if available). */
-  usage?: UsageInfo;
+  /** Token usage for the final model step (if available). */
+  usage?: LanguageModelUsage;
+  /** Aggregate token usage across all model steps (if available). */
+  totalUsage?: LanguageModelUsage;
+  /** AI SDK step results for the generation (if available). */
+  steps?: ReadonlyArray<StepResult<ToolSet>>;
   /** Original provider response (if needed). */
   providerResponse?: unknown;
   /** Finish reason (if available from provider). */

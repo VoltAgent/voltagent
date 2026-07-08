@@ -1204,6 +1204,8 @@ Use pandas and summarize findings.`.split("\n"),
           };
         })(),
         usage: Promise.resolve(lastStepUsage),
+        totalUsage: Promise.resolve(summedUsage),
+        steps: Promise.resolve([{ usage: lastStepUsage }]),
         finishReason: Promise.resolve("stop"),
         warnings: [],
         toUIMessageStream: vi.fn(),
@@ -1224,6 +1226,8 @@ Use pandas and summarize findings.`.split("\n"),
 
       const finishPart = parts.find((part) => part.type === "finish");
       expect(finishPart?.totalUsage).toEqual(summedUsage);
+      await expect(result.totalUsage).resolves.toEqual(summedUsage);
+      await expect(result.steps).resolves.toEqual([{ usage: lastStepUsage }]);
     });
 
     it("keeps fullStream intact after probe for ReadableStream-based providers", async () => {
@@ -3208,6 +3212,78 @@ Use pandas and summarize findings.`.split("\n"),
       expect(oc.logger).toBeDefined();
       expect(arg.output).toBeDefined();
       expect(arg.output.text).toBe("Success response");
+    });
+
+    it("should expose AI SDK final-step usage and aggregate totalUsage in onEnd", async () => {
+      const onEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: { onEnd },
+      });
+
+      const stepUsages = [
+        { inputTokens: 100, outputTokens: 19, totalTokens: 119 },
+        { inputTokens: 140, outputTokens: 27, totalTokens: 167 },
+        { inputTokens: 190, outputTokens: 32, totalTokens: 222 },
+      ];
+      const totalUsage = { inputTokens: 430, outputTokens: 78, totalTokens: 508 };
+      const steps = stepUsages.map((usage, index) => ({
+        text: index === stepUsages.length - 1 ? "Final response" : "",
+        content: [],
+        reasoning: [],
+        reasoningText: undefined,
+        files: [],
+        sources: [],
+        toolCalls: [],
+        staticToolCalls: [],
+        dynamicToolCalls: [],
+        toolResults: [],
+        staticToolResults: [],
+        dynamicToolResults: [],
+        finishReason: index === stepUsages.length - 1 ? "stop" : "tool-calls",
+        usage,
+        warnings: [],
+        request: {},
+        response: {
+          id: `step-${index}`,
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        providerMetadata: undefined,
+      }));
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Final response",
+        content: [],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: stepUsages[2],
+        totalUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps,
+      } as any);
+
+      await agent.generateText("Test");
+
+      expect(onEnd).toHaveBeenCalledTimes(1);
+      const output = onEnd.mock.calls[0]?.[0].output;
+      expect(output?.usage).toEqual(stepUsages[2]);
+      expect(output?.totalUsage).toEqual(totalUsage);
+      expect(output?.steps?.map((step: any) => step.usage)).toEqual(stepUsages);
     });
 
     it("should call onStepFinish for multi-step generation", async () => {

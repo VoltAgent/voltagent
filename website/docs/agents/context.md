@@ -390,7 +390,8 @@ const auditHooks = createHooks({
       conversationId: context.conversationId,
       input: context.input,
       output: context.output,
-      usage: output?.usage,
+      finalStepUsage: output?.usage,
+      totalUsage: output?.totalUsage,
     });
   },
 });

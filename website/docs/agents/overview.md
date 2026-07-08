@@ -121,13 +121,15 @@ const response = await agent.streamText("Explain async/await");
 })();
 
 // Access final values (resolve when stream completes)
-const [fullText, usage, finishReason] = await Promise.all([
+const [fullText, finalStepUsage, totalUsage, finishReason] = await Promise.all([
   response.text, // Promise<string>
-  response.usage, // Promise<UsageInfo>
+  response.usage, // Promise<LanguageModelUsage> for the final step
+  response.totalUsage, // Promise<LanguageModelUsage> across all steps
   response.finishReason, // Promise<string>
 ]);
 
-console.log(`\nTotal: ${fullText.length} chars, ${usage?.totalTokens} tokens`);
+console.log(`\nTotal: ${fullText.length} chars, ${totalUsage?.totalTokens} tokens`);
+console.log(`Final step tokens: ${finalStepUsage?.totalTokens}`);
 ```
 
 ### Feedback (optional)

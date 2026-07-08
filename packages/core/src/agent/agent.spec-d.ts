@@ -714,10 +714,27 @@ describe("Agent Type System", () => {
   });
 
   describe("Response Type Tests", () => {
+    const usage = (inputTokens: number, outputTokens: number, totalTokens: number) => ({
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      inputTokenDetails: {
+        noCacheTokens: inputTokens,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+      },
+      outputTokenDetails: {
+        textTokens: outputTokens,
+        reasoningTokens: 0,
+      },
+    });
+
     it("should validate StandardizedTextResult", () => {
       const textResult: StandardizedTextResult = {
         text: "Generated text",
-        usage: { promptTokens: 50, completionTokens: 50, totalTokens: 100 },
+        usage: usage(50, 50, 100),
+        totalUsage: usage(150, 50, 200),
+        steps: [],
         providerResponse: {},
         finishReason: "stop",
         warnings: ["Warning 1"],
@@ -730,7 +747,9 @@ describe("Agent Type System", () => {
     it("should validate StreamTextFinishResult", () => {
       const streamTextResult: StreamTextFinishResult = {
         text: "Streamed text",
-        usage: { promptTokens: 75, completionTokens: 75, totalTokens: 150 },
+        usage: usage(75, 75, 150),
+        totalUsage: usage(175, 75, 250),
+        steps: [],
         finishReason: "length",
         providerResponse: {},
         warnings: [],
@@ -743,7 +762,9 @@ describe("Agent Type System", () => {
     it("should validate StandardizedObjectResult", () => {
       const objectResult: StandardizedObjectResult<{ name: string; age: number }> = {
         object: { name: "John", age: 30 },
-        usage: { promptTokens: 100, completionTokens: 100, totalTokens: 200 },
+        usage: usage(100, 100, 200),
+        totalUsage: usage(200, 100, 300),
+        steps: [],
         providerResponse: {},
         finishReason: "stop",
         warnings: undefined,
@@ -758,7 +779,9 @@ describe("Agent Type System", () => {
     it("should validate StreamObjectFinishResult", () => {
       const streamObjectResult: StreamObjectFinishResult<{ items: string[] }> = {
         object: { items: ["a", "b", "c"] },
-        usage: { promptTokens: 125, completionTokens: 125, totalTokens: 250 },
+        usage: usage(125, 125, 250),
+        totalUsage: usage(225, 125, 350),
+        steps: [],
         providerResponse: {},
         warnings: [],
         finishReason: "stop",

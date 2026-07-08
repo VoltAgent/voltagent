@@ -700,6 +700,8 @@ export type StreamTextResultWithContext<
   readonly textStream: AIStreamTextResult<TOOLS, any>["textStream"];
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
   readonly usage: AIStreamTextResult<TOOLS, any>["usage"];
+  readonly totalUsage: AIStreamTextResult<TOOLS, any>["totalUsage"];
+  readonly steps: AIStreamTextResult<TOOLS, any>["steps"];
   readonly finishReason: AIStreamTextResult<TOOLS, any>["finishReason"];
   // Partial output stream for streaming structured objects
   readonly partialOutputStream?: AIStreamTextResult<TOOLS, any>["partialOutputStream"];
@@ -1504,7 +1506,9 @@ export class Agent {
               agent: this,
               output: {
                 text: finalText,
-                usage: usageInfo,
+                usage: providerUsage,
+                totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+                steps: result.steps,
                 providerResponse: result.response,
                 finishReason: result.finishReason,
                 warnings: result.warnings,
@@ -1662,6 +1666,20 @@ export class Agent {
               completionTokens: 0,
               totalTokens: 0,
             };
+            const providerUsage: LanguageModelUsage = {
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+              inputTokenDetails: {
+                noCacheTokens: 0,
+                cacheReadTokens: 0,
+                cacheWriteTokens: 0,
+              },
+              outputTokenDetails: {
+                textTokens: 0,
+                reasoningTokens: 0,
+              },
+            };
 
             // Apply guardrails to bailed result
             const finalText = await executeOutputGuardrails({
@@ -1683,7 +1701,8 @@ export class Agent {
               agent: this,
               output: {
                 text: finalText,
-                usage: usageInfo,
+                usage: providerUsage,
+                totalUsage: providerUsage,
                 providerResponse: undefined as any,
                 finishReason: "bail" as any,
                 warnings: undefined,
@@ -1698,7 +1717,8 @@ export class Agent {
             // Return bailed result as successful generation
             return {
               text: finalText,
-              usage: usageInfo,
+              usage: providerUsage,
+              totalUsage: providerUsage,
               finishReason: "bail" as any,
               warnings: undefined,
               response: {} as any,
@@ -2184,10 +2204,10 @@ export class Agent {
                   }
                 }
 
-                const usage = convertUsage(usageForFinish);
+                const usageInfo = convertUsage(usageForFinish);
                 const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
                   oc,
-                  usage,
+                  usage: usageInfo,
                   finishReason: finalResult.finishReason ?? null,
                 });
                 this.applyMetadataToLastAssistantMessage({
@@ -2227,7 +2247,7 @@ export class Agent {
                       operation: "streamText",
                       agent: this,
                       metadata: {
-                        usage,
+                        usage: usageInfo,
                         finishReason: "bail" as any,
                         warnings: finalResult.warnings ?? null,
                       },
@@ -2245,7 +2265,7 @@ export class Agent {
                     operation: "streamText",
                     agent: this,
                     metadata: {
-                      usage,
+                      usage: usageInfo,
                       finishReason: finalResult.finishReason ?? null,
                       warnings: finalResult.warnings ?? null,
                     },
@@ -2284,7 +2304,9 @@ export class Agent {
                   agent: this,
                   output: {
                     text: finalText,
-                    usage,
+                    usage: providerUsage,
+                    totalUsage: finalResult.totalUsage,
+                    steps: finalResult.steps,
                     providerResponse: finalResult.response,
                     finishReason: finalResult.finishReason,
                     warnings: finalResult.warnings,
@@ -2299,7 +2321,7 @@ export class Agent {
                   await userOnFinish(guardrailedResult);
                 }
 
-                const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+                const tokenInfo = usageInfo ? `${usageInfo.totalTokens} tokens` : "no usage data";
                 methodLogger.debug(
                   buildAgentLogMessage(
                     this.name,
@@ -2794,6 +2816,12 @@ export class Agent {
           get usage() {
             return result.usage;
           },
+          get totalUsage() {
+            return result.totalUsage;
+          },
+          get steps() {
+            return result.steps;
+          },
           get finishReason() {
             return result.finishReason;
           },
@@ -3094,7 +3122,9 @@ export class Agent {
               agent: this,
               output: {
                 object: finalObject,
-                usage: usageInfo,
+                usage: providerUsage,
+                totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+                steps: (result as { steps?: ReadonlyArray<StepResult<ToolSet>> }).steps,
                 providerResponse: (result as any).response,
                 finishReason: result.finishReason,
                 warnings: result.warnings,
@@ -3527,7 +3557,9 @@ export class Agent {
                     agent: this,
                     output: {
                       object: finalObject,
-                      usage: usageInfo,
+                      usage: providerUsage,
+                      totalUsage: (finalResult as { totalUsage?: LanguageModelUsage }).totalUsage,
+                      steps: (finalResult as { steps?: ReadonlyArray<StepResult<ToolSet>> }).steps,
                       providerResponse: finalResult.response,
                       finishReason: finalResult.finishReason,
                       warnings: finalResult.warnings,

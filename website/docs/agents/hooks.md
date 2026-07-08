@@ -93,9 +93,9 @@ const myAgentHooks = createHooks({
       console.error(`[Hook] Error Details:`, JSON.stringify(error, null, 2));
     } else if (output) {
       console.log(`[Hook] Agent ${agent.name} finished successfully.`);
-      // Log usage or inspect output type
-      if ("usage" in output && output.usage) {
-        console.log(`[Hook] Token Usage: ${output.usage.totalTokens}`);
+      // Log aggregate usage or inspect output type
+      if ("totalUsage" in output && output.totalUsage) {
+        console.log(`[Hook] Total Token Usage: ${output.totalUsage.totalTokens}`);
       }
       if ("text" in output && output.text) {
         console.log(`[Hook] Final text length: ${output.text.length}`);
@@ -355,8 +355,8 @@ onEnd: async ({ agent, output, error, conversationId, context }) => {
     });
 
     // Log usage if available
-    if (output?.usage) {
-      console.log(`  Usage: ${output.usage.totalTokens} tokens`);
+    if (output?.totalUsage) {
+      console.log(`  Total usage: ${output.totalUsage.totalTokens} tokens`);
     }
   }
 };
@@ -588,8 +588,8 @@ const enhancedHooks = createHooks({
 
   onEnd: async ({ output, context }) => {
     console.log(`Messages processed for operation ${context.operationId}`);
-    if (output?.usage) {
-      console.log(`Tokens used: ${output.usage.totalTokens}`);
+    if (output?.totalUsage) {
+      console.log(`Tokens used: ${output.totalUsage.totalTokens}`);
     }
   },
 });
@@ -609,15 +609,28 @@ const agent = new Agent({
 
 The `output` parameter structure depends on the agent method called. Check for `text` or `object` fields:
 
+For token accounting, VoltAgent exposes the AI SDK usage contract directly:
+
+- `output.usage` is the final step usage, matching AI SDK `result.usage`.
+- `output.totalUsage` is the aggregate usage across all steps, matching AI SDK `result.totalUsage`.
+- `output.steps?.[index].usage` is the per-step usage, matching AI SDK `result.steps[].usage`.
+
+In a single-step run, `usage` and `totalUsage` are usually the same. In a multi-step tool run, use `totalUsage` for total cost or billing, `usage` for the final model step, and `steps[].usage` for step-level analysis.
+
 ```ts
 const hooks = createHooks({
   onEnd: async ({ output }) => {
     if (!output) return; // operation failed or was aborted
 
-    // Log usage if available
-    if (output.usage) {
-      console.log(`Total tokens: ${output.usage.totalTokens}`);
-    }
+    const finalStepUsage = output.usage;
+    const aggregateUsage = output.totalUsage;
+    const perStepUsage = output.steps?.map((step) => step.usage);
+
+    console.log({
+      finalStepTokens: finalStepUsage?.totalTokens,
+      aggregateTokens: aggregateUsage?.totalTokens,
+      stepTokens: perStepUsage?.map((usage) => usage.totalTokens),
+    });
 
     // Handle text results
     if ("text" in output && output.text) {

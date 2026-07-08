@@ -95,8 +95,15 @@ describe("Agent Hooks Functionality", () => {
       expect(arg.output.finishReason).toBe("stop");
       expect(arg.output.usage).toEqual(
         expect.objectContaining({
-          promptTokens: 10,
-          completionTokens: 5,
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+      );
+      expect(arg.output.totalUsage).toEqual(
+        expect.objectContaining({
+          inputTokens: 10,
+          outputTokens: 5,
           totalTokens: 15,
         }),
       );
