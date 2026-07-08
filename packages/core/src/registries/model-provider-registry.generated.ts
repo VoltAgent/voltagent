@@ -317,7 +317,7 @@ export const MODEL_PROVIDER_REGISTRY: Record<string, ModelProviderRegistryEntry>
     npm: "@ai-sdk/anthropic",
     api: "https://api.minimax.io/anthropic/v1",
     env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimax.io/docs/guides/quickstart",
+    doc: "https://platform.minimax.io/docs/api-reference/api-overview",
   },
   "minimax-cn": {
     id: "minimax-cn",
@@ -325,7 +325,7 @@ export const MODEL_PROVIDER_REGISTRY: Record<string, ModelProviderRegistryEntry>
     npm: "@ai-sdk/anthropic",
     api: "https://api.minimaxi.com/anthropic/v1",
     env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimaxi.com/docs/guides/quickstart",
+    doc: "https://platform.minimaxi.com/docs/api-reference/api-overview",
   },
   mistral: {
     id: "mistral",

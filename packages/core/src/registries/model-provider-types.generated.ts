@@ -1103,8 +1103,8 @@ export type ProviderModelsMap = {
     "qwen/qwen3-coder-30b",
   ];
   readonly lucidquery: readonly ["lucidnova-rf1-100b", "lucidquery-nexus-coder"];
-  readonly minimax: readonly ["MiniMax-M2", "MiniMax-M2.1"];
-  readonly "minimax-cn": readonly ["MiniMax-M2", "MiniMax-M2.1"];
+  readonly minimax: readonly ["MiniMax-M2", "MiniMax-M2.1", "MiniMax-M3"];
+  readonly "minimax-cn": readonly ["MiniMax-M2", "MiniMax-M2.1", "MiniMax-M3"];
   readonly mistral: readonly [
     "codestral-latest",
     "devstral-2512",

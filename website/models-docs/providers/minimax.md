@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "minimax-agent",
   instructions: "You are a helpful assistant",
-  model: "minimax/MiniMax-M2.7",
+  model: "minimax/MiniMax-M3",
 });
 ```
 
@@ -36,13 +36,20 @@ You can override the base URL by setting `MINIMAX_BASE_URL`.
 
 ## Provider docs
 
-- https://platform.minimax.io/docs/guides/quickstart
+- https://platform.minimax.io/docs/api-reference/api-overview
+
+## Pricing
+
+| Model | Input | Output | Cache read | Cache write |
+|---|---:|---:|---:|---:|
+| MiniMax-M3 | $0.60 / 1M tokens | $2.40 / 1M tokens | $0.12 / 1M tokens | Not listed |
 
 ## Models
 
 | Model | Context | Description |
 |---|---|---|
-| MiniMax-M2.7 | 1M tokens | Latest flagship model |
+| MiniMax-M3 | 1M tokens | Latest flagship model |
+| MiniMax-M2.7 | 1M tokens | Previous generation |
 | MiniMax-M2.7-highspeed | 1M tokens | Optimized for speed |
 | MiniMax-M2.5 | 1M tokens | Previous generation |
 | MiniMax-M2.5-highspeed | 204K tokens | Fast inference |
