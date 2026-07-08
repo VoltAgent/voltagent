@@ -150,7 +150,7 @@ const EXTRA_PROVIDER_REGISTRY: ModelProviderRegistryEntry[] = [
     npm: "@ai-sdk/openai-compatible",
     api: "https://api.minimax.io/v1",
     env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimax.io/docs/guides/quickstart",
+    doc: "https://platform.minimax.io/docs/api-reference/api-overview",
   },
   {
     id: "minimax-cn",
@@ -158,7 +158,7 @@ const EXTRA_PROVIDER_REGISTRY: ModelProviderRegistryEntry[] = [
     npm: "@ai-sdk/openai-compatible",
     api: "https://api.minimaxi.com/v1",
     env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimaxi.com/docs/guides/quickstart",
+    doc: "https://platform.minimaxi.com/docs/api-reference/api-overview",
   },
 ];
 

@@ -149,6 +149,7 @@ describe("MiniMax provider registry", () => {
     const registry = ModelProviderRegistry.getInstance();
 
     const modelIds = [
+      "MiniMax-M3",
       "MiniMax-M2.7",
       "MiniMax-M2.7-highspeed",
       "MiniMax-M2.5",
