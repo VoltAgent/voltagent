@@ -20,7 +20,7 @@
       "id_str": "791392986",
       "name": "Siim Haugas",
       "screen_name": "siimh",
-      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1949718040532090880/DosiN28C_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2067564618872963072/iYlBofWQ_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
@@ -112,7 +112,7 @@
       "id_str": "791392986",
       "name": "Siim Haugas",
       "screen_name": "siimh",
-      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1949718040532090880/DosiN28C_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2067564618872963072/iYlBofWQ_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
@@ -186,6 +186,55 @@
       "verified": false,
       "is_blue_verified": true
     }
+  },
+  "1950536117549486550": {
+    "__typename": "Tweet",
+    "id_str": "1950536117549486550",
+    "text": "@tomhacks if you're building in typescript, you need to see voltagent.  \n\ntheir state and memory features are solid. \n\njust built a sales pipeline for a client with it, and it runs smoothly.  huge win for complex systems.\n\nhttps://t.co/ZuCR9qgqcj",
+    "created_at": "2025-07-30T12:37:04.000Z",
+    "lang": "en",
+    "display_text_range": [
+      10,
+      246
+    ],
+    "entities": {
+      "hashtags": [],
+      "urls": [
+        {
+          "indices": [
+            223,
+            246
+          ],
+          "url": "https://t.co/ZuCR9qgqcj",
+          "display_url": "voltagent.dev/docs/agents/me…",
+          "expanded_url": "https://voltagent.dev/docs/agents/memory/overview/"
+        }
+      ],
+      "user_mentions": [
+        {
+          "indices": [
+            0,
+            9
+          ],
+          "id_str": "19107253",
+          "name": "",
+          "screen_name": "tomhacks"
+        }
+      ],
+      "symbols": [],
+      "media": []
+    },
+    "user": {
+      "id_str": "791392986",
+      "name": "Siim Haugas",
+      "screen_name": "siimh",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2067564618872963072/iYlBofWQ_normal.jpg",
+      "profile_image_shape": "Circle",
+      "verified": false,
+      "is_blue_verified": true
+    },
+    "in_reply_to_screen_name": "tomhacks",
+    "in_reply_to_status_id_str": "1950494081458811022"
   },
   "1927072927213596780": {
     "__typename": "Tweet",
@@ -359,7 +408,7 @@
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/512100374816124929/Scsxt-2G_normal.jpeg",
       "profile_image_shape": "Circle",
       "verified": false,
-      "is_blue_verified": false
+      "is_blue_verified": true
     }
   },
   "1924303206794059823": {
@@ -439,7 +488,7 @@
       "id_str": "691253",
       "name": "Seth Rose",
       "screen_name": "sethrose",
-      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1980430209074581504/MRTJmflB_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2073491571153006592/G59Nz2o4_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
@@ -526,7 +575,7 @@
     },
     "user": {
       "id_str": "79119874",
-      "name": "🍺 イケハヤ@アニメ作る人",
+      "name": "🍺 イケハヤ@「月蝕綺譚」開発",
       "screen_name": "IHayato",
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1613769723065532416/FMH_NlQh_normal.png",
       "profile_image_shape": "Circle",
@@ -585,7 +634,7 @@
       "id_str": "1081110908116631552",
       "name": "Adrian | JavaScript Mastery",
       "screen_name": "jsmasterypro",
-      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2021307607957327872/qsS9-rAr_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2070772089733156864/pv0SirxG_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true

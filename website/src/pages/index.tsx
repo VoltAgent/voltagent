@@ -9,6 +9,7 @@ import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
 import Ops from "../components/ops";
 import { Rag } from "../components/rag";
+import { SponsorsSection } from "../components/sponsors-section";
 import { SupervisorAgent } from "../components/supervisor-agent";
 import { Testimonials } from "../components/testimonials";
 import { DotPattern } from "../components/ui/dot-pattern";
@@ -39,6 +40,7 @@ export default function Home(): JSX.Element {
             <Workflows />
             <Rag />
             <Integrations />
+            <SponsorsSection />
             {/*            <FeaturedBlog /> */}
             <CommunitySection />
           </div>
