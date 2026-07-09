@@ -59,7 +59,6 @@ const agent = new Agent({
       },
       voltagent: {
         tags: ["weather", "external-api"],
-        needsApproval: true,
         hooks: {
           onStart: ({ tool }) => {
             console.log(`[tool] ${tool.name} starting`);
@@ -79,6 +78,8 @@ Each AI SDK-style tool has:
 - **execute**: Function that runs when the tool is called
 - **providerOptions** (optional): Provider-specific options for advanced features
 - **voltagent.tags** (optional): Optional user-defined tags for organizing or labeling tools.
+- **voltagent.hooks** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
+- **voltagent.needsApproval** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 
@@ -159,7 +160,7 @@ const result = await agent.generateText({
 });
 ```
 
-Use `voltagent.needsApproval` when approval is static tool metadata or part of an existing VoltAgent tool policy:
+Use `voltagent.needsApproval` only when approval should be static tool metadata or part of an existing VoltAgent tool policy. If both are provided, call-level `toolApproval` takes precedence:
 
 ```ts
 const agent = new Agent({

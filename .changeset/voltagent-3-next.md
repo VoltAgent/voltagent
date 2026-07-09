@@ -181,8 +181,7 @@ const refundCustomer = tool({
   },
   voltagent: {
     name: "refundCustomer",
-    purpose: "Issue customer refunds after approval",
-    needsApproval: true,
+    purpose: "Issue customer refunds",
   },
 });
 ```
@@ -202,7 +201,7 @@ const result = await agent.streamText({
 });
 ```
 
-Tools configured with VoltAgent `needsApproval` continue to participate in VoltAgent approval-aware flows. Native visible tools can use AI SDK approval responses, while hidden routed tools still enforce VoltAgent routing policy before execution.
+Use call-level `toolApproval` for new per-request approval flows. Use `voltagent.needsApproval` only when approval should be static tool metadata or part of an existing VoltAgent approval/tool-policy flow. If both are provided, call-level `toolApproval` takes precedence.
 
 ### Structured output
 

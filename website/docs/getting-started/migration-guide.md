@@ -423,7 +423,6 @@ const agent = new Agent({
       },
       voltagent: {
         tags: ["weather", "external-api"],
-        needsApproval: true,
         hooks: {
           onStart: async ({ args }) => {
             console.log("Calling weather tool", args);
@@ -459,10 +458,10 @@ Existing `createTool` definitions still work as compatibility API. Keep them if 
 
 - move `name` to the `tools` object key.
 - rename `parameters` to `inputSchema`.
-- move `tags`, `needsApproval`, and `hooks` under `voltagent`.
+- move `tags`, `hooks`, and other VoltAgent-only metadata under `voltagent`.
 - keep `execute`, `outputSchema`, `providerOptions`, and `toModelOutput` in the AI SDK tool definition.
 
-Use `voltagent.needsApproval` for static tool metadata or compatibility with existing VoltAgent tool policies. Use `toolApproval` when approval should be controlled per request, per user, or per runtime context.
+Use call-level `toolApproval` when approval should be controlled per request, per user, or per runtime context. Use `voltagent.needsApproval` only for static tool metadata or compatibility with existing VoltAgent tool policies.
 
 If you type the AI SDK tool execution options, import the v7-compatible type from `@ai-sdk/provider-utils`:
 
