@@ -3835,6 +3835,7 @@ Use pandas and summarize findings.`.split("\n"),
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        maxRetries: 0,
         hooks: { onError },
       });
 
@@ -4909,6 +4910,7 @@ Use pandas and summarize findings.`.split("\n"),
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        maxRetries: 0,
       });
 
       const modelError = new Error("Model unavailable");
@@ -4922,6 +4924,7 @@ Use pandas and summarize findings.`.split("\n"),
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        maxRetries: 0,
       });
 
       // Test with null/undefined

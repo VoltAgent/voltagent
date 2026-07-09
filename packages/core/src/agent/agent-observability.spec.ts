@@ -406,6 +406,7 @@ describe("Agent with Observability", () => {
         instructions: "You are a test agent",
         model: mockModel as any,
         observability,
+        maxRetries: 0,
       });
 
       // Execute and expect error

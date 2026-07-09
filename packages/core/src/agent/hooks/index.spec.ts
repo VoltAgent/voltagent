@@ -159,6 +159,7 @@ describe("Agent Hooks Functionality", () => {
             throw new Error("LLM Error");
           },
         }),
+        maxRetries: 0,
         hooks: createHooks({ onEnd: onEndSpy, onError: onErrorSpy }),
       });
 

@@ -274,12 +274,22 @@ const DEFAULT_MESSAGE_METADATA_PERSISTENCE_OPTIONS: ResolvedMessageMetadataPersi
 };
 
 type ResponseMessage = AssistantModelMessage | ToolModelMessage;
+type ValidationIssue = Parameters<typeof coerceStringifiedJsonToolArgs>[1][number];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   isRecord(value) && !Array.isArray(value);
+
+const getValidationIssues = (error: unknown): ValidationIssue[] => {
+  if (!isRecord(error)) {
+    return [];
+  }
+
+  const issues = error.issues ?? error.errors;
+  return Array.isArray(issues) ? (issues as ValidationIssue[]) : [];
+};
 
 const stringIncludesTemperature = (value: unknown): boolean =>
   typeof value === "string" && value.toLowerCase().includes("temperature");
@@ -6732,7 +6742,7 @@ export class Agent {
     if (!parseResult.success) {
       const error = new Error(`Output validation failed: ${parseResult.error.message}`);
       Object.assign(error, {
-        validationErrors: parseResult.error.errors,
+        validationErrors: getValidationIssues(parseResult.error),
         actualOutput: result,
       });
 
@@ -7763,14 +7773,8 @@ export class Agent {
         if (schema && typeof schema.safeParse === "function") {
           const parsed = schema.safeParse(rawArgs);
           if (!parsed.success) {
-            const issues =
-              (parsed.error as { issues?: unknown; errors?: unknown }).issues ??
-              (parsed.error as { issues?: unknown; errors?: unknown }).errors ??
-              [];
-            const coercedArgs = coerceStringifiedJsonToolArgs(
-              rawArgs,
-              Array.isArray(issues) ? issues : [],
-            );
+            const issues = getValidationIssues(parsed.error);
+            const coercedArgs = coerceStringifiedJsonToolArgs(rawArgs, issues);
 
             if (coercedArgs) {
               const reparsed = schema.safeParse(coercedArgs);
@@ -7780,14 +7784,14 @@ export class Agent {
                 const error = new Error(
                   `Invalid arguments for tool "${name}": ${reparsed.error.message}`,
                 );
-                Object.assign(error, { validationErrors: reparsed.error.errors });
+                Object.assign(error, { validationErrors: getValidationIssues(reparsed.error) });
                 throw error;
               }
             } else {
               const error = new Error(
                 `Invalid arguments for tool "${name}": ${parsed.error.message}`,
               );
-              Object.assign(error, { validationErrors: parsed.error.errors });
+              Object.assign(error, { validationErrors: issues });
               throw error;
             }
           } else {
