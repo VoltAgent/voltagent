@@ -48,6 +48,6 @@
     "test:integration:setup": "docker compose -f docker-compose.test.yaml up -d && sleep 10",
     "test:integration:teardown": "docker compose -f docker-compose.test.yaml down -v"
   },
-  "types": "dist/index.d.ts",
-  "type": "module"
+  "type": "module",
+  "types": "dist/index.d.ts"
 }

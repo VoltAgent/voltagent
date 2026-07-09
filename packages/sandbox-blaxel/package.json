@@ -43,6 +43,6 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "types": "dist/index.d.ts",
-  "type": "module"
+  "type": "module",
+  "types": "dist/index.d.ts"
 }

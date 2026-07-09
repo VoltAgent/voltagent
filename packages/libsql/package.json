@@ -53,6 +53,6 @@
     "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
     "test:coverage": "vitest run --coverage --typecheck"
   },
-  "types": "dist/index.d.ts",
-  "type": "module"
+  "type": "module",
+  "types": "dist/index.d.ts"
 }

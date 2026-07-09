@@ -61,6 +61,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "type": "module",
   "types": "dist/main/index.d.ts",
   "typesVersions": {
     "*": {
@@ -83,6 +84,5 @@
         "dist/types/index.d.ts"
       ]
     }
-  },
-  "type": "module"
+  }
 }

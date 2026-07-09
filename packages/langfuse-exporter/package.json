@@ -45,6 +45,6 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "types": "dist/index.d.ts",
-  "type": "module"
+  "type": "module",
+  "types": "dist/index.d.ts"
 }
