@@ -315,6 +315,8 @@ describe("ToolManager", () => {
         inputSchema,
         execute,
         voltagent: {
+          name: "weatherLookup",
+          purpose: "Fetch weather observations",
           tags: ["weather"],
           needsApproval: true,
           hooks,
@@ -345,6 +347,8 @@ describe("ToolManager", () => {
         "get_weather",
         aiTool,
         expect.objectContaining({
+          name: "weatherLookup",
+          purpose: "Fetch weather observations",
           tags: ["weather"],
           needsApproval: true,
           hooks,

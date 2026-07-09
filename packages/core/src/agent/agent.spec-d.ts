@@ -226,6 +226,8 @@ describe("Agent Type System", () => {
             inputSchema: z.object({ value: z.string() }),
             execute: async ({ value }) => ({ result: value }),
             voltagent: {
+              name: "test_tool",
+              purpose: "Exercise AI SDK tool metadata typing",
               tags: ["test"],
             },
           }),

@@ -11,6 +11,17 @@ const metadataStore = new WeakMap<object, VoltAgentToolMetadata>();
 
 export type VoltAgentToolMetadata<INPUT = unknown, OUTPUT = unknown> = {
   /**
+   * Optional VoltAgent-facing tool name for display or metadata consumers.
+   *
+   * When the tool is registered in an AI SDK ToolSet, the object key remains
+   * the execution name used by the model and tool calls.
+   */
+  name?: string;
+  /**
+   * Optional VoltAgent-facing purpose for display or metadata consumers.
+   */
+  purpose?: string;
+  /**
    * Optional user-defined tags for organizing or routing tools.
    */
   tags?: string[];

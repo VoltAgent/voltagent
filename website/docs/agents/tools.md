@@ -58,6 +58,8 @@ const agent = new Agent({
         return { location, temperature: 22, conditions: "sunny" };
       },
       voltagent: {
+        name: "getWeather",
+        purpose: "Fetch current weather for a location",
         tags: ["weather", "external-api"],
         hooks: {
           onStart: ({ tool }) => {
@@ -77,6 +79,8 @@ Each AI SDK-style tool has:
 - **inputSchema**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
 - **providerOptions** (optional): Provider-specific options for advanced features
+- **voltagent.name** (optional): VoltAgent-facing name for display or metadata consumers. The ToolSet key remains the execution name.
+- **voltagent.purpose** (optional): VoltAgent-facing purpose for display or metadata consumers.
 - **voltagent.tags** (optional): Optional user-defined tags for organizing or labeling tools.
 - **voltagent.hooks** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
 - **voltagent.needsApproval** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
