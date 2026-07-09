@@ -4084,6 +4084,9 @@ importers:
       '@voltagent/postgres':
         specifier: ^3.0.0-next.0
         version: link:../postgres
+      '@voltagent/server-hono':
+        specifier: ^3.0.0-next.0
+        version: link:../server-hono
       ai:
         specifier: ^7.0.0
         version: 7.0.18(zod@4.3.5)

@@ -209,6 +209,8 @@ Progress:
 - [x] Added focused subagent stream metadata and bail parity tests.
 - [x] Added memory step persistence and working memory parity tests.
 - [x] Added server/protocol adapter stream contract tests.
+- [x] Added e2e runtime coverage for AI SDK tools, VoltAgent tools, tool approval, structured output, middleware/guardrails, subagent delegation, Hono agent routes, working memory, and tool routing.
+- [x] Expanded e2e coverage for server `options.voltagent` normalization, streamed server tool calls, approval denial, guardrail blocks, subagent streaming delegation, model fallback, tool hooks, tool-routing approval, and LibSQL working memory persistence.
 
 ### Phase 1: Add Agent Request Normalization
 
@@ -878,6 +880,9 @@ Progress:
 - [x] Docs, examples, and templates updated for AI SDK 7, Node.js 22, and ESM-only.
 - [x] `pnpm --filter @voltagent/core typecheck` passes.
 - [x] `pnpm --filter @voltagent/core test` passes.
+- [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/agent-runtime.e2e.spec.ts` passes.
+- [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/message-persistence.libsql.e2e.spec.ts` passes.
+- [x] `pnpm --filter @voltagent/e2e lint` passes.
 - [x] `pnpm build:all` passes.
 - [x] `pnpm lint` passes with existing warnings only.
 - [ ] Remaining release gates: `pnpm test:all`, `pnpm publint:all`, and `pnpm --dir website build`.
