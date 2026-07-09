@@ -12,7 +12,7 @@
 
   ```bash
   pnpm add @voltagent/core@next @voltagent/server-hono@next @voltagent/logger@next
-  pnpm add ai@^7 @ai-sdk/openai@^4
+  pnpm add ai@^7 @ai-sdk/openai@^4 zod@^4
   ```
 
   If your app uses additional VoltAgent packages, keep all `@voltagent/*` packages on the same major/prerelease line:
@@ -70,6 +70,14 @@
   | `@ai-sdk/openai-compatible` | `^3`                  |
   | `@ai-sdk/amazon-bedrock`    | `^5`                  |
   | `@ai-sdk/google-vertex`     | `^5`                  |
+
+  ### Zod 4-only
+
+  VoltAgent 3 requires Zod 4. The framework packages now use `zod@^4` peer ranges, examples and templates install Zod 4, and the old Zod 3 JSON Schema/OpenAPI compatibility fallback has been removed.
+
+  ```bash
+  pnpm add zod@^4
+  ```
 
   ### Agent usage
 
@@ -205,10 +213,11 @@
   2. Set `"type": "module"` and replace CommonJS `require()` calls with ESM imports.
   3. Upgrade all `@voltagent/*` packages together from the `next` channel.
   4. Upgrade `ai` to `^7` and AI SDK provider packages to their v7-compatible majors.
-  5. Replace `stepCountIs` with `isStepCount`.
-  6. Prefer `result.stream` over `result.fullStream`.
-  7. Prefer `output` over `experimental_output`.
-  8. Prefer object-style agent calls for new code, with VoltAgent runtime options under `voltagent`.
+  5. Upgrade `zod` to `^4`.
+  6. Replace `stepCountIs` with `isStepCount`.
+  7. Prefer `result.stream` over `result.fullStream`.
+  8. Prefer `output` over `experimental_output`.
+  9. Prefer object-style agent calls for new code, with VoltAgent runtime options under `voltagent`.
 
 ### Patch Changes
 

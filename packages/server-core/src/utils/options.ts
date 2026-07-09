@@ -1,7 +1,5 @@
 import { Output } from "ai";
-import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 
 type RequestHeadersInput = Headers | Record<string, string | string[] | undefined>;
 type RuntimeOptionsInput = Record<string, any> & {
@@ -179,10 +177,7 @@ export function processAgentOptions(
     const { type, schema: jsonSchema } = options.output;
 
     if (type === "object" && jsonSchema) {
-      // Convert JSON schema to Zod schema (supports zod v3 and v4)
-      const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(
-        jsonSchema,
-      ) as any;
+      const zodSchema = convertJsonSchemaToZod(jsonSchema) as any;
 
       processedOptions.output = Output.object({ schema: zodSchema });
     } else if (type === "text") {

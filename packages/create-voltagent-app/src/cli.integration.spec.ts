@@ -216,8 +216,8 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
           version: "0.1.0",
           type: "module",
           dependencies: {
-            "@voltagent/core": "^2.0.0",
-            "@voltagent/libsql": "^2.0.0",
+            "@voltagent/core": "^3.0.0-next.0",
+            "@voltagent/libsql": "^3.0.0-next.0",
             [SERVER_CONFIG[server].package]: SERVER_CONFIG[server].packageVersion,
           },
           meta: {

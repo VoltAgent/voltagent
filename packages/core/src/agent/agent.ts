@@ -3849,7 +3849,11 @@ export class Agent {
                   oc.traceContext.setOutput(finalObject);
 
                   // Set output in operation context
-                  oc.output = finalObject;
+                  oc.output =
+                    typeof finalObject === "string" ||
+                    (typeof finalObject === "object" && finalObject !== null)
+                      ? finalObject
+                      : safeStringify(finalObject);
 
                   await this.getMergedHooks(options).onEnd?.({
                     conversationId: oc.conversationId || "",

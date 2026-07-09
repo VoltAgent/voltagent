@@ -26,7 +26,7 @@ export function zodSchemaToJsonUI(schema: any): any {
     const properties: Record<string, any> = {};
     const required: string[] = [];
 
-    // Zod v3 uses a shape() method, v4 exposes the object directly
+    // Zod 4 exposes shape as an object; keep a defensive function path for schema-like values.
     const shape = typeof def?.shape === "function" ? def.shape() : def?.shape;
 
     // Process each property in the object

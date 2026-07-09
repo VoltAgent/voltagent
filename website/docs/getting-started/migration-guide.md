@@ -13,6 +13,7 @@ If you are still on 1.x, follow the **Migration guide: 1.x → 2.x** section fir
 - Module format: VoltAgent 3.x is ESM-only. CommonJS `require("@voltagent/core")` is no longer supported.
 - AI SDK: `ai` moves to `^7`.
 - AI SDK provider packages need v7-compatible majors, for example `@ai-sdk/openai@^4`.
+- Zod: `zod` moves to `^4`. Zod 3 is no longer a supported peer dependency in VoltAgent 3.x.
 - AI SDK callbacks use `onEnd` and `onStepEnd`.
 - `stepCountIs` is now `isStepCount`.
 - `streamText` detailed events are exposed as `stream`. `fullStream` remains as a deprecated alias during the transition.
@@ -99,6 +100,7 @@ Install AI SDK v7 and v7-compatible provider packages:
 ```bash
 pnpm add ai@^7 @ai-sdk/openai@^4
 pnpm add @ai-sdk/provider@^4 @ai-sdk/provider-utils@^5
+pnpm add zod@^4
 ```
 
 If you use AI SDK UI helpers:
@@ -127,6 +129,16 @@ After changing dependencies, reinstall and refresh the lockfile:
 ```bash
 pnpm install
 ```
+
+### 3.3 Update Zod
+
+VoltAgent 3.x is Zod 4-only. Remove Zod 3 pins from your app and templates:
+
+```bash
+pnpm add zod@^4
+```
+
+If you have custom code that imports Zod 3-specific internals or `zod/v3`, update it to the public Zod 4 API before upgrading VoltAgent.
 
 ## Step 4. Keep using the AI SDK-style agent call shape
 
@@ -535,6 +547,7 @@ pnpm --dir website build
 - [ ] `ai` is `^7`.
 - [ ] AI SDK provider packages are v7-compatible.
 - [ ] `@ai-sdk/react` is `^4` if used.
+- [ ] `zod` is `^4`.
 - [ ] CommonJS `require()` imports are replaced with ESM imports.
 - [ ] `stepCountIs` is replaced with `isStepCount`.
 - [ ] `result.fullStream` is replaced with `result.stream` in new code.

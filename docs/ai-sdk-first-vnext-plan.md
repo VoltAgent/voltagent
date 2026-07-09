@@ -24,11 +24,12 @@ This means AI SDK primitives such as `model`, `prompt`, `messages`, `tools`, `ou
 
 ## vNext Platform Decision
 
-Decision: VoltAgent vNext will target AI SDK 7, Node.js 22 or later, and ESM-only package output.
+Decision: VoltAgent vNext will target AI SDK 7, Zod 4, Node.js 22 or later, and ESM-only package output.
 
 This is an explicit compatibility boundary:
 
 - Set the repository and published package engine requirement to `node >=22`.
+- Set published Zod peer ranges to `^4.0.0` and remove Zod 3 fallback code paths.
 - Remove CommonJS runtime exports from vNext packages that depend on AI SDK or packages that depend on those packages.
 - Prefer `"type": "module"` and ESM package exports for new vNext package metadata.
 - Keep TypeScript declaration output for ESM consumers.
@@ -45,6 +46,7 @@ Migration consequence:
 
 - Users on Node.js 20 must stay on the previous VoltAgent major or upgrade Node before adopting vNext.
 - Users using `require("@voltagent/core")` must migrate to ESM imports.
+- Users pinned to Zod 3 must upgrade to Zod 4 before adopting VoltAgent 3.
 - Docs, examples, package exports, and migration guide must call this out clearly.
 
 ## Protected Feature Surface
@@ -932,6 +934,7 @@ Each PR should include focused tests and avoid mixing refactors with behavior ch
 | Model retry/fallback behavior changes                            | High   | Keep VoltAgent retry loop and add retry/fallback tests                                             |
 | CommonJS users break on vNext                                    | High   | Make ESM-only and Node.js 22 requirements explicit in package metadata and migration docs          |
 | Package exports or publint fail after removing CJS output        | High   | Update export maps package-by-package and run `pnpm publint:all`                                   |
+| Zod 3 compatibility fallback hides broken app dependencies       | Medium | Make VoltAgent 3 Zod 4-only in peer deps, examples, templates, docs, and converter code paths      |
 | Third-party providers are not AI SDK 7 compatible                | Medium | Audit third-party providers, document incompatibilities, and isolate unsupported provider builders |
 | Provider dependency decoupling expands scope                     | Medium | Deferred; keep existing router and provider dependency behavior unchanged in this plan             |
 | Server request schemas diverge from core API                     | Medium | Update schemas and processAgentOptions in same slice                                               |
@@ -949,7 +952,7 @@ Each PR should include focused tests and avoid mixing refactors with behavior ch
 - [x] Phase 6 ecosystem packages are updated.
 - [x] Phase 7 docs are available; executable codemods are deferred to a separate follow-up.
 - [x] Phase 8 release gates are green.
-- [ ] Phase 9 AI SDK 7, Node.js 22, ESM-only, and AI SDK-style tool support is complete.
+- [ ] Phase 9 AI SDK 7, Zod 4, Node.js 22, ESM-only, and AI SDK-style tool support is complete.
 
 ## Current Recommendation
 
@@ -964,10 +967,11 @@ Proceed in this order:
 7. Finish docs/codemod decisions and run release gates.
 8. Apply the Node.js 22 and ESM-only package boundary.
 9. Upgrade AI SDK dependencies to v7-compatible ranges.
-10. Run and review AI SDK v7 codemods.
-11. Update the core AI SDK boundary for v7 option, stream, callback, usage, and tool approval changes.
-12. Add AI SDK-style `tool()` and direct `ToolSet` support while preserving VoltAgent tool features.
-13. Update server, protocol, memory, scorer, docs, examples, and templates.
-14. Re-run the full release gates for the AI SDK 7 scope.
+10. Move Zod support to Zod 4-only across peers, examples, templates, and compatibility code.
+11. Run and review AI SDK v7 codemods.
+12. Update the core AI SDK boundary for v7 option, stream, callback, usage, and tool approval changes.
+13. Add AI SDK-style `tool()` and direct `ToolSet` support while preserving VoltAgent tool features.
+14. Update server, protocol, memory, scorer, docs, examples, and templates.
+15. Re-run the full release gates for the AI SDK 7 scope.
 
 This order keeps the vNext direction moving while minimizing the chance of losing existing framework features. Phase 8 was green before the AI SDK 7 scope was added; Phase 9 intentionally reopens the release-gate work for the new runtime and dependency boundary.

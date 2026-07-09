@@ -338,7 +338,7 @@ describe("workflow chain - type inference", () => {
         suspendSchema: z.object({
           taskId: z.string(),
           progress: z.number(),
-          metadata: z.record(z.string()),
+          metadata: z.record(z.string(), z.string()),
         }),
         execute: async ({ data, suspend }) => {
           // Should use step-level suspendSchema

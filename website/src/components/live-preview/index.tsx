@@ -214,16 +214,16 @@ export const fetchRepoContributorsTool = createTool({
     "volt": "volt"
   },
   "dependencies": {
-    "ai": "^5.0.0",
-    "@ai-sdk/openai": "^2.0.0",
+    "ai": "^7.0.0",
+    "@ai-sdk/openai": "^4.0.0",
     "@octokit/rest": "^21.0.0",
-    "@voltagent/core": "^1.0.0",
-    "@voltagent/server-hono": "^1.0.0",
-    "zod": "^3.25.72"
+    "@voltagent/core": "^3.0.0",
+    "@voltagent/server-hono": "^3.0.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/node": "^20.10.4",
-    "@voltagent/cli": "^0.1.0",
+    "@types/node": "^22.10.5",
+    "@voltagent/cli": "^1.0.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   }

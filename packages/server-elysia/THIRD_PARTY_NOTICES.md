@@ -29,12 +29,6 @@ This package includes or depends upon third-party code. The following is a list 
 - **License**: MIT
 - **Repository**: https://github.com/colinhacks/zod
 
-## zod-to-json-schema
-
-- **License**: MIT
-- **Repository**: https://github.com/StefanTerdell/zod-to-json-schema
-- **Copyright**: Copyright (c) 2023 Stefan Terdell
-
 ## VoltAgent Core Packages
 
 - **License**: MIT

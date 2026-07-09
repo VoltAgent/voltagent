@@ -1045,7 +1045,7 @@ describe("Agent Type System", () => {
             tags: z.array(z.string()),
           }),
         }),
-        metadata: z.record(z.unknown()),
+        metadata: z.record(z.string(), z.unknown()),
       });
 
       type InferredObject = z.infer<typeof complexSchema>;
@@ -1391,7 +1391,7 @@ describe("Agent Type System", () => {
             z.object({
               id: z.number(),
               value: z.string(),
-              metadata: z.record(z.unknown()).optional(),
+              metadata: z.record(z.string(), z.unknown()).optional(),
             }),
           ),
           options: z.object({
@@ -1426,7 +1426,7 @@ describe("Agent Type System", () => {
             z.object({
               id: z.number(),
               value: z.string(),
-              metadata: z.record(z.unknown()).optional(),
+              metadata: z.record(z.string(), z.unknown()).optional(),
             }),
           ),
           options: z.object({
