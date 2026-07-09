@@ -60,7 +60,5 @@
     "@voltagent/voice": "2.1.0",
     "@voltagent/voltagent-memory": "1.0.4"
   },
-  "changesets": [
-    "voltagent-3-next"
-  ]
+  "changesets": ["voltagent-3-next"]
 }
