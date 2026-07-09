@@ -1,4 +1,4 @@
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
@@ -13,10 +13,9 @@ const weatherOutputSchema = z.object({
   message: z.string(),
 });
 
-const weatherTool = createTool({
-  name: "getWeather",
+const weatherTool = tool({
   description: "Get the current weather for a specific location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),
   }),
   outputSchema: weatherOutputSchema,
@@ -43,7 +42,9 @@ export const assistantAgent = new Agent({
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can gracefully describe any image or file attachments the user provides, and can call the getWeather tool for weather questions. Ask clarifying questions when context is missing.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
   memory: sharedMemory,
 });
 

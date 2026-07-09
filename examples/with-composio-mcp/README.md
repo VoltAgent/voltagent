@@ -63,7 +63,7 @@ This example demonstrates how to integrate VoltAgent with Composio's Model Conte
 
 ## Prerequisites
 
-- Node.js (v20 or later recommended)
+- Node.js 22 or later
 - pnpm (or npm/yarn)
 - An OpenAI API key (or setup for another supported LLM provider)
 - A Composio MCP account (sign up at [https://mcp.composio.dev/](https://mcp.composio.dev/))
@@ -81,7 +81,6 @@ This example demonstrates how to integrate VoltAgent with Composio's Model Conte
    Replace `your_openai_api_key_here` with your actual OpenAI API key. Adjust the variable if using a different LLM provider.
 
 2. **Create a Composio MCP Account:**
-
    - Visit [https://mcp.composio.dev/](https://mcp.composio.dev/)
    - You can sign up using your Google account
    - Once logged in, you'll see the MCP dashboard

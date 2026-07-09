@@ -338,7 +338,7 @@ describe("ToolManager", () => {
         description: string;
         inputSchema: unknown;
         execute?: (args: any, options?: ToolExecuteOptions) => ToolExecutionResult<any>;
-        metadata?: { voltagent?: { tags?: string[] } };
+        metadata?: { voltagent?: { name?: string; purpose?: string; tags?: string[] } };
         needsApproval?: unknown;
       };
 
@@ -357,6 +357,8 @@ describe("ToolManager", () => {
       expect(preparedTool.description).toBe("Get weather");
       expect(preparedTool.inputSchema).toBe(inputSchema);
       expect(preparedTool.needsApproval).toBe(true);
+      expect(preparedTool.metadata?.voltagent?.name).toBe("weatherLookup");
+      expect(preparedTool.metadata?.voltagent?.purpose).toBe("Fetch weather observations");
       expect(preparedTool.metadata?.voltagent?.tags).toEqual(["weather"]);
       await expect(
         preparedTool.execute?.({ location: "SF" }, { toolCallId: "call-1" }),
@@ -365,6 +367,84 @@ describe("ToolManager", () => {
         temp: 72,
       });
       expect(wrappedExecute).toHaveBeenCalledWith({ location: "SF" }, { toolCallId: "call-1" });
+    });
+
+    it("should expose AI SDK tool display metadata in API tool info without changing the tool key", () => {
+      const inputSchema = z.object({
+        location: z.string(),
+      });
+      const aiTool = aiSdkTool({
+        description: "Get weather",
+        inputSchema,
+        execute: vi.fn(),
+        voltagent: {
+          name: "Weather Lookup",
+          purpose: "Fetch weather observations",
+          tags: ["weather"],
+        },
+      });
+
+      toolManager.addToolSet({
+        get_weather: aiTool,
+      });
+
+      const apiTools = toolManager.getToolsForApi();
+
+      expect(apiTools).toEqual([
+        expect.objectContaining({
+          name: "get_weather",
+          displayName: "Weather Lookup",
+          purpose: "Fetch weather observations",
+          description: "Get weather",
+          parameters: expect.any(Object),
+          tags: ["weather"],
+          metadata: {
+            voltagent: {
+              name: "Weather Lookup",
+              purpose: "Fetch weather observations",
+              tags: ["weather"],
+            },
+          },
+        }),
+      ]);
+    });
+
+    it("should strip VoltAgent-owned context and telemetry fields from AI SDK-style tools", () => {
+      const inputSchema = z.object({
+        query: z.string(),
+      });
+      const aiTool = aiSdkTool({
+        description: "Search docs",
+        inputSchema,
+        contextSchema: z.object({ tenantId: z.string() }),
+        runtimeContext: { tenantId: "tenant-1" },
+        toolsContext: { search_docs: { requestId: "tool-request-1" } },
+        telemetry: { isEnabled: false },
+        experimental_telemetry: { isEnabled: false },
+        execute: vi.fn().mockResolvedValue({ result: "ok" }),
+      } as any);
+
+      expect(aiTool).not.toHaveProperty("contextSchema");
+      expect(aiTool).not.toHaveProperty("runtimeContext");
+      expect(aiTool).not.toHaveProperty("toolsContext");
+      expect(aiTool).not.toHaveProperty("telemetry");
+      expect(aiTool).not.toHaveProperty("experimental_telemetry");
+
+      toolManager.addToolSet({
+        search_docs: aiTool,
+      });
+
+      const preparedTools = toolManager.prepareToolsForExecution(
+        vi.fn(),
+        vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ result: "ok" })),
+      );
+      const preparedTool = preparedTools.search_docs as Record<string, unknown>;
+
+      expect(preparedTool).not.toHaveProperty("contextSchema");
+      expect(preparedTool).not.toHaveProperty("runtimeContext");
+      expect(preparedTool).not.toHaveProperty("toolsContext");
+      expect(preparedTool).not.toHaveProperty("telemetry");
+      expect(preparedTool).not.toHaveProperty("experimental_telemetry");
     });
 
     it("should preserve server, client, approval, output, and provider tool metadata together", () => {

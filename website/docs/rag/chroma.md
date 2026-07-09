@@ -11,7 +11,7 @@ slug: /rag/chroma
 
 Before starting, ensure you have:
 
-- Node.js 18+ installed
+- Node.js 22+ installed
 - OpenAI API key (for embeddings)
 
 **Note**: Docker or Python are no longer required since Chroma CLI is now bundled with the JS/TS package.

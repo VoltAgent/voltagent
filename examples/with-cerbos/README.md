@@ -13,7 +13,7 @@ This example uses Cerbos as the Policy Decision Point (PDP) to enforce role-base
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - Docker (for running Cerbos)
 - OpenAI API key
 

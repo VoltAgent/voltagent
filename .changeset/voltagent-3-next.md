@@ -107,7 +107,7 @@ pnpm add zod@^4
 
 ### Agent usage
 
-The object-style call shape is the preferred API. AI SDK generation options stay at the top level, while VoltAgent runtime concerns live under `voltagent`.
+The object-style call shape is the preferred API. VoltAgent 3 derives agent generation options from AI SDK v7 `generateText` and `streamText`, so AI SDK settings stay at the top level while VoltAgent runtime concerns live under `voltagent`.
 
 ```ts
 const result = await agent.generateText({
@@ -125,6 +125,33 @@ const result = await agent.generateText({
   },
 });
 ```
+
+AI SDK v7 options such as `timeout`, `headers`, `include`, `activeTools`, `toolOrder`, `experimental_download`, `onChunk`, and stream lifecycle callbacks can be used directly on VoltAgent calls:
+
+```ts
+const result = await agent.streamText({
+  prompt: "Write a release note for this changelog",
+  timeout: {
+    totalMs: 30_000,
+    chunkMs: 5_000,
+  },
+  include: {
+    rawChunks: true,
+  },
+  onChunk: async ({ chunk }) => {
+    console.log(chunk.type);
+  },
+  voltagent: {
+    context: {
+      requestId: "req-789",
+    },
+  },
+});
+```
+
+VoltAgent composes the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, `maxRetries`, `onStepEnd`, `onEnd`/`onFinish`, and `onError`. User callbacks are still accepted at the top level and are invoked after VoltAgent memory, guardrails, hooks, tracing, and recovery handling.
+
+Top-level AI SDK `runtimeContext`, `toolsContext`, `telemetry`, and `experimental_telemetry` are intentionally not exposed. Use `voltagent.context` for per-call application context, VoltAgent tool context/hooks for tool execution context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
 
 The same shape works for streaming:
 
@@ -151,7 +178,7 @@ for await (const part of result.stream) {
 
 ### Tool usage
 
-VoltAgent now accepts AI SDK-style tool sets directly, so projects can use `tool()` without wrapping every tool in `createTool`.
+VoltAgent now accepts AI SDK-style tool sets directly. The recommended custom tool API is `tool()` from `@voltagent/core`, extended with VoltAgent-specific metadata under the `voltagent` namespace.
 
 ```ts
 import { Agent, tool } from "@voltagent/core";
@@ -188,13 +215,29 @@ const refundCustomer = tool({
     return issueRefund(orderId, reason);
   },
   voltagent: {
-    name: "refundCustomer",
+    name: "Refund Customer",
     purpose: "Issue customer refunds",
   },
 });
 ```
 
-`createTool` remains available for existing tools and for codebases that prefer the VoltAgent-native helper.
+Register the tool under the canonical name the model should call:
+
+```ts
+const agent = new Agent({
+  name: "Support Agent",
+  model,
+  tools: {
+    refundCustomer,
+  },
+});
+```
+
+The ToolSet key remains the canonical `tool.name` used for tool calls, approval, routing, and telemetry correlation. `voltagent.name` is display metadata and is emitted as `tool.display_name` for Console and observability consumers.
+
+VoltAgent `tool()` intentionally does not expose AI SDK `contextSchema`, `runtimeContext`, `toolsContext`, `telemetry`, or `experimental_telemetry`. Use `voltagent.context` on the agent call for per-request application context, `voltagent` tool hooks for VoltAgent lifecycle context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
+
+`createTool` is now a legacy compatibility helper for existing class-style tools. New code should use `tool()`.
 
 ### Tool approval
 

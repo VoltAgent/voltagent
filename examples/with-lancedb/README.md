@@ -14,7 +14,7 @@ This example demonstrates how to use [LanceDB](https://lancedb.github.io/lancedb
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - OpenAI API Key (for embeddings and LLM)
 
 ## Getting Started

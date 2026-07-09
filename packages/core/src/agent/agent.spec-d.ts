@@ -15,6 +15,7 @@ import {
   Agent,
   type AgentHooks,
   type GenerateObjectResultWithContext,
+  type GenerateTextOptions,
   type GenerateTextResultWithContext,
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
@@ -235,6 +236,48 @@ describe("Agent Type System", () => {
       });
 
       expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should reject VoltAgent-owned context and telemetry fields on AI SDK-style tools", () => {
+      aiSdkTool({
+        description: "Test",
+        inputSchema: z.object({ value: z.string() }),
+        // @ts-expect-error - use `voltagent.context` and VoltAgent tool hooks instead
+        contextSchema: z.object({ tenantId: z.string() }),
+        execute: async ({ value }) => ({ result: value }),
+      });
+
+      aiSdkTool({
+        description: "Test",
+        inputSchema: z.object({ value: z.string() }),
+        // @ts-expect-error - runtime context is owned by VoltAgent agent calls
+        runtimeContext: { tenantId: "tenant-1" },
+        execute: async ({ value }) => ({ result: value }),
+      });
+
+      aiSdkTool({
+        description: "Test",
+        inputSchema: z.object({ value: z.string() }),
+        // @ts-expect-error - tools context is owned by VoltAgent
+        toolsContext: {},
+        execute: async ({ value }) => ({ result: value }),
+      });
+
+      aiSdkTool({
+        description: "Test",
+        inputSchema: z.object({ value: z.string() }),
+        // @ts-expect-error - use VoltAgent observability/OpenTelemetry instead
+        telemetry: { isEnabled: false },
+        execute: async ({ value }) => ({ result: value }),
+      });
+
+      aiSdkTool({
+        description: "Test",
+        inputSchema: z.object({ value: z.string() }),
+        // @ts-expect-error - use VoltAgent observability/OpenTelemetry instead
+        experimental_telemetry: { isEnabled: false },
+        execute: async ({ value }) => ({ result: value }),
+      });
     });
   });
 
@@ -530,6 +573,123 @@ describe("Agent Type System", () => {
         prompt: "Test input",
         toolApproval: {
           dangerous_tool: "approved",
+        },
+      });
+
+      expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
+    });
+
+    it("should accept AI SDK v7 generateText passthrough options", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const tools = {
+        lookup_order: aiSdkTool({
+          description: "Lookup an order",
+          inputSchema: z.object({ orderId: z.string() }),
+          execute: async ({ orderId }) => ({ orderId }),
+        }),
+      };
+
+      const result = await agent.generateText({
+        prompt: "Test input",
+        tools,
+        activeTools: ["lookup_order"],
+        toolOrder: ["lookup_order"],
+        timeout: {
+          totalMs: 10_000,
+          stepMs: 5_000,
+          toolMs: 2_000,
+          tools: {
+            lookup_orderMs: 1_000,
+          },
+        },
+        headers: {
+          "x-provider-header": "provider-value",
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          responseBody: true,
+        },
+        experimental_download: async (downloads) => downloads.map(() => null),
+        onStart: async () => {},
+        onStepStart: async () => {},
+        onLanguageModelCallStart: async () => {},
+        onLanguageModelCallEnd: async () => {},
+        onToolExecutionStart: async () => {},
+        onToolExecutionEnd: async () => {},
+        onStepEnd: async (step) => {
+          expectTypeOf(step).toMatchTypeOf<unknown>();
+        },
+        onEnd: async (finish) => {
+          expectTypeOf(finish).toMatchTypeOf<unknown>();
+        },
+      });
+
+      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+    });
+
+    it("should reject VoltAgent-owned AI SDK context and telemetry fields", () => {
+      const runtimeContextOptions: GenerateTextOptions = {
+        // @ts-expect-error - use `voltagent.context` instead
+        runtimeContext: {
+          tenantId: "tenant-1",
+        },
+      };
+
+      const toolsContextOptions: GenerateTextOptions = {
+        // @ts-expect-error - use VoltAgent tool context APIs instead
+        toolsContext: {},
+      };
+
+      const telemetryOptions: GenerateTextOptions = {
+        // @ts-expect-error - use VoltAgent observability/tracing instead
+        telemetry: {
+          isEnabled: false,
+        },
+      };
+
+      const experimentalTelemetryOptions: GenerateTextOptions = {
+        // @ts-expect-error - use VoltAgent observability/tracing instead
+        experimental_telemetry: {
+          isEnabled: false,
+        },
+      };
+
+      expectTypeOf(runtimeContextOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(toolsContextOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(telemetryOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(experimentalTelemetryOptions).toMatchTypeOf<GenerateTextOptions>();
+    });
+
+    it("should accept AI SDK v7 streamText-only passthrough options", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const result = await agent.streamText({
+        prompt: "Test input",
+        timeout: {
+          totalMs: 10_000,
+          chunkMs: 1_000,
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          rawChunks: true,
+        },
+        includeRawChunks: true,
+        experimental_transform: [],
+        onChunk: async () => {},
+        onAbort: async () => {},
+        onError: async ({ error }) => {
+          expectTypeOf(error).toEqualTypeOf<unknown>();
         },
       });
 

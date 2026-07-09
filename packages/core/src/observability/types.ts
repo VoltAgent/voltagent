@@ -170,6 +170,12 @@ export interface SpanAttributes {
 
   // Tool-specific attributes
   "tool.name"?: string;
+  "tool.display_name"?: string;
+  "tool.purpose"?: string;
+  "tool.description"?: string;
+  "tool.call.id"?: string;
+  "tool.tags"?: string;
+  "tool.parameters"?: string;
 
   // Workspace attributes
   "workspace.id"?: string;

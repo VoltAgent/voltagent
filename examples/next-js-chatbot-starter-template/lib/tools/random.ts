@@ -1,15 +1,14 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * Random Number Tool
  * Generates random numbers within a specified range
  */
-export const randomNumberTool = createTool({
-  name: "generateRandomNumber",
+export const randomNumberTool = tool({
   description:
     "Generate a random number within a specified range. Can generate single numbers or arrays of random numbers.",
-  parameters: z.object({
+  inputSchema: z.object({
     min: z.number().describe("Minimum value (inclusive)"),
     max: z.number().describe("Maximum value (inclusive)"),
     count: z

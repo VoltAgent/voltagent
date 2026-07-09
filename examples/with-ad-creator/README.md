@@ -25,7 +25,7 @@ AI Ad Generator automatically creates professional social media advertisements f
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Git
 - OpenAI API Key - [Get yours here](https://platform.openai.com/api-keys)
 - BrowserBase Account - [Sign up here](https://browserbase.com)

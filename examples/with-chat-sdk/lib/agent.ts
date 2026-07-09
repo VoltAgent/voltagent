@@ -1,10 +1,9 @@
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const getCurrentTimeTool = createTool({
-  name: "getCurrentTime",
+const getCurrentTimeTool = tool({
   description: "Get the current date and time for a given IANA timezone.",
-  parameters: z.object({
+  inputSchema: z.object({
     timeZone: z
       .string()
       .default("UTC")
@@ -45,5 +44,7 @@ export const slackAssistantAgent = new Agent({
     "If the user asks for time in a city/timezone, call getCurrentTime.",
   ].join("\n"),
   model: "openai/gpt-4o-mini",
-  tools: [getCurrentTimeTool],
+  tools: {
+    getCurrentTime: getCurrentTimeTool,
+  },
 });

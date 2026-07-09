@@ -7,7 +7,7 @@ slug: /agents/structured-output
 
 Use the AI SDK `output` option with `generateText` and `streamText` when you need typed structured data. This keeps tool calling, memory, hooks, observability, retries, and all other agent features on the same text-generation path.
 
-`generateObject` and `streamObject` are still available as compatibility wrappers, but they are deprecated in VoltAgent 2.x.
+`generateObject` and `streamObject` are still available as compatibility wrappers, but they are deprecated in VoltAgent 3.x. New code should use `generateText` or `streamText` with `output: Output.object(...)`.
 
 ## Generate an Object
 

@@ -144,6 +144,8 @@ If you have custom code that imports Zod 3-specific internals or `zod/v3`, updat
 
 The object-style call shape introduced in 2.x remains the preferred API. Keep AI SDK generation settings at the top level and VoltAgent runtime options under `voltagent`:
 
+VoltAgent 3.x derives most public generation options from AI SDK v7 `generateText` and `streamText`, so AI SDK settings such as `timeout`, `headers`, `include`, `activeTools`, `toolOrder`, `experimental_download`, `onChunk`, and stream lifecycle callbacks can be used directly on the agent call.
+
 ```ts
 const result = await agent.generateText({
   prompt: "Summarize this ticket",
@@ -166,6 +168,16 @@ The same shape works for `streamText`:
 ```ts
 const result = await agent.streamText({
   prompt: "Write a short release note",
+  timeout: {
+    totalMs: 30_000,
+    chunkMs: 5_000,
+  },
+  include: {
+    rawChunks: true,
+  },
+  onChunk: async ({ chunk }) => {
+    // Native AI SDK stream callback.
+  },
   voltagent: {
     memory: {
       userId: "user-123",
@@ -174,6 +186,10 @@ const result = await agent.streamText({
   },
 });
 ```
+
+VoltAgent composes a small set of fields instead of passing them through unchanged: `model`, `prompt`/`messages`, `tools`, `abortSignal`, `maxRetries`, `onStepEnd`, `onEnd`/`onFinish`, and `onError`. You still pass the callbacks at the top level; VoltAgent invokes them after its memory, guardrail, hook, tracing, and recovery work has run.
+
+Top-level AI SDK `runtimeContext`, `toolsContext`, `telemetry`, and `experimental_telemetry` are intentionally not supported on VoltAgent calls. Use `voltagent.context` for per-call application context, VoltAgent tool context/hooks for tool execution context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
 
 Legacy positional calls are still accepted:
 
@@ -434,6 +450,8 @@ const agent = new Agent({
         return { city, temperature: 72 };
       },
       voltagent: {
+        name: "Weather Lookup",
+        purpose: "Fetch weather observations",
         tags: ["weather", "external-api"],
         hooks: {
           onStart: async ({ args }) => {
@@ -466,12 +484,14 @@ const result = await agent.generateText({
 });
 ```
 
-Existing `createTool` definitions still work as compatibility API. Keep them if you rely on the class-style VoltAgent tool shape or if migration is not worth the churn yet. When migrating from `createTool` to `tool()`:
+`createTool` is now a legacy compatibility helper for existing class-style tools. New custom tools should use `tool()`. When migrating from `createTool` to `tool()`:
 
 - move `name` to the `tools` object key.
 - rename `parameters` to `inputSchema`.
 - move `tags`, `hooks`, and other VoltAgent-only metadata under `voltagent`.
+- use `voltagent.name` only as display metadata. Telemetry and tool calls keep using the ToolSet key as canonical `tool.name`; `voltagent.name` is exposed as `tool.display_name`.
 - keep `execute`, `outputSchema`, `providerOptions`, and `toModelOutput` in the AI SDK tool definition.
+- do not use AI SDK `contextSchema`, `runtimeContext`, `toolsContext`, `telemetry`, or `experimental_telemetry` on `tool()`. Use `voltagent.context` on the agent call for per-request application context, `voltagent.hooks` when a tool needs VoltAgent lifecycle context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
 
 Use call-level `toolApproval` when approval should be controlled per request, per user, or per runtime context. Use `voltagent.needsApproval` only for static tool metadata or compatibility with existing VoltAgent tool policies.
 

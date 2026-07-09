@@ -65,7 +65,7 @@ examples/with-a2a-server
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - `pnpm`
 - `OPENAI_API_KEY` in your environment (used by the example agent)
 

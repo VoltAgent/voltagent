@@ -887,12 +887,6 @@ importers:
       '@voltagent/server-hono':
         specifier: ^3.0.0-next.0
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@4.3.5)
-      '@voltagent/vercel-ui':
-        specifier: ^1.0.1
-        version: 1.0.1(@voltagent/core@packages+core)(zod@4.3.5)
       ai:
         specifier: ^7.0.0
         version: 7.0.18(zod@4.3.5)
@@ -5056,17 +5050,6 @@ packages:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.19(zod@3.25.76)
       zod: 3.25.76
-
-  /@ai-sdk/openai@2.0.85(zod@4.3.5):
-    resolution: {integrity: sha512-3pzr7qVhsOXwjPAfmvFNZz3sRWCuyMOc3GgLHe7sWY0t8J4hA5mwQ4LISTKYI3iIr8IXzAQn9MUrC8Hiji9RpA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.19(zod@4.3.5)
-      zod: 4.3.5
-    dev: false
 
   /@ai-sdk/openai@4.0.9(zod@4.3.5):
     resolution: {integrity: sha512-j7x7FC6KQJMQaJoi6hFLzbB2aXMnR+IA8h0BQH8YCbQESppbM7SzmZ4VAPpobIvx0rqiVNJ1JjraElOLuA31Ag==}
@@ -21459,38 +21442,6 @@ packages:
 
   /@volar/source-map@2.4.23:
     resolution: {integrity: sha512-Z1Uc8IB57Lm6k7q6KIDu/p+JWtf3xsXJqAX/5r18hYOTpJyBn0KXUR8oTJ4WFYOcDzWC9n3IflGgHowx6U6z9Q==}
-    dev: false
-
-  /@voltagent/internal@0.0.9:
-    resolution: {integrity: sha512-Kaa2jW60VsfYVotuXC81LmNOJ07Lf1yq36vMteNKKa5seIsKkJ75PvIbMp52eEZ/ky/oBXrs94UXrQNqXBJ80Q==}
-    dev: false
-
-  /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@4.3.5):
-    resolution: {integrity: sha512-ooknKRG0G79YuHJAPuZ5Xoy1oiirq0XfyS5ncKO2+yMqasRSn5phd8wHq5x4nVwRFMY1mulo3YZJ2QGQLj1mIg==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.71
-      zod: ^3.25.0
-    dependencies:
-      '@ai-sdk/openai': 2.0.85(zod@4.3.5)
-      '@voltagent/core': link:packages/core
-      ai: 5.0.113(zod@4.3.5)
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      zod: 4.3.5
-    dev: false
-
-  /@voltagent/vercel-ui@1.0.1(@voltagent/core@packages+core)(zod@4.3.5):
-    resolution: {integrity: sha512-0suTujwLPQX7TZIarEI6Z4PZUtnFZguuevLUBwlu9bIP32VpZoSn20+Voovm16qQ+2jirhltdjuj/XAy6hC3hQ==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.71
-      zod: ^3.25.0
-    dependencies:
-      '@voltagent/core': link:packages/core
-      '@voltagent/internal': 0.0.9
-      ai: 5.0.113(zod@4.3.5)
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      zod: 4.3.5
     dev: false
 
   /@vue-macros/common@3.0.0-beta.16(vue@3.5.22):

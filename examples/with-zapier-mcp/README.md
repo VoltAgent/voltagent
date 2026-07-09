@@ -54,7 +54,7 @@ This example demonstrates how to integrate VoltAgent with a Zapier Model Context
 
 ## Prerequisites
 
-- Node.js (v20 or later recommended)
+- Node.js 22 or later
 - pnpm (or npm/yarn)
 - AWS credentials for Amazon Bedrock (see below) or you can use OpenAI
 - A Zapier MCP account (see [Zapier documentation](https://zapier.com/mcp/))

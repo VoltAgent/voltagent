@@ -15,9 +15,12 @@ const toolNameParam = () => createPathParam("name", "The name of the tool", "web
 const ToolDefinitionSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
+  displayName: z.string().optional(),
+  purpose: z.string().optional(),
   description: z.string().optional(),
   parameters: z.record(z.string(), z.any()).optional(),
   status: z.string().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   agents: z
     .array(
       z.object({

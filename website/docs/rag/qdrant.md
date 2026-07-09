@@ -11,7 +11,7 @@ slug: /rag/qdrant
 
 Before starting, ensure you have:
 
-- Node.js 18+ installed
+- Node.js 22+ installed
 - Qdrant instance (local or cloud)
 - Qdrant API key (if using cloud)
 - OpenAI API key (for embeddings)

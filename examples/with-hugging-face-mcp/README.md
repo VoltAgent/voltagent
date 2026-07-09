@@ -61,7 +61,7 @@ npm create voltagent-app@latest -- --example with-hugging-face-mcp
 
 ## Prerequisites
 
-- Node.js (v20 or later recommended)
+- Node.js 22 or later
 - pnpm (or npm/yarn)
 - An OpenAI API key (or setup for another supported LLM provider)
 - A Hugging Face account and API token (sign up at [https://huggingface.co/](https://huggingface.co/))
@@ -80,7 +80,6 @@ npm create voltagent-app@latest -- --example with-hugging-face-mcp
    Replace the placeholder values with your actual API keys.
 
 2. **Get Your Hugging Face Token:**
-
    - Visit [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
    - Create a new token with read access
    - Copy the token and add it to your `.env` file

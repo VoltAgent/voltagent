@@ -318,7 +318,10 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
 }
 
 /**
- * Helper function for creating a new tool
+ * Legacy helper for creating a class-style VoltAgent tool.
+ *
+ * @deprecated Use `tool()` with AI SDK-style `inputSchema` and VoltAgent
+ * metadata under the `voltagent` namespace.
  */
 export function createTool<T extends ToolSchema>(
   options: ToolOptions<T, undefined>,

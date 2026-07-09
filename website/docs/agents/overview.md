@@ -184,7 +184,7 @@ For end-to-end examples (SDK, API, and useChat), see [Feedback](/observability-d
 ### Structured Data Generation
 
 Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.
-`generateObject` and `streamObject` are deprecated in VoltAgent 2.x.
+`generateObject` and `streamObject` remain available as deprecated compatibility wrappers in VoltAgent 3.x.
 See [Structured Output](/docs/agents/structured-output) for a dedicated guide.
 
 ```ts
@@ -280,6 +280,21 @@ await agent.generateText("Hello", {
 ```
 
 When both legacy top-level runtime fields and `voltagent.*` are supplied, `voltagent.*` takes precedence.
+
+### AI SDK Compatibility Boundaries
+
+VoltAgent accepts most AI SDK generation settings, but it owns orchestration fields that affect memory, tools, retries, cancellation, hooks, and observability.
+
+| AI SDK field                           | VoltAgent behavior                                                                                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `runtimeContext`                       | Use VoltAgent `context`, `memory`, and hooks instead.                                                       |
+| `toolsContext`                         | Use `voltagent.hooks`, agent call `context`, or tool-level `voltagent.hooks`.                               |
+| `telemetry` / `experimental_telemetry` | Use VoltAgent OpenTelemetry and observability configuration.                                                |
+| `maxRetries`                           | VoltAgent owns retries and model fallback so tracing, memory, hooks, and fallback attempts stay consistent. |
+| `abortSignal`                          | VoltAgent wires cancellation through its operation context and forwards a managed signal to the model call. |
+| `onStepEnd`, `onEnd`, `onError`        | Supported, but invoked through VoltAgent's managed lifecycle after internal work has completed.             |
+
+Provider options, model settings, tool choice, stop conditions, structured output, and other AI SDK generation settings still belong at the top level. Runtime context, memory identity, feedback, middleware, guardrails, and tool routing belong under `voltagent`.
 
 To migrate positional calls, move the prompt into `prompt` and runtime options into `voltagent`:
 
@@ -577,13 +592,12 @@ const agent = new Agent({
 Tools let agents call functions to fetch data, perform actions, or interact with external systems. The LLM decides when to use tools based on the user's input.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get current weather for a location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string(),
   }),
   execute: async ({ location }) => {
@@ -596,7 +610,9 @@ const agent = new Agent({
   name: "Weather Assistant",
   instructions: "Answer weather questions using the get_weather tool.",
   model: "openai/gpt-4o",
-  tools: [weatherTool],
+  tools: {
+    get_weather: weatherTool,
+  },
 });
 ```
 
@@ -828,18 +844,28 @@ await agent.generateText("Hello", {
 Pass request-specific data (like request IDs, user info) between hooks and tools using the operation context `Map`. Context is scoped to a single operation.
 
 ```ts
+import { createHooks, tool } from "@voltagent/core";
+import { z } from "zod";
+
 const hooks = createHooks({
   onStart: async ({ context }) => {
     context.context.set("requestId", `req-${Date.now()}`);
   },
 });
 
-const tool = createTool({
-  name: "logger",
-  parameters: z.object({ message: z.string() }),
-  execute: async (params, oc) => {
-    const requestId = oc?.context?.get("requestId");
-    console.log(`[${requestId}] ${params.message}`);
+const loggerTool = tool({
+  description: "Log a message with the current request id",
+  inputSchema: z.object({ message: z.string() }),
+  execute: async ({ message }) => {
+    return { logged: true, message };
+  },
+  voltagent: {
+    hooks: {
+      onStart: ({ args, options }) => {
+        const requestId = options.context?.get("requestId");
+        options.logger?.info(`[${requestId}] ${args.message}`);
+      },
+    },
   },
 });
 ```

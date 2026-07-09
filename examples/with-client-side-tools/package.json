@@ -6,8 +6,6 @@
     "@libsql/client": "^0.15.0",
     "@voltagent/core": "^3.0.0-next.0",
     "@voltagent/server-hono": "^3.0.0-next.0",
-    "@voltagent/vercel-ai": "^1.0.0",
-    "@voltagent/vercel-ui": "^1.0.1",
     "ai": "^7.0.0",
     "next": "^16.0.7",
     "react": "^19.2.3",

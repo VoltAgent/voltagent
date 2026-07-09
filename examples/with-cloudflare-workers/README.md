@@ -14,7 +14,7 @@ This example demonstrates how to deploy a VoltAgent AI agent to Cloudflare Worke
 
 ## Prerequisites
 
-- Node.js 20+ installed
+- Node.js 22+ installed
 - [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier available)
 - [OpenAI API key](https://platform.openai.com/api-keys)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via npm)

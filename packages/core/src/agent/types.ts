@@ -66,8 +66,12 @@ export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
  */
 export interface ApiToolInfo {
   name: string;
+  displayName?: string;
+  purpose?: string;
   description: string;
   parameters?: any;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AgentToolRoutingState {

@@ -16,6 +16,68 @@ import type { Toolkit } from "../toolkit";
 import { BaseToolManager } from "./BaseToolManager";
 import { ToolkitManager } from "./ToolkitManager";
 
+function getStringMetadataValue(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function getStringArrayMetadataValue(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const normalized = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function getExistingVoltAgentToolMetadata(tool: unknown): Record<string, unknown> {
+  const existingMetadata =
+    tool && typeof tool === "object"
+      ? (tool as { metadata?: { voltagent?: unknown } }).metadata
+      : undefined;
+  const existingVoltAgentMetadata = existingMetadata?.voltagent;
+  return existingVoltAgentMetadata && typeof existingVoltAgentMetadata === "object"
+    ? (existingVoltAgentMetadata as Record<string, unknown>)
+    : {};
+}
+
+function createVoltAgentToolMetadataPayload(
+  metadata: VoltAgentToolMetadata | undefined,
+  existingVoltAgentMetadata: Record<string, unknown> = {},
+): Record<string, unknown> | undefined {
+  const name = getStringMetadataValue(metadata?.name);
+  const purpose = getStringMetadataValue(metadata?.purpose);
+  const tags = getStringArrayMetadataValue(metadata?.tags);
+  const userMetadata =
+    metadata?.metadata && typeof metadata.metadata === "object" ? metadata.metadata : undefined;
+  const api = metadata?.api && typeof metadata.api === "object" ? metadata.api : undefined;
+
+  const payload: Record<string, unknown> = {
+    ...existingVoltAgentMetadata,
+    ...(name ? { name } : {}),
+    ...(purpose ? { purpose } : {}),
+    ...(tags ? { tags } : {}),
+    ...(userMetadata ? { metadata: userMetadata } : {}),
+    ...(api ? { api } : {}),
+  };
+
+  return Object.keys(payload).length > 0 ? payload : undefined;
+}
+
+function getToolTags(tool: unknown, metadata?: VoltAgentToolMetadata): string[] | undefined {
+  return (
+    getStringArrayMetadataValue(metadata?.tags) ??
+    getStringArrayMetadataValue((tool as { tags?: unknown } | undefined)?.tags)
+  );
+}
+
 export class ToolManager extends BaseToolManager<
   AgentTool | VercelTool | NamedAiSdkTool | Toolkit,
   ToolkitManager
@@ -188,14 +250,14 @@ export class ToolManager extends BaseToolManager<
       if (needsApproval !== undefined) {
         preparedTool.needsApproval = needsApproval;
       }
-      if (metadata?.tags && metadata.tags.length > 0) {
+      const voltAgentMetadata = createVoltAgentToolMetadataPayload(
+        metadata,
+        getExistingVoltAgentToolMetadata(tool),
+      );
+      if (voltAgentMetadata) {
         preparedTool.metadata = {
           ...((tool as { metadata?: Record<string, unknown> }).metadata ?? {}),
-          voltagent: {
-            ...(((tool as { metadata?: { voltagent?: Record<string, unknown> } }).metadata
-              ?.voltagent as Record<string, unknown> | undefined) ?? {}),
-            tags: metadata.tags,
-          },
+          voltagent: voltAgentMetadata,
         };
       }
       if (
@@ -214,14 +276,43 @@ export class ToolManager extends BaseToolManager<
    * Get agent's tools (including those in toolkits) for API exposure.
    */
   getToolsForApi(): ApiToolInfo[] {
-    return this.getAllTools().map((tool: AgentTool | ProviderTool | NamedAiSdkTool) => ({
-      name: tool.name,
-      description: tool.description || "",
-      // Use optional chaining for cleaner syntax
-      parameters:
-        "parameters" in tool && (tool as any).parameters
-          ? zodSchemaToJsonUI((tool as any).parameters)
-          : undefined,
-    }));
+    return this.getAllTools().map((tool: AgentTool | ProviderTool | NamedAiSdkTool) => {
+      const metadata = getVoltAgentToolMetadata(tool);
+      const displayName = getStringMetadataValue(metadata?.name);
+      const purpose = getStringMetadataValue(metadata?.purpose);
+      const tags = getToolTags(tool, metadata);
+      const voltagentMetadata = createVoltAgentToolMetadataPayload(
+        metadata,
+        getExistingVoltAgentToolMetadata(tool),
+      );
+
+      const apiTool: ApiToolInfo = {
+        name: tool.name,
+        description: tool.description || "",
+        // Use optional chaining for cleaner syntax
+        parameters:
+          "parameters" in tool && (tool as any).parameters
+            ? zodSchemaToJsonUI((tool as any).parameters)
+            : undefined,
+      };
+
+      if (displayName) {
+        apiTool.displayName = displayName;
+      }
+      if (purpose) {
+        apiTool.purpose = purpose;
+      }
+      if (tags) {
+        apiTool.tags = tags;
+      }
+      if (voltagentMetadata) {
+        apiTool.metadata = {
+          ...((tool as { metadata?: Record<string, unknown> }).metadata ?? {}),
+          voltagent: voltagentMetadata,
+        };
+      }
+
+      return apiTool;
+    });
   }
 }

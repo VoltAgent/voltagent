@@ -6,7 +6,7 @@ This example shows how to run VoltAgent with the hosted _VoltAgent Managed Memor
 
 1. **VoltOps Project Keys** – create or reuse a VoltOps project and copy the **public** and **secret** API keys.
 2. **Managed Memory Database** – create a managed database from VoltOps Console or the VoltOps API and note its name (e.g. `production-memory`).
-3. **Node.js 20+** and **pnpm** (or your preferred package manager).
+3. **Node.js 22+** and **pnpm** (or your preferred package manager).
 
 ## Setup
 

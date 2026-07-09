@@ -17,9 +17,7 @@ import type {
   GenerateObjectResult,
   GenerateTextResult,
   LanguageModel,
-  LanguageModelCallOptions,
   PrepareStepFunction,
-  RequestOptions,
   StepResult,
   ToolApprovalConfiguration,
   ToolApprovalStatus,
@@ -835,7 +833,37 @@ function cloneGenerateTextResultWithContext<
   return clone;
 }
 
-type AITextCallOptions = Partial<LanguageModelCallOptions & Omit<RequestOptions, "timeout">> & {
+type AIGenerateTextOptions = Parameters<typeof generateText>[0];
+type AIStreamTextOptions = Parameters<typeof streamText>[0];
+type AITextGenerationOptions = AIGenerateTextOptions & AIStreamTextOptions;
+type VoltAgentControlledAISDKOption =
+  | "model"
+  | "prompt"
+  | "messages"
+  | "tools"
+  | "output"
+  | "providerOptions"
+  | "abortSignal"
+  | "maxRetries"
+  | "runtimeContext"
+  | "toolsContext"
+  | "telemetry"
+  | "experimental_telemetry"
+  | "onStepEnd"
+  | "onStepFinish"
+  | "onEnd"
+  | "onFinish"
+  | "onError"
+  | "_internal";
+type AISDKPassthroughOptions = Partial<
+  Omit<AITextGenerationOptions, VoltAgentControlledAISDKOption>
+>;
+type AISDKManagedCallbacks = Pick<
+  Partial<AITextGenerationOptions>,
+  "onStepEnd" | "onStepFinish" | "onEnd" | "onFinish" | "onError"
+>;
+
+type AITextCallOptions = AISDKPassthroughOptions & {
   instructions?: Instructions;
   system?: Instructions;
   stop?: string | string[];
@@ -843,6 +871,11 @@ type AITextCallOptions = Partial<LanguageModelCallOptions & Omit<RequestOptions,
   toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
   experimental_toolApprovalSecret?: string | Uint8Array;
   prepareStep?: PrepareStepFunction<Record<string, AITool>>;
+  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
+  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
+  onEnd?: AISDKManagedCallbacks["onEnd"];
+  onFinish?: AISDKManagedCallbacks["onFinish"];
+  onError?: AISDKManagedCallbacks["onError"];
 };
 
 function applyForcedToolChoice(
@@ -906,7 +939,7 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * Extends AI SDK's CallSettings for full compatibility
  */
 export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions = ProviderOptions>
-  extends Partial<LanguageModelCallOptions & Omit<RequestOptions, "timeout">> {
+  extends AISDKPassthroughOptions {
   // === VoltAgent Specific ===
   // New namespace for VoltAgent runtime-specific options.
   voltagent?: VoltAgentRuntimeOptions;
@@ -940,6 +973,12 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   parentOperationContext?: OperationContext;
   parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
   inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
+  /**
+   * External abort signal for this operation. VoltAgent wires this into its
+   * operation context so memory, tools, guardrails, tracing, and the model call
+   * are cancelled together.
+   */
+  abortSignal?: AbortSignal;
 
   // Memory
   /**
@@ -963,6 +1002,13 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
 
   // Steps control
   maxSteps?: number;
+  /**
+   * VoltAgent retry/fallback count for model attempts.
+   *
+   * The underlying AI SDK call receives `maxRetries: 0`; VoltAgent owns retries
+   * so fallback models, tracing, memory persistence, and hooks stay consistent.
+   */
+  maxRetries?: number;
   feedback?: boolean | AgentFeedbackOptions;
   /**
    * When true, avoids wiring the HTTP abort signal into streams so clients can resume later.
@@ -1002,10 +1048,9 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   // Structured output (for schema-guided generation)
   output?: OutputSpec;
 
-  // === Inherited from AI SDK CallSettings ===
-  // maxOutputTokens, temperature, topP, topK,
-  // presencePenalty, frequencyPenalty, stopSequences,
-  // seed, maxRetries, abortSignal, headers
+  // === AI SDK generation settings ===
+  // BaseGenerationOptions inherits AI SDK generateText/streamText settings.
+  // VoltAgent composes a small set of lifecycle and runtime options below.
   /**
    * Optional explicit stop sequences to pass through to the underlying provider.
    * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
@@ -1037,6 +1082,31 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
    * Overrides the agent-level `prepareStep` if provided.
    */
   prepareStep?: PrepareStep;
+
+  /**
+   * AI SDK step callback. VoltAgent invokes this from its managed step handler
+   * after internal memory/tracing work, preserving native callback access while
+   * keeping framework behavior intact.
+   */
+  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
+  /**
+   * Deprecated AI SDK alias for `onStepEnd`.
+   */
+  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
+  /**
+   * AI SDK completion callback. VoltAgent invokes it after guardrails,
+   * middleware, memory persistence, and tracing have produced the final result.
+   */
+  onEnd?: AISDKManagedCallbacks["onEnd"];
+  /**
+   * Deprecated AI SDK alias for `onEnd`.
+   */
+  onFinish?: AISDKManagedCallbacks["onFinish"];
+  /**
+   * AI SDK stream error callback. VoltAgent invokes it from its managed stream
+   * error handler after framework recovery/error handling has run.
+   */
+  onError?: AISDKManagedCallbacks["onError"];
 }
 
 function normalizeInstructions(instructions: Instructions | undefined): SystemModelMessage[] {
@@ -1159,19 +1229,37 @@ function normalizeVoltAgentRuntimeOptions<TOptions extends BaseGenerationOptions
   return normalizedOptions as TOptions;
 }
 
-type GenerationOptionsWithFinish<TProviderOptions extends ProviderOptions = ProviderOptions> =
-  BaseGenerationOptions<TProviderOptions> & {
-    onFinish?: (result: any) => void | Promise<void>;
-    onEnd?: (result: any) => void | Promise<void>;
-  };
+type GenerationFinishCallback = (result: any) => void | PromiseLike<void>;
+type GenerationStepEndCallback = (event: StepResult<ToolSet>) => void | PromiseLike<void>;
+type GenerationErrorCallback = (event: { error: unknown }) => void | PromiseLike<void>;
+
+type GenerationOptionsWithManagedCallbacks<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+> = BaseGenerationOptions<TProviderOptions> & {
+  onFinish?: GenerationFinishCallback;
+  onEnd?: GenerationFinishCallback;
+  onStepEnd?: GenerationStepEndCallback;
+  onStepFinish?: GenerationStepEndCallback;
+  onError?: GenerationErrorCallback;
+};
+type GenerationOptionsWithBlockedAISDKFields<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+> = GenerationOptionsWithManagedCallbacks<TProviderOptions> & {
+  runtimeContext?: unknown;
+  toolsContext?: unknown;
+  telemetry?: unknown;
+  experimental_telemetry?: unknown;
+};
 
 function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = ProviderOptions>(
-  options?: GenerationOptionsWithFinish<TProviderOptions>,
+  options?: GenerationOptionsWithManagedCallbacks<TProviderOptions>,
 ): {
   aiSDKOptions: AITextCallOptions;
   output?: OutputSpec;
   providerOptions?: TProviderOptions;
-  onFinish?: (result: any) => void | Promise<void>;
+  onFinish?: GenerationFinishCallback;
+  onStepEnd?: GenerationStepEndCallback;
+  onError?: GenerationErrorCallback;
 } {
   const {
     voltagent: _voltagent,
@@ -1202,16 +1290,25 @@ function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = Prov
     resumableStream: _resumableStream,
     output,
     providerOptions,
+    runtimeContext: _runtimeContext,
+    toolsContext: _toolsContext,
+    telemetry: _telemetry,
+    experimental_telemetry: _experimentalTelemetry,
     onFinish,
     onEnd,
+    onStepEnd,
+    onStepFinish,
+    onError,
     ...aiSDKOptions
-  } = options ?? {};
+  } = (options ?? {}) as GenerationOptionsWithBlockedAISDKFields<TProviderOptions>;
 
   return {
     aiSDKOptions: aiSDKOptions as AITextCallOptions,
     output,
     providerOptions,
     onFinish: onEnd ?? onFinish,
+    onStepEnd: onStepEnd ?? onStepFinish,
+    onError,
   };
 }
 
@@ -1631,7 +1728,13 @@ export class Agent {
               tools: tools ? Object.keys(tools) : [],
             });
 
-            const { aiSDKOptions, output, providerOptions } = extractAISDKCallOptions(options);
+            const {
+              aiSDKOptions,
+              output,
+              providerOptions,
+              onFinish: userOnFinish,
+              onStepEnd: userOnStepEnd,
+            } = extractAISDKCallOptions(options);
 
             // Apply agent-level prepareStep as default (per-call overrides)
             if (this.prepareStep && !aiSDKOptions.prepareStep) {
@@ -1705,7 +1808,7 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepEnd: this.createStepHandler(oc, options),
+                      onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
                     }),
                   );
 
@@ -1908,13 +2011,19 @@ export class Agent {
               });
             })();
 
-            return cloneGenerateTextResultWithContext(result, {
+            const finalResult = cloneGenerateTextResultWithContext(result, {
               text: finalText,
               context: oc.context,
               toolCalls: aggregatedToolCalls,
               toolResults: aggregatedToolResults,
               feedback: feedbackValue,
             });
+
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+
+            return finalResult;
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
@@ -2303,6 +2412,8 @@ export class Agent {
           output,
           providerOptions,
           onFinish: userOnFinish,
+          onStepEnd: userOnStepEnd,
+          onError: userOnError,
         } = extractAISDKCallOptions(options);
 
         // Apply agent-level prepareStep as default (per-call overrides)
@@ -2383,7 +2494,7 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepEnd: this.createStepHandler(oc, options),
+              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
               onError: async (errorData) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
@@ -2464,7 +2575,7 @@ export class Agent {
                 }
 
                 // Call error hooks if they exist
-                this.getMergedHooks(options).onError?.({
+                await this.getMergedHooks(options).onError?.({
                   agent: this,
                   error: actualError as Error,
                   context: oc,
@@ -2477,12 +2588,16 @@ export class Agent {
                 // The onError callback should return void for AI SDK compatibility
                 // Ensure spans are flushed on error
                 // Uses waitUntil if available to avoid blocking
-                await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
-                  "streamText:onError",
-                );
+                try {
+                  await userOnError?.(errorData as { error: unknown });
+                } finally {
+                  await flushObservability(
+                    this.getObservability(),
+                    oc.logger ?? this.logger,
+                    this.observabilityAuthWarningState,
+                    "streamText:onError",
+                  );
+                }
               },
               onEnd: async (finalResult) => {
                 latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
@@ -3281,7 +3396,12 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            const { aiSDKOptions, providerOptions } = extractAISDKCallOptions(options);
+            const {
+              aiSDKOptions,
+              providerOptions,
+              onFinish: userOnFinish,
+              onStepEnd: userOnStepEnd,
+            } = extractAISDKCallOptions(options);
             const {
               instructions: explicitInstructions,
               system: explicitSystem,
@@ -3312,6 +3432,7 @@ export class Agent {
                   providerOptions,
                   // VoltAgent controlled
                   abortSignal: oc.abortController.signal,
+                  onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
                 });
 
                 await this.ensureStructuredOutputGenerated({
@@ -3467,13 +3588,19 @@ export class Agent {
             );
 
             // Return result with same context reference for consistency
-            return {
+            const finalResult = {
               ...result,
               reasoning: result.reasoningText,
               object: finalObject,
               toJsonResponse: (init?: ResponseInit) => Response.json(finalObject, init),
               context: oc.context,
             };
+
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+
+            return finalResult;
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
@@ -3665,6 +3792,8 @@ export class Agent {
           aiSDKOptions,
           providerOptions,
           onFinish: userOnFinish,
+          onStepEnd: userOnStepEnd,
+          onError: userOnError,
         } = extractAISDKCallOptions(options);
         const {
           instructions: explicitInstructions,
@@ -3709,6 +3838,7 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled
               abortSignal: oc.abortController.signal,
+              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
               onError: async (errorData) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
@@ -3771,7 +3901,7 @@ export class Agent {
                 }
 
                 // Call error hooks if they exist
-                this.getMergedHooks(options).onError?.({
+                await this.getMergedHooks(options).onError?.({
                   agent: this,
                   error: actualError as Error,
                   context: oc,
@@ -3785,12 +3915,16 @@ export class Agent {
                 // The onError callback should return void for AI SDK compatibility
                 // Ensure spans are flushed on error
                 // Uses waitUntil if available to avoid blocking
-                await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
-                  "streamObject:onError",
-                );
+                try {
+                  await userOnError?.(errorData as { error: unknown });
+                } finally {
+                  await flushObservability(
+                    this.getObservability(),
+                    oc.logger ?? this.logger,
+                    this.observabilityAuthWarningState,
+                    "streamObject:onError",
+                  );
+                }
               },
               onEnd: async (finalResult: any) => {
                 try {
@@ -6762,8 +6896,18 @@ export class Agent {
   ) => (args: any, options?: ToolExecutionOptions<any>) => ToolExecutionResult<any> {
     return (name, tool, metadata) => {
       const execute = (tool as { execute?: unknown }).execute;
+      const toolDisplayName =
+        typeof metadata?.name === "string" && metadata.name.trim().length > 0
+          ? metadata.name.trim()
+          : undefined;
+      const toolPurpose =
+        typeof metadata?.purpose === "string" && metadata.purpose.trim().length > 0
+          ? metadata.purpose.trim()
+          : undefined;
       const toolInfo = {
         name,
+        displayName: toolDisplayName,
+        purpose: toolPurpose,
         description:
           typeof (tool as { description?: unknown }).description === "string"
             ? (tool as { description: string }).description
@@ -6803,6 +6947,8 @@ export class Agent {
           label: name,
           attributes: {
             "tool.name": name,
+            ...(toolDisplayName ? { "tool.display_name": toolDisplayName } : {}),
+            ...(toolPurpose ? { "tool.purpose": toolPurpose } : {}),
             "tool.call.id": toolCallId,
             "tool.description": toolInfo.description,
             ...(toolTags && toolTags.length > 0 ? { "tool.tags": safeStringify(toolTags) } : {}),
@@ -8180,7 +8326,11 @@ export class Agent {
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
+  private createStepHandler(
+    oc: OperationContext,
+    options?: BaseGenerationOptions,
+    userOnStepEnd?: GenerationStepEndCallback,
+  ) {
     const buffer = this.getConversationBuffer(oc);
     const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
@@ -8243,6 +8393,7 @@ export class Agent {
       // Call hooks
       const hooks = this.getMergedHooks(options);
       await hooks.onStepEnd?.({ agent: this, step: event, context: oc });
+      await userOnStepEnd?.(event);
     };
   }
 
@@ -9110,8 +9261,8 @@ export class Agent {
   /**
    * Get all tools
    */
-  public getTools() {
-    return this.toolManager.getAllBaseTools();
+  public getTools(): Array<Tool<any, any> | ProviderTool | NamedAiSdkTool> {
+    return this.toolManager.getAllTools();
   }
 
   /**

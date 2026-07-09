@@ -179,7 +179,7 @@ const agentWithInlineHooks = new Agent({
 
 ## Passing Hooks to Methods
 
-Pass hooks to `generateText`, `streamText`, `generateObject`, or `streamObject` to run hooks for that specific invocation only.
+Pass hooks to `generateText` or `streamText` to run hooks for that specific invocation only. `generateObject` and `streamObject` remain deprecated compatibility wrappers and use the same hook pipeline.
 
 :::warning
 Method-level hooks do not override agent-level hooks. Both will execute. For most hooks, the method-level hook runs first, then the agent-level hook. For `onPrepareMessages` and `onPrepareModelMessages`, the method-level hook replaces the agent-level hook entirely.
@@ -487,23 +487,32 @@ Tool hooks run for a specific tool instance and are called before/after executio
 - `onEnd`: `{ tool, args, output, error, options }` (return `{ output }` to override)
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const normalizeTool = createTool({
-  name: "normalize_text",
+const normalizeTool = tool({
   description: "Normalize and trim text",
-  parameters: z.object({ text: z.string() }),
+  inputSchema: z.object({ text: z.string() }),
   execute: async ({ text }) => text,
-  hooks: {
-    onStart: ({ tool }) => {
-      console.log(`[tool] ${tool.name} starting`);
+  voltagent: {
+    hooks: {
+      onStart: ({ tool }) => {
+        console.log(`[tool] ${tool.name} starting`);
+      },
+      onEnd: ({ output }) => {
+        if (typeof output === "string") {
+          return { output: output.trim() };
+        }
+      },
     },
-    onEnd: ({ output }) => {
-      if (typeof output === "string") {
-        return { output: output.trim() };
-      }
-    },
+  },
+});
+
+const agent = new Agent({
+  name: "Normalizer",
+  model: "openai/gpt-4o-mini",
+  tools: {
+    normalize_text: normalizeTool,
   },
 });
 ```
@@ -544,7 +553,7 @@ onHandoff: async ({ agent, sourceAgent }) => {
 3.  **Message Transformation**: Modify messages before they reach the LLM or provider.
 4.  **State Management**: Initialize or clean up request-specific resources.
 5.  **Workflow Orchestration**: Trigger external actions based on agent events.
-6.  **UI Integration**: Convert `OperationContext` to messages for the Vercel AI SDK using `@voltagent/vercel-ui`.
+6.  **UI Integration**: Attach metadata or transform messages before returning AI SDK-compatible UI streams.
 
 ## Examples
 

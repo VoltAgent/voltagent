@@ -43,13 +43,30 @@ export type VoltAgentToolMetadata<INPUT = unknown, OUTPUT = unknown> = {
   api?: Record<string, unknown>;
 } & Record<never, OUTPUT>;
 
-export type VoltAgentToolDefinition<T extends VercelTool<any, any, any>> = T & {
+type VoltAgentBlockedAiSdkToolOption =
+  | "contextSchema"
+  | "runtimeContext"
+  | "toolsContext"
+  | "telemetry"
+  | "experimental_telemetry";
+
+export type VoltAgentToolDefinition<T extends VercelTool<any, any, any>> = Omit<
+  T,
+  VoltAgentBlockedAiSdkToolOption
+> & {
+  contextSchema?: never;
+  runtimeContext?: never;
+  toolsContext?: never;
+  telemetry?: never;
+  experimental_telemetry?: never;
   voltagent?: VoltAgentToolMetadata;
 };
 
 export type NamedAiSdkTool = {
   [VOLTAGENT_NAMED_AI_SDK_TOOL_SYMBOL]: true;
   name: string;
+  displayName?: string;
+  purpose?: string;
   description: string;
   parameters: unknown;
   inputSchema?: unknown;
@@ -59,6 +76,7 @@ export type NamedAiSdkTool = {
   providerOptions?: unknown;
   toModelOutput?: unknown;
   hooks?: ToolHooks;
+  metadata?: Record<string, unknown>;
   execute?: unknown;
   isClientSide: () => boolean;
   type: "ai-sdk" | "provider";
@@ -108,10 +126,13 @@ export function createNamedAiSdkTool(
   rawTool: VercelTool<any, any, any>,
 ): NamedAiSdkTool {
   const metadata = getVoltAgentToolMetadata(rawTool);
+  const rawMetadata = (rawTool as { metadata?: unknown }).metadata;
   const providerType = (rawTool as { type?: unknown }).type === "provider";
   const descriptor: NamedAiSdkTool = {
     [VOLTAGENT_NAMED_AI_SDK_TOOL_SYMBOL]: true,
     name,
+    displayName: metadata?.name,
+    purpose: metadata?.purpose,
     description: getToolDescription(rawTool),
     parameters: (rawTool as { inputSchema?: unknown; args?: unknown }).inputSchema
       ? (rawTool as { inputSchema?: unknown }).inputSchema
@@ -125,6 +146,10 @@ export function createNamedAiSdkTool(
     providerOptions: (rawTool as { providerOptions?: unknown }).providerOptions,
     toModelOutput: (rawTool as { toModelOutput?: unknown }).toModelOutput,
     hooks: metadata?.hooks,
+    metadata:
+      rawMetadata && typeof rawMetadata === "object"
+        ? (rawMetadata as Record<string, unknown>)
+        : undefined,
     execute: (rawTool as { execute?: unknown }).execute,
     isClientSide: () => typeof (rawTool as { execute?: unknown }).execute !== "function",
     type: providerType ? "provider" : "ai-sdk",
@@ -186,8 +211,21 @@ export function getRawAiSdkTool(tool: NamedAiSdkTool): VercelTool<any, any, any>
 export function tool<T extends VercelTool<any, any, Context>>(
   definition: VoltAgentToolDefinition<T>,
 ): T {
-  const { voltagent, ...toolDefinition } = definition as VoltAgentToolDefinition<T> & {
+  const {
+    voltagent,
+    contextSchema: _contextSchema,
+    runtimeContext: _runtimeContext,
+    toolsContext: _toolsContext,
+    telemetry: _telemetry,
+    experimental_telemetry: _experimentalTelemetry,
+    ...toolDefinition
+  } = definition as VoltAgentToolDefinition<T> & {
     voltagent?: VoltAgentToolMetadata;
+    contextSchema?: unknown;
+    runtimeContext?: unknown;
+    toolsContext?: unknown;
+    telemetry?: unknown;
+    experimental_telemetry?: unknown;
   };
   const createdTool = aiTool(toolDefinition as T) as T;
   if (voltagent) {

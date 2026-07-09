@@ -838,6 +838,263 @@ Exit criteria:
 - Users can follow the migration guide from VoltAgent 2.x/AI SDK 6 to vNext/AI SDK 7.
 - Website build succeeds.
 
+#### 9.6.1 Follow-up Audit: Remaining v2 Usage in Examples and website/docs
+
+Audit scope:
+
+- `examples`
+- `website/docs`
+- Exclude historical `CHANGELOG.md` files unless they are copied into live docs.
+
+Current finding: the first migration pass updated the core API docs and migration guide, but many live examples and topic docs still show v2-era usage. These should be cleaned before promoting the 3.x next release beyond early validation.
+
+1. Replace preferred tool examples from `createTool` to AI SDK-style `tool()`.
+
+   Update live docs and examples so new code imports `tool` from `@voltagent/core`, uses `inputSchema`, and registers tools as a `ToolSet` object:
+
+   ```ts
+   import { Agent, tool } from "@voltagent/core";
+   import { z } from "zod";
+
+   const tools = {
+     getWeather: tool({
+       description: "Get the weather for a city",
+       inputSchema: z.object({
+         city: z.string(),
+       }),
+       execute: async ({ city }) => ({ city, temperature: 72 }),
+       voltagent: {
+         tags: ["weather"],
+       },
+     }),
+   };
+
+   const agent = new Agent({
+     name: "assistant",
+     model: "openai/gpt-4o-mini",
+     tools,
+   });
+   ```
+
+   Keep `createTool` only in migration/deprecation sections that explicitly explain legacy compatibility.
+
+   Priority docs:
+   - `website/docs/agents/overview.md`
+   - `website/docs/agents/tools.md`
+   - `website/docs/tools/overview.md`
+   - `website/docs/tools/tool-routing.md`
+   - `website/docs/agents/context.md`
+   - `website/docs/agents/hooks.md`
+   - `website/docs/agents/cancellation.md`
+   - `website/docs/agents/dynamic-agents.md`
+   - `website/docs/agents/plan-agent.md`
+   - `website/docs/agents/mcp/mcp-server.md`
+   - `website/docs/integrations/nextjs.md`
+   - `website/docs/ui/assistant-ui.md`
+   - `website/docs/ui/copilotkit.md`
+   - `website/docs/workspaces/overview.md`
+   - `website/docs/workflows/steps/and-agent.md`
+   - `website/docs/workflows/steps/and-then.md`
+   - `website/docs/observability/logging.md`
+
+   Priority examples:
+   - `examples/with-tools`
+   - `examples/with-tool-routing`
+   - `examples/with-client-side-tools`
+   - `examples/next-js-chatbot-starter-template`
+   - `examples/with-nextjs`
+   - `examples/with-nextjs-resumable-stream`
+   - `examples/with-assistant-ui`
+   - `examples/with-copilotkit`
+   - `examples/with-mcp-server`
+   - `examples/with-mcp-elicitation`
+   - `examples/with-a2a-server`
+   - `examples/with-playwright`
+   - `examples/with-whatsapp`
+   - `examples/with-ad-creator`
+   - `examples/github-repo-analyzer`
+   - `examples/github-star-stories`
+   - `examples/with-voltagent-exporter`
+   - `examples/with-langfuse`
+   - `examples/with-voltagent-actions`
+
+2. Update old tool field names in docs and examples.
+
+   Replace v2-style tool fields in preferred examples:
+   - `parameters` -> `inputSchema`
+   - `name` inside the tool definition -> object key in the `tools` object
+   - VoltAgent-only tool metadata -> `voltagent`
+   - tool execution context access from `execute` -> AI SDK execution options or `voltagent.hooks`
+
+   Do not rewrite workflow step schemas that intentionally use `inputSchema`; those are not tool API leftovers.
+
+   Code/API follow-up found during audit:
+   - `ToolRoutingConfig.pool` and `ToolRoutingConfig.expose` currently accept arrays of class-style tools/toolkits/provider tools, but not named AI SDK `ToolSet` records. Do not convert tool-routing docs to `tool()` + object syntax until the type/runtime support exists.
+   - `createToolkit` can type-accept AI SDK tool objects, but array registration cannot infer names from a `ToolSet` key. Keep toolkit docs marked as compatibility-only until toolkit APIs support named AI SDK tools directly.
+
+3. Update agent docs for AI SDK compatibility boundaries.
+
+   Add or expand a short section in agent docs explaining:
+   - AI SDK generation settings mostly pass through.
+   - VoltAgent owns `runtimeContext`, `toolsContext`, `telemetry`, `experimental_telemetry`, `maxRetries`, `abortSignal`, lifecycle callback composition, model resolution, messages, tools, and structured output wiring.
+   - Use VoltAgent `context`, `memory`, `voltagent` runtime options, hooks, and OpenTelemetry instead of AI SDK `runtimeContext`, `toolsContext`, or `telemetry`.
+
+   Priority docs:
+   - `website/docs/agents/overview.md`
+   - `website/docs/agents/context.md`
+   - `website/docs/agents/hooks.md`
+   - `website/docs/getting-started/migration-guide.md`
+   - `website/docs/agents/tools.md` should link back to the agent-level ownership section.
+
+4. Normalize memory examples to the 3.x preferred envelope.
+
+   Preferred new-code shape:
+
+   ```ts
+   await agent.generateText("Continue the conversation", {
+     memory: {
+       userId: "user-123",
+       conversationId: "thread-456",
+       options: {
+         contextLimit: 10,
+       },
+     },
+   });
+   ```
+
+   Update user-facing examples that still show top-level `userId`, `conversationId`, `contextLimit`, `semanticMemory`, `conversationPersistence`, or `messageMetadataPersistence`. Keep top-level fields only in migration sections, compatibility notes, REST API schema examples, or UI request payload examples where the HTTP contract still uses those names.
+
+   Priority docs:
+   - `website/docs/agents/overview.md`
+   - `website/docs/agents/context.md`
+   - `website/docs/agents/memory.md`
+   - `website/docs/agents/memory/overview.md`
+   - `website/docs/agents/memory/in-memory.md`
+   - `website/docs/agents/memory/working-memory.md`
+   - `website/docs/agents/memory/semantic-search.md`
+   - `website/docs/agents/message-types.md`
+   - `website/docs/agents/resumable-streaming.md`
+   - `website/docs/rag/custom-retrievers.md`
+
+   Priority examples:
+   - `examples/with-mcp-elicitation/src/index.ts`
+   - `examples/with-nextjs-resumable-stream`
+   - `examples/with-assistant-ui/app/api/chat/route.ts`
+   - `examples/with-whatsapp`
+   - `examples/with-vector-search/src/index.ts`
+   - `examples/with-workflow/src/index.ts`
+   - `examples/with-workflow-chain/src/index.ts`
+
+5. Update structured-output language and examples for VoltAgent 3.x.
+
+   Replace live docs that say "`generateObject` and `streamObject` are deprecated in VoltAgent 2.x" with 3.x wording:
+   - `generateObject` and `streamObject` remain deprecated compatibility wrappers in 3.x.
+   - New code should use `generateText` or `streamText` with `output: Output.object(...)`.
+
+   Priority files:
+   - `website/docs/agents/overview.md`
+   - `website/docs/agents/structured-output.md`
+   - `website/docs/agents/multi-modal.md`
+   - `website/docs/agents/hooks.md`
+   - `website/docs/agents/middleware.md`
+   - `website/docs/agents/subagents.md`
+   - `website/docs/agents/providers.md`
+   - `examples/with-live-evals/src/index.ts`
+   - `examples/with-offline-evals/src/experiments/scorers.ts`
+
+   Do not change direct AI SDK `generateObject` calls used for dataset generation unless they are intended to demonstrate VoltAgent agent APIs.
+
+6. Update Node.js, ESM, and package version references.
+
+   Replace Node.js 18/20 requirements in live examples and docs with Node.js 22+ for VoltAgent 3.x.
+
+   Priority files found by audit:
+   - `website/docs/getting-started/quick-start.md`
+   - `website/docs/rag/pinecone.md`
+   - `website/docs/rag/qdrant.md`
+   - `website/docs/rag/chroma.md`
+   - `website/docs/rag/lancedb.md`
+   - `examples/with-zapier-mcp/README.md`
+   - `examples/with-mcp-server/README.md`
+   - `examples/with-amazon-bedrock/README.md`
+   - `examples/with-recipe-generator/README.md`
+   - `examples/with-planagents/README.md`
+   - `examples/with-anthropic/README.md`
+   - `examples/with-a2a-server/README.md`
+   - `examples/with-cerbos/README.md`
+   - `examples/with-chat-sdk/README.md`
+   - `examples/with-research-assistant/README.md`
+   - `examples/with-hugging-face-mcp/README.md`
+   - `examples/with-cloudflare-workers/README.md`
+   - `examples/with-voltagent-managed-memory/README.md`
+   - `examples/with-lancedb/README.md`
+   - `examples/with-nestjs/README.md`
+   - `examples/with-ad-creator/README.md`
+   - `examples/with-summarization/README.md`
+   - `examples/with-composio-mcp/README.md`
+   - `examples/with-netlify-functions/README.md`
+   - `examples/with-openrouter/README.md`
+   - `examples/with-mcp-elicitation/README.md`
+
+   Package/version cleanup found by audit:
+   - `examples/with-client-side-tools/package.json` uses legacy `@voltagent/vercel-ai` and `@voltagent/vercel-ui`. These can be removed immediately because the example does not import them.
+   - `examples/with-a2a-server/package.json` uses `@voltagent/internal@^2.0.0-next.0`.
+   - `examples/with-airtable/package.json` uses `@voltagent/internal@^2.0.0-next.0`.
+   - `examples/with-nextjs-resumable-stream/package.json` uses `@voltagent/internal@^2.0.0-next.0`.
+   - `examples/with-copilotkit/server/package.json` uses `@voltagent/ag-ui@^2.0.0-next.0`.
+   - `examples/with-voltagent-managed-memory/package.json` uses `@voltagent/voltagent-memory@^2.0.0-next.0`.
+   - Keep workspace package ranges that still point at local `2.0.0-next.0` packages until the changeset version step bumps those packages. Moving them to `^3.0.0-next.0` before versioning breaks local `pnpm install` because the workspace package versions do not satisfy the range yet.
+   - `examples/with-playwright/tsconfig.json` still sets `"module": "CommonJS"`.
+
+7. Review legacy provider documentation.
+
+   `website/docs/getting-started/providers-models.md` still contains an older native-provider migration section. Keep it only as a clearly labeled historical migration note and make the current 3.x recommendation direct AI SDK providers/model strings.
+
+   `website/docs/community/contributing.md` mentions deprecated provider packages; verify the wording still matches the 3.x package policy.
+
+8. Telemetry docs cleanup.
+
+   Ensure live docs do not imply AI SDK `telemetry` can be passed through `Agent` or `tool()`. The correct 3.x guidance is:
+   - Use VoltAgent OpenTelemetry/observability for Agent calls and VoltAgent-managed tools.
+   - Use AI SDK telemetry only when calling AI SDK directly outside VoltAgent.
+   - Provider-defined tools are passed through and may have provider-owned observability semantics.
+
+   Priority docs:
+   - `website/docs/observability/overview.md`
+   - `website/docs/observability/logging.md`
+   - `website/docs/integrations/vercel-ai.md`
+   - `website/docs/agents/overview.md`
+   - `website/docs/agents/tools.md`
+
+Validation search gates after cleanup:
+
+```bash
+rg -n "createTool" examples website/docs --glob '!**/CHANGELOG.md'
+rg -n "parameters:\\s*z\\." examples website/docs --glob '!**/CHANGELOG.md'
+rg -n "deprecated in VoltAgent 2\\.x|AI SDK v6|vNext|vnext" website/docs examples --glob '!**/CHANGELOG.md'
+rg -n "Node\\.js 18|Node\\.js 20|Node 18|Node 20|v18 or|v20 or" website/docs examples --glob '!**/CHANGELOG.md'
+rg -n "@voltagent/(internal|ag-ui|voltagent-memory|vercel-ai|vercel-ui).*\\\"[~^]?[12]\\." examples/**/package.json
+rg -n "\"module\": \"CommonJS\"" examples/**/tsconfig.json
+```
+
+Expected exceptions:
+
+- `website/docs/getting-started/migration-guide.md` may intentionally contain legacy before/after snippets.
+- Historical changelogs should not be rewritten.
+- Direct AI SDK examples can still use AI SDK-native APIs when they are not demonstrating VoltAgent agent wrappers.
+- REST API schema examples may still expose `userId` and `conversationId` if those are part of the HTTP contract.
+
+Exit criteria:
+
+- Preferred docs use `tool()` plus `inputSchema`.
+- New examples do not recommend `createTool`.
+- Agent docs clearly explain VoltAgent-owned AI SDK fields and telemetry ownership.
+- New-code memory examples use the `memory` envelope.
+- Structured-output docs say 3.x compatibility wrappers, not 2.x deprecation.
+- Live prerequisites say Node.js 22+ for VoltAgent 3.x.
+- Example package manifests do not depend on old VoltAgent 1.x/2.x companion packages.
+- Website build succeeds after the cleanup.
+
 #### 9.7 Validation Gates for AI SDK 7
 
 Run these after the v7 migration work, even though Phase 8 was already green before this new scope:
@@ -877,7 +1134,9 @@ Progress:
 - [x] Added AI SDK-style `tool()` support with a VoltAgent metadata namespace and direct `ToolSet` support.
 - [x] Added native AI SDK `toolApproval` pass-through and tool routing policy enforcement.
 - [x] Server/protocol/ecosystem packages updated.
-- [x] Docs, examples, and templates updated for AI SDK 7, Node.js 22, and ESM-only.
+- [x] Initial migration guide, core docs, and templates updated for AI SDK 7, Node.js 22, and ESM-only.
+- [x] Follow-up audit cleanup started: core agent/tool docs, selected safe ToolSet examples, Node.js 22 README/docs references, and legacy `@voltagent/vercel-*` example dependencies.
+- [ ] Follow-up audit cleanup for remaining v2-era examples and website docs is complete.
 - [x] `pnpm --filter @voltagent/core typecheck` passes.
 - [x] `pnpm --filter @voltagent/core test` passes.
 - [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/agent-runtime.e2e.spec.ts` passes.

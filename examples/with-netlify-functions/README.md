@@ -1,17 +1,17 @@
 # VoltAgent Netlify Functions Deployment Example
 
-This example shows how to deploy a VoltAgent agent as a Netlify Function (Node 20 runtime) while keeping the full VoltAgent HTTP API available behind a single serverless entry point.
+This example shows how to deploy a VoltAgent agent as a Netlify Function with a Node.js 22 runtime while keeping the full VoltAgent HTTP API available behind a single serverless entry point.
 
 ## Features
 
-- ⚙️ Runs on Netlify Functions (AWS Lambda) with Node.js 20
+- ⚙️ Runs on Netlify Functions (AWS Lambda) with Node.js 22
 - 🤖 Uses model strings like `openai/gpt-4o-mini` for completions
 - 🧰 Includes a sample weather tool
 - 🔁 `netlify.toml` redirects every route to the function so `/agents`, `/observability`, etc. continue to work
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - A Netlify account
 - [`netlify-cli`](https://docs.netlify.com/cli/get-started/)
 - An OpenAI API key (VoltOps keys optional)

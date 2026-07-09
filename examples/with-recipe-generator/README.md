@@ -63,7 +63,7 @@ This example demonstrates how to integrate VoltAgent with Exa's Model Context Pr
 
 ## Prerequisites
 
-- Node.js (v20 or later recommended)
+- Node.js 22 or later
 - pnpm (or npm/yarn)
 - An OpenAI API key (or setup for another supported LLM provider)
 - An Exa API key (sign up at [https://exa.ai/](https://exa.ai/))

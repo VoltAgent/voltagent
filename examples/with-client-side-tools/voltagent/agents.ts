@@ -1,27 +1,24 @@
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Tools definitions - those without execute are automatically client-side
 const tools = {
   // Client-side automatic tool (no execute function)
-  getLocation: createTool({
-    name: "getLocation",
+  getLocation: tool({
     description: "Get the user's current location",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   }),
 
   // Client-side interactive tool
-  readClipboard: createTool({
-    name: "readClipboard",
+  readClipboard: tool({
     description: "Read the content from the user's clipboard (requires permission)",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   }),
 
   // Server-side tool (has execute function)
-  getWeather: createTool({
-    name: "getWeather",
+  getWeather: tool({
     description: "Get current weather for a city",
-    parameters: z.object({
+    inputSchema: z.object({
       city: z.string().describe("City name"),
     }),
     execute: async ({ city }) => {
@@ -41,5 +38,5 @@ export const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant that demonstrates client-side tools in VoltAgent.",
   model: "openai/gpt-4o-mini",
-  tools: Object.values(tools),
+  tools,
 });

@@ -1608,6 +1608,199 @@ Use pandas and summarize findings.`.split("\n"),
       expect(startContext.conversationId).toBe("runtime-conv");
     });
 
+    it("should pass AI SDK v7 generateText options, strip VoltAgent-owned fields, and compose managed callbacks", async () => {
+      const hookOnStepEnd = vi.fn();
+      const userOnStepEnd = vi.fn();
+      const userOnEnd = vi.fn();
+      const onStart = vi.fn();
+      const onStepStart = vi.fn();
+      const experimentalDownload = vi.fn(async (downloads: Array<{ url: URL }>) =>
+        downloads.map(() => null),
+      );
+      const agent = new Agent({
+        name: "AISDKOptionsAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+        hooks: createHooks({
+          onStepEnd: hookOnStepEnd,
+        }),
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        content: [{ type: "text", text: "Response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText({
+        prompt: "Hello",
+        timeout: {
+          totalMs: 10_000,
+          stepMs: 5_000,
+        },
+        headers: {
+          "x-provider-header": "provider-value",
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          responseBody: true,
+        },
+        experimental_download: experimentalDownload,
+        onStart,
+        onStepStart,
+        onStepEnd: userOnStepEnd,
+        onEnd: userOnEnd,
+        ...({
+          telemetry: {
+            isEnabled: false,
+            functionId: "generateText-test",
+          },
+          experimental_telemetry: {
+            isEnabled: false,
+          },
+          runtimeContext: {
+            tenantId: "tenant-1",
+          },
+          toolsContext: {
+            lookup_order: {
+              requestId: "tool-request-1",
+            },
+          },
+        } as Record<string, unknown>),
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.timeout).toEqual({ totalMs: 10_000, stepMs: 5_000 });
+      expect(callArgs.headers).toEqual({ "x-provider-header": "provider-value" });
+      expect(callArgs.telemetry).toBeUndefined();
+      expect(callArgs.experimental_telemetry).toBeUndefined();
+      expect(callArgs.runtimeContext).toBeUndefined();
+      expect(callArgs.toolsContext).toBeUndefined();
+      expect(callArgs.include).toEqual({
+        requestBody: true,
+        requestMessages: true,
+        responseBody: true,
+      });
+      expect(callArgs.experimental_download).toBe(experimentalDownload);
+      expect(callArgs.onStart).toBe(onStart);
+      expect(callArgs.onStepStart).toBe(onStepStart);
+      expect(callArgs.onEnd).toBeUndefined();
+      expect(callArgs.onFinish).toBeUndefined();
+      expect(userOnEnd).toHaveBeenCalledTimes(1);
+      expect(userOnEnd.mock.calls[0][0]).toMatchObject({
+        text: "Response",
+        context: expect.any(Map),
+      });
+
+      await callArgs.onStepEnd?.({
+        content: [],
+        response: {
+          messages: [],
+        },
+      } as any);
+
+      expect(hookOnStepEnd).toHaveBeenCalledTimes(1);
+      expect(userOnStepEnd).toHaveBeenCalledTimes(1);
+    });
+
+    it("should pass AI SDK v7 streamText options and compose managed callbacks", async () => {
+      const onChunk = vi.fn();
+      const onAbort = vi.fn();
+      const userOnError = vi.fn();
+      const agent = new Agent({
+        name: "AISDKStreamOptionsAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const mockStream = {
+        text: Promise.resolve("Streamed response"),
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed response",
+            text: "Streamed response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      await agent.streamText({
+        prompt: "Hello",
+        timeout: {
+          totalMs: 10_000,
+          chunkMs: 1_000,
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          rawChunks: true,
+        },
+        includeRawChunks: true,
+        experimental_transform: [],
+        onChunk,
+        onAbort,
+        onError: userOnError,
+      });
+
+      const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
+      expect(callArgs.timeout).toEqual({ totalMs: 10_000, chunkMs: 1_000 });
+      expect(callArgs.include).toEqual({
+        requestBody: true,
+        requestMessages: true,
+        rawChunks: true,
+      });
+      expect(callArgs.includeRawChunks).toBe(true);
+      expect(callArgs.experimental_transform).toEqual([]);
+      expect(callArgs.onChunk).toBe(onChunk);
+      expect(callArgs.onAbort).toBe(onAbort);
+      expect(callArgs.onError).not.toBe(userOnError);
+
+      const abortError = new Error("client aborted");
+      abortError.name = "AbortError";
+      await callArgs.onError?.({ error: abortError });
+
+      expect(userOnError).toHaveBeenCalledTimes(1);
+      expect(userOnError).toHaveBeenCalledWith({ error: abortError });
+    });
+
     it("should use bailed delegate_task output as streamText final text", async () => {
       const agent = new Agent({
         name: "SupervisorAgent",
@@ -2126,6 +2319,36 @@ Use pandas and summarize findings.`.split("\n"),
       expect(result.added).toHaveLength(1); // VoltAgent allows adding same tool
       const tools = agent.getTools();
       expect(tools).toHaveLength(1); // But only keeps one instance
+    });
+
+    it("should expose AI SDK ToolSet tools from getTools", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        tools: {
+          get_weather: aiSdkTool({
+            description: "Get weather",
+            inputSchema: z.object({ city: z.string() }),
+            execute: async ({ city }) => ({ city, temperature: 72 }),
+            voltagent: {
+              name: "Weather Lookup",
+              purpose: "Fetch weather observations",
+              tags: ["weather"],
+            },
+          }),
+        },
+      });
+
+      const tools = agent.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0]).toMatchObject({
+        name: "get_weather",
+        displayName: "Weather Lookup",
+        purpose: "Fetch weather observations",
+        description: "Get weather",
+        tags: ["weather"],
+      });
     });
   });
 
@@ -5332,6 +5555,8 @@ Use pandas and summarize findings.`.split("\n"),
             inputSchema,
             execute,
             voltagent: {
+              name: "Weather Lookup",
+              purpose: "Fetch weather observations",
               tags: ["weather", "external-api"],
               hooks: {
                 onStart: toolOnStart,
@@ -5346,11 +5571,16 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const operationContext = (agent as any).createOperationContext("input message");
+      const createChildSpanSpy = vi.spyOn(operationContext.traceContext, "createChildSpan");
       const prepared = await (agent as any).prepareTools([], operationContext, 3, {});
 
       expect(prepared.get_weather.description).toBe("Get weather");
       expect(prepared.get_weather.inputSchema).toBe(inputSchema);
-      expect(prepared.get_weather.metadata?.voltagent?.tags).toEqual(["weather", "external-api"]);
+      expect(prepared.get_weather.metadata?.voltagent).toMatchObject({
+        name: "Weather Lookup",
+        purpose: "Fetch weather observations",
+        tags: ["weather", "external-api"],
+      });
 
       await expect(
         prepared.get_weather.execute(
@@ -5368,6 +5598,18 @@ Use pandas and summarize findings.`.split("\n"),
         { location: "SF" },
         expect.objectContaining({ toolCallId: "call-1" }),
       );
+      const toolSpanCall = createChildSpanSpy.mock.calls.find(
+        ([spanName]) => spanName === "tool.execution:get_weather",
+      );
+      expect(toolSpanCall?.[2]).toMatchObject({
+        label: "get_weather",
+        attributes: expect.objectContaining({
+          "tool.name": "get_weather",
+          "tool.display_name": "Weather Lookup",
+          "tool.purpose": "Fetch weather observations",
+          "tool.description": "Get weather",
+        }),
+      });
       expect(toolOnStart).toHaveBeenCalledWith(
         expect.objectContaining({
           args: { location: "SF" },
