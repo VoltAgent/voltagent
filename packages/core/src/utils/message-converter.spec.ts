@@ -634,8 +634,8 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
         role: "user",
         content: [
           {
-            type: "image",
-            image: "https://example.com/image.jpg",
+            type: "file",
+            data: "https://example.com/image.jpg",
             mediaType: "image/jpeg",
           } as any,
           { type: "text", text: "What is in this image?" },

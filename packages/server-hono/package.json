@@ -1,16 +1,16 @@
 {
   "name": "@voltagent/server-hono",
   "description": "Hono server implementation for VoltAgent",
-  "version": "2.0.14",
+  "version": "3.0.0-next.0",
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@hono/swagger-ui": "^0.5.1",
-    "@voltagent/a2a-server": "^2.0.3",
-    "@voltagent/core": "^2.7.6",
-    "@voltagent/internal": "^1.0.2",
-    "@voltagent/mcp-server": "^2.0.2",
-    "@voltagent/resumable-streams": "^2.0.1",
-    "@voltagent/server-core": "^2.1.18",
+    "@voltagent/a2a-server": "^3.0.0-next.0",
+    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/internal": "^2.0.0-next.0",
+    "@voltagent/mcp-server": "^3.0.0-next.0",
+    "@voltagent/resumable-streams": "^3.0.0-next.0",
+    "@voltagent/server-core": "^3.0.0-next.0",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.7",
     "openapi3-ts": "^4.5.0"
@@ -21,14 +21,9 @@
   },
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -36,9 +31,9 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "peerDependencies": {
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^3.0.0-next.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "repository": {
@@ -52,5 +47,6 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "type": "module"
 }

@@ -89,4 +89,7 @@ selectedModule.z.ZodType.prototype.openapi = function proxyOpenApi(
 export const OpenAPIHono = selectedModule.OpenAPIHono;
 export const createRoute = selectedModule.createRoute;
 export const z = selectedModule.z;
-export type OpenAPIHonoType = InstanceType<OpenAPIHonoCtor>;
+type OpenAPIHonoInstance = InstanceType<OpenAPIHonoCtor>;
+export type OpenAPIHonoType = Omit<OpenAPIHonoInstance, "openapi"> & {
+  openapi: (route: any, handler: (c: any) => any) => any;
+};

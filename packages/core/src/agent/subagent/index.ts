@@ -609,7 +609,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     const { uiStreamWriter, fullStreamWriter } = this.getStreamWriters(parentOperationContext);
 
     // If we have a UI writer, merge the subagent's stream with metadata
-    if (uiStreamWriter && response.fullStream) {
+    if (uiStreamWriter && response.stream) {
       // Convert the subagent's fullStream to UI message stream
       // Include all messages to maintain tool call/result pairing
       const subagentUIStream = response.toUIMessageStream();
@@ -632,7 +632,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     }
 
     // If we have a fullStream writer, also write the subagent's fullStream events
-    if (fullStreamWriter && response.fullStream) {
+    if (fullStreamWriter && response.stream) {
       this.writeFullStream(
         response,
         forwardingMetadata,
@@ -660,7 +660,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     // Write subagent's fullStream events with metadata
     const writeSubagentFullStream = async () => {
       try {
-        for await (const part of response.fullStream) {
+        for await (const part of response.stream) {
           // Check if this event type should be forwarded
           if (!shouldForwardChunk(part, allowedTypes)) {
             continue; // Skip this event if not in allowed types

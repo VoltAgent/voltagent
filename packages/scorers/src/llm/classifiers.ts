@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 type ChoiceId = string;
 
@@ -96,17 +97,17 @@ async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis>
     instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),
   });
 
-  const response = await agent.generateObject(prompt, CHOICE_RESPONSE_SCHEMA, {
+  const response = await generateStructuredObject(agent, prompt, CHOICE_RESPONSE_SCHEMA, {
     maxOutputTokens,
   });
 
-  const { choice, reason } = extractChoiceFromResponse(response.object, choices, scorerId);
+  const { choice, reason } = extractChoiceFromResponse(response, choices, scorerId);
   const definition = choices[choice];
 
   return {
     choice,
     reason,
-    raw: response.object,
+    raw: response,
     score: definition.score,
     definition,
   } satisfies ChoiceAnalysis;

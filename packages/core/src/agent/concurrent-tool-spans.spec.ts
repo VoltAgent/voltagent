@@ -17,7 +17,7 @@ vi.mock("ai", async () => {
     streamText: vi.fn(),
     generateObject: vi.fn(),
     streamObject: vi.fn(),
-    stepCountIs: vi.fn(() => vi.fn(() => false)),
+    isStepCount: vi.fn(() => vi.fn(() => false)),
   };
 });
 

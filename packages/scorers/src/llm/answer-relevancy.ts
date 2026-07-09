@@ -8,6 +8,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 const QUESTION_GEN_PROMPT = `Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, "I don't know" or "I'm not sure" are noncommittal answers
 
@@ -131,10 +132,10 @@ export function createAnswerRelevancyScorer<
         payload.context,
       );
 
-      const response = await agent.generateObject(prompt, QUESTION_SCHEMA);
+      const question = await generateStructuredObject(agent, prompt, QUESTION_SCHEMA);
       questions.push({
-        question: response.object.question,
-        noncommittal: response.object.noncommittal === 1,
+        question: question.question,
+        noncommittal: question.noncommittal === 1,
       });
     }
 

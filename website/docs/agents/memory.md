@@ -43,18 +43,24 @@ const agent = new Agent({
 });
 
 // First message
-await agent.generateText("My name is Sarah", {
-  memory: {
-    userId: "user-123",
-    conversationId: "chat-001",
+await agent.generateText({
+  prompt: "My name is Sarah",
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "chat-001",
+    },
   },
 });
 
 // Agent remembers context
-await agent.generateText("What's my name?", {
-  memory: {
-    userId: "user-123",
-    conversationId: "chat-001",
+await agent.generateText({
+  prompt: "What's my name?",
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "chat-001",
+    },
   },
 });
 ```

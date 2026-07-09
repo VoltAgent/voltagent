@@ -322,7 +322,7 @@ export interface StepWithContent {
   subAgentName?: string;
 }
 
-export type StepFinishCallback = (step: StepWithContent) => void | Promise<void>;
+export type StepEndCallback = (step: StepWithContent) => void | Promise<void>;
 export type StepChunkCallback = (chunk: any) => void | Promise<void>;
 
 export interface GenerateTextOptions<TModel> {
@@ -331,7 +331,7 @@ export interface GenerateTextOptions<TModel> {
   tools?: BaseTool[];
   maxSteps?: number;
   provider?: ProviderOptions;
-  onStepFinish?: StepFinishCallback;
+  onStepEnd?: StepEndCallback;
   signal?: AbortSignal;
 }
 
@@ -341,9 +341,9 @@ export interface StreamTextOptions<TModel> {
   tools?: BaseTool[];
   maxSteps?: number;
   provider?: ProviderOptions;
-  onStepFinish?: StepFinishCallback;
+  onStepEnd?: StepEndCallback;
   onChunk?: StepChunkCallback;
-  onFinish?: StreamTextOnFinishCallback;
+  onEnd?: StreamTextOnFinishCallback;
   onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
 }
@@ -353,7 +353,7 @@ export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
   model: TModel;
   schema: TSchema;
   provider?: ProviderOptions;
-  onStepFinish?: StepFinishCallback;
+  onStepEnd?: StepEndCallback;
   signal?: AbortSignal;
 }
 
@@ -362,8 +362,8 @@ export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
   model: TModel;
   schema: TSchema;
   provider?: ProviderOptions;
-  onStepFinish?: StepFinishCallback;
-  onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
+  onStepEnd?: StepEndCallback;
+  onEnd?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
   onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
 }

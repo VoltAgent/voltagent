@@ -112,6 +112,9 @@ Generate a text response from an agent synchronously.
         "reasoningEffort": "medium"
       }
     },
+    "toolApproval": {
+      "delete_file": "user-approval"
+    },
     "context": {
       "role": "admin",
       "tier": "premium"
@@ -213,6 +216,8 @@ Generate a text response from an agent synchronously.
 | `seed` | number | - | For reproducible results |
 | `stopSequences` | string[] | - | Stop generation sequences |
 | `providerOptions` | object | - | Provider-specific options |
+| `toolApproval` | object | - | AI SDK native per-tool approval status map: `not-applicable`, `approved`, `denied`, or `user-approval` |
+| `experimental_toolApprovalSecret` | string | - | Secret used by AI SDK to sign native tool approval requests |
 | `context` | object | - | Dynamic agent context |
 | `conversationPersistence` | object | - | Deprecated: use `memory.options.conversationPersistence` (groups `mode`, `debounceMs`, `flushOnToolResult`) |
 | `conversationPersistence.mode` | string | `"step"` | Deprecated: use `memory.options.conversationPersistence.mode` |
@@ -554,9 +559,11 @@ function ChatComponent({ agentId }) {
           body: {
             input: [lastMessage], // Send as array of UIMessage
             options: {
-              memory: {
-                userId: "user-123",
-                conversationId: "conv-456",
+              voltagent: {
+                memory: {
+                  userId: "user-123",
+                  conversationId: "conv-456",
+                },
               },
               temperature: 0.7,
               maxSteps: 10,
@@ -590,7 +597,7 @@ function ChatComponent({ agentId }) {
 }
 ```
 
-**Note:** VoltAgent requires a custom transport with `prepareSendMessagesRequest` to format the request body correctly. The endpoint expects `input` as an array of UIMessage objects and options in a specific format.
+**Note:** VoltAgent requires a custom transport with `prepareSendMessagesRequest` to format the request body correctly. The endpoint expects `input` as an array of UIMessage objects and options in a specific format. Legacy top-level runtime options such as `options.memory` still work, but `options.voltagent.memory` is preferred for new clients.
 
 ## Generate Object
 

@@ -72,14 +72,14 @@ for await (const chunk of stream.textStream) {
 
 When using `streamText`, you can access detailed events and final values.
 
-#### fullStream for Detailed Events
+#### Stream for Detailed Events
 
-Use `fullStream` to receive detailed streaming events including tool calls, reasoning steps, and completion status.
+Use `stream` to receive detailed streaming events including tool calls, reasoning steps, and completion status.
 
 ```ts
 const response = await agent.streamText("Write a story");
 
-for await (const chunk of response.fullStream) {
+for await (const chunk of response.stream) {
   switch (chunk.type) {
     case "reasoning-start":
       console.log("\nReasoning started");
@@ -185,6 +185,7 @@ For end-to-end examples (SDK, API, and useChat), see [Feedback](/observability-d
 
 Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.
 `generateObject` and `streamObject` are deprecated in VoltAgent 2.x.
+See [Structured Output](/docs/agents/structured-output) for a dedicated guide.
 
 ```ts
 import { Output } from "ai";
@@ -198,13 +199,15 @@ const recipeSchema = z.object({
 });
 
 // With generateText - supports tool calling
-const result = await agent.generateText("Create a pasta recipe", {
+const result = await agent.generateText({
+  prompt: "Create a pasta recipe",
   output: Output.object({ schema: recipeSchema }),
 });
 console.log(result.output); // { name: "...", ingredients: [...], ... }
 
 // With streamText - stream partial objects while using tools
-const stream = await agent.streamText("Create a detailed recipe", {
+const stream = await agent.streamText({
+  prompt: "Create a detailed recipe",
   output: Output.object({ schema: recipeSchema }),
 });
 
@@ -213,10 +216,94 @@ for await (const partial of stream.partialOutputStream ?? []) {
 }
 
 // Constrained text generation
-const haiku = await agent.generateText("Write a haiku about coding", {
+const haiku = await agent.generateText({
+  prompt: "Write a haiku about coding",
   output: Output.text(),
 });
 console.log(haiku.output);
+```
+
+### Object-Style Calls and Runtime Options
+
+VoltAgent supports the existing positional call style and the newer object-style request shape. Keep AI SDK-compatible generation settings at the top level, and put VoltAgent runtime options under `voltagent`.
+
+```ts
+const result = await agent.generateText({
+  prompt: "Summarize this support ticket",
+  temperature: 0.2,
+  maxOutputTokens: 500,
+  providerOptions: {
+    openai: {
+      reasoningEffort: "low",
+    },
+  },
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "ticket-456",
+    },
+    context: {
+      tenantId: "acme",
+      requestId: "req-789",
+    },
+    feedback: {
+      key: "support-quality",
+    },
+  },
+});
+
+console.log(result.text);
+console.log(result.context.get("requestId"));
+```
+
+Use top-level fields for model call settings such as `temperature`, `maxOutputTokens`, `providerOptions`, `output`, `stopWhen`, and `toolChoice`.
+
+Use `voltagent` for runtime concerns such as:
+
+- `memory.userId` and `memory.conversationId`
+- `context`
+- `feedback`
+- `guardrails`
+- `middleware`
+- `toolRouting`
+- `requestHeaders`
+- `resumableStream`
+
+Legacy top-level runtime options still work during the transition:
+
+```ts
+await agent.generateText("Hello", {
+  userId: "user-123",
+  conversationId: "conversation-456",
+  context: { requestId: "req-789" },
+});
+```
+
+When both legacy top-level runtime fields and `voltagent.*` are supplied, `voltagent.*` takes precedence.
+
+To migrate positional calls, move the prompt into `prompt` and runtime options into `voltagent`:
+
+```ts
+// Before
+await agent.generateText("Hello", {
+  temperature: 0.2,
+  userId: "user-123",
+  conversationId: "conversation-456",
+  context: { requestId: "req-789" },
+});
+
+// Preferred
+await agent.generateText({
+  prompt: "Hello",
+  temperature: 0.2,
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "conversation-456",
+    },
+    context: { requestId: "req-789" },
+  },
+});
 ```
 
 ### Summarization
@@ -243,11 +330,14 @@ const agent = new Agent({
 You can also override this per call:
 
 ```ts
-await agent.generateText("Run the workflow", {
-  memory: {
-    options: {
-      conversationPersistence: {
-        mode: "finish",
+await agent.generateText({
+  prompt: "Run the workflow",
+  voltagent: {
+    memory: {
+      options: {
+        conversationPersistence: {
+          mode: "finish",
+        },
       },
     },
   },
@@ -362,10 +452,13 @@ import { agent } from "@/voltagent";
 export async function POST(req: Request) {
   const { messages, conversationId, userId } = await req.json();
 
-  const result = await agent.streamText(messages, {
-    memory: {
-      conversationId,
-      userId,
+  const result = await agent.streamText({
+    messages,
+    voltagent: {
+      memory: {
+        conversationId,
+        userId,
+      },
     },
   });
 
@@ -388,6 +481,26 @@ const response = await fetch("http://localhost:3141/agents/assistant/chat", {
 // Stream response (SSE)
 const reader = response.body.getReader();
 // ... process stream chunks
+```
+
+REST requests accept the same runtime namespace inside `options.voltagent`:
+
+```json
+{
+  "input": "Hello",
+  "options": {
+    "temperature": 0.2,
+    "voltagent": {
+      "memory": {
+        "userId": "user-123",
+        "conversationId": "conversation-456"
+      },
+      "context": {
+        "requestId": "req-789"
+      }
+    }
+  }
+}
 ```
 
 ## Constructor Options
@@ -619,7 +732,7 @@ const coordinator = new Agent({
 
 // Now receive all sub-agent events
 const response = await coordinator.streamText("Research and write about AI");
-for await (const chunk of response.fullStream) {
+for await (const chunk of response.stream) {
   if (chunk.subAgentId && chunk.subAgentName) {
     console.log(`[${chunk.agentPath?.join(" > ") ?? chunk.subAgentName}] ${chunk.type}`);
   }

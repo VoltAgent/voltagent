@@ -19,7 +19,7 @@ vi.mock("ai", () => ({
   generateObject: vi.fn(),
   streamObject: vi.fn(),
   convertToModelMessages: vi.fn((messages) => messages),
-  stepCountIs: vi.fn(() => vi.fn(() => false)),
+  isStepCount: vi.fn(() => vi.fn(() => false)),
   validateUIMessages: vi.fn(async ({ messages }) => messages),
 }));
 

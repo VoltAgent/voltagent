@@ -309,7 +309,7 @@ export { convertUsage } from "./utils/usage-converter";
 export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/internal/utils";
 
 // Convenience re-exports from ai-sdk so apps need only @voltagent/core
-export { stepCountIs, hasToolCall } from "ai";
+export { isStepCount, hasToolCall } from "ai";
 export type { LanguageModel } from "ai";
 export type { PrepareStep, StopWhen } from "./ai-types";
 

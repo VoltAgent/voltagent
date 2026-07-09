@@ -4,7 +4,7 @@ import type {
   EmbeddingAdapter,
   EmbeddingModelReference,
 } from "../../memory/adapters/embedding/types";
-import type { ProviderTool, Tool, VercelTool } from "../index";
+import type { NamedAiSdkTool, ProviderTool, Tool, VercelTool } from "../index";
 import type { Toolkit } from "../toolkit";
 
 export type ToolSearchSelection = {
@@ -35,7 +35,7 @@ export type ToolSearchCandidate = {
   tags?: string[];
   parameters?: unknown;
   outputSchema?: unknown;
-  tool: Tool<any, any> | ProviderTool;
+  tool: Tool<any, any> | ProviderTool | NamedAiSdkTool;
 };
 
 export type ToolSearchContext = {

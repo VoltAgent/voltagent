@@ -36,7 +36,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install Dependencies
         run: pnpm install
@@ -63,7 +63,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install Dependencies
         run: pnpm install
@@ -111,7 +111,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Creating .npmrc
@@ -150,6 +150,18 @@ jobs:
           npm run test:integration:ci
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
+
+      - name: Verify Changesets prerelease mode
+        run: |
+          node <<'NODE'
+          const pre = require("./.changeset/pre.json");
+
+          if (pre.mode !== "pre" || pre.tag !== "next") {
+            throw new Error(
+              'Expected Changesets prerelease mode with tag "next". Run "pnpm changeset pre enter next" on the next branch before publishing.',
+            );
+          }
+          NODE
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets

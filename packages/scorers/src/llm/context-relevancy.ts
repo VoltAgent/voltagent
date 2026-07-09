@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 const CONTEXT_RELEVANCY_PROMPT = `Analyze the provided context and identify which parts are relevant to answering the given question. For each context sentence or passage, determine its relevance level.
 
@@ -157,8 +158,8 @@ export function createContextRelevancyScorer<
         contextText,
       );
 
-      const response = await agent.generateObject(prompt, CONTEXT_RELEVANCY_SCHEMA);
-      const evaluations = response.object.evaluations;
+      const response = await generateStructuredObject(agent, prompt, CONTEXT_RELEVANCY_SCHEMA);
+      const evaluations = response.evaluations;
 
       context.results.raw.contextRelevancyEvaluations = evaluations;
 

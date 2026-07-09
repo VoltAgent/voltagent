@@ -172,13 +172,16 @@ new VoltAgent({
 
 ## Usage with User and Conversation IDs
 
-Provide `memory.userId` and `memory.conversationId` in generation calls to scope memory:
+Provide `voltagent.memory.userId` and `voltagent.memory.conversationId` in generation calls to scope memory:
 
 ```ts
-const response = await agent.generateText("What did we discuss yesterday?", {
-  memory: {
-    userId: "user-123",
-    conversationId: "thread-abc",
+const response = await agent.generateText({
+  prompt: "What did we discuss yesterday?",
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "thread-abc",
+    },
   },
 });
 ```
@@ -245,15 +248,18 @@ const agent = new Agent({
 });
 
 // Enable semantic search per call
-const result = await agent.generateText("What preferences did I mention?", {
-  memory: {
-    userId: "user-123",
-    conversationId: "thread-abc",
-    options: {
-      semanticMemory: {
-        enabled: true,
-        semanticLimit: 5,
-        semanticThreshold: 0.7,
+const result = await agent.generateText({
+  prompt: "What preferences did I mention?",
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "thread-abc",
+      options: {
+        semanticMemory: {
+          enabled: true,
+          semanticLimit: 5,
+          semanticThreshold: 0.7,
+        },
       },
     },
   },
@@ -356,11 +362,14 @@ const agent = new Agent({
 });
 
 // Pass tenant per request
-await agent.generateText("Query", {
-  memory: {
-    userId: "user-123",
+await agent.generateText({
+  prompt: "Query",
+  voltagent: {
+    memory: {
+      userId: "user-123",
+    },
+    context: { tenantId: "company-abc" }, // Different tenant = different data
   },
-  context: { tenantId: "company-abc" }, // Different tenant = different data
 });
 ```
 

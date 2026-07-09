@@ -10,7 +10,7 @@ export default defineDataset({
     for (let i = 0; i < 10; i++) {
       const { object } = await generateObject({
         model: "openai/gpt-5",
-        system: `
+        instructions: `
           You are an expert at generating test data for a math agent. You will generate a math problem and the expected answer.
           Generate problems that can be solved with basic arithmetic operations (addition, subtraction, multiplication, division).
           `,

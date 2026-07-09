@@ -28,21 +28,8 @@ export function convertUsage(usage: LanguageModelUsage | undefined): UsageInfo |
   const totalTokens =
     typeof usage.totalTokens === "number" ? usage.totalTokens : inputTokens + outputTokens;
 
-  const cachedInputTokens =
-    usage.cachedInputTokens ??
-    (usage as any).inputTokenDetails?.cacheReadTokens ??
-    (typeof usage.inputTokens === "object"
-      ? ((usage.inputTokens as any)?.cacheRead ?? (usage.inputTokens as any)?.cacheReadTokens)
-      : undefined) ??
-    0;
-
-  const reasoningTokens =
-    usage.reasoningTokens ??
-    (usage as any).outputTokenDetails?.reasoningTokens ??
-    (typeof usage.outputTokens === "object"
-      ? ((usage.outputTokens as any)?.reasoning ?? (usage.outputTokens as any)?.reasoningTokens)
-      : undefined) ??
-    0;
+  const cachedInputTokens = usage.inputTokenDetails?.cacheReadTokens ?? 0;
+  const reasoningTokens = usage.outputTokenDetails?.reasoningTokens ?? 0;
 
   return {
     promptTokens: inputTokens,

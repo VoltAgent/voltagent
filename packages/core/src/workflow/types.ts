@@ -181,7 +181,7 @@ export interface WorkflowStreamResult<
   cancellation: Promise<WorkflowCancellationMetadata | undefined>;
   error: Promise<unknown | undefined>;
   usage: Promise<UsageInfo>;
-  toUIMessageStreamResponse: StreamTextResult<any, any>["toUIMessageStreamResponse"];
+  toUIMessageStreamResponse: StreamTextResult<any, any, any>["toUIMessageStreamResponse"];
   /**
    * Resume a suspended workflow execution
    * @param input - Optional new input data for resuming (validated against resumeSchema if provided)

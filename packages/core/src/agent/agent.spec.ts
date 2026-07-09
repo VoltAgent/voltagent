@@ -4,6 +4,7 @@
  */
 
 import type { ModelMessage } from "@ai-sdk/provider-utils";
+import { safeStringify } from "@voltagent/internal/utils";
 import * as ai from "ai";
 import type { UIMessage } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
@@ -13,7 +14,7 @@ import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
-import { Tool } from "../tool";
+import { Tool, tool as aiSdkTool } from "../tool";
 import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
 import { SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY } from "./context-keys";
@@ -31,7 +32,7 @@ vi.mock("ai", async () => {
     streamText: vi.fn(),
     generateObject: vi.fn(),
     streamObject: vi.fn(),
-    stepCountIs: vi.fn(() => vi.fn(() => false)),
+    isStepCount: vi.fn(() => vi.fn(() => false)),
   };
 });
 
@@ -146,6 +147,51 @@ describe("Agent", () => {
     });
   });
 
+  const toText = (message: ModelMessage): string => {
+    const content = (message as { content?: unknown }).content;
+    if (typeof content === "string") {
+      return content;
+    }
+    if (!Array.isArray(content)) {
+      return "";
+    }
+
+    return content
+      .map((part) => {
+        if (typeof part === "string") {
+          return part;
+        }
+        if (part && typeof part === "object" && "text" in part && typeof part.text === "string") {
+          return part.text;
+        }
+        return "";
+      })
+      .join("\n");
+  };
+
+  const getInstructionMessages = (callArgs?: {
+    instructions?: unknown;
+    messages?: ModelMessage[];
+  }): ModelMessage[] => {
+    const instructions = callArgs?.instructions;
+    const instructionMessages =
+      instructions == null
+        ? []
+        : typeof instructions === "string"
+          ? [{ role: "system", content: instructions }]
+          : Array.isArray(instructions)
+            ? instructions
+            : [instructions];
+
+    return [
+      ...(instructionMessages as ModelMessage[]),
+      ...((callArgs?.messages || []).filter((message) => message.role === "system") || []),
+    ];
+  };
+
+  const getSystemTexts = (callArgs?: { instructions?: unknown; messages?: ModelMessage[] }) =>
+    getInstructionMessages(callArgs).map(toText);
+
   describe("Workspace skills prompt injection", () => {
     const createWorkspaceWithSkill = () => {
       const timestamp = new Date().toISOString();
@@ -195,31 +241,6 @@ Use pandas and summarize findings.`.split("\n"),
       steps: [],
     });
 
-    const toText = (message: ModelMessage): string => {
-      const content = (message as { content?: unknown }).content;
-      if (typeof content === "string") {
-        return content;
-      }
-      if (!Array.isArray(content)) {
-        return "";
-      }
-
-      return content
-        .map((part) => {
-          if (typeof part === "string") {
-            return part;
-          }
-          if (part && typeof part === "object" && "text" in part && typeof part.text === "string") {
-            return part.text;
-          }
-          return "";
-        })
-        .join("\n");
-    };
-
-    const getSystemTexts = (messages: ModelMessage[] | undefined): string[] =>
-      (messages || []).filter((message) => message.role === "system").map(toText);
-
     it("auto-injects workspace skills prompt by default", async () => {
       const workspace = createWorkspaceWithSkill();
       const agent = new Agent({
@@ -234,7 +255,7 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("Analyze my data");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
-      const systemTexts = getSystemTexts(callArgs?.messages);
+      const systemTexts = getSystemTexts(callArgs);
 
       expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
       expect(systemTexts.some((text) => text.includes("Data Analyst (/skills/data)"))).toBe(true);
@@ -259,7 +280,7 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("Analyze my data");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
-      const systemTexts = getSystemTexts(callArgs?.messages);
+      const systemTexts = getSystemTexts(callArgs);
 
       expect(onPrepareMessages).toHaveBeenCalledTimes(1);
       expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
@@ -283,7 +304,7 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("Analyze my data");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
-      const systemTexts = getSystemTexts(callArgs?.messages);
+      const systemTexts = getSystemTexts(callArgs);
 
       expect(onPrepareMessages).toHaveBeenCalledTimes(1);
       expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(false);
@@ -308,7 +329,7 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("Analyze my data");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
-      const systemTexts = getSystemTexts(callArgs?.messages);
+      const systemTexts = getSystemTexts(callArgs);
 
       expect(onPrepareMessages).toHaveBeenCalledTimes(1);
       expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
@@ -356,13 +377,337 @@ Use pandas and summarize findings.`.split("\n"),
       expect(ai.generateText).toHaveBeenCalled();
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       expect(callArgs.model).toBe(mockModel);
-      if (callArgs.messages) {
-        expect(callArgs.messages).toHaveLength(2);
-        expect(callArgs.messages[0].role).toBe("system");
-        expect(callArgs.messages[1].role).toBe("user");
-      }
+      expect(getSystemTexts(callArgs)).toContain("You are a helpful assistant");
+      expect(callArgs.messages).toHaveLength(1);
+      expect(callArgs.messages?.[0].role).toBe("user");
 
       expect(result.text).toBe("Generated response");
+    });
+
+    it("should preserve structured output on generateText results", async () => {
+      const agent = new Agent({
+        name: "StructuredTextAgent",
+        instructions: "Return structured data",
+        model: mockModel as any,
+      });
+
+      const output = ai.Output.object({
+        schema: z.object({
+          answer: z.string(),
+          count: z.number(),
+        }),
+      });
+      const providerOptions = {
+        openai: {
+          reasoningEffort: "low",
+        },
+      } as const;
+      const context = new Map<string | symbol, unknown>([["requestId", "req-123"]]);
+
+      const mockResponse = {
+        text: "Structured response",
+        content: [{ type: "text", text: "Structured response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "structured-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+        output: {
+          answer: "ok",
+          count: 2,
+        },
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const result = await agent.generateText("Return JSON", {
+        output,
+        providerOptions,
+        context,
+        userId: "user-1",
+        conversationId: "conv-1",
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.output).toBe(output);
+      expect(callArgs.providerOptions).toBe(providerOptions);
+      expect(callArgs.maxRetries).toBe(0);
+      expect(callArgs.model).toBe(mockModel);
+
+      expect(result.text).toBe("Structured response");
+      expect(result.output).toEqual({ answer: "ok", count: 2 });
+      expect(result.context.get("requestId")).toBe("req-123");
+    });
+
+    it("should preserve positional generateText options for AI SDK calls", async () => {
+      const agent = new Agent({
+        name: "PositionalTextAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const providerOptions = {
+        openai: {
+          reasoningEffort: "medium",
+        },
+      } as const;
+      const context = new Map<string | symbol, unknown>([["tenantId", "tenant-1"]]);
+      const stopWhen = vi.fn(() => false);
+      const toolApproval = {
+        get_weather: "user-approval" as const,
+      };
+      const experimentalToolApprovalSecret = new Uint8Array([1, 2, 3]);
+
+      const mockResponse = {
+        text: "Generated response",
+        content: [{ type: "text", text: "Generated response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "positional-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const result = await agent.generateText("Keep positional API", {
+        temperature: 0.2,
+        maxOutputTokens: 256,
+        topP: 0.8,
+        seed: 123,
+        stop: ["END"],
+        stopWhen,
+        toolChoice: "none",
+        toolApproval,
+        experimental_toolApprovalSecret: experimentalToolApprovalSecret,
+        providerOptions,
+        context,
+        userId: "user-1",
+        conversationId: "conv-1",
+        requestHeaders: {
+          authorization: "Bearer test",
+        },
+        maxSteps: 7,
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.temperature).toBe(0.2);
+      expect(callArgs.maxOutputTokens).toBe(256);
+      expect(callArgs.topP).toBe(0.8);
+      expect(callArgs.seed).toBe(123);
+      expect(callArgs.stop).toEqual(["END"]);
+      expect(callArgs.stopWhen).toBe(stopWhen);
+      expect(callArgs.toolChoice).toBe("none");
+      expect(callArgs.toolApproval).toBe(toolApproval);
+      expect(callArgs.experimental_toolApprovalSecret).toBe(experimentalToolApprovalSecret);
+      expect(callArgs.providerOptions).toBe(providerOptions);
+      expect(callArgs.maxRetries).toBe(0);
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(callArgs).not.toHaveProperty("requestHeaders");
+      expect(callArgs).not.toHaveProperty("maxSteps");
+      expect(result.context.get("tenantId")).toBe("tenant-1");
+    });
+
+    it("should normalize object-style generateText requests", async () => {
+      const agent = new Agent({
+        name: "ObjectStyleTextAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const output = ai.Output.object({
+        schema: z.object({
+          answer: z.string(),
+        }),
+      });
+      const providerOptions = {
+        openai: {
+          reasoningEffort: "high",
+        },
+      } as const;
+      const context = {
+        requestId: "req-object-1",
+      };
+
+      const mockResponse = {
+        text: "Object-style response",
+        content: [{ type: "text", text: "Object-style response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "object-style-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+        output: {
+          answer: "ok",
+        },
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const result = await agent.generateText({
+        prompt: "Keep object-style API",
+        options: {
+          temperature: 0.2,
+          providerOptions,
+          context,
+          userId: "user-1",
+          conversationId: "conv-1",
+        },
+        temperature: 0.6,
+        maxOutputTokens: 64,
+        output,
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.temperature).toBe(0.6);
+      expect(callArgs.maxOutputTokens).toBe(64);
+      expect(callArgs.providerOptions).toBe(providerOptions);
+      expect(callArgs.output).toBe(output);
+      expect(callArgs.maxRetries).toBe(0);
+      expect(callArgs).not.toHaveProperty("prompt");
+      expect(callArgs).not.toHaveProperty("options");
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(result.text).toBe("Object-style response");
+      expect(result.output).toEqual({ answer: "ok" });
+      expect(result.context.get("requestId")).toBe("req-object-1");
+    });
+
+    it("should normalize voltagent namespaced runtime options for generateText", async () => {
+      let startContext: any;
+      let capturedHeaders: Record<string, string> | undefined;
+      const agent = new Agent({
+        name: "NamespacedRuntimeTextAgent",
+        instructions: async ({ headers }) => {
+          capturedHeaders = headers;
+          return "You are a helpful assistant";
+        },
+        model: mockModel as any,
+        hooks: createHooks({
+          onStart: ({ context }) => {
+            startContext = context;
+          },
+        }),
+      });
+
+      const mockResponse = {
+        text: "Namespaced response",
+        content: [{ type: "text", text: "Namespaced response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "namespaced-runtime-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const result = await agent.generateText({
+        prompt: "Use namespaced runtime options",
+        temperature: 0.3,
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        context: {
+          requestId: "legacy-request",
+        },
+        requestHeaders: {
+          "x-runtime-source": "legacy",
+        },
+        voltagent: {
+          userId: "runtime-user",
+          conversationId: "runtime-conv",
+          context: {
+            requestId: "runtime-request",
+            tenantId: "tenant-1",
+          },
+          requestHeaders: {
+            "x-runtime-source": "voltagent",
+          },
+          maxSteps: 3,
+        },
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.temperature).toBe(0.3);
+      expect(callArgs).not.toHaveProperty("voltagent");
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(callArgs).not.toHaveProperty("requestHeaders");
+      expect(callArgs).not.toHaveProperty("maxSteps");
+
+      expect(result.context.get("requestId")).toBe("runtime-request");
+      expect(result.context.get("tenantId")).toBe("tenant-1");
+      expect(startContext.userId).toBe("runtime-user");
+      expect(startContext.conversationId).toBe("runtime-conv");
+      expect(capturedHeaders).toEqual({
+        "x-runtime-source": "voltagent",
+      });
     });
 
     it("should resolve string model ids via registry", async () => {
@@ -666,8 +1011,10 @@ Use pandas and summarize findings.`.split("\n"),
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       expect(Array.isArray(callArgs.messages)).toBe(true);
-      expect(callArgs.messages?.[0]).toMatchObject({ role: "system" });
-      expect((callArgs.messages?.[0] as any).parts).toBeUndefined();
+      const instructionMessage = getInstructionMessages(callArgs)[0] as any;
+      expect(instructionMessage).toMatchObject({ role: "system" });
+      expect(instructionMessage.parts).toBeUndefined();
+      expect(callArgs.messages?.some((message) => message.role === "system")).toBe(false);
     });
 
     it("should retain provider options from system instructions", async () => {
@@ -721,10 +1068,13 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("test");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      // Under the current constraint, we assert only the role is preserved here.
-      // Provider options handling is validated elsewhere and may be stripped by normalizers.
-      expect(callArgs.messages?.[0]).toMatchObject({
+      expect(getInstructionMessages(callArgs)[0]).toMatchObject({
         role: "system",
+        providerOptions: {
+          anthropic: {
+            cacheControl,
+          },
+        },
       });
     });
 
@@ -798,7 +1148,7 @@ Use pandas and summarize findings.`.split("\n"),
       );
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      expect(callArgs.messages).toContain(injectedModelMessage);
+      expect(getInstructionMessages(callArgs)).toContain(injectedModelMessage);
     });
 
     it("should throw a descriptive error when structured output is missing", async () => {
@@ -962,6 +1312,9 @@ Use pandas and summarize findings.`.split("\n"),
           yield "Streamed ";
           yield "response";
         })(),
+        get stream() {
+          return this.fullStream;
+        },
         fullStream: (async function* () {
           yield {
             type: "text-delta" as const,
@@ -999,14 +1352,337 @@ Use pandas and summarize findings.`.split("\n"),
       expect(ai.streamText).toHaveBeenCalled();
       const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
       expect(callArgs.model).toBe(mockModel);
-      if (callArgs.messages) {
-        expect(callArgs.messages).toHaveLength(2);
-        expect(callArgs.messages[0].role).toBe("system");
-        expect(callArgs.messages[1].role).toBe("user");
-      }
+      expect(getSystemTexts(callArgs)).toContain("You are a helpful assistant");
+      expect(callArgs.messages).toHaveLength(1);
+      expect(callArgs.messages?.[0].role).toBe("user");
 
       const text = await result.text;
       expect(text).toBe("Streamed response");
+    });
+
+    it("should preserve positional streamText options for AI SDK calls", async () => {
+      const agent = new Agent({
+        name: "PositionalStreamAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const providerOptions = {
+        anthropic: {
+          thinking: {
+            type: "enabled",
+            budgetTokens: 1024,
+          },
+        },
+      } as const;
+      const context = new Map<string | symbol, unknown>([["requestId", "req-456"]]);
+      const stopWhen = vi.fn(() => false);
+      const toolApproval = {
+        get_weather: "approved" as const,
+      };
+      const experimentalToolApprovalSecret = new Uint8Array([4, 5, 6]);
+      const mockStream = {
+        text: Promise.resolve("Streamed response"),
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed response",
+            text: "Streamed response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Keep positional stream API", {
+        temperature: 0.4,
+        maxOutputTokens: 128,
+        topK: 20,
+        seed: 456,
+        stop: "DONE",
+        stopWhen,
+        toolChoice: "none",
+        toolApproval,
+        experimental_toolApprovalSecret: experimentalToolApprovalSecret,
+        providerOptions,
+        context,
+        userId: "user-1",
+        conversationId: "conv-1",
+        requestHeaders: {
+          "x-request-id": "req-456",
+        },
+        maxSteps: 5,
+      });
+
+      const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
+      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.temperature).toBe(0.4);
+      expect(callArgs.maxOutputTokens).toBe(128);
+      expect(callArgs.topK).toBe(20);
+      expect(callArgs.seed).toBe(456);
+      expect(callArgs.stop).toBe("DONE");
+      expect(callArgs.stopWhen).toBe(stopWhen);
+      expect(callArgs.toolChoice).toBe("none");
+      expect(callArgs.toolApproval).toBe(toolApproval);
+      expect(callArgs.experimental_toolApprovalSecret).toBe(experimentalToolApprovalSecret);
+      expect(callArgs.providerOptions).toBe(providerOptions);
+      expect(callArgs.maxRetries).toBe(0);
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(callArgs).not.toHaveProperty("requestHeaders");
+      expect(callArgs).not.toHaveProperty("maxSteps");
+      expect(result.context.get("requestId")).toBe("req-456");
+    });
+
+    it("should normalize object-style streamText requests", async () => {
+      const agent = new Agent({
+        name: "ObjectStyleStreamAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const messages: UIMessage[] = [
+        {
+          id: "msg-1",
+          role: "user",
+          parts: [{ type: "text", text: "Stream from messages" }],
+        },
+      ];
+      const providerOptions = {
+        openai: {
+          reasoningEffort: "low",
+        },
+      } as const;
+      const context = new Map<string | symbol, unknown>([["requestId", "req-stream-object"]]);
+      const mockStream = {
+        text: Promise.resolve("Streamed object-style response"),
+        textStream: (async function* () {
+          yield "Streamed object-style response";
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed object-style response",
+            text: "Streamed object-style response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText({
+        messages,
+        options: {
+          temperature: 0.1,
+          providerOptions,
+          context,
+          userId: "user-1",
+          conversationId: "conv-1",
+        },
+        temperature: 0.5,
+        topP: 0.9,
+      });
+
+      const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
+      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.temperature).toBe(0.5);
+      expect(callArgs.topP).toBe(0.9);
+      expect(callArgs.providerOptions).toBe(providerOptions);
+      expect(callArgs.maxRetries).toBe(0);
+      expect(callArgs).not.toHaveProperty("messagesInput");
+      expect(callArgs).not.toHaveProperty("options");
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(result.context.get("requestId")).toBe("req-stream-object");
+    });
+
+    it("should normalize voltagent namespaced runtime options for positional streamText", async () => {
+      let startContext: any;
+      const agent = new Agent({
+        name: "NamespacedRuntimeStreamAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+        hooks: createHooks({
+          onStart: ({ context }) => {
+            startContext = context;
+          },
+        }),
+      });
+
+      const mockStream = {
+        text: Promise.resolve("Streamed namespaced response"),
+        textStream: (async function* () {
+          yield "Streamed namespaced response";
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed namespaced response",
+            text: "Streamed namespaced response",
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Stream with namespaced options", {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        context: {
+          requestId: "legacy-request",
+        },
+        voltagent: {
+          userId: "runtime-user",
+          conversationId: "runtime-conv",
+          context: {
+            requestId: "runtime-request",
+          },
+          resumableStream: true,
+        },
+      });
+
+      const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
+      expect(callArgs).not.toHaveProperty("voltagent");
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(callArgs).not.toHaveProperty("resumableStream");
+      expect(result.context.get("requestId")).toBe("runtime-request");
+      expect(startContext.userId).toBe("runtime-user");
+      expect(startContext.conversationId).toBe("runtime-conv");
+    });
+
+    it("should use bailed delegate_task output as streamText final text", async () => {
+      const agent = new Agent({
+        name: "SupervisorAgent",
+        instructions: "Delegate when useful",
+        model: mockModel as any,
+      });
+
+      const mockStream = {
+        text: Promise.resolve("Supervisor continuation"),
+        textStream: (async function* () {
+          yield "Supervisor continuation";
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield {
+            type: "tool-result" as const,
+            toolCallId: "call-1",
+            toolName: "delegate_task",
+            input: {},
+            output: [
+              {
+                agentName: "Research Agent",
+                response: "Bailed final answer",
+                usage: {},
+                bailed: true,
+              },
+            ],
+          };
+        })(),
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Delegate this");
+      const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
+
+      await callArgs.onStepEnd?.({
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "call-1",
+            toolName: "delegate_task",
+            input: {},
+            output: [
+              {
+                agentName: "Research Agent",
+                response: "Bailed final answer",
+                usage: {},
+                bailed: true,
+              },
+            ],
+          },
+        ],
+        response: {
+          messages: [],
+        },
+      } as any);
+
+      expect(callArgs.abortSignal.aborted).toBe(true);
+      await expect(result.text).resolves.toBe("Bailed final answer");
     });
 
     it("does not eagerly materialize lazy stream result promises", async () => {
@@ -1030,6 +1706,9 @@ Use pandas and summarize findings.`.split("\n"),
         textStream: (async function* () {
           yield "Streamed response";
         })(),
+        get stream() {
+          return this.fullStream;
+        },
         fullStream: toAsyncIterableStream(
           convertArrayToReadableStream([
             {
@@ -1097,6 +1776,9 @@ Use pandas and summarize findings.`.split("\n"),
         textStream: (async function* () {
           yield "Streamed response";
         })(),
+        get stream() {
+          return this.fullStream;
+        },
         fullStream: (async function* () {
           yield {
             type: "start" as const,
@@ -1153,7 +1835,7 @@ Use pandas and summarize findings.`.split("\n"),
       expect(callArgs?.generateMessageId()).toBe(generatedId);
 
       const parts: any[] = [];
-      for await (const part of result.fullStream) {
+      for await (const part of result.stream) {
         parts.push(part);
       }
       expect(parts).toHaveLength(2);
@@ -1187,6 +1869,9 @@ Use pandas and summarize findings.`.split("\n"),
         textStream: (async function* () {
           yield "Streamed response";
         })(),
+        get stream() {
+          return this.fullStream;
+        },
         fullStream: (async function* () {
           yield {
             type: "finish-step" as const,
@@ -1220,7 +1905,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       const result = await agent.streamText("Stream this");
       const parts: any[] = [];
-      for await (const part of result.fullStream) {
+      for await (const part of result.stream) {
         parts.push(part);
       }
 
@@ -1255,6 +1940,7 @@ Use pandas and summarize findings.`.split("\n"),
         textStream: (async function* () {
           yield "Final answer";
         })(),
+        stream: fullStream,
         fullStream,
         usage: Promise.resolve({
           inputTokens: 10,
@@ -1275,7 +1961,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       const result = await agent.streamText("answer me");
       const emittedTypes: string[] = [];
-      for await (const part of result.fullStream as AsyncIterable<{ type: string }>) {
+      for await (const part of result.stream as AsyncIterable<{ type: string }>) {
         emittedTypes.push(part.type);
       }
 
@@ -1315,8 +2001,12 @@ Use pandas and summarize findings.`.split("\n"),
           return toAsyncIterableStream(probeStream);
         }
 
-        get fullStream(): ai.AsyncIterableStream<any> {
+        get stream(): ai.AsyncIterableStream<any> {
           return this.teeStream();
+        }
+
+        get fullStream(): ai.AsyncIterableStream<any> {
+          return this.stream;
         }
 
         get text(): Promise<string> {
@@ -1345,7 +2035,7 @@ Use pandas and summarize findings.`.split("\n"),
 
         private async consumeText(): Promise<string> {
           let text = "";
-          for await (const part of this.fullStream) {
+          for await (const part of this.stream) {
             if (part.type === "text-delta" && typeof part.delta === "string") {
               text += part.delta;
             }
@@ -1360,7 +2050,7 @@ Use pandas and summarize findings.`.split("\n"),
       const result = await agent.streamText("answer me");
       const emittedTypes: string[] = [];
 
-      for await (const part of result.fullStream as AsyncIterable<{ type: string }>) {
+      for await (const part of result.stream as AsyncIterable<{ type: string }>) {
         emittedTypes.push(part.type);
       }
 
@@ -2578,7 +3268,7 @@ Use pandas and summarize findings.`.split("\n"),
               totalUsage: providerUsage,
             };
           } finally {
-            await args.onFinish?.(finalResult);
+            await args.onEnd?.(finalResult);
           }
         })();
 
@@ -2587,6 +3277,7 @@ Use pandas and summarize findings.`.split("\n"),
           textStream: (async function* () {
             yield "Persisted stream response";
           })(),
+          stream: fullStream,
           fullStream,
           usage: Promise.resolve(providerUsage),
           finishReason: Promise.resolve("stop"),
@@ -2613,7 +3304,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      for await (const _part of result.fullStream) {
+      for await (const _part of result.stream) {
         // Consume stream to trigger mocked onFinish.
       }
 
@@ -3286,13 +3977,13 @@ Use pandas and summarize findings.`.split("\n"),
       expect(output?.steps?.map((step: any) => step.usage)).toEqual(stepUsages);
     });
 
-    it("should call onStepFinish for multi-step generation", async () => {
-      const onStepFinish = vi.fn();
+    it("should call onStepEnd for multi-step generation", async () => {
+      const onStepEndSpy = vi.fn();
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
-        hooks: { onStepFinish },
+        hooks: { onStepEnd: onStepEndSpy },
         maxSteps: 2,
       });
 
@@ -3325,9 +4016,9 @@ Use pandas and summarize findings.`.split("\n"),
 
       await agent.generateText("Test with steps");
 
-      // onStepFinish might be called, depending on implementation
+      // onStepEnd might be called, depending on implementation
       // Just verify the test doesn't throw
-      expect(onStepFinish.mock.calls.length).toBeGreaterThanOrEqual(0);
+      expect(onStepEndSpy.mock.calls.length).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -3373,6 +4064,75 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("Object Generation", () => {
+    const streamObjectUsage = {
+      inputTokens: 10,
+      outputTokens: 5,
+      totalTokens: 15,
+    };
+
+    const collectAsyncIterable = async <T>(iterable: AsyncIterable<T>): Promise<T[]> => {
+      const items: T[] = [];
+      for await (const item of iterable) {
+        items.push(item);
+      }
+      return items;
+    };
+
+    const createMockStructuredStreamTextResult = (
+      args: { onEnd?: (result: any) => Promise<void> | void },
+      finalObject: Record<string, unknown>,
+      partials: Array<Record<string, unknown>>,
+    ) => {
+      const finalResult = {
+        text: safeStringify(finalObject),
+        output: finalObject,
+        finishReason: "stop",
+        usage: streamObjectUsage,
+        totalUsage: streamObjectUsage,
+        warnings: [],
+        response: {
+          id: "stream-object-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+        },
+        steps: [],
+      };
+      let finishTriggered = false;
+      const triggerFinish = async () => {
+        if (!finishTriggered) {
+          finishTriggered = true;
+          await args.onEnd?.(finalResult);
+        }
+      };
+
+      const partialOutputStream = (async function* () {
+        for (const partial of partials) {
+          yield partial;
+        }
+        await triggerFinish();
+      })();
+
+      return {
+        output: Promise.resolve(finalObject),
+        partialOutputStream,
+        textStream: (async function* () {
+          yield safeStringify(finalObject);
+        })(),
+        get stream() {
+          return this.fullStream;
+        },
+        fullStream: (async function* () {
+          yield { type: "text-delta", text: safeStringify(partials.at(-1) ?? finalObject) };
+          yield { type: "finish", finishReason: "stop", usage: streamObjectUsage };
+        })(),
+        usage: Promise.resolve(streamObjectUsage),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(() => new Response("streamed object")),
+      };
+    };
+
     it("should generate object with schema", async () => {
       const agent = new Agent({
         name: "TestAgent",
@@ -3386,25 +4146,119 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const mockResponse = {
-        object: { name: "John", age: 30 },
+        text: '{"name":"John","age":30}',
+        content: [{ type: "text", text: '{"name":"John","age":30}' }],
+        reasoning: [],
+        reasoningText: undefined,
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        output: { name: "John", age: 30 },
         finishReason: "stop",
         usage: {
           inputTokens: 10,
           outputTokens: 5,
           totalTokens: 15,
         },
+        totalUsage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
         warnings: [],
+        request: {},
+        response: {
+          id: "object-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
       };
 
-      vi.mocked(ai.generateObject).mockResolvedValue(mockResponse as any);
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
 
       const result = await agent.generateObject("Generate a person", schema);
 
-      expect(ai.generateObject).toHaveBeenCalled();
+      expect(ai.generateText).toHaveBeenCalled();
+      expect(ai.generateObject).not.toHaveBeenCalled();
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.output).toBeDefined();
+      expect(callArgs.output).toHaveProperty("parseCompleteOutput");
       expect(result.object).toEqual({ name: "John", age: 30 });
     });
 
-    it("should stream object with schema", async () => {
+    it("should normalize voltagent namespaced runtime options for generateObject", async () => {
+      let startContext: any;
+      const agent = new Agent({
+        name: "NamespacedRuntimeObjectAgent",
+        instructions: "Generate structured data",
+        model: mockModel as any,
+        hooks: createHooks({
+          onStart: ({ context }) => {
+            startContext = context;
+          },
+        }),
+      });
+
+      const schema = z.object({
+        name: z.string(),
+      });
+
+      const mockResponse = {
+        text: '{"name":"Ada"}',
+        content: [{ type: "text", text: '{"name":"Ada"}' }],
+        reasoning: [],
+        reasoningText: undefined,
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        output: { name: "Ada" },
+        finishReason: "stop",
+        usage: streamObjectUsage,
+        totalUsage: streamObjectUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: "namespaced-object-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      const result = await agent.generateObject("Generate a person", schema, {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        context: {
+          requestId: "legacy-request",
+        },
+        voltagent: {
+          userId: "runtime-user",
+          conversationId: "runtime-conv",
+          context: {
+            requestId: "runtime-request",
+          },
+        },
+      });
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs).not.toHaveProperty("voltagent");
+      expect(callArgs).not.toHaveProperty("context");
+      expect(callArgs).not.toHaveProperty("userId");
+      expect(callArgs).not.toHaveProperty("conversationId");
+      expect(result.object).toEqual({ name: "Ada" });
+      expect(result.context.get("requestId")).toBe("runtime-request");
+      expect(startContext.userId).toBe("runtime-user");
+      expect(startContext.conversationId).toBe("runtime-conv");
+    });
+
+    it("should expose the streamObject public stream contract", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Stream structured data",
@@ -3415,31 +4269,93 @@ Use pandas and summarize findings.`.split("\n"),
         message: z.string(),
       });
 
-      const mockStream = {
-        object: Promise.resolve({ message: "Hello" }),
-        partialObjectStream: (async function* () {
-          yield { message: "H" };
-          yield { message: "Hello" };
-        })(),
-        fullStream: (async function* () {
-          yield { type: "object-delta", delta: { message: "H" } };
-          yield { type: "object-delta", delta: { message: "ello" } };
-        })(),
-        usage: Promise.resolve({
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        }),
-        warnings: [],
-      };
+      const mockStream = createMockStructuredStreamTextResult({}, { message: "Hello" }, [
+        { message: "H" },
+        { message: "Hello" },
+      ]);
 
-      vi.mocked(ai.streamObject).mockReturnValue(mockStream as any);
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
 
-      const result = await agent.streamObject("Stream a message", schema);
+      const result = await agent.streamObject("Stream a message", schema, {
+        context: {
+          requestId: "req-1",
+        },
+      });
 
-      expect(ai.streamObject).toHaveBeenCalled();
+      expect(ai.streamText).toHaveBeenCalled();
+      expect(ai.streamObject).not.toHaveBeenCalled();
+      const callArgs = vi.mocked(ai.streamText).mock.calls.at(-1)?.[0];
+      expect(callArgs?.output).toBeDefined();
+      expect(callArgs?.output).toHaveProperty("parseCompleteOutput");
+      expect(result.context).toBeInstanceOf(Map);
+      expect(result.context.get("requestId")).toBe("req-1");
+
+      await expect(result.object).resolves.toEqual({ message: "Hello" });
+      await expect(result.usage).resolves.toEqual(streamObjectUsage);
+      await expect(result.finishReason).resolves.toBe("stop");
+
+      await expect(collectAsyncIterable(result.partialObjectStream as any)).resolves.toEqual([
+        { message: "H" },
+        { message: "Hello" },
+      ]);
+      await expect(collectAsyncIterable(result.textStream as any)).resolves.toEqual([
+        safeStringify({ message: "Hello" }),
+      ]);
+      expect(await result.toTextStreamResponse().text()).toBe("streamed object");
+      expect(mockStream.toTextStreamResponse).toHaveBeenCalled();
+    });
+
+    it("should apply streamObject output guardrails before result object and onFinish", async () => {
+      const outputGuardrail = vi.fn(({ output }) => ({
+        pass: true,
+        action: "modify" as const,
+        modifiedOutput: {
+          ...(output as Record<string, unknown>),
+          message: "Safe",
+        },
+      }));
+      const userOnFinish = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Stream structured data",
+        model: mockModel as any,
+        outputGuardrails: [outputGuardrail as any],
+      });
+
+      const schema = z.object({
+        message: z.string(),
+      });
+
+      vi.mocked(ai.streamText).mockImplementation(
+        (args: any) =>
+          createMockStructuredStreamTextResult(args, { message: "Unsafe" }, [
+            { message: "Un" },
+            { message: "Unsafe" },
+          ]) as any,
+      );
+
+      const result = await agent.streamObject("Stream a guarded message", schema, {
+        onEnd: userOnFinish,
+      });
+
+      await collectAsyncIterable(result.partialObjectStream as any);
+
       const obj = await result.object;
-      expect(obj).toEqual({ message: "Hello" });
+      expect(obj).toEqual({ message: "Safe" });
+      expect(outputGuardrail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          output: { message: "Unsafe" },
+          originalOutput: { message: "Unsafe" },
+          operation: "streamObject",
+        }),
+      );
+      expect(userOnFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          object: { message: "Safe" },
+          finishReason: "stop",
+          usage: streamObjectUsage,
+        }),
+      );
     });
 
     it("should abort with ToolDeniedError passed to abortController", async () => {
@@ -4074,9 +4990,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(dynamicInstructions).toHaveBeenCalled();
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      if (callArgs?.messages?.[0]) {
-        expect(callArgs.messages[0].role).toBe("system");
-      }
+      expect(getInstructionMessages(callArgs)[0]?.role).toBe("system");
     });
 
     it("should handle retriever integration", async () => {
@@ -4203,7 +5117,9 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(dynamicTools).toHaveBeenCalledTimes(1);
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      const systemMessage = callArgs.messages?.find((message: any) => message.role === "system");
+      const systemMessage = getInstructionMessages(callArgs).find(
+        (message: any) => message.role === "system",
+      );
 
       expect(systemMessage?.content).toContain("Base instructions");
       expect(systemMessage?.content).toContain("My test instructions");
@@ -4394,6 +5310,86 @@ Use pandas and summarize findings.`.split("\n"),
       expect(prepared["static-only"].description).toBe("Static only tool");
     });
 
+    it("should prepare AI SDK tool records with VoltAgent metadata hooks", async () => {
+      const inputSchema = z.object({
+        location: z.string(),
+      });
+      const execute = vi.fn().mockResolvedValue({ location: "SF", temp: 72 });
+      const toolOnStart = vi.fn();
+      const agentOnToolStart = vi.fn();
+      const agentOnToolEnd = vi.fn();
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        tools: {
+          get_weather: aiSdkTool({
+            description: "Get weather",
+            inputSchema,
+            execute,
+            voltagent: {
+              tags: ["weather", "external-api"],
+              hooks: {
+                onStart: toolOnStart,
+              },
+            },
+          }),
+        },
+        hooks: {
+          onToolStart: agentOnToolStart,
+          onToolEnd: agentOnToolEnd,
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const prepared = await (agent as any).prepareTools([], operationContext, 3, {});
+
+      expect(prepared.get_weather.description).toBe("Get weather");
+      expect(prepared.get_weather.inputSchema).toBe(inputSchema);
+      expect(prepared.get_weather.metadata?.voltagent?.tags).toEqual(["weather", "external-api"]);
+
+      await expect(
+        prepared.get_weather.execute(
+          { location: "SF" },
+          {
+            toolCallId: "call-1",
+            messages: [],
+            abortSignal: new AbortController().signal,
+            context: undefined,
+          },
+        ),
+      ).resolves.toEqual({ location: "SF", temp: 72 });
+
+      expect(execute).toHaveBeenCalledWith(
+        { location: "SF" },
+        expect.objectContaining({ toolCallId: "call-1" }),
+      );
+      expect(toolOnStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: { location: "SF" },
+          tool: expect.objectContaining({
+            name: "get_weather",
+            tags: ["weather", "external-api"],
+          }),
+        }),
+      );
+      expect(agentOnToolStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent,
+          args: { location: "SF" },
+          tool: expect.objectContaining({ name: "get_weather" }),
+        }),
+      );
+      expect(agentOnToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent,
+          output: { location: "SF", temp: 72 },
+          tool: expect.objectContaining({ name: "get_weather" }),
+        }),
+      );
+    });
+
     it("should prefer user-defined callTool/searchTools when tool routing is enabled", async () => {
       const callTool = new Tool({
         name: "callTool",
@@ -4479,6 +5475,51 @@ Use pandas and summarize findings.`.split("\n"),
       await expect(prepared.searchTools.execute({ query: "callTool" })).resolves.toBe(
         "searched:callTool",
       );
+    });
+
+    it("should apply native toolApproval to tool routing pool calls", async () => {
+      const execute = vi.fn().mockResolvedValue("sensitive-result");
+      const sensitiveTool = new Tool({
+        name: "sensitiveTool",
+        description: "Sensitive tool",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        execute,
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolRouting: {
+          enforceSearchBeforeCall: false,
+        },
+        tools: [sensitiveTool],
+      });
+
+      const testAgent = agent as unknown as TestAgentInternals;
+      const operationContext = testAgent.createOperationContext("input message");
+      const prepared = await testAgent.prepareTools([], operationContext, 3, {
+        toolApproval: {
+          sensitiveTool: "user-approval",
+        },
+      });
+
+      await expect(
+        prepared.callTool.execute({
+          name: "sensitiveTool",
+          args: {
+            query: "secret",
+          },
+        }),
+      ).resolves.toMatchObject({
+        error: true,
+        name: "sensitiveTool",
+        code: "TOOL_APPROVAL_REQUIRED",
+        message: "Tool sensitiveTool requires user approval.",
+      });
+      expect(execute).not.toHaveBeenCalled();
     });
 
     it("should add delegate tool when subagents are present", async () => {
@@ -4626,6 +5667,75 @@ Use pandas and summarize findings.`.split("\n"),
       expect(toolNames).toContain("get_working_memory");
       expect(toolNames).not.toContain("update_working_memory");
       expect(toolNames).not.toContain("clear_working_memory");
+    });
+
+    it("should execute working memory tools against the resolved memory envelope", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: {
+          enabled: true,
+        },
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      await memory.createConversation({
+        id: "memory-conv",
+        userId: "memory-user",
+        title: "Memory Conversation",
+        metadata: {},
+      });
+      await memory.createConversation({
+        id: "legacy-conv",
+        userId: "legacy-user",
+        title: "Legacy Conversation",
+        metadata: {},
+      });
+
+      const options = {
+        userId: "legacy-user",
+        conversationId: "legacy-conv",
+        memory: {
+          userId: "memory-user",
+          conversationId: "memory-conv",
+        },
+      } as any;
+      const operationContext = (agent as any).createOperationContext("input message", options);
+      const runtimeTools = (agent as any).createWorkingMemoryTools(options, operationContext);
+      const getWorkingMemoryTool = runtimeTools.find(
+        (tool: Tool<any, any>) => tool.name === "get_working_memory",
+      );
+      const updateWorkingMemoryTool = runtimeTools.find(
+        (tool: Tool<any, any>) => tool.name === "update_working_memory",
+      );
+
+      await updateWorkingMemoryTool?.execute?.(
+        {
+          content: "Preferred language: Turkish",
+          mode: "replace",
+        },
+        operationContext,
+      );
+
+      await expect(
+        memory.getWorkingMemory({
+          userId: "memory-user",
+          conversationId: "memory-conv",
+        }),
+      ).resolves.toBe("Preferred language: Turkish");
+      await expect(
+        memory.getWorkingMemory({
+          userId: "legacy-user",
+          conversationId: "legacy-conv",
+        }),
+      ).resolves.toBeNull();
+      await expect(getWorkingMemoryTool?.execute?.({}, operationContext)).resolves.toBe(
+        "Preferred language: Turkish",
+      );
     });
   });
 

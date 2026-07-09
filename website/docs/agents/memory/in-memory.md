@@ -100,10 +100,13 @@ const testAgent = new Agent({
 });
 
 // Test conversations without persistence
-await testAgent.generateText("Test message", {
-  memory: {
-    userId: "test-user",
-    conversationId: "test-conversation",
+await testAgent.generateText({
+  prompt: "Test message",
+  voltagent: {
+    memory: {
+      userId: "test-user",
+      conversationId: "test-conversation",
+    },
   },
 });
 ```
@@ -121,10 +124,13 @@ export async function handler(event) {
     // Default in-memory storage
   });
 
-  return await agent.generateText(event.message, {
-    memory: {
-      userId: event.userId,
-      conversationId: event.sessionId,
+  return await agent.generateText({
+    prompt: event.message,
+    voltagent: {
+      memory: {
+        userId: event.userId,
+        conversationId: event.sessionId,
+      },
     },
   });
 }

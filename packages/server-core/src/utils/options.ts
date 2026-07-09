@@ -4,6 +4,26 @@ import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 
 type RequestHeadersInput = Headers | Record<string, string | string[] | undefined>;
+type RuntimeOptionsInput = Record<string, any> & {
+  voltagent?:
+    | (Record<string, any> & {
+        guardrails?: {
+          input?: unknown;
+          output?: unknown;
+        };
+        middleware?: {
+          input?: unknown;
+          output?: unknown;
+          maxRetries?: number;
+        };
+        inputGuardrails?: unknown;
+        outputGuardrails?: unknown;
+        inputMiddlewares?: unknown;
+        outputMiddlewares?: unknown;
+        maxMiddlewareRetries?: number;
+      })
+    | null;
+};
 
 function normalizeRequestHeaders(
   headers?: RequestHeadersInput,
@@ -29,6 +49,48 @@ function normalizeRequestHeaders(
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function normalizeVoltAgentRuntimeOptions(options: RuntimeOptionsInput): Record<string, any> {
+  if (!("voltagent" in options)) {
+    return options;
+  }
+
+  const { voltagent, ...legacyOptions } = options;
+  if (!voltagent) {
+    return legacyOptions;
+  }
+
+  const {
+    guardrails,
+    middleware,
+    inputGuardrails,
+    outputGuardrails,
+    inputMiddlewares,
+    outputMiddlewares,
+    maxMiddlewareRetries,
+    ...runtimeOptions
+  } = voltagent;
+
+  return {
+    ...legacyOptions,
+    ...runtimeOptions,
+    ...(guardrails?.input !== undefined || inputGuardrails !== undefined
+      ? { inputGuardrails: guardrails?.input ?? inputGuardrails }
+      : {}),
+    ...(guardrails?.output !== undefined || outputGuardrails !== undefined
+      ? { outputGuardrails: guardrails?.output ?? outputGuardrails }
+      : {}),
+    ...(middleware?.input !== undefined || inputMiddlewares !== undefined
+      ? { inputMiddlewares: middleware?.input ?? inputMiddlewares }
+      : {}),
+    ...(middleware?.output !== undefined || outputMiddlewares !== undefined
+      ? { outputMiddlewares: middleware?.output ?? outputMiddlewares }
+      : {}),
+    ...(middleware?.maxRetries !== undefined || maxMiddlewareRetries !== undefined
+      ? { maxMiddlewareRetries: middleware?.maxRetries ?? maxMiddlewareRetries }
+      : {}),
+  };
 }
 
 /**
@@ -96,7 +158,7 @@ export function processAgentOptions(
   requestHeaders?: RequestHeadersInput,
 ): ProcessedAgentOptions {
   // Now all options should be in body.options, no need to merge from root
-  const options = body.options || {};
+  const options = normalizeVoltAgentRuntimeOptions(body.options || {});
   const normalizedRequestHeaders = normalizeRequestHeaders(requestHeaders);
 
   const processedOptions: ProcessedAgentOptions = {

@@ -492,6 +492,7 @@ describe("SubAgentManager", () => {
       const mockToUIMessageStream = vi.fn().mockReturnValue(mockStream);
 
       vi.spyOn(mockAgent, "streamText").mockResolvedValue({
+        stream: mockStream,
         fullStream: mockStream,
         toUIMessageStream: mockToUIMessageStream,
         text: Promise.resolve("Test"),
@@ -532,6 +533,7 @@ describe("SubAgentManager", () => {
       const mockToUIMessageStream = vi.fn().mockReturnValue(mockStream);
 
       vi.spyOn(mockAgent, "streamText").mockResolvedValue({
+        stream: mockStream,
         fullStream: mockStream,
         toUIMessageStream: mockToUIMessageStream,
         text: Promise.resolve("Text"),
@@ -583,6 +585,7 @@ describe("SubAgentManager", () => {
       ]);
 
       vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        stream: mockStream,
         fullStream: mockStream,
         toUIMessageStream: vi.fn(),
         text: Promise.resolve("done"),
@@ -607,6 +610,15 @@ describe("SubAgentManager", () => {
       expect(toolCallPart.parentAgentId).toBe("parent-agent");
       expect(toolCallPart.parentAgentName).toBe("Parent Agent");
       expect(toolCallPart.agentPath).toEqual(["Parent Agent", "Sub-Agent A"]);
+
+      const toolResultPart = forwarded.find((part) => part.type === "tool-result");
+      expect(toolResultPart?.subAgentId).toBe("sub-agent-a");
+      expect(toolResultPart?.subAgentName).toBe("Sub-Agent A");
+      expect(toolResultPart?.executingAgentId).toBe("sub-agent-a");
+      expect(toolResultPart?.executingAgentName).toBe("Sub-Agent A");
+      expect(toolResultPart?.parentAgentId).toBe("parent-agent");
+      expect(toolResultPart?.parentAgentName).toBe("Parent Agent");
+      expect(toolResultPart?.agentPath).toEqual(["Parent Agent", "Sub-Agent A"]);
 
       const guardrailPart = forwarded.find((part) => part.type === "input-guardrail-blocked");
       expect(guardrailPart?.data).toMatchObject({

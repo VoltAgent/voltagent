@@ -1,7 +1,7 @@
 import type { Logger } from "@voltagent/internal";
 import type { BaseTool } from "../../agent/providers/base/types";
 import { getGlobalLogger } from "../../logger";
-import type { AgentTool, ProviderTool, VercelTool } from "../index";
+import type { AgentTool, NamedAiSdkTool, ProviderTool, VercelTool } from "../index";
 import type { Tool } from "../index";
 import type { Toolkit } from "../toolkit";
 
@@ -9,27 +9,33 @@ import type { Toolkit } from "../toolkit";
  * Type guard to check if an object is a VoltAgent Tool instance
  * to reliably distinguish our Tool instances from externally defined tools.
  */
-function isBaseTool(tool: AgentTool | VercelTool): tool is Tool<any, any> {
+function isBaseTool(tool: AgentTool | VercelTool | NamedAiSdkTool): tool is Tool<any, any> {
   return "type" in tool && tool.type === "user-defined";
 }
 
 /**
  * Type guard for provider-defined tools
  * */
-export function isProviderTool(tool: AgentTool | Toolkit | VercelTool): tool is ProviderTool {
+export function isProviderTool(
+  tool: AgentTool | Toolkit | VercelTool | NamedAiSdkTool,
+): tool is ProviderTool {
   return "type" in tool && tool.type === "provider";
 }
 
 /**
  * Type guard to check if an object is a Toolkit
  */
-function isToolkit(item: AgentTool | Toolkit | VercelTool): item is Toolkit {
+function isToolkit(item: AgentTool | Toolkit | VercelTool | NamedAiSdkTool): item is Toolkit {
   // Check for the 'tools' array property which is specific to Toolkit
   return "tools" in item && Array.isArray((item as any).tools);
 }
 
 export abstract class BaseToolManager<
-  TItems extends AgentTool | VercelTool | Toolkit = AgentTool | VercelTool | Toolkit,
+  TItems extends AgentTool | VercelTool | NamedAiSdkTool | Toolkit =
+    | AgentTool
+    | VercelTool
+    | NamedAiSdkTool
+    | Toolkit,
   TToolkitManager extends BaseToolManager<TItems, never> | never = BaseToolManager<TItems, never>,
 > {
   /**
@@ -86,7 +92,7 @@ export abstract class BaseToolManager<
     }
   }
 
-  addStandaloneTool(tool: AgentTool | VercelTool): boolean {
+  addStandaloneTool(tool: AgentTool | VercelTool | NamedAiSdkTool): boolean {
     if (isProviderTool(tool)) {
       if (!("name" in tool)) {
         this.logger.warn(
@@ -190,7 +196,7 @@ export abstract class BaseToolManager<
   /**
    * Get all kinds of tools, owned by this manager and inside toolkits as a flattened list.
    * */
-  getAllTools(): (BaseTool | ProviderTool)[] {
+  getAllTools(): (BaseTool | ProviderTool | NamedAiSdkTool)[] {
     return [
       ...this.getStandaloneTools(),
       ...this.getToolkitManagers().flatMap((toolkit) => toolkit.getAllTools()),
@@ -200,7 +206,7 @@ export abstract class BaseToolManager<
   /**
    * Get a tool by name across standalone tools and toolkits.
    */
-  getToolByName(toolName: string): BaseTool | ProviderTool | undefined {
+  getToolByName(toolName: string): BaseTool | ProviderTool | NamedAiSdkTool | undefined {
     const standalone = this.baseTools.get(toolName) ?? this.providerTools.get(toolName);
     if (standalone) {
       return standalone;
@@ -233,7 +239,7 @@ export abstract class BaseToolManager<
   /**
    * Returns tools owned directly by this manager (standalone tools), excluding tools inside toolkits.
    */
-  protected getStandaloneTools(): (BaseTool | ProviderTool)[] {
+  protected getStandaloneTools(): (BaseTool | ProviderTool | NamedAiSdkTool)[] {
     return [...this.baseTools.values(), ...this.providerTools.values()];
   }
 

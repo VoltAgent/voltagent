@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 const ANSWER_CORRECTNESS_PROMPT = `Given a ground truth and an answer, analyze each statement in the answer and classify them in one of the following categories:
 
@@ -92,8 +93,8 @@ export function createAnswerCorrectnessScorer<
       .replace("{{answer}}", payload.output)
       .replace("{{ground_truth}}", payload.expected);
 
-    const response = await agent.generateObject(prompt, CLASSIFICATION_SCHEMA);
-    const normalized = normalizeClassification(response.object);
+    const response = await generateStructuredObject(agent, prompt, CLASSIFICATION_SCHEMA);
+    const normalized = normalizeClassification(response);
 
     return {
       ...normalized,

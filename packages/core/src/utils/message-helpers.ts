@@ -62,7 +62,13 @@ export function hasImagePart(input: MessageContent | UIMessage): boolean {
 
   // Handle MessageContent
   if (isStructuredContent(input)) {
-    return input.some((part) => part.type === "image");
+    return input.some(
+      (part) =>
+        part.type === "image" ||
+        (part.type === "file" &&
+          typeof part.mediaType === "string" &&
+          part.mediaType.startsWith("image/")),
+    );
   }
   return false;
 }
@@ -181,7 +187,13 @@ export function extractImageParts(input: MessageContent | UIMessage): Array<any>
 
   // Handle MessageContent
   if (isStructuredContent(input)) {
-    return input.filter((part) => part.type === "image");
+    return input.filter(
+      (part) =>
+        part.type === "image" ||
+        (part.type === "file" &&
+          typeof part.mediaType === "string" &&
+          part.mediaType.startsWith("image/")),
+    );
   }
   return [];
 }
@@ -311,7 +323,11 @@ export class MessageContentBuilder {
    * Add an image part
    */
   addImage(image: string | Uint8Array): this {
-    this.parts.push({ type: "image", image });
+    this.parts.push({
+      type: "file",
+      data: image,
+      mediaType: "image/*",
+    });
     return this;
   }
 

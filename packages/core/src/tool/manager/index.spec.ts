@@ -6,6 +6,7 @@ import {
   Tool,
   type ToolExecutionResult,
   ToolManager,
+  tool as aiSdkTool,
   createTool,
 } from "../index";
 import { createToolkit } from "../toolkit";
@@ -299,6 +300,158 @@ describe("ToolManager", () => {
         execute: wrappedExecute,
       });
       expect(preparedTools[providerTool.name]).toBe(providerTool);
+    });
+
+    it("should prepare AI SDK ToolSet records with VoltAgent metadata", async () => {
+      const inputSchema = z.object({
+        location: z.string(),
+      });
+      const execute = vi.fn().mockResolvedValue({ location: "SF", temp: 72 });
+      const hooks = {
+        onStart: vi.fn(),
+      };
+      const aiTool = aiSdkTool({
+        description: "Get weather",
+        inputSchema,
+        execute,
+        voltagent: {
+          tags: ["weather"],
+          needsApproval: true,
+          hooks,
+        },
+      });
+      toolManager.addToolSet({
+        get_weather: aiTool,
+      });
+
+      const wrappedExecute = vi.fn().mockResolvedValue({ location: "SF", temp: 72 });
+      const createToolExecuteFunction = vi.fn();
+      const createAiSdkToolExecuteFunction = vi.fn().mockReturnValue(wrappedExecute);
+
+      const preparedTools = toolManager.prepareToolsForExecution(
+        createToolExecuteFunction,
+        createAiSdkToolExecuteFunction,
+      );
+      const preparedTool = preparedTools.get_weather as {
+        description: string;
+        inputSchema: unknown;
+        execute?: (args: any, options?: ToolExecuteOptions) => ToolExecutionResult<any>;
+        metadata?: { voltagent?: { tags?: string[] } };
+        needsApproval?: unknown;
+      };
+
+      expect(createToolExecuteFunction).not.toHaveBeenCalled();
+      expect(createAiSdkToolExecuteFunction).toHaveBeenCalledWith(
+        "get_weather",
+        aiTool,
+        expect.objectContaining({
+          tags: ["weather"],
+          needsApproval: true,
+          hooks,
+        }),
+      );
+      expect(preparedTool.description).toBe("Get weather");
+      expect(preparedTool.inputSchema).toBe(inputSchema);
+      expect(preparedTool.needsApproval).toBe(true);
+      expect(preparedTool.metadata?.voltagent?.tags).toEqual(["weather"]);
+      await expect(
+        preparedTool.execute?.({ location: "SF" }, { toolCallId: "call-1" }),
+      ).resolves.toEqual({
+        location: "SF",
+        temp: 72,
+      });
+      expect(wrappedExecute).toHaveBeenCalledWith({ location: "SF" }, { toolCallId: "call-1" });
+    });
+
+    it("should preserve server, client, approval, output, and provider tool metadata together", () => {
+      const providerOptions = {
+        anthropic: {
+          cacheControl: { type: "ephemeral" },
+        },
+      } as const;
+      const serverOutputSchema = z.object({
+        answer: z.string(),
+      });
+      const clientOutputSchema = z.object({
+        status: z.string(),
+      });
+      const needsApproval = vi.fn(() => true);
+      const toModelOutput = vi.fn(({ output }) => ({
+        type: "json" as const,
+        value: output as { answer: string },
+      }));
+      const serverTool = createTool({
+        name: "server-tool",
+        description: "Server tool",
+        parameters: z.object({
+          query: z.string(),
+        }),
+        outputSchema: serverOutputSchema,
+        needsApproval,
+        providerOptions,
+        toModelOutput,
+        execute: vi.fn().mockResolvedValue({ answer: "ok" }),
+      });
+      const clientTool = createTool({
+        name: "client-tool",
+        description: "Client tool",
+        parameters: z.object({
+          action: z.string(),
+        }),
+        outputSchema: clientOutputSchema,
+        needsApproval: true,
+        providerOptions,
+        toModelOutput,
+      });
+      const providerTool = {
+        type: "provider",
+        id: "provider.search",
+        name: "provider-search",
+        description: "Provider search",
+        args: {},
+      } as ProviderTool;
+
+      toolManager.addStandaloneTool(serverTool);
+      toolManager.addStandaloneTool(clientTool);
+      toolManager.addStandaloneTool(providerTool);
+
+      const wrappedExecute = vi.fn().mockResolvedValue({ answer: "wrapped" });
+      const createToolExecuteFunction = vi.fn().mockReturnValue(wrappedExecute);
+      const preparedTools = toolManager.prepareToolsForExecution(createToolExecuteFunction);
+
+      const preparedServerTool = preparedTools[serverTool.name] as {
+        inputSchema: unknown;
+        outputSchema?: unknown;
+        execute?: unknown;
+        needsApproval?: unknown;
+        providerOptions?: unknown;
+        toModelOutput?: unknown;
+      };
+      expect(preparedServerTool.inputSchema).toBe(serverTool.parameters);
+      expect(preparedServerTool.outputSchema).toBe(serverOutputSchema);
+      expect(preparedServerTool.needsApproval).toBe(needsApproval);
+      expect(preparedServerTool.providerOptions).toBe(providerOptions);
+      expect(preparedServerTool.toModelOutput).toBe(toModelOutput);
+      expect(preparedServerTool.execute).toBe(wrappedExecute);
+
+      const preparedClientTool = preparedTools[clientTool.name] as {
+        inputSchema: unknown;
+        outputSchema?: unknown;
+        execute?: unknown;
+        needsApproval?: unknown;
+        providerOptions?: unknown;
+        toModelOutput?: unknown;
+      };
+      expect(preparedClientTool.inputSchema).toBe(clientTool.parameters);
+      expect(preparedClientTool.outputSchema).toBe(clientOutputSchema);
+      expect(preparedClientTool.needsApproval).toBe(true);
+      expect(preparedClientTool.providerOptions).toBe(providerOptions);
+      expect(preparedClientTool.toModelOutput).toBe(toModelOutput);
+      expect(preparedClientTool.execute).toBeUndefined();
+
+      expect(preparedTools[providerTool.name]).toBe(providerTool);
+      expect(createToolExecuteFunction).toHaveBeenCalledTimes(1);
+      expect(createToolExecuteFunction).toHaveBeenCalledWith(serverTool);
     });
   });
 

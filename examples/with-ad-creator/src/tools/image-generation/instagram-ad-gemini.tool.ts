@@ -132,8 +132,8 @@ Critical requirements:
           await fs.writeFile(referencePath, processedScreenshot);
 
           userContent.push({
-            type: "image",
-            image: processedScreenshot,
+            type: "file",
+            data: processedScreenshot,
             mediaType: "image/png",
           });
 

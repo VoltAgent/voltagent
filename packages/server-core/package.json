@@ -1,12 +1,12 @@
 {
   "name": "@voltagent/server-core",
   "description": "Framework-agnostic server core for VoltAgent",
-  "version": "2.1.19",
+  "version": "3.0.0-next.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@voltagent/core": "^2.8.1",
-    "@voltagent/internal": "^1.0.2",
-    "ai": "^6.0.0",
+    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/internal": "^2.0.0-next.0",
+    "ai": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1",
     "zod-from-json-schema": "^0.5.0",
@@ -19,24 +19,14 @@
   },
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./edge": {
-      "import": {
-        "types": "./dist/edge.d.mts",
-        "default": "./dist/edge.mjs"
-      },
-      "require": {
-        "types": "./dist/edge.d.ts",
-        "default": "./dist/edge.js"
-      }
+      "types": "./dist/edge.d.ts",
+      "import": "./dist/edge.js",
+      "default": "./dist/edge.js"
     }
   },
   "files": [
@@ -44,9 +34,9 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "peerDependencies": {
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^3.0.0-next.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "repository": {
@@ -60,5 +50,6 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "type": "module"
 }

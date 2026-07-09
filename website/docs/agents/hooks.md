@@ -526,14 +526,14 @@ onHandoff: async ({ agent, sourceAgent }) => {
 - **Async Execution:** Hooks can be `async` functions. VoltAgent awaits completion before proceeding. Long-running operations in hooks add latency to agent response time.
 - **Error Handling:** Errors thrown inside hooks may interrupt agent execution. Use `try...catch` within hooks or design them to be reliable.
 - **Hook Merging:** When hooks are passed to both the Agent constructor and a method call:
-  - Most hooks (`onStart`, `onEnd`, `onError`, `onHandoff`, `onToolStart`, `onToolEnd`, `onToolError`, `onStepFinish`, `onRetry`, `onFallback`) execute both: method-level first, then agent-level.
+  - Most hooks (`onStart`, `onEnd`, `onError`, `onHandoff`, `onToolStart`, `onToolEnd`, `onToolError`, `onStepEnd`, `onRetry`, `onFallback`) execute both: method-level first, then agent-level.
   - Message hooks (`onPrepareMessages`, `onPrepareModelMessages`) do not merge: method-level replaces agent-level entirely.
 
 ## Additional Hooks
 
 - **`onError`**: Called when an error occurs during agent execution. Receives `{ agent: Agent, error: Error, context: OperationContext }`.
 - **`onToolError`**: Called when a tool throws, before default tool error serialization. Receives `{ agent, tool, args, error, originalError, context }` and can return `{ output }`.
-- **`onStepFinish`**: Called after each step in multi-step agent execution. Receives `{ agent: Agent, step: any, context: OperationContext }`.
+- **`onStepEnd`**: Called after each step in multi-step agent execution. Receives `{ agent: Agent, step: any, context: OperationContext }`.
 - **`onRetry`**: Called when VoltAgent schedules a retry. Receives `{ source, operation, ... }` with retry metadata.
 - **`onFallback`**: Called when VoltAgent selects the next model candidate. Receives `{ stage, fromModel, nextModel, error, ... }`.
 

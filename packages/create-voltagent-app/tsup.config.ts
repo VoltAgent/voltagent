@@ -3,7 +3,7 @@ import { markAsExternalPlugin } from "../shared/tsup-plugins/mark-as-external";
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["cjs"],
+  format: ["esm"],
   splitting: false,
   sourcemap: true,
   clean: false,

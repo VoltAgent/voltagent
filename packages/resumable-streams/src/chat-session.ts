@@ -10,7 +10,7 @@ type ResumableChatSessionOptions = ResumableStreamContext & {
 
 export type ResumableChatSession = {
   consumeSseStream: (args: { stream: ReadableStream<string> }) => Promise<void>;
-  onFinish: () => Promise<void>;
+  onEnd: () => Promise<void>;
   resumeResponse: () => Promise<Response>;
   getActiveStreamId: () => Promise<string | null>;
   clearActiveStream: (streamId?: string) => Promise<void>;
@@ -66,7 +66,7 @@ export function createResumableChatSession({
     }
   };
 
-  const onFinish = async () => {
+  const onEnd = async () => {
     try {
       const streamId = activeStreamId ?? (await getActiveStreamId());
       if (!streamId) {
@@ -104,7 +104,7 @@ export function createResumableChatSession({
 
   return {
     consumeSseStream,
-    onFinish,
+    onEnd,
     resumeResponse,
     getActiveStreamId,
     clearActiveStream,

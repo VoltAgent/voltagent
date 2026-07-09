@@ -517,13 +517,13 @@ describe("Agent Hooks Functionality", () => {
     });
   });
 
-  describe("onStepFinish", () => {
-    it("should call onStepFinish when a step completes", async () => {
-      const onStepFinishSpy = vi.fn();
+  describe("onStepEnd", () => {
+    it("should call onStepEnd when a step completes", async () => {
+      const onStepEndSpy = vi.fn();
       agent = createTestAgent({
         name: "TestAgent",
         model: createMockLanguageModel(),
-        hooks: createHooks({ onStepFinish: onStepFinishSpy }),
+        hooks: createHooks({ onStepEnd: onStepEndSpy }),
       });
 
       const mockStep = {
@@ -533,7 +533,7 @@ describe("Agent Hooks Functionality", () => {
         finishReason: "stop",
       };
 
-      await agent.hooks.onStepFinish?.({
+      await agent.hooks.onStepEnd?.({
         agent: agent as any,
         step: mockStep,
         context: {
@@ -541,7 +541,7 @@ describe("Agent Hooks Functionality", () => {
         } as any,
       });
 
-      expect(onStepFinishSpy).toHaveBeenCalledWith(
+      expect(onStepEndSpy).toHaveBeenCalledWith(
         expect.objectContaining({ agent: expect.any(Object), step: mockStep }),
       );
     });

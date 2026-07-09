@@ -9,7 +9,80 @@ Tools enable agents to interact with external systems, APIs, databases, and perf
 
 ## Creating a Tool
 
-Use `createTool` to define a tool with type-safe parameters and execution logic.
+For new VoltAgent 3.x code, use the AI SDK-style `tool()` helper and pass tools as a `ToolSet` object. The tool name comes from the object key and the input schema uses `inputSchema`, matching AI SDK conventions.
+
+```ts
+import { Agent, tool } from "@voltagent/core";
+import { z } from "zod";
+
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Answer weather questions using the weather tool.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string().describe("The city name"),
+      }),
+      execute: async ({ location }) => {
+        // Call weather API
+        const response = await fetch(`https://api.weather.com/current?city=${location}`);
+        const data = await response.json();
+
+        return {
+          location,
+          temperature: data.temp,
+          conditions: data.conditions,
+        };
+      },
+    }),
+  },
+});
+```
+
+AI SDK-style tools can still use VoltAgent-specific features through the `voltagent` namespace:
+
+```ts
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Answer weather questions using the weather tool.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => {
+        return { location, temperature: 22, conditions: "sunny" };
+      },
+      voltagent: {
+        tags: ["weather", "external-api"],
+        needsApproval: true,
+        hooks: {
+          onStart: ({ tool }) => {
+            console.log(`[tool] ${tool.name} starting`);
+          },
+        },
+      },
+    }),
+  },
+});
+```
+
+Each AI SDK-style tool has:
+
+- **object key**: Unique identifier, such as `get_weather`
+- **description**: Explains what the tool does (the model uses this to decide when to call it)
+- **inputSchema**: Input schema defined with Zod
+- **execute**: Function that runs when the tool is called
+- **providerOptions** (optional): Provider-specific options for advanced features
+- **voltagent.tags** (optional): Optional user-defined tags for organizing or labeling tools.
+
+The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+`createTool` is still available as a compatibility API for the class-style VoltAgent tool shape:
 
 ```ts
 import { createTool } from "@voltagent/core";
@@ -19,32 +92,94 @@ const weatherTool = createTool({
   name: "get_weather",
   description: "Get current weather for a location",
   parameters: z.object({
-    location: z.string().describe("The city name"),
+    location: z.string(),
   }),
   execute: async ({ location }) => {
-    // Call weather API
-    const response = await fetch(`https://api.weather.com/current?city=${location}`);
-    const data = await response.json();
-
-    return {
-      location,
-      temperature: data.temp,
-      conditions: data.conditions,
-    };
+    return { location, temperature: 22, conditions: "sunny" };
   },
 });
 ```
 
-Each tool has:
+## Using AI SDK Provider Tools
 
-- **name**: Unique identifier
-- **description**: Explains what the tool does (the model uses this to decide when to call it)
-- **parameters**: Input schema defined with Zod
-- **execute**: Function that runs when the tool is called
-- **providerOptions** (optional): Provider-specific options for advanced features
-- **tags** (optional): Optional user-defined tags for organizing or labeling tools.
+VoltAgent-managed AI SDK tools, `createTool` tools, and AI SDK provider-defined tools can be used together on the same agent. Use `tool()` when VoltAgent should execute your code and provide hooks, tags, approval metadata, API metadata, and observability. Use provider-defined tools when the model provider owns the tool implementation.
 
-The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+```ts
+import { Agent, tool, type ProviderTool } from "@voltagent/core";
+import { z } from "zod";
+
+const webSearchTool: ProviderTool = {
+  name: "web_search",
+  description: "Search the web using the model provider's hosted search tool.",
+  type: "provider",
+  id: "openai.web_search_preview",
+  args: {},
+};
+
+const agent = new Agent({
+  name: "Research Assistant",
+  instructions: "Use the right tool for weather or current web research.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => {
+        return { location, temperature: 22, conditions: "sunny" };
+      },
+    }),
+    web_search: webSearchTool,
+  },
+});
+```
+
+Provider-defined tools are passed through to the AI SDK unchanged. Use the exact `id` and `args` shape from your provider's AI SDK docs. They are not wrapped with VoltAgent tool hooks or `execute` handlers, so use `tool()` or `createTool` for tools that need VoltAgent-managed lifecycle behavior or application-side execution.
+
+## Native Tool Approval
+
+Use AI SDK v7's native `toolApproval` option when approval should be decided per request. This takes precedence over tool-level `needsApproval`.
+
+```ts
+const result = await agent.generateText({
+  prompt: "Delete the stale report",
+  tools: {
+    delete_file: tool({
+      description: "Delete a file",
+      inputSchema: z.object({
+        path: z.string(),
+      }),
+      execute: async ({ path }) => deleteFile(path),
+    }),
+  },
+  toolApproval: {
+    delete_file: "user-approval",
+  },
+});
+```
+
+Use `voltagent.needsApproval` when approval is static tool metadata or part of an existing VoltAgent tool policy:
+
+```ts
+const agent = new Agent({
+  name: "Workspace Assistant",
+  instructions: "Manage workspace files.",
+  model: "openai/gpt-4o",
+  tools: {
+    delete_file: tool({
+      description: "Delete a file",
+      inputSchema: z.object({
+        path: z.string(),
+      }),
+      execute: async ({ path }) => deleteFile(path),
+      voltagent: {
+        needsApproval: true,
+      },
+    }),
+  },
+});
+```
 
 ## Tool Hooks
 

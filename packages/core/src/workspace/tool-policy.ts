@@ -2,7 +2,7 @@ import type { ToolNeedsApprovalFunction } from "@ai-sdk/provider-utils";
 
 export type WorkspaceToolPolicy = {
   enabled?: boolean;
-  needsApproval?: boolean | ToolNeedsApprovalFunction<any>;
+  needsApproval?: boolean | ToolNeedsApprovalFunction<any, any>;
 };
 
 export type WorkspaceToolPolicyGroup<TName extends string, TPolicy = WorkspaceToolPolicy> = {

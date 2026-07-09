@@ -1,5 +1,14 @@
 # example-with-live-evals
 
+## 0.0.6-next.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @voltagent/core@3.0.0-next.0
+  - @voltagent/scorers@3.0.0-next.0
+  - @voltagent/server-hono@3.0.0-next.0
+
 ## 0.0.5
 
 ### Patch Changes

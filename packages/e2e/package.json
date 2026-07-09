@@ -2,11 +2,11 @@
   "name": "@voltagent/e2e",
   "dependencies": {
     "@libsql/client": "^0.15.0",
-    "@voltagent/core": "^2.9.0",
-    "@voltagent/internal": "^1.0.3",
-    "@voltagent/libsql": "^2.1.2",
-    "@voltagent/postgres": "^2.1.2",
-    "ai": "^6.0.0",
+    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/internal": "^2.0.0-next.0",
+    "@voltagent/libsql": "^3.0.0-next.0",
+    "@voltagent/postgres": "^3.0.0-next.0",
+    "ai": "^7.0.0",
     "pg": "^8.16.0",
     "zod": "^3.25.76"
   },

@@ -1,5 +1,16 @@
 # ai-ad-generator
 
+## 0.1.3-next.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @voltagent/cli@1.0.0-next.0
+  - @voltagent/core@3.0.0-next.0
+  - @voltagent/libsql@3.0.0-next.0
+  - @voltagent/logger@3.0.0-next.0
+  - @voltagent/server-hono@3.0.0-next.0
+
 ## 0.1.2
 
 ### Patch Changes

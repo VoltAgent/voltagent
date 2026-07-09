@@ -1,7 +1,8 @@
 import { EventType } from "@ag-ui/core";
 import type { RunErrorEvent, RunFinishedEvent } from "@ag-ui/core";
 import { Observable, type Subscriber } from "rxjs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { VoltAgentAGUI } from "./voltagent-agent";
 
 /**
  * Regression test for the RUN_FINISHED-after-RUN_ERROR bug in VoltAgentAGUI.
@@ -124,5 +125,82 @@ describe("VoltAgentAGUI – error event handling", () => {
     expect(events).toHaveLength(2);
     expect((events[0] as { type: string }).type).toBe(EventType.RUN_STARTED);
     expect((events[1] as { type: string }).type).toBe(EventType.RUN_FINISHED);
+  });
+});
+
+describe("VoltAgentAGUI – VoltAgent call contract", () => {
+  it("streams converted messages through positional streamText messages and options", async () => {
+    const streamText = vi.fn(async () => ({
+      fullStream: (async function* () {
+        yield {
+          type: "text-delta" as const,
+          id: "text-1",
+          messageId: "assistant-1",
+          text: "Hello back",
+        };
+      })(),
+    }));
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    try {
+      const adapter = new VoltAgentAGUI({
+        agent: {
+          id: "support-agent",
+          name: "Support Agent",
+          streamText,
+        } as any,
+        deriveUserId: () => "user-1",
+      });
+
+      const events: unknown[] = [];
+      await new Promise<void>((resolve, reject) => {
+        const observable = adapter.run({
+          threadId: "thread-1",
+          runId: "run-1",
+          messages: [{ id: "msg-1", role: "user", content: "Hello" }],
+          state: { screen: "checkout" },
+          context: [{ description: "route", value: "checkout" }],
+          forwardedProps: { source: "copilot" },
+        } as any) as unknown as Observable<unknown>;
+
+        observable.subscribe({
+          next: (event) => events.push(event),
+          error: reject,
+          complete: resolve,
+        });
+      });
+
+      expect(streamText).toHaveBeenCalledTimes(1);
+      const [messages, options] = streamText.mock.calls[0];
+      expect(messages).toEqual([
+        expect.objectContaining({
+          id: "msg-1",
+          role: "user",
+          content: "Hello",
+        }),
+      ]);
+      expect(options).toEqual(
+        expect.objectContaining({
+          conversationId: "thread-1",
+          userId: "user-1",
+          abortSignal: expect.any(AbortSignal),
+        }),
+      );
+      expect(options.context).toBeInstanceOf(Map);
+      expect(options.context.get("agui:context")).toEqual(
+        expect.objectContaining({
+          state: { screen: "checkout" },
+          context: [{ description: "route", value: "checkout" }],
+          forwardedProps: { source: "copilot" },
+        }),
+      );
+      expect(options).not.toHaveProperty("prompt");
+      expect(options).not.toHaveProperty("messages");
+      expect(
+        events.some((event) => (event as { type?: string }).type === EventType.RUN_FINISHED),
+      ).toBe(true);
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 });

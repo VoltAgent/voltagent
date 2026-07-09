@@ -42,13 +42,29 @@ describe("Message Helpers", () => {
     it("should check for text parts", () => {
       expect(hasTextPart("hello")).toBe(true);
       expect(hasTextPart([{ type: "text", text: "hello" }])).toBe(true);
-      expect(hasTextPart([{ type: "image", image: "data" }])).toBe(false);
+      expect(
+        hasTextPart([
+          {
+            type: "file",
+            data: "data",
+            mediaType: "image",
+          },
+        ]),
+      ).toBe(false);
       expect(hasTextPart([])).toBe(false);
     });
 
     it("should check for image parts", () => {
       expect(hasImagePart("hello")).toBe(false);
-      expect(hasImagePart([{ type: "image", image: "data" }])).toBe(true);
+      expect(
+        hasImagePart([
+          {
+            type: "file",
+            data: "data",
+            mediaType: "image/*",
+          },
+        ]),
+      ).toBe(true);
       expect(hasImagePart([{ type: "text", text: "hello" }])).toBe(false);
     });
 
@@ -68,7 +84,11 @@ describe("Message Helpers", () => {
       const content: MessageContent = [
         { type: "text", text: "hello " },
         { type: "text", text: "world" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
       ];
       expect(extractText(content)).toBe("hello world");
     });
@@ -76,7 +96,11 @@ describe("Message Helpers", () => {
     it("should extract text parts", () => {
       const content: MessageContent = [
         { type: "text", text: "hello" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
         { type: "text", text: "world" },
       ];
       const textParts = extractTextParts(content);
@@ -88,12 +112,24 @@ describe("Message Helpers", () => {
     it("should extract image parts", () => {
       const content: MessageContent = [
         { type: "text", text: "hello" },
-        { type: "image", image: "data1" },
-        { type: "image", image: "data2" },
+        {
+          type: "file",
+          data: "data1",
+          mediaType: "image/*",
+        },
+        {
+          type: "file",
+          data: "data2",
+          mediaType: "image/*",
+        },
       ];
       const imageParts = extractImageParts(content);
       expect(imageParts).toHaveLength(2);
-      expect(imageParts[0]).toEqual({ type: "image", image: "data1" });
+      expect(imageParts[0]).toEqual({
+        type: "file",
+        data: "data1",
+        mediaType: "image/*",
+      });
     });
 
     it("should extract file parts", () => {
@@ -117,13 +153,21 @@ describe("Message Helpers", () => {
     it("should transform text in structured content", () => {
       const content: MessageContent = [
         { type: "text", text: "hello" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
         { type: "text", text: "world" },
       ];
       const result = transformTextContent(content, (text) => text.toUpperCase());
       expect(result).toEqual([
         { type: "text", text: "HELLO" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
         { type: "text", text: "WORLD" },
       ]);
     });
@@ -134,7 +178,11 @@ describe("Message Helpers", () => {
         role: "user",
         parts: [
           { type: "text", text: "hello" },
-          { type: "image", image: "data" } as any,
+          {
+            type: "file",
+            data: "data",
+            mediaType: "image",
+          } as any,
           { type: "text", text: "world" },
         ],
         metadata: {},
@@ -142,14 +190,22 @@ describe("Message Helpers", () => {
       const result = mapMessageContent(message, (text) => text.toUpperCase());
       const parts = result.parts as any[];
       expect(parts[0].text).toBe("HELLO");
-      expect(parts[1]).toMatchObject({ type: "image", image: "data" });
+      expect(parts[1]).toMatchObject({
+        type: "file",
+        data: "data",
+        mediaType: "image",
+      });
       expect(parts[2].text).toBe("WORLD");
     });
 
     it("should filter content parts", () => {
       const content: MessageContent = [
         { type: "text", text: "hello" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
         { type: "text", text: "world" },
       ];
       const result = filterContentParts(content, (part) => part.type === "text");
@@ -174,11 +230,19 @@ describe("Message Helpers", () => {
       expect(
         normalizeContent([
           { type: "text", text: "hello" },
-          { type: "image", image: "data" },
+          {
+            type: "file",
+            data: "data",
+            mediaType: "image",
+          },
         ]),
       ).toEqual([
         { type: "text", text: "hello" },
-        { type: "image", image: "data" },
+        {
+          type: "file",
+          data: "data",
+          mediaType: "image",
+        },
       ]);
     });
   });
@@ -257,7 +321,11 @@ describe("Message Helpers", () => {
       expect(
         getContentLength([
           { type: "text", text: "hello" },
-          { type: "image", image: "data" },
+          {
+            type: "file",
+            data: "data",
+            mediaType: "image",
+          },
         ]),
       ).toBe(2);
     });
@@ -275,7 +343,11 @@ describe("Message Helpers", () => {
       const content = builder.addText("hello").addImage("imageData").addText("world").build();
       expect(content).toEqual([
         { type: "text", text: "hello" },
-        { type: "image", image: "imageData" },
+        {
+          type: "file",
+          data: "imageData",
+          mediaType: "image/*",
+        },
         { type: "text", text: "world" },
       ]);
     });

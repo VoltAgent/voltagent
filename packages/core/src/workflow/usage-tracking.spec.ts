@@ -29,8 +29,8 @@ function createMockAgentWithUsage(
       textTokens: outputTokens,
       reasoningTokens: 0,
     },
-    cachedInputTokens: usage.cachedInputTokens,
-    reasoningTokens: usage.reasoningTokens,
+    cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens ?? 0,
+    reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
     raw: usage.raw,
   };
 
