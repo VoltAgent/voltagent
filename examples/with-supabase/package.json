@@ -4,7 +4,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "@voltagent/cli": "^1.0.0-next.0",
-    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/core": "^3.0.0-next.1",
     "@voltagent/logger": "^3.0.0-next.0",
     "@voltagent/server-hono": "^3.0.0-next.0",
     "@voltagent/supabase": "^3.0.0-next.0",

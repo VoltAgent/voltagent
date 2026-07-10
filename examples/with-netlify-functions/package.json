@@ -3,7 +3,7 @@
   "description": "VoltAgent example deployed as a Netlify Function",
   "version": "1.0.0",
   "dependencies": {
-    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/core": "^3.0.0-next.1",
     "@voltagent/serverless-hono": "^3.0.0-next.0",
     "ai": "^7.0.0",
     "hono": "^4.7.7",
