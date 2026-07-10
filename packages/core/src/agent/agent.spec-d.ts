@@ -1,11 +1,17 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import { type FinishReason, type LanguageModelUsage, Output, type UIMessage } from "ai";
+import {
+  type FinishReason,
+  type LanguageModelUsage,
+  Output,
+  type UIMessage,
+  tool as rawAiTool,
+} from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
-import { Tool, type Toolkit, tool as aiSdkTool, createTool } from "../tool";
+import { Tool, type Toolkit, tool as aiSdkTool, createTool, withVoltAgentMetadata } from "../tool";
 import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
@@ -238,46 +244,69 @@ describe("Agent Type System", () => {
       expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
 
-    it("should reject VoltAgent-owned context and telemetry fields on AI SDK-style tools", () => {
-      aiSdkTool({
-        description: "Test",
-        inputSchema: z.object({ value: z.string() }),
-        // @ts-expect-error - use `voltagent.context` and VoltAgent tool hooks instead
-        contextSchema: z.object({ tenantId: z.string() }),
-        execute: async ({ value }) => ({ result: value }),
+    it("should accept AI SDK contextSchema on AI SDK-style tools", () => {
+      const weatherTool = aiSdkTool({
+        description: "Get weather",
+        inputSchema: z.object({ city: z.string() }),
+        contextSchema: z.object({
+          apiKey: z.string(),
+          defaultUnit: z.enum(["celsius", "fahrenheit"]),
+        }),
+        execute: async ({ city }, { context }) => {
+          expectTypeOf(context.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(context.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return { city, unit: context.defaultUnit };
+        },
       });
 
-      aiSdkTool({
-        description: "Test",
-        inputSchema: z.object({ value: z.string() }),
-        // @ts-expect-error - runtime context is owned by VoltAgent agent calls
-        runtimeContext: { tenantId: "tenant-1" },
-        execute: async ({ value }) => ({ result: value }),
+      const agent = new Agent({
+        name: "Weather",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          weather: weatherTool,
+        },
       });
 
-      aiSdkTool({
-        description: "Test",
-        inputSchema: z.object({ value: z.string() }),
-        // @ts-expect-error - tools context is owned by VoltAgent
-        toolsContext: {},
-        execute: async ({ value }) => ({ result: value }),
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should attach VoltAgent metadata to raw AI SDK tools", () => {
+      const refundCustomer = withVoltAgentMetadata(
+        rawAiTool({
+          description: "Refund a customer order",
+          inputSchema: z.object({
+            orderId: z.string(),
+            reason: z.string(),
+          }),
+          contextSchema: z.object({
+            actorId: z.string(),
+            permissions: z.array(z.string()),
+          }),
+          execute: async ({ orderId, reason }, { context }) => {
+            expectTypeOf(context.actorId).toEqualTypeOf<string>();
+            expectTypeOf(context.permissions).toEqualTypeOf<string[]>();
+            return { orderId, reason, actorId: context.actorId };
+          },
+        }),
+        {
+          tags: ["billing", "dangerous"],
+          metadata: {
+            owner: "payments-team",
+          },
+        },
+      );
+
+      const agent = new Agent({
+        name: "Support",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          refundCustomer,
+        },
       });
 
-      aiSdkTool({
-        description: "Test",
-        inputSchema: z.object({ value: z.string() }),
-        // @ts-expect-error - use VoltAgent observability/OpenTelemetry instead
-        telemetry: { isEnabled: false },
-        execute: async ({ value }) => ({ result: value }),
-      });
-
-      aiSdkTool({
-        description: "Test",
-        inputSchema: z.object({ value: z.string() }),
-        // @ts-expect-error - use VoltAgent observability/OpenTelemetry instead
-        experimental_telemetry: { isEnabled: false },
-        execute: async ({ value }) => ({ result: value }),
-      });
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
   });
 
@@ -616,6 +645,9 @@ describe("Agent Type System", () => {
           responseBody: true,
         },
         experimental_download: async (downloads) => downloads.map(() => null),
+        toolsContext: {
+          lookup_order: {},
+        },
         onStart: async () => {},
         onStepStart: async () => {},
         onLanguageModelCallStart: async () => {},
@@ -633,7 +665,7 @@ describe("Agent Type System", () => {
       expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
     });
 
-    it("should reject VoltAgent-owned AI SDK context and telemetry fields", () => {
+    it("should accept toolsContext and reject VoltAgent-owned runtime/telemetry fields", () => {
       const runtimeContextOptions: GenerateTextOptions = {
         // @ts-expect-error - use `voltagent.context` instead
         runtimeContext: {
@@ -642,8 +674,9 @@ describe("Agent Type System", () => {
       };
 
       const toolsContextOptions: GenerateTextOptions = {
-        // @ts-expect-error - use VoltAgent tool context APIs instead
-        toolsContext: {},
+        toolsContext: {
+          lookup_order: {},
+        },
       };
 
       const telemetryOptions: GenerateTextOptions = {

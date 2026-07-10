@@ -9,10 +9,11 @@ import {
   createSubagent,
   createTool,
   tool,
+  withVoltAgentMetadata,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import { createVoltAgentApp } from "@voltagent/server-hono";
-import { Output } from "ai";
+import { Output, tool as aiTool } from "ai";
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -687,6 +688,117 @@ describe("Agent runtime e2e", () => {
     expect(toolMetadataEnd).toHaveBeenCalledTimes(1);
     expect(agentToolStart).toHaveBeenCalledTimes(1);
     expect(agentToolEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes toolsContext to raw AI SDK tools with VoltAgent metadata", async () => {
+    const toolMetadataStart = vi.fn();
+    const toolMetadataEnd = vi.fn();
+    const execute = vi.fn(
+      async (
+        { orderId, reason }: { orderId: string; reason: string },
+        { context }: { context: { actorId: string; permissions: string[] } },
+      ) => {
+        if (!context.permissions.includes("refund:write")) {
+          throw new Error("Not allowed to refund orders");
+        }
+
+        return {
+          orderId,
+          reason,
+          actorId: context.actorId,
+          refunded: true,
+        };
+      },
+    );
+    const refundCustomer = withVoltAgentMetadata(
+      aiTool({
+        description: "Refund a customer order",
+        inputSchema: z.object({
+          orderId: z.string(),
+          reason: z.string(),
+        }),
+        contextSchema: z.object({
+          actorId: z.string(),
+          permissions: z.array(z.string()),
+        }),
+        execute,
+      }),
+      {
+        name: "Refund Customer",
+        purpose: "Issue customer refunds",
+        tags: ["billing", "dangerous"],
+        metadata: {
+          owner: "payments-team",
+        },
+        hooks: {
+          onStart: toolMetadataStart,
+          onEnd: toolMetadataEnd,
+        },
+      },
+    );
+
+    let generateCalls = 0;
+    const model = createModel(async () => {
+      generateCalls += 1;
+      return generateCalls === 1
+        ? toolCallGenerate("refundCustomer", {
+            orderId: "order-123",
+            reason: "duplicate charge",
+          })
+        : textGenerate("Refund completed.");
+    });
+    const agent = new Agent({
+      name: "RawAiSdkToolMetadataAgent",
+      instructions: "Use refund tools when allowed.",
+      model,
+      tools: {
+        refundCustomer,
+      },
+    });
+
+    const result = await agent.generateText({
+      prompt: "Refund order order-123.",
+      toolsContext: {
+        refundCustomer: {
+          actorId: "user-42",
+          permissions: ["refund:write"],
+        },
+      },
+    });
+
+    expect(result.text).toBe("Refund completed.");
+    expect(execute).toHaveBeenCalledWith(
+      {
+        orderId: "order-123",
+        reason: "duplicate charge",
+      },
+      expect.objectContaining({
+        toolCallId: "refundCustomer-call",
+        context: {
+          actorId: "user-42",
+          permissions: ["refund:write"],
+        },
+      }),
+    );
+    expect(toolMetadataStart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: expect.objectContaining({
+          name: "refundCustomer",
+        }),
+        args: {
+          orderId: "order-123",
+          reason: "duplicate charge",
+        },
+      }),
+    );
+    expect(toolMetadataEnd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        output: expect.objectContaining({
+          actorId: "user-42",
+          refunded: true,
+        }),
+      }),
+    );
   });
 
   it("serves generateText and streamText through server-hono routes", async () => {

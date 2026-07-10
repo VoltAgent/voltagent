@@ -151,7 +151,7 @@ const result = await agent.streamText({
 
 VoltAgent composes the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, `maxRetries`, `onStepEnd`, `onEnd`/`onFinish`, and `onError`. User callbacks are still accepted at the top level and are invoked after VoltAgent memory, guardrails, hooks, tracing, and recovery handling.
 
-Top-level AI SDK `runtimeContext`, `toolsContext`, `telemetry`, and `experimental_telemetry` are intentionally not exposed. Use `voltagent.context` for per-call application context, VoltAgent tool context/hooks for tool execution context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
+Top-level AI SDK `toolsContext` is passed through for native AI SDK tools that declare `contextSchema`. Top-level AI SDK `runtimeContext`, `telemetry`, and `experimental_telemetry` are intentionally not exposed. Use `voltagent.context` for per-call application context and VoltAgent observability/OpenTelemetry configuration for telemetry.
 
 The same shape works for streaming:
 
@@ -178,10 +178,11 @@ for await (const part of result.stream) {
 
 ### Tool usage
 
-VoltAgent now accepts AI SDK-style tool sets directly. The recommended custom tool API is `tool()` from `@voltagent/core`, extended with VoltAgent-specific metadata under the `voltagent` namespace.
+VoltAgent now accepts AI SDK-style tool sets directly. Raw AI SDK tools are first-class, so the recommended custom tool API is `tool()` from `ai`. Add VoltAgent-specific metadata with `withVoltAgentMetadata` when you need hooks, tags, API metadata, or display metadata.
 
 ```ts
-import { Agent, tool } from "@voltagent/core";
+import { tool } from "ai";
+import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -202,23 +203,75 @@ const agent = new Agent({
 });
 ```
 
-VoltAgent-specific tool metadata is available through the `voltagent` namespace, so existing framework features can be used with AI SDK-style tools:
+Native AI SDK tool options such as `contextSchema` work unchanged with call-level `toolsContext`:
 
 ```ts
-const refundCustomer = tool({
-  description: "Refund a customer order",
-  inputSchema: z.object({
-    orderId: z.string(),
-    reason: z.string(),
+const weather = tool({
+  description: "Get weather for a city",
+  inputSchema: z.object({ city: z.string() }),
+  contextSchema: z.object({
+    apiKey: z.string(),
+    defaultUnit: z.enum(["celsius", "fahrenheit"]),
   }),
-  execute: async ({ orderId, reason }) => {
-    return issueRefund(orderId, reason);
-  },
-  voltagent: {
-    name: "Refund Customer",
-    purpose: "Issue customer refunds",
+  execute: async ({ city }, { context }) => {
+    return fetchWeather(city, {
+      apiKey: context.apiKey,
+      unit: context.defaultUnit,
+    });
   },
 });
+
+await agent.generateText({
+  prompt: "What is the weather in San Francisco?",
+  tools: { weather },
+  toolsContext: {
+    weather: {
+      apiKey: process.env.WEATHER_API_KEY!,
+      defaultUnit: "fahrenheit",
+    },
+  },
+});
+```
+
+VoltAgent-specific tool metadata is optional and stored out-of-band so it is not sent to the model provider:
+
+```ts
+import { tool } from "ai";
+import { withVoltAgentMetadata } from "@voltagent/core";
+
+const refundCustomer = withVoltAgentMetadata(
+  tool({
+    description: "Refund a customer order",
+    inputSchema: z.object({
+      orderId: z.string(),
+      reason: z.string(),
+    }),
+    contextSchema: z.object({
+      actorId: z.string(),
+      permissions: z.array(z.string()),
+    }),
+    execute: async ({ orderId, reason }, { context }) => {
+      if (!context.permissions.includes("refund:write")) {
+        throw new Error("Not allowed to refund orders");
+      }
+
+      return issueRefund({
+        orderId,
+        reason,
+        actorId: context.actorId,
+      });
+    },
+  }),
+  {
+    name: "Refund Customer",
+    purpose: "Issue customer refunds",
+    tags: ["billing", "dangerous", "customer-support"],
+    metadata: {
+      owner: "payments-team",
+      riskLevel: "high",
+    },
+  }
+);
 ```
 
 Register the tool under the canonical name the model should call:
@@ -233,11 +286,9 @@ const agent = new Agent({
 });
 ```
 
-The ToolSet key remains the canonical `tool.name` used for tool calls, approval, routing, and telemetry correlation. `voltagent.name` is display metadata and is emitted as `tool.display_name` for Console and observability consumers.
+The ToolSet key remains the canonical `tool.name` used for tool calls, approval, routing, and telemetry correlation. VoltAgent metadata `name` is display metadata and is emitted as `tool.display_name` for Console and observability consumers.
 
-VoltAgent `tool()` intentionally does not expose AI SDK `contextSchema`, `runtimeContext`, `toolsContext`, `telemetry`, or `experimental_telemetry`. Use `voltagent.context` on the agent call for per-request application context, `voltagent` tool hooks for VoltAgent lifecycle context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
-
-`createTool` is now a legacy compatibility helper for existing class-style tools. New code should use `tool()`.
+`tool()` from `@voltagent/core` remains available as a convenience wrapper when inline `voltagent` metadata is preferred. `createTool` is now a legacy compatibility helper for existing class-style tools.
 
 ### Tool approval
 

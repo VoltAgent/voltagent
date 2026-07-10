@@ -288,13 +288,12 @@ VoltAgent accepts most AI SDK generation settings, but it owns orchestration fie
 | AI SDK field                           | VoltAgent behavior                                                                                          |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `runtimeContext`                       | Use VoltAgent `context`, `memory`, and hooks instead.                                                       |
-| `toolsContext`                         | Use `voltagent.hooks`, agent call `context`, or tool-level `voltagent.hooks`.                               |
 | `telemetry` / `experimental_telemetry` | Use VoltAgent OpenTelemetry and observability configuration.                                                |
 | `maxRetries`                           | VoltAgent owns retries and model fallback so tracing, memory, hooks, and fallback attempts stay consistent. |
 | `abortSignal`                          | VoltAgent wires cancellation through its operation context and forwards a managed signal to the model call. |
 | `onStepEnd`, `onEnd`, `onError`        | Supported, but invoked through VoltAgent's managed lifecycle after internal work has completed.             |
 
-Provider options, model settings, tool choice, stop conditions, structured output, and other AI SDK generation settings still belong at the top level. Runtime context, memory identity, feedback, middleware, guardrails, and tool routing belong under `voltagent`.
+Provider options, model settings, tool choice, stop conditions, structured output, `toolsContext`, and other AI SDK generation settings still belong at the top level. Use `toolsContext` for native AI SDK tools with `contextSchema`. Runtime context, memory identity, feedback, middleware, guardrails, and tool routing belong under `voltagent`.
 
 To migrate positional calls, move the prompt into `prompt` and runtime options into `voltagent`:
 

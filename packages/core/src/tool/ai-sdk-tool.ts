@@ -43,22 +43,7 @@ export type VoltAgentToolMetadata<INPUT = unknown, OUTPUT = unknown> = {
   api?: Record<string, unknown>;
 } & Record<never, OUTPUT>;
 
-type VoltAgentBlockedAiSdkToolOption =
-  | "contextSchema"
-  | "runtimeContext"
-  | "toolsContext"
-  | "telemetry"
-  | "experimental_telemetry";
-
-export type VoltAgentToolDefinition<T extends VercelTool<any, any, any>> = Omit<
-  T,
-  VoltAgentBlockedAiSdkToolOption
-> & {
-  contextSchema?: never;
-  runtimeContext?: never;
-  toolsContext?: never;
-  telemetry?: never;
-  experimental_telemetry?: never;
+export type VoltAgentToolDefinition<T extends VercelTool<any, any, any>> = T & {
   voltagent?: VoltAgentToolMetadata;
 };
 
@@ -203,33 +188,34 @@ export function getRawAiSdkTool(tool: NamedAiSdkTool): VercelTool<any, any, any>
 }
 
 /**
+ * Attach VoltAgent metadata to a raw AI SDK tool without changing the tool
+ * definition or sending the metadata to the model provider.
+ */
+export function withVoltAgentMetadata<T extends VercelTool<any, any, any>>(
+  tool: T,
+  metadata: VoltAgentToolMetadata,
+): T {
+  setVoltAgentToolMetadata(tool as object, metadata);
+  return tool;
+}
+
+/**
  * AI SDK-compatible tool helper with a VoltAgent metadata namespace.
  *
  * The returned object is a regular AI SDK tool. VoltAgent metadata is stored
  * out-of-band so it is not sent to the model provider.
  */
-export function tool<T extends VercelTool<any, any, Context>>(
-  definition: VoltAgentToolDefinition<T>,
-): T {
-  const {
-    voltagent,
-    contextSchema: _contextSchema,
-    runtimeContext: _runtimeContext,
-    toolsContext: _toolsContext,
-    telemetry: _telemetry,
-    experimental_telemetry: _experimentalTelemetry,
-    ...toolDefinition
-  } = definition as VoltAgentToolDefinition<T> & {
+export function tool<INPUT, OUTPUT, CONTEXT extends Context>(
+  definition: VercelTool<INPUT, OUTPUT, CONTEXT> & {
+    voltagent?: VoltAgentToolMetadata<INPUT, OUTPUT>;
+  },
+): VercelTool<INPUT, OUTPUT, CONTEXT> {
+  const { voltagent, ...toolDefinition } = definition as VercelTool<INPUT, OUTPUT, CONTEXT> & {
     voltagent?: VoltAgentToolMetadata;
-    contextSchema?: unknown;
-    runtimeContext?: unknown;
-    toolsContext?: unknown;
-    telemetry?: unknown;
-    experimental_telemetry?: unknown;
   };
-  const createdTool = aiTool(toolDefinition as T) as T;
+  const createdTool = aiTool(toolDefinition as VercelTool<INPUT, OUTPUT, CONTEXT>);
   if (voltagent) {
-    setVoltAgentToolMetadata(createdTool as object, voltagent);
+    withVoltAgentMetadata(createdTool, voltagent);
   }
   return createdTool;
 }

@@ -9,10 +9,11 @@ Tools enable agents to interact with external systems, APIs, databases, and perf
 
 ## Creating a Tool
 
-For new VoltAgent 3.x code, use the AI SDK-style `tool()` helper and pass tools as a `ToolSet` object. The tool name comes from the object key and the input schema uses `inputSchema`, matching AI SDK conventions.
+For new VoltAgent 3.x code, use AI SDK `tool()` from `ai` and pass tools as a `ToolSet` object. The tool name comes from the object key and the input schema uses `inputSchema`, matching AI SDK conventions. Raw AI SDK tools are first-class in VoltAgent.
 
 ```ts
-import { Agent, tool } from "@voltagent/core";
+import { tool } from "ai";
+import { Agent } from "@voltagent/core";
 import { z } from "zod";
 
 const agent = new Agent({
@@ -41,9 +42,11 @@ const agent = new Agent({
 });
 ```
 
-AI SDK-style tools can still use VoltAgent-specific features through the `voltagent` namespace:
+Native AI SDK tool options pass through unchanged. For example, use `contextSchema` on the tool and `toolsContext` on the agent call for per-tool runtime context:
 
 ```ts
+import { tool } from "ai";
+
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "Answer weather questions using the weather tool.",
@@ -54,22 +57,58 @@ const agent = new Agent({
       inputSchema: z.object({
         location: z.string(),
       }),
-      execute: async ({ location }) => {
-        return { location, temperature: 22, conditions: "sunny" };
-      },
-      voltagent: {
-        name: "Get Weather",
-        purpose: "Fetch current weather for a location",
-        tags: ["weather", "external-api"],
-        hooks: {
-          onStart: ({ tool }) => {
-            console.log(`[tool] ${tool.name} starting`);
-          },
-        },
+      contextSchema: z.object({
+        apiKey: z.string(),
+        defaultUnit: z.enum(["celsius", "fahrenheit"]),
+      }),
+      execute: async ({ location }, { context }) => {
+        return fetchWeather(location, {
+          apiKey: context.apiKey,
+          unit: context.defaultUnit,
+        });
       },
     }),
   },
 });
+
+await agent.generateText({
+  prompt: "What is the weather in San Francisco?",
+  toolsContext: {
+    get_weather: {
+      apiKey: process.env.WEATHER_API_KEY!,
+      defaultUnit: "fahrenheit",
+    },
+  },
+});
+```
+
+VoltAgent-specific tool metadata is optional and additive. Attach it with `withVoltAgentMetadata`; metadata is stored out-of-band and is not sent to the model provider:
+
+```ts
+import { tool } from "ai";
+import { withVoltAgentMetadata } from "@voltagent/core";
+
+const getWeather = withVoltAgentMetadata(
+  tool({
+    description: "Get current weather for a location",
+    inputSchema: z.object({
+      location: z.string(),
+    }),
+    execute: async ({ location }) => {
+      return { location, temperature: 22, conditions: "sunny" };
+    },
+  }),
+  {
+    name: "Get Weather",
+    purpose: "Fetch current weather for a location",
+    tags: ["weather", "external-api"],
+    hooks: {
+      onStart: ({ tool }) => {
+        console.log(`[tool] ${tool.name} starting`);
+      },
+    },
+  }
+);
 ```
 
 Each AI SDK-style tool has:
@@ -79,26 +118,28 @@ Each AI SDK-style tool has:
 - **inputSchema**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
 - **outputSchema** (optional): Output schema for validating tool results
+- **contextSchema** (optional): AI SDK context schema for per-tool runtime context
 - **providerOptions** (optional): Provider-specific options for advanced features
 - **toModelOutput** (optional): Converts rich tool results into AI SDK model output
-- **voltagent.name** (optional): VoltAgent-facing name for display or metadata consumers. The ToolSet key remains the execution name.
-- **voltagent.purpose** (optional): VoltAgent-facing purpose for display or metadata consumers.
-- **voltagent.tags** (optional): Optional user-defined tags for organizing or labeling tools.
-- **voltagent.hooks** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
-- **voltagent.needsApproval** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
+- **VoltAgent metadata `name`** (optional): VoltAgent-facing name for display or metadata consumers. The ToolSet key remains the execution name.
+- **VoltAgent metadata `purpose`** (optional): VoltAgent-facing purpose for display or metadata consumers.
+- **VoltAgent metadata `tags`** (optional): Optional user-defined tags for organizing or labeling tools.
+- **VoltAgent metadata `hooks`** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
+- **VoltAgent metadata `needsApproval`** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
 
-VoltAgent observability and tool execution use the ToolSet key as the canonical `tool.name`. If you set `voltagent.name`, it is exposed as display metadata (`tool.display_name`) for the Console and telemetry consumers without changing the name the model calls.
+VoltAgent observability and tool execution use the ToolSet key as the canonical `tool.name`. If you set metadata `name`, it is exposed as display metadata (`tool.display_name`) for the Console and telemetry consumers without changing the name the model calls.
 
-VoltAgent intentionally does not expose AI SDK `contextSchema`, `runtimeContext`, `toolsContext`, `telemetry`, or `experimental_telemetry` on `tool()`. Use agent call `context` or `voltagent.context` for per-request application context, `voltagent.hooks` when a tool needs VoltAgent lifecycle context, and VoltAgent observability/OpenTelemetry configuration for telemetry. See [AI SDK Compatibility Boundaries](/docs/agents/overview#ai-sdk-compatibility-boundaries) for the agent-level ownership rules.
+VoltAgent also exports a convenience `tool()` helper that accepts inline `voltagent` metadata, but raw AI SDK `tool()` from `ai` is the primary API and supports native AI SDK options directly. See [AI SDK Compatibility Boundaries](/docs/agents/overview#ai-sdk-compatibility-boundaries) for the agent-level ownership rules.
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 
 ## Using AI SDK Provider Tools
 
-VoltAgent-managed `tool()` tools and AI SDK provider-defined tools can be used together on the same agent. Use `tool()` when VoltAgent should execute your code and provide hooks, tags, approval metadata, API metadata, and observability. Use provider-defined tools when the model provider owns the tool implementation.
+AI SDK user-defined tools and provider-defined tools can be used together on the same agent. Use `withVoltAgentMetadata` when VoltAgent should provide hooks, tags, approval metadata, API metadata, and observability around a user-defined tool. Use provider-defined tools when the model provider owns the tool implementation.
 
 ```ts
-import { Agent, tool, type ProviderTool } from "@voltagent/core";
+import { tool } from "ai";
+import { Agent, type ProviderTool } from "@voltagent/core";
 import { z } from "zod";
 
 const webSearchTool: ProviderTool = {
@@ -128,7 +169,7 @@ const agent = new Agent({
 });
 ```
 
-Provider-defined tools are passed through to the AI SDK unchanged. Use the exact `id` and `args` shape from your provider's AI SDK docs. They are not wrapped with VoltAgent tool hooks or `execute` handlers, so use `tool()` for tools that need VoltAgent-managed lifecycle behavior or application-side execution.
+Provider-defined tools are passed through to the AI SDK unchanged. Use the exact `id` and `args` shape from your provider's AI SDK docs. They are not wrapped with VoltAgent tool hooks or `execute` handlers, so use user-defined AI SDK tools plus `withVoltAgentMetadata` for tools that need VoltAgent-managed lifecycle metadata or application-side execution.
 
 ## Native Tool Approval
 

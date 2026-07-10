@@ -870,6 +870,7 @@ type AITextCallOptions = AISDKPassthroughOptions & {
   toolChoice?: ToolChoice<Record<string, unknown>>;
   toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
   experimental_toolApprovalSecret?: string | Uint8Array;
+  toolsContext?: Record<string, unknown>;
   prepareStep?: PrepareStepFunction<Record<string, AITool>>;
   onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
   onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
@@ -877,6 +878,31 @@ type AITextCallOptions = AISDKPassthroughOptions & {
   onFinish?: AISDKManagedCallbacks["onFinish"];
   onError?: AISDKManagedCallbacks["onError"];
 };
+
+type VoltAgentGenerateTextCallOptions = Omit<AIGenerateTextOptions, "toolsContext"> & {
+  toolsContext?: Record<string, unknown>;
+};
+type VoltAgentStreamTextCallOptions = Omit<AIStreamTextOptions, "toolsContext"> & {
+  toolsContext?: Record<string, unknown>;
+};
+type VoltAgentGenerateTextReturn = ReturnType<typeof generateText<any, any, any>>;
+type VoltAgentStreamTextReturn = ReturnType<typeof streamText<any, any, any>>;
+
+function generateTextWithVoltAgentTools(
+  options: VoltAgentGenerateTextCallOptions,
+): VoltAgentGenerateTextReturn {
+  // VoltAgent resolves ToolSet entries dynamically at runtime, so TypeScript
+  // cannot infer which tools declare AI SDK `contextSchema`. The AI SDK runtime
+  // supports `toolsContext`; this boundary keeps the cast localized.
+  return generateText(options as unknown as AIGenerateTextOptions) as VoltAgentGenerateTextReturn;
+}
+
+function streamTextWithVoltAgentTools(
+  options: VoltAgentStreamTextCallOptions,
+): VoltAgentStreamTextReturn {
+  // See `generateTextWithVoltAgentTools` for why this cast is localized here.
+  return streamText(options as unknown as AIStreamTextOptions) as VoltAgentStreamTextReturn;
+}
 
 function applyForcedToolChoice(
   aiSDKOptions: AITextCallOptions,
@@ -1072,6 +1098,15 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
 
   /**
+   * AI SDK per-tool execution context.
+   *
+   * Use this with native AI SDK tools that declare `contextSchema`. VoltAgent
+   * forwards the value to the underlying AI SDK call so tool `execute`
+   * handlers receive it as `options.context`.
+   */
+  toolsContext?: Record<string, unknown>;
+
+  /**
    * Secret used by AI SDK to sign native tool approval requests.
    */
   experimental_toolApprovalSecret?: string | Uint8Array;
@@ -1246,7 +1281,6 @@ type GenerationOptionsWithBlockedAISDKFields<
   TProviderOptions extends ProviderOptions = ProviderOptions,
 > = GenerationOptionsWithManagedCallbacks<TProviderOptions> & {
   runtimeContext?: unknown;
-  toolsContext?: unknown;
   telemetry?: unknown;
   experimental_telemetry?: unknown;
 };
@@ -1291,7 +1325,6 @@ function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = Prov
     output,
     providerOptions,
     runtimeContext: _runtimeContext,
-    toolsContext: _toolsContext,
     telemetry: _telemetry,
     experimental_telemetry: _experimentalTelemetry,
     onFinish,
@@ -1791,7 +1824,7 @@ export class Agent {
 
                 try {
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
-                    generateText({
+                    generateTextWithVoltAgentTools({
                       model: resolvedModel,
                       ...promptOptions,
                       tools,
@@ -2477,7 +2510,7 @@ export class Agent {
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-            const streamResult = streamText({
+            const streamResult = streamTextWithVoltAgentTools({
               model: resolvedModel,
               ...promptOptions,
               tools,
@@ -2495,7 +2528,7 @@ export class Agent {
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
               onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
-              onError: async (errorData) => {
+              onError: async (errorData: any) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
                 const actualError = (errorData as any)?.error || errorData;
@@ -2599,7 +2632,7 @@ export class Agent {
                   );
                 }
               },
-              onEnd: async (finalResult) => {
+              onEnd: async (finalResult: any) => {
                 latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
@@ -3098,13 +3131,15 @@ export class Agent {
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
             return applySpeculativeInputGuardrailToUIStream({
-              baseStream: result.toUIMessageStream(streamOptions),
+              baseStream: result.toUIMessageStream(streamOptions as any),
               guardrail: speculativeInputGuardrail,
               responseMessageId: responseMessageId ?? undefined,
             });
           }
           return applySpeculativeInputGuardrailToUIStream({
-            baseStream: guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn,
+            baseStream: guardrailPipeline.createUIStream(
+              streamOptions as any,
+            ) as ToUIMessageStreamReturn,
             guardrail: speculativeInputGuardrail,
             responseMessageId: responseMessageId ?? undefined,
           });
@@ -3219,7 +3254,7 @@ export class Agent {
           const stream = toUIMessageStreamSanitized(streamOptions);
           const initOptions = init ? { ...init } : {};
           pipeUIMessageStreamToResponse({
-            response,
+            response: response as any,
             stream,
             ...initOptions,
           });
@@ -3417,7 +3452,7 @@ export class Agent {
               operation: "generateObject",
               options,
               run: async ({ model: resolvedModel }) => {
-                const response = await generateText({
+                const response = await generateTextWithVoltAgentTools({
                   model: resolvedModel,
                   ...promptOptions,
                   // Default values
@@ -3824,7 +3859,7 @@ export class Agent {
             const attemptState: { hasOutput: boolean; lastError?: unknown } = {
               hasOutput: false,
             };
-            const streamResult = streamText({
+            const streamResult = streamTextWithVoltAgentTools({
               model: resolvedModel,
               ...promptOptions,
               output: objectOutput,
@@ -3839,7 +3874,7 @@ export class Agent {
               // VoltAgent controlled
               abortSignal: oc.abortController.signal,
               onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
-              onError: async (errorData) => {
+              onError: async (errorData: any) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
                 const actualError = (errorData as any)?.error || errorData;

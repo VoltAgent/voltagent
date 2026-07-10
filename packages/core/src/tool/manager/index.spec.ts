@@ -8,6 +8,7 @@ import {
   ToolManager,
   tool as aiSdkTool,
   createTool,
+  withVoltAgentMetadata,
 } from "../index";
 import { createToolkit } from "../toolkit";
 import type { Toolkit } from "../toolkit";
@@ -409,26 +410,19 @@ describe("ToolManager", () => {
       ]);
     });
 
-    it("should strip VoltAgent-owned context and telemetry fields from AI SDK-style tools", () => {
+    it("should preserve native AI SDK contextSchema on AI SDK-style tools", () => {
       const inputSchema = z.object({
         query: z.string(),
       });
+      const contextSchema = z.object({ tenantId: z.string() });
       const aiTool = aiSdkTool({
         description: "Search docs",
         inputSchema,
-        contextSchema: z.object({ tenantId: z.string() }),
-        runtimeContext: { tenantId: "tenant-1" },
-        toolsContext: { search_docs: { requestId: "tool-request-1" } },
-        telemetry: { isEnabled: false },
-        experimental_telemetry: { isEnabled: false },
+        contextSchema,
         execute: vi.fn().mockResolvedValue({ result: "ok" }),
-      } as any);
+      });
 
-      expect(aiTool).not.toHaveProperty("contextSchema");
-      expect(aiTool).not.toHaveProperty("runtimeContext");
-      expect(aiTool).not.toHaveProperty("toolsContext");
-      expect(aiTool).not.toHaveProperty("telemetry");
-      expect(aiTool).not.toHaveProperty("experimental_telemetry");
+      expect(aiTool).toHaveProperty("contextSchema", contextSchema);
 
       toolManager.addToolSet({
         search_docs: aiTool,
@@ -440,11 +434,61 @@ describe("ToolManager", () => {
       );
       const preparedTool = preparedTools.search_docs as Record<string, unknown>;
 
-      expect(preparedTool).not.toHaveProperty("contextSchema");
-      expect(preparedTool).not.toHaveProperty("runtimeContext");
-      expect(preparedTool).not.toHaveProperty("toolsContext");
-      expect(preparedTool).not.toHaveProperty("telemetry");
-      expect(preparedTool).not.toHaveProperty("experimental_telemetry");
+      expect(preparedTool).toHaveProperty("contextSchema", contextSchema);
+    });
+
+    it("should attach VoltAgent metadata to raw AI SDK tools", () => {
+      const inputSchema = z.object({
+        orderId: z.string(),
+      });
+      const rawTool = aiSdkTool({
+        description: "Refund customer",
+        inputSchema,
+        contextSchema: z.object({
+          actorId: z.string(),
+        }),
+        execute: vi.fn().mockResolvedValue({ status: "ok" }),
+      });
+      const metadataTool = withVoltAgentMetadata(rawTool, {
+        name: "Refund Customer",
+        purpose: "Issue customer refunds",
+        tags: ["billing", "dangerous"],
+        metadata: {
+          owner: "payments-team",
+        },
+      });
+
+      toolManager.addToolSet({
+        refundCustomer: metadataTool,
+      });
+
+      const preparedTools = toolManager.prepareToolsForExecution(
+        vi.fn(),
+        vi.fn().mockReturnValue(vi.fn().mockResolvedValue({ status: "ok" })),
+      );
+      const preparedTool = preparedTools.refundCustomer as {
+        inputSchema: unknown;
+        contextSchema?: unknown;
+        metadata?: {
+          voltagent?: {
+            name?: string;
+            purpose?: string;
+            tags?: string[];
+            metadata?: Record<string, unknown>;
+          };
+        };
+      };
+
+      expect(preparedTool.inputSchema).toBe(inputSchema);
+      expect(preparedTool.contextSchema).toBe(rawTool.contextSchema);
+      expect(preparedTool.metadata?.voltagent).toEqual({
+        name: "Refund Customer",
+        purpose: "Issue customer refunds",
+        tags: ["billing", "dangerous"],
+        metadata: {
+          owner: "payments-team",
+        },
+      });
     });
 
     it("should preserve server, client, approval, output, and provider tool metadata together", () => {

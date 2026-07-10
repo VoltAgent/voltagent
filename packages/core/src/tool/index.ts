@@ -65,6 +65,7 @@ export {
   getVoltAgentToolMetadata,
   isNamedAiSdkTool,
   tool,
+  withVoltAgentMetadata,
 } from "./ai-sdk-tool";
 export type { NamedAiSdkTool, VoltAgentToolDefinition, VoltAgentToolMetadata } from "./ai-sdk-tool";
 

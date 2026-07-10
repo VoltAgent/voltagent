@@ -1608,7 +1608,7 @@ Use pandas and summarize findings.`.split("\n"),
       expect(startContext.conversationId).toBe("runtime-conv");
     });
 
-    it("should pass AI SDK v7 generateText options, strip VoltAgent-owned fields, and compose managed callbacks", async () => {
+    it("should pass AI SDK v7 generateText options, strip VoltAgent-owned telemetry/runtime fields, and compose managed callbacks", async () => {
       const hookOnStepEnd = vi.fn();
       const userOnStepEnd = vi.fn();
       const userOnEnd = vi.fn();
@@ -1691,7 +1691,11 @@ Use pandas and summarize findings.`.split("\n"),
       expect(callArgs.telemetry).toBeUndefined();
       expect(callArgs.experimental_telemetry).toBeUndefined();
       expect(callArgs.runtimeContext).toBeUndefined();
-      expect(callArgs.toolsContext).toBeUndefined();
+      expect(callArgs.toolsContext).toEqual({
+        lookup_order: {
+          requestId: "tool-request-1",
+        },
+      });
       expect(callArgs.include).toEqual({
         requestBody: true,
         requestMessages: true,
