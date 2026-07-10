@@ -4,7 +4,7 @@ const SPONSORS = [
   {
     name: "Ego Lite",
     description: "Fast browser automation for AI agents.",
-    href: "https://lite.ego.app/?utm_campaign=ego-sponsor&utm_source=voltagent&utm_medium=sponsor",
+    href: "https://lite.ego.app/?utm_source=voltagent&utm_medium=sponsor&utm_campaign=github-sponsor",
     logo: "https://cdn.voltagent.dev/awesome-repo/ego-lite/logo_wordmark_lite_white.svg",
   },
 ];
