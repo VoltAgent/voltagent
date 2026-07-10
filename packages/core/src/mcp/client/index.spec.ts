@@ -4,7 +4,6 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import { getGlobalLogger } from "../../logger";
 import { MCPClient } from "./index";
 
@@ -27,10 +26,6 @@ vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
 }));
 
 vi.mock("zod-from-json-schema", () => ({
-  convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
-}));
-
-vi.mock("zod-from-json-schema-v3", () => ({
   convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
 }));
 
@@ -464,7 +459,7 @@ describe("MCPClient", () => {
 
       expect(mockConnect).toHaveBeenCalled();
       expect(mockListTools).toHaveBeenCalled();
-      expect(convertJsonSchemaToZodV3).toHaveBeenCalledTimes(2);
+      expect(convertJsonSchemaToZod).toHaveBeenCalledTimes(2);
 
       expect(agentTools).toEqual(
         expect.objectContaining({
@@ -496,7 +491,7 @@ describe("MCPClient", () => {
     });
 
     it("should skip a tool if schema conversion fails", async () => {
-      (convertJsonSchemaToZodV3 as vi.Mock).mockImplementationOnce(() => {
+      (convertJsonSchemaToZod as vi.Mock).mockImplementationOnce(() => {
         throw new Error("Schema conversion failed");
       });
 

@@ -6,7 +6,7 @@ A [VoltAgent](https://github.com/VoltAgent/voltagent) application using OpenRout
 
 ### Prerequisites
 
-- Node.js (v20 or newer)
+- Node.js 22 or newer
 - npm, yarn, or pnpm
 - An OpenRouter API key
 

@@ -59,7 +59,7 @@ cd my-agent-app
 ```
 
 :::info requirement
-Be sure your environment is running Node.js 20.19 or newer so the generated tsdown build works without ESM resolution issues.
+Be sure your environment is running Node.js 22 or newer. VoltAgent 3.x follows AI SDK 7's Node.js and ESM-only runtime boundary.
 :::
 
 </StepSection>

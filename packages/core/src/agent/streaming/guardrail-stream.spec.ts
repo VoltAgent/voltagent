@@ -292,7 +292,7 @@ describe("Output guardrail streaming integration", () => {
     ]);
 
     const emitted: VoltAgentTextStreamPart[] = [];
-    for await (const chunk of pipeline.fullStream) {
+    for await (const chunk of pipeline.stream) {
       emitted.push(chunk as VoltAgentTextStreamPart);
     }
 
@@ -429,12 +429,15 @@ describe("Output guardrail streaming integration", () => {
     const pipeline = buildPipeline(parts, {
       id: "passthrough",
       name: "Passthrough",
-      handler: async (_ctx) => ({ pass: true }) as const,
+      handler: async (_ctx) =>
+        ({
+          pass: true,
+        }) as const,
       streamHandler: ({ part }) => part,
     });
 
     const emitted: VoltAgentTextStreamPart[] = [];
-    for await (const chunk of pipeline.fullStream) {
+    for await (const chunk of pipeline.stream) {
       emitted.push(chunk as VoltAgentTextStreamPart);
     }
 
@@ -481,7 +484,10 @@ describe("Output guardrail streaming integration", () => {
     const pipeline = buildPipeline(parts, {
       id: "passthrough",
       name: "Passthrough",
-      handler: async (_ctx) => ({ pass: true }) as const,
+      handler: async (_ctx) =>
+        ({
+          pass: true,
+        }) as const,
       streamHandler: ({ part }) => part,
     });
 

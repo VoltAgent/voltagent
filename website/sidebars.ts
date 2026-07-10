@@ -61,6 +61,7 @@ const sidebars: SidebarsConfig = {
         },
         "agents/prompts",
         "agents/tools",
+        "agents/structured-output",
         {
           type: "doc",
           id: "agents/plan-agent",

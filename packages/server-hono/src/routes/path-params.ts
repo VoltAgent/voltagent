@@ -12,8 +12,11 @@ export const createPathParam = (name: string, description: string, example?: str
 
   const baseSchema = z.string().min(1);
   const schemaWithMetadata = baseSchema.openapi(`PathParam.${name}`, metadata);
-  if (typeof schemaWithMetadata.meta === "function") {
-    return schemaWithMetadata.meta(metadata);
+  const schemaWithOptionalMeta = schemaWithMetadata as typeof schemaWithMetadata & {
+    meta?: (metadata: Record<string, unknown>) => typeof schemaWithMetadata;
+  };
+  if (typeof schemaWithOptionalMeta.meta === "function") {
+    return schemaWithOptionalMeta.meta(metadata);
   }
   return schemaWithMetadata;
 };

@@ -10,7 +10,7 @@ export default defineDataset({
     for (let i = 0; i < 10; i++) {
       const { object } = await generateObject({
         model: "openai/gpt-5",
-        system: `
+        instructions: `
           You are an expert at generating test data for a science agent. You will generate a science question and the expected answer.
           Focus on questions about physics, chemistry, biology, earth sciences, and scientific concepts.
           `,

@@ -602,7 +602,7 @@ function composeAgentHooks(sequences: {
   onPrepareMessages?: AgentHooks["onPrepareMessages"][];
   onPrepareModelMessages?: AgentHooks["onPrepareModelMessages"][];
   onError?: AgentHooks["onError"][];
-  onStepFinish?: AgentHooks["onStepFinish"][];
+  onStepEnd?: AgentHooks["onStepEnd"][];
 }): AgentHooks {
   return {
     onStart: chainVoidHooks(sequences.onStart ?? []),
@@ -614,7 +614,7 @@ function composeAgentHooks(sequences: {
     onPrepareMessages: chainPrepareMessagesHooks(sequences.onPrepareMessages ?? []),
     onPrepareModelMessages: chainPrepareModelMessagesHooks(sequences.onPrepareModelMessages ?? []),
     onError: chainVoidHooks(sequences.onError ?? []),
-    onStepFinish: chainVoidHooks(sequences.onStepFinish ?? []),
+    onStepEnd: chainVoidHooks(sequences.onStepEnd ?? []),
   };
 }
 
@@ -856,7 +856,7 @@ function createPlanningExtension(options: {
             markPlanProgress(args.context);
             return undefined;
           },
-          onStepFinish: async (args) => {
+          onStepEnd: async (args) => {
             const step = args.step as StepResult<ToolSet> | undefined;
             if (!step) {
               return;
@@ -1020,7 +1020,7 @@ export class PlanAgent extends Agent {
       ],
       onToolStart: [hooks?.onToolStart, ...extensionHooks.map((hook) => hook.onToolStart)],
       onToolEnd: [hooks?.onToolEnd, ...extensionHooks.map((hook) => hook.onToolEnd)],
-      onStepFinish: [hooks?.onStepFinish, ...extensionHooks.map((hook) => hook.onStepFinish)],
+      onStepEnd: [hooks?.onStepEnd, ...extensionHooks.map((hook) => hook.onStepEnd)],
       onError: [...extensionHooks.map((hook) => hook.onError), hooks?.onError],
     });
 

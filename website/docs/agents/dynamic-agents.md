@@ -131,13 +131,18 @@ const agent = new Agent({
 For direct in-process calls, pass `requestHeaders`:
 
 ```ts
-await agent.generateText("Hello", {
-  requestHeaders: {
-    authorization: "Bearer token",
-    "x-tenant-id": "tenant-1",
+await agent.generateText({
+  prompt: "Hello",
+  voltagent: {
+    requestHeaders: {
+      authorization: "Bearer token",
+      "x-tenant-id": "tenant-1",
+    },
   },
 });
 ```
+
+Legacy top-level `requestHeaders` is still supported, but `voltagent.requestHeaders` is preferred for new object-style calls.
 
 ### Dynamic Models
 

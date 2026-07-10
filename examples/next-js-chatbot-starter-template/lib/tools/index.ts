@@ -9,9 +9,13 @@ export { calculatorTool } from "./calculator";
 export { dateTimeTool } from "./datetime";
 export { randomNumberTool } from "./random";
 
-// Export as array for easy agent configuration
+// Export as a ToolSet for agent configuration. Tool names come from object keys.
 import { calculatorTool } from "./calculator";
 import { dateTimeTool } from "./datetime";
 import { randomNumberTool } from "./random";
 
-export const defaultTools = [calculatorTool, dateTimeTool, randomNumberTool];
+export const defaultTools = {
+  calculator: calculatorTool,
+  getDateTime: dateTimeTool,
+  generateRandomNumber: randomNumberTool,
+};

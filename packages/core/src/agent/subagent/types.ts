@@ -1,4 +1,4 @@
-import type { StreamTextResult, TextStreamPart } from "ai";
+import type { Output, StreamTextResult, TextStreamPart } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent";
 import type {
@@ -206,10 +206,12 @@ export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<s
  */
 export type VoltAgentStreamTextResult<
   TOOLS extends Record<string, any> = Record<string, any>,
-  OUTPUT = unknown,
-> = Omit<StreamTextResult<TOOLS, any>, "fullStream"> & {
+  OUTPUT extends Output.Output<any, any, any> = Output.Output<any, any, any>,
+> = Omit<StreamTextResult<TOOLS, any, OUTPUT>, "stream"> & {
   /**
-   * Full stream with subagent metadata support
+   * Stream with subagent metadata support.
    */
+  readonly stream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
+  /** @deprecated Use `stream` instead. */
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
 } & Record<never, OUTPUT>;

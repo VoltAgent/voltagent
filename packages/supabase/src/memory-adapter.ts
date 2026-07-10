@@ -693,7 +693,13 @@ END OF MIGRATION SQL
         }
 
         if (row.type === "image") {
-          parts = [{ type: "image", image: content }];
+          parts = [
+            {
+              type: "file",
+              data: content,
+              mediaType: "image",
+            },
+          ];
         } else {
           parts = [{ type: "text", text: content }];
         }

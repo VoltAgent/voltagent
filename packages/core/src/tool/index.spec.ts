@@ -230,7 +230,7 @@ describe("Tool", () => {
       // Validate the output against the schema
       const parseResult = tool.outputSchema?.safeParse(result);
       expect(parseResult?.success).toBe(false);
-      expect(parseResult?.error?.errors?.[0]?.message).toContain("Expected number");
+      expect(parseResult?.error?.issues?.[0]?.message).toContain("expected number");
     });
 
     it("should maintain backward compatibility for tools without output schema", async () => {

@@ -32,13 +32,13 @@ export const createBaseDependencyInstaller = async (
   const packageManagerConfig = PACKAGE_MANAGER_CONFIG[packageManager];
 
   const baseDependencies: Record<string, string> = {
-    "@voltagent/core": "^2.0.0",
-    "@voltagent/libsql": "^2.0.0",
-    ai: "^6.0.0",
-    "@voltagent/cli": "^0.1.10",
-    "@voltagent/logger": "^2.0.0",
+    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/libsql": "^3.0.0-next.0",
+    ai: "^7.0.0",
+    "@voltagent/cli": "^1.0.0-next.0",
+    "@voltagent/logger": "^3.0.0-next.0",
     dotenv: "^16.4.7",
-    zod: "^3.25.76",
+    zod: "^4.1.11",
   };
 
   baseDependencies[serverConfig.package] = serverConfig.packageVersion;
@@ -67,7 +67,7 @@ export const createBaseDependencyInstaller = async (
       typescript: "^5.7.3",
     },
     engines: {
-      node: ">=20.19.0",
+      node: ">=22",
     },
   };
 

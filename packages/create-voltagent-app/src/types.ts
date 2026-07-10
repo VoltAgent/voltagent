@@ -70,13 +70,13 @@ export const SERVER_CONFIG = {
   hono: {
     name: "Hono",
     package: "@voltagent/server-hono",
-    packageVersion: "^2.0.0",
+    packageVersion: "^3.0.0-next.0",
     factory: "honoServer",
   },
   elysia: {
     name: "Elysia",
     package: "@voltagent/server-elysia",
-    packageVersion: "^2.0.0",
+    packageVersion: "^3.0.0-next.0",
     factory: "elysiaServer",
   },
 } as const;

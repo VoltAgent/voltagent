@@ -58,7 +58,6 @@ import {
   workspaceReadFileRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
-import { registerTriggerRoutes } from "./trigger.routes";
 export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
 export { registerToolRoutes } from "./tool.routes";

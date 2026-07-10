@@ -26,11 +26,9 @@ import type {
   AgentHooks,
   GenerateObjectOptions,
   GenerateObjectResultWithContext,
-  GenerateTextOptions,
   GenerateTextResultWithContext,
   StreamObjectOptions,
   StreamObjectResultWithContext,
-  StreamTextOptions,
   StreamTextResultWithContext,
 } from "../agent";
 import type { ToolSchema } from "../providers/base/types";
@@ -214,10 +212,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
 
   // Optionally stub individual methods if needed for specific test cases
   vi.spyOn(agent, "streamText").mockImplementation(
-    async (
-      _input: string | ModelMessage[] | UIMessage[],
-      _options?: StreamTextOptions,
-    ): Promise<StreamTextResultWithContext> => {
+    async (_input: any, _options?: any): Promise<StreamTextResultWithContext> => {
       const textContent = `Hello from ${agent.name}`;
       const stream = simulateReadableStream({
         chunks: [
@@ -245,6 +240,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       });
 
       const result: StreamTextResultWithContext = {
+        stream: stream as any,
         fullStream: stream as any,
         textStream: textStream as any,
         text: Promise.resolve(textContent),
@@ -268,8 +264,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Stub generateText method with proper signature
   vi.spyOn(agent, "generateText").mockImplementation(
     async <OUTPUT extends Output.Output<unknown, unknown> = Output.Output<unknown, unknown>>(
-      _input: string | ModelMessage[] | UIMessage[],
-      _options?: GenerateTextOptions<OUTPUT>,
+      _input: any,
+      _options?: any,
     ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> => {
       // Use a minimal mock that satisfies the interface
       const outputValue = undefined as unknown as InferGenerateOutput<OUTPUT>;
@@ -292,7 +288,6 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         finishReason: "stop" as const,
         rawFinishReason: undefined,
         steps: [],
-        experimental_output: outputValue,
         output: outputValue,
         response: {
           id: "mock-response-id",
@@ -311,7 +306,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         toDataStream: vi.fn(),
         toDataStreamResponse: vi.fn(),
         pipeDataStreamToResponse: vi.fn(),
-      } as GenerateTextResultWithContext<ToolSet, OUTPUT>;
+      } as unknown as GenerateTextResultWithContext<ToolSet, OUTPUT>;
 
       return result;
     },

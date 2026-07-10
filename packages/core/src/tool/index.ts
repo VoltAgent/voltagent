@@ -59,6 +59,15 @@ export type ToolResultOutput =
 
 export type { Tool as VercelTool } from "ai";
 export type { ProviderOptions } from "@ai-sdk/provider-utils";
+export {
+  createNamedAiSdkTool,
+  getRawAiSdkTool,
+  getVoltAgentToolMetadata,
+  isNamedAiSdkTool,
+  tool,
+  withVoltAgentMetadata,
+} from "./ai-sdk-tool";
+export type { NamedAiSdkTool, VoltAgentToolDefinition, VoltAgentToolMetadata } from "./ai-sdk-tool";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -135,7 +144,7 @@ export type ToolOptions<
    * Whether the tool requires approval before execution.
    * When set to a function, it can decide dynamically per call.
    */
-  needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>>;
+  needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>, any>;
 
   /**
    * Provider-specific options for the tool.
@@ -172,8 +181,10 @@ export type ToolOptions<
    * ```
    */
   toModelOutput?: (args: {
+    toolCallId: string;
+    input: z.infer<T>;
     output: O extends ToolSchema ? z.infer<O> : unknown;
-  }) => ToolResultOutput;
+  }) => ToolResultOutput | PromiseLike<ToolResultOutput>;
 
   /**
    * Function to execute when the tool is called.
@@ -230,7 +241,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   /**
    * Whether the tool requires approval before execution.
    */
-  readonly needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>>;
+  readonly needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>, any>;
 
   /**
    * Provider-specific options for the tool.
@@ -243,8 +254,10 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    * Enables returning images, media, or structured content to the LLM.
    */
   readonly toModelOutput?: (args: {
+    toolCallId: string;
+    input: z.infer<T>;
     output: O extends ToolSchema ? z.infer<O> : unknown;
-  }) => ToolResultOutput;
+  }) => ToolResultOutput | PromiseLike<ToolResultOutput>;
 
   /**
    * Optional tool-specific hooks for lifecycle events.
@@ -306,7 +319,10 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
 }
 
 /**
- * Helper function for creating a new tool
+ * Legacy helper for creating a class-style VoltAgent tool.
+ *
+ * @deprecated Use `tool()` with AI SDK-style `inputSchema` and VoltAgent
+ * metadata under the `voltagent` namespace.
  */
 export function createTool<T extends ToolSchema>(
   options: ToolOptions<T, undefined>,
@@ -319,8 +335,3 @@ export function createTool<T extends ToolSchema, O extends ToolSchema | undefine
 ): Tool<T, O> {
   return new Tool<T, O>(options);
 }
-
-/**
- * Alias for createTool function
- */
-export const tool = createTool;

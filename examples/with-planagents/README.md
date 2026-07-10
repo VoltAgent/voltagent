@@ -4,7 +4,7 @@ Build a PlanAgent with planning, file system tools, and subagent support. This e
 
 ## Prerequisites
 
-- Node.js (v20 or newer)
+- Node.js 22 or newer
 - OpenAI API key
 - Tavily API key
 

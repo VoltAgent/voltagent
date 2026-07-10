@@ -90,7 +90,7 @@ const response = await agent.streamText("Complex task...", {
   abortController,
 });
 
-for await (const event of response.fullStream) {
+for await (const event of response.stream) {
   if (event.type === "error" && isAbortError(event.error)) {
     console.log("Cancelled during:", event.context);
     break;

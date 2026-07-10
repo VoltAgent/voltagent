@@ -1436,6 +1436,12 @@ function extractJudgeTelemetry(
     }
 
     const usage = isPlainRecord(judge.usage) ? (judge.usage as Record<string, unknown>) : undefined;
+    const inputTokenDetails = isPlainRecord(usage?.inputTokenDetails)
+      ? (usage.inputTokenDetails as Record<string, unknown>)
+      : undefined;
+    const outputTokenDetails = isPlainRecord(usage?.outputTokenDetails)
+      ? (usage.outputTokenDetails as Record<string, unknown>)
+      : undefined;
     const providerCost = isPlainRecord(judge.providerCost)
       ? (judge.providerCost as Record<string, unknown>)
       : undefined;
@@ -1445,8 +1451,8 @@ function extractJudgeTelemetry(
       promptTokens: readNumber(usage?.promptTokens),
       completionTokens: readNumber(usage?.completionTokens),
       totalTokens: readNumber(usage?.totalTokens),
-      cachedTokens: readNumber(usage?.cachedInputTokens ?? usage?.cachedTokens),
-      reasoningTokens: readNumber(usage?.reasoningTokens),
+      cachedTokens: readNumber(inputTokenDetails?.cacheReadTokens ?? usage?.cachedTokens),
+      reasoningTokens: readNumber(outputTokenDetails?.reasoningTokens ?? usage?.reasoningTokens),
       providerCost: providerCost
         ? {
             cost: readNumber(providerCost.cost),

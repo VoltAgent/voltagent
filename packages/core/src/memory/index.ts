@@ -1216,8 +1216,21 @@ Remember:
       const schemaShape = this.workingMemoryConfig.schema.shape;
       schemaSummary = Object.fromEntries(
         Object.entries(schemaShape || {}).map(([key, value]) => {
-          const typeName = (value as z.ZodTypeAny)?._def?.typeName;
-          const friendlyName = typeName ? typeName.replace(/^Zod/, "").toLowerCase() : "unknown";
+          const def = (
+            value as {
+              _def?: { typeName?: string; type?: string };
+              def?: { typeName?: string; type?: string };
+            }
+          )._def;
+          const fallbackDef = (
+            value as {
+              def?: { typeName?: string; type?: string };
+            }
+          ).def;
+          const schemaDef = def ?? fallbackDef;
+          const typeName = schemaDef?.typeName ?? schemaDef?.type;
+          const friendlyName =
+            typeof typeName === "string" ? typeName.replace(/^Zod/, "").toLowerCase() : "unknown";
           return [key, friendlyName];
         }),
       );

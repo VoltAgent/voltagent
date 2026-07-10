@@ -213,8 +213,8 @@ describe("Tool Parser Utilities", () => {
       });
     });
 
-    it("should handle records", () => {
-      const schema = z.record(z.string());
+    it("should handle records with explicit key and value schemas", () => {
+      const schema = z.record(z.string(), z.string());
 
       const result = zodSchemaToJsonUI(schema);
 

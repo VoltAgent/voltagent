@@ -1,10 +1,14 @@
-import type { Agent, ResumableStreamAdapter } from "@voltagent/core";
+import type {
+  Agent,
+  BaseMessage,
+  ResumableStreamAdapter,
+  StreamTextOptions,
+} from "@voltagent/core";
 import { getGlobalLogger, setWaitUntil } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
-import { UI_MESSAGE_STREAM_HEADERS } from "ai";
+import { type UIMessage, UI_MESSAGE_STREAM_HEADERS } from "ai";
 
-type StreamTextInput = Parameters<Agent["streamText"]>[0];
-type StreamTextOptions = Parameters<Agent["streamText"]>[1];
+type StreamTextInput = string | UIMessage[] | BaseMessage[];
 type RouteParams = Record<string, string>;
 
 type HandlerContext<Params extends RouteParams | undefined> = {
@@ -114,7 +118,7 @@ export function createResumableChatHandlers<
             logger.error("Failed to persist resumable chat stream", { error });
           }
         },
-        onFinish: async () => {
+        onEnd: async () => {
           try {
             await adapter.clearActiveStream({
               conversationId,

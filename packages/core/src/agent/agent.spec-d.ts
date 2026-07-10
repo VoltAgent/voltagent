@@ -1,11 +1,17 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { FinishReason, LanguageModelUsage, UIMessage } from "ai";
+import {
+  type FinishReason,
+  type LanguageModelUsage,
+  Output,
+  type UIMessage,
+  tool as rawAiTool,
+} from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
-import { Tool, type Toolkit, createTool } from "../tool";
+import { Tool, type Toolkit, tool as aiSdkTool, createTool, withVoltAgentMetadata } from "../tool";
 import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
@@ -15,6 +21,7 @@ import {
   Agent,
   type AgentHooks,
   type GenerateObjectResultWithContext,
+  type GenerateTextOptions,
   type GenerateTextResultWithContext,
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
@@ -38,6 +45,7 @@ import type {
   SupervisorConfig,
   ToolsDynamicValue,
   UserContext,
+  VoltAgentRuntimeOptions,
 } from "./types";
 
 describe("Agent Type System", () => {
@@ -213,6 +221,93 @@ describe("Agent Type System", () => {
 
       expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
+
+    it("should accept AI SDK ToolSet tools", () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          test_tool: aiSdkTool({
+            description: "Test",
+            inputSchema: z.object({ value: z.string() }),
+            execute: async ({ value }) => ({ result: value }),
+            voltagent: {
+              name: "test_tool",
+              purpose: "Exercise AI SDK tool metadata typing",
+              tags: ["test"],
+            },
+          }),
+        },
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should accept AI SDK contextSchema on AI SDK-style tools", () => {
+      const weatherTool = aiSdkTool({
+        description: "Get weather",
+        inputSchema: z.object({ city: z.string() }),
+        contextSchema: z.object({
+          apiKey: z.string(),
+          defaultUnit: z.enum(["celsius", "fahrenheit"]),
+        }),
+        execute: async ({ city }, { context }) => {
+          expectTypeOf(context.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(context.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return { city, unit: context.defaultUnit };
+        },
+      });
+
+      const agent = new Agent({
+        name: "Weather",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          weather: weatherTool,
+        },
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should attach VoltAgent metadata to raw AI SDK tools", () => {
+      const refundCustomer = withVoltAgentMetadata(
+        rawAiTool({
+          description: "Refund a customer order",
+          inputSchema: z.object({
+            orderId: z.string(),
+            reason: z.string(),
+          }),
+          contextSchema: z.object({
+            actorId: z.string(),
+            permissions: z.array(z.string()),
+          }),
+          execute: async ({ orderId, reason }, { context }) => {
+            expectTypeOf(context.actorId).toEqualTypeOf<string>();
+            expectTypeOf(context.permissions).toEqualTypeOf<string[]>();
+            return { orderId, reason, actorId: context.actorId };
+          },
+        }),
+        {
+          tags: ["billing", "dangerous"],
+          metadata: {
+            owner: "payments-team",
+          },
+        },
+      );
+
+      const agent = new Agent({
+        name: "Support",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          refundCustomer,
+        },
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
   });
 
   describe("Dynamic Value Types", () => {
@@ -322,6 +417,26 @@ describe("Agent Type System", () => {
       // Tools with toolkit
       const mixedTools: ToolsDynamicValue = [tool, mockToolkit];
       expectTypeOf(mixedTools).toMatchTypeOf<ToolsDynamicValue>();
+
+      // AI SDK ToolSet
+      const toolSet: ToolsDynamicValue = {
+        test_tool: aiSdkTool({
+          description: "Test tool",
+          inputSchema: z.object({ value: z.string() }),
+          execute: async ({ value }) => ({ result: value }),
+        }),
+      };
+      expectTypeOf(toolSet).toMatchTypeOf<ToolsDynamicValue>();
+
+      // Dynamic AI SDK ToolSet
+      const dynamicToolSet: ToolsDynamicValue = async () => ({
+        test_tool: aiSdkTool({
+          description: "Test tool",
+          inputSchema: z.object({ value: z.string() }),
+          execute: async ({ value }) => ({ result: value }),
+        }),
+      });
+      expectTypeOf(dynamicToolSet).toMatchTypeOf<ToolsDynamicValue>();
     });
   });
 
@@ -359,6 +474,85 @@ describe("Agent Type System", () => {
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 
+    it("should infer generateText structured output type with Output.object", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const schema = z.object({
+        answer: z.string(),
+        count: z.number(),
+      });
+
+      const result = await agent.generateText("Test input", {
+        output: Output.object({ schema }),
+      });
+
+      expectTypeOf(result.output).toEqualTypeOf<{ answer: string; count: number }>();
+      expectTypeOf(result.output.answer).toEqualTypeOf<string>();
+      expectTypeOf(result.output.count).toEqualTypeOf<number>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
+
+      // @ts-expect-error - missing does not exist in schema
+      result.output.missing;
+    });
+
+    it("should infer object-style generateText structured output type", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const schema = z.object({
+        answer: z.string(),
+        count: z.number(),
+      });
+
+      const result = await agent.generateText({
+        prompt: "Test input",
+        output: Output.object({ schema }),
+        temperature: 0.2,
+      });
+
+      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+      expectTypeOf(result.output).toEqualTypeOf<{ answer: string; count: number }>();
+      expectTypeOf(result.output.answer).toEqualTypeOf<string>();
+      expectTypeOf(result.output.count).toEqualTypeOf<number>();
+
+      // @ts-expect-error - missing does not exist in schema
+      result.output.missing;
+    });
+
+    it("should accept native toolApproval options", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const tools = {
+        dangerous_tool: aiSdkTool({
+          description: "Dangerous tool",
+          inputSchema: z.object({ value: z.string() }),
+          execute: async ({ value }) => ({ value }),
+        }),
+      };
+
+      const result = await agent.generateText({
+        prompt: "Test input",
+        tools,
+        toolApproval: {
+          dangerous_tool: "user-approval",
+        },
+        experimental_toolApprovalSecret: new Uint8Array([1, 2, 3]),
+      });
+
+      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+    });
+
     it("should infer streamText return type", async () => {
       const agent = new Agent({
         name: "Test",
@@ -370,6 +564,169 @@ describe("Agent Type System", () => {
       expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
       expectTypeOf(result.textStream).not.toBeUndefined();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
+    });
+
+    it("should infer object-style streamText return type", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const messages: UIMessage[] = [
+        {
+          id: "message-1",
+          role: "user",
+          parts: [{ type: "text", text: "Test input" }],
+        },
+      ];
+
+      const result = await agent.streamText({
+        messages,
+        temperature: 0.2,
+      });
+
+      expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
+      expectTypeOf(result.textStream).not.toBeUndefined();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
+    });
+
+    it("should accept native toolApproval options for streamText", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const result = await agent.streamText({
+        prompt: "Test input",
+        toolApproval: {
+          dangerous_tool: "approved",
+        },
+      });
+
+      expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
+    });
+
+    it("should accept AI SDK v7 generateText passthrough options", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const tools = {
+        lookup_order: aiSdkTool({
+          description: "Lookup an order",
+          inputSchema: z.object({ orderId: z.string() }),
+          execute: async ({ orderId }) => ({ orderId }),
+        }),
+      };
+
+      const result = await agent.generateText({
+        prompt: "Test input",
+        tools,
+        activeTools: ["lookup_order"],
+        toolOrder: ["lookup_order"],
+        timeout: {
+          totalMs: 10_000,
+          stepMs: 5_000,
+          toolMs: 2_000,
+          tools: {
+            lookup_orderMs: 1_000,
+          },
+        },
+        headers: {
+          "x-provider-header": "provider-value",
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          responseBody: true,
+        },
+        experimental_download: async (downloads) => downloads.map(() => null),
+        toolsContext: {
+          lookup_order: {},
+        },
+        onStart: async () => {},
+        onStepStart: async () => {},
+        onLanguageModelCallStart: async () => {},
+        onLanguageModelCallEnd: async () => {},
+        onToolExecutionStart: async () => {},
+        onToolExecutionEnd: async () => {},
+        onStepEnd: async (step) => {
+          expectTypeOf(step).toMatchTypeOf<unknown>();
+        },
+        onEnd: async (finish) => {
+          expectTypeOf(finish).toMatchTypeOf<unknown>();
+        },
+      });
+
+      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+    });
+
+    it("should accept toolsContext and reject VoltAgent-owned runtime/telemetry fields", () => {
+      const runtimeContextOptions: GenerateTextOptions = {
+        // @ts-expect-error - use `voltagent.context` instead
+        runtimeContext: {
+          tenantId: "tenant-1",
+        },
+      };
+
+      const toolsContextOptions: GenerateTextOptions = {
+        toolsContext: {
+          lookup_order: {},
+        },
+      };
+
+      const telemetryOptions: GenerateTextOptions = {
+        // @ts-expect-error - use VoltAgent observability/tracing instead
+        telemetry: {
+          isEnabled: false,
+        },
+      };
+
+      const experimentalTelemetryOptions: GenerateTextOptions = {
+        // @ts-expect-error - use VoltAgent observability/tracing instead
+        experimental_telemetry: {
+          isEnabled: false,
+        },
+      };
+
+      expectTypeOf(runtimeContextOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(toolsContextOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(telemetryOptions).toMatchTypeOf<GenerateTextOptions>();
+      expectTypeOf(experimentalTelemetryOptions).toMatchTypeOf<GenerateTextOptions>();
+    });
+
+    it("should accept AI SDK v7 streamText-only passthrough options", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const result = await agent.streamText({
+        prompt: "Test input",
+        timeout: {
+          totalMs: 10_000,
+          chunkMs: 1_000,
+        },
+        include: {
+          requestBody: true,
+          requestMessages: true,
+          rawChunks: true,
+        },
+        includeRawChunks: true,
+        experimental_transform: [],
+        onChunk: async () => {},
+        onAbort: async () => {},
+        onError: async ({ error }) => {
+          expectTypeOf(error).toEqualTypeOf<unknown>();
+        },
+      });
+
+      expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
     });
 
     it("should infer generateObject return type with schema", async () => {
@@ -453,6 +810,39 @@ describe("Agent Type System", () => {
         },
       };
 
+      const runtimeOptions: VoltAgentRuntimeOptions = {
+        memory: {
+          conversationId: "namespaced-conversation",
+          userId: "namespaced-user",
+          options: {
+            contextLimit: 500,
+            semanticMemory: {
+              enabled: true,
+            },
+          },
+        },
+        context: {
+          requestId: "req-1",
+        },
+        requestHeaders: {
+          authorization: "Bearer token",
+        },
+        feedback: true,
+        guardrails: {
+          input: [],
+          output: [],
+        },
+        middleware: {
+          input: [],
+          output: [],
+          maxRetries: 0,
+        },
+        resumableStream: true,
+      };
+      const namespacedOptions: PublicGenerateOptions = {
+        voltagent: runtimeOptions,
+      };
+
       const internalOptions: InternalGenerateOptions = {
         ...publicOptions,
         parentAgentId: "parent-123",
@@ -466,6 +856,8 @@ describe("Agent Type System", () => {
 
       expectTypeOf(publicOptions).toMatchTypeOf<PublicGenerateOptions>();
       expectTypeOf(legacyOptions).toMatchTypeOf<PublicGenerateOptions>();
+      expectTypeOf(namespacedOptions).toMatchTypeOf<PublicGenerateOptions>();
+      expectTypeOf(runtimeOptions).toMatchTypeOf<VoltAgentRuntimeOptions>();
       expectTypeOf(internalOptions).toMatchTypeOf<InternalGenerateOptions>();
     });
 
@@ -479,10 +871,10 @@ describe("Agent Type System", () => {
         seed: 12345,
         stopSequences: ["END"],
         extraOptions: { custom: "value" },
-        onStepFinish: async (_step) => {
+        onStepEnd: async (_step) => {
           // Step type varies based on provider
         },
-        onFinish: async (result) => {
+        onEnd: async (result) => {
           expectTypeOf(result).toEqualTypeOf<unknown>();
         },
         onError: async (error) => {
@@ -657,9 +1049,9 @@ describe("Agent Type System", () => {
       expectTypeOf(hooks).toMatchTypeOf<AgentHooks>();
     });
 
-    it("should validate onStepFinish hook", () => {
+    it("should validate onStepEnd hook", () => {
       const hooks: AgentHooks = {
-        onStepFinish: async ({ step }) => {
+        onStepEnd: async ({ step }) => {
           // Step can be any type based on provider
           expectTypeOf(step).toBeAny();
         },
@@ -848,7 +1240,7 @@ describe("Agent Type System", () => {
             tags: z.array(z.string()),
           }),
         }),
-        metadata: z.record(z.unknown()),
+        metadata: z.record(z.string(), z.unknown()),
       });
 
       type InferredObject = z.infer<typeof complexSchema>;
@@ -1154,7 +1546,7 @@ describe("Agent Type System", () => {
 
       // Should have AI SDK compatible stream properties
       expectTypeOf(result.textStream).not.toBeNever();
-      expectTypeOf(result.fullStream).not.toBeNever();
+      expectTypeOf(result.stream).not.toBeNever();
       expectTypeOf(result.usage).not.toBeNever();
       expectTypeOf(result.text).not.toBeNever();
       expectTypeOf(result.finishReason).not.toBeNever();
@@ -1194,7 +1586,7 @@ describe("Agent Type System", () => {
             z.object({
               id: z.number(),
               value: z.string(),
-              metadata: z.record(z.unknown()).optional(),
+              metadata: z.record(z.string(), z.unknown()).optional(),
             }),
           ),
           options: z.object({
@@ -1229,7 +1621,7 @@ describe("Agent Type System", () => {
             z.object({
               id: z.number(),
               value: z.string(),
-              metadata: z.record(z.unknown()).optional(),
+              metadata: z.record(z.string(), z.unknown()).optional(),
             }),
           ),
           options: z.object({

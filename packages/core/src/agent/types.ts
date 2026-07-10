@@ -1,5 +1,5 @@
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import type { GoogleLanguageModelOptions } from "@ai-sdk/google";
 import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import type { XaiProviderOptions, XaiResponsesProviderOptions } from "@ai-sdk/xai";
 import type { Span } from "@opentelemetry/api";
@@ -16,7 +16,7 @@ import type { PrepareStep, StopWhen } from "../ai-types";
 import type { LanguageModel, LanguageModelUsage, StepResult, ToolSet, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
+import type { NamedAiSdkTool, ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
 import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
@@ -66,8 +66,12 @@ export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
  */
 export interface ApiToolInfo {
   name: string;
+  displayName?: string;
+  purpose?: string;
   description: string;
   parameters?: any;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AgentToolRoutingState {
@@ -124,7 +128,7 @@ export type AgentMarkFeedbackProvidedInput = {
 /**
  * Tool with node_id for agent state
  */
-export type ToolWithNodeId = (BaseTool | ProviderTool) & {
+export type ToolWithNodeId = (BaseTool | ProviderTool | NamedAiSdkTool) & {
   node_id: string;
 };
 
@@ -264,12 +268,12 @@ export type AgentModelConfig = {
  */
 export type AgentModelValue = ModelDynamicValue<AgentModelReference> | AgentModelConfig[];
 
+export type AgentToolInput = (Tool<any, any> | Toolkit | VercelTool)[] | ToolSet;
+
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
  */
-export type ToolsDynamicValue =
-  | (Tool<any, any> | Toolkit)[]
-  | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+export type ToolsDynamicValue = AgentToolInput | DynamicValue<AgentToolInput>;
 
 /**
  * Provider options type for LLM configurations
@@ -292,11 +296,11 @@ type LegacyProviderCallOptions = {
   // Provider-specific options that don't fit the common pattern
   extraOptions?: Record<string, unknown>;
 
-  // Callback when a step is finished
-  onStepFinish?: (step: StepWithContent) => Promise<void>;
+  // Callback when a step ends
+  onStepEnd?: (step: StepWithContent) => Promise<void>;
 
-  // Callback when generation completes successfully
-  onFinish?: (result: unknown) => Promise<void>;
+  // Callback when generation ends successfully
+  onEnd?: (result: unknown) => Promise<void>;
 
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
@@ -305,7 +309,7 @@ type LegacyProviderCallOptions = {
 export type ProviderOptions = LegacyProviderCallOptions & {
   // Common provider-specific option buckets with IntelliSense
   anthropic?: AnthropicProviderOptions & Record<string, unknown>;
-  google?: GoogleGenerativeAIProviderOptions & Record<string, unknown>;
+  google?: GoogleLanguageModelOptions & Record<string, unknown>;
   openai?: OpenAIResponsesProviderOptions & Record<string, unknown>;
   xai?: (XaiProviderOptions | XaiResponsesProviderOptions) & Record<string, unknown>;
 
@@ -687,7 +691,7 @@ export type AgentOptions = {
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory
-  tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  tools?: AgentToolInput | DynamicValue<AgentToolInput>;
   toolkits?: Toolkit[];
   toolRouting?: ToolRoutingConfig | false;
   workspace?: Workspace | WorkspaceConfig | false;
@@ -1022,6 +1026,76 @@ export type SemanticMemoryOptions = CommonSemanticMemoryOptions;
 export type RuntimeMemoryBehaviorOptions = CommonRuntimeMemoryBehaviorOptions;
 export type RuntimeMemoryEnvelope = CommonRuntimeMemoryEnvelope;
 
+export interface VoltAgentRuntimeGuardrailOptions {
+  input?: InputGuardrail[];
+  output?: OutputGuardrail<any>[];
+}
+
+export interface VoltAgentRuntimeMiddlewareOptions {
+  input?: InputMiddleware[];
+  output?: OutputMiddleware<any>[];
+  maxRetries?: number;
+}
+
+export interface VoltAgentRuntimeOptions {
+  // Preferred runtime memory envelope for per-call memory identity and behavior overrides.
+  memory?: CommonRuntimeMemoryEnvelope;
+
+  /**
+   * @deprecated Use `memory.userId` instead.
+   */
+  userId?: string;
+
+  /**
+   * @deprecated Use `memory.conversationId` instead.
+   */
+  conversationId?: string;
+
+  /**
+   * @deprecated Use `memory.options.contextLimit` instead.
+   */
+  contextLimit?: number;
+
+  /**
+   * @deprecated Use `memory.options.semanticMemory` instead.
+   */
+  semanticMemory?: CommonSemanticMemoryOptions;
+
+  /**
+   * @deprecated Use `memory.options.messageMetadataPersistence` instead.
+   */
+  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
+
+  /**
+   * @deprecated Use `memory.options.conversationPersistence` instead.
+   */
+  conversationPersistence?: AgentConversationPersistenceOptions;
+
+  context?: ContextInput;
+  requestHeaders?: Record<string, string>;
+  elicitation?: (request: unknown) => Promise<unknown>;
+
+  parentAgentId?: string;
+  parentOperationContext?: OperationContext;
+  parentSpan?: Span;
+  inheritParentSpan?: boolean;
+
+  maxSteps?: number;
+  feedback?: AgentFeedbackOptions | boolean;
+  toolRouting?: ToolRoutingConfig | false;
+
+  hooks?: AgentHooks;
+  guardrails?: VoltAgentRuntimeGuardrailOptions;
+  inputGuardrails?: InputGuardrail[];
+  outputGuardrails?: OutputGuardrail<any>[];
+  middleware?: VoltAgentRuntimeMiddlewareOptions;
+  inputMiddlewares?: InputMiddleware[];
+  outputMiddlewares?: OutputMiddleware<any>[];
+  maxMiddlewareRetries?: number;
+
+  resumableStream?: boolean;
+}
+
 export interface CommonResolvedRuntimeMemoryOptions {
   userId?: string;
   conversationId?: string;
@@ -1035,6 +1109,9 @@ export interface CommonResolvedRuntimeMemoryOptions {
 export interface CommonGenerateOptions {
   // Common LLM provider properties
   provider?: ProviderOptions;
+
+  // New namespace for VoltAgent runtime-specific options.
+  voltagent?: VoltAgentRuntimeOptions;
 
   // Preferred runtime memory envelope for per-call memory identity and behavior overrides.
   memory?: CommonRuntimeMemoryEnvelope;

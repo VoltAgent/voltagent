@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 const CONTEXT_PRECISION_PROMPT = `Given question, answer and context verify if the context was useful in arriving at the given answer. Give verdict as "1" if useful and "0" if not with json output.
 
@@ -121,18 +122,18 @@ export function createContextPrecisionScorer<
         .replace("{{context}}", contextText)
         .replace("{{answer}}", payload.output);
 
-      const response = await agent.generateObject(prompt, CONTEXT_PRECISION_SCHEMA);
+      const verdict = await generateStructuredObject(agent, prompt, CONTEXT_PRECISION_SCHEMA);
 
-      context.results.raw.contextPrecisionVerdict = response.object;
+      context.results.raw.contextPrecisionVerdict = verdict;
 
-      if (mergedOptions.weighted && response.object.verdict === 1) {
+      if (mergedOptions.weighted && verdict.verdict === 1) {
         // For weighted scoring, we could use confidence if available
         // For now, return the verdict as is
-        return response.object.verdict;
+        return verdict.verdict;
       }
 
       // Binary scoring based on threshold
-      return response.object.verdict >= mergedOptions.binaryThreshold ? 1 : 0;
+      return verdict.verdict >= mergedOptions.binaryThreshold ? 1 : 0;
     })
     .reason(({ results }) => {
       const verdict = results.raw.contextPrecisionVerdict as z.infer<

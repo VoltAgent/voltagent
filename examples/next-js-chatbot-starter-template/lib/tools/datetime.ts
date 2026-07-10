@@ -1,14 +1,13 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * Date Time Tool
  * Gets current date and time information
  */
-export const dateTimeTool = createTool({
-  name: "getDateTime",
+export const dateTimeTool = tool({
   description: "Get the current date, time, and timezone information",
-  parameters: z.object({
+  inputSchema: z.object({
     timezone: z
       .string()
       .optional()

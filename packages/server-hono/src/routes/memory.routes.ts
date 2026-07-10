@@ -41,6 +41,14 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+type JsonResponder = {
+  json: (data: any, status?: any, headers?: any) => any;
+};
+
+function jsonResponse(c: JsonResponder, response: unknown, status: number) {
+  return c.json(response, status);
+}
+
 const orderByAllowlist = new Set(["created_at", "updated_at", "title"]);
 
 function parseOrderBy(value?: string): "created_at" | "updated_at" | "title" | undefined {
@@ -91,7 +99,7 @@ export function registerMemoryRoutes(
       orderDirection: parseOrderDirection(query.orderDirection),
     });
 
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.get(MEMORY_ROUTES.getConversation.path, async (c) => {
@@ -101,7 +109,7 @@ export function registerMemoryRoutes(
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.get(MEMORY_ROUTES.listMessages.path, async (c) => {
@@ -118,7 +126,7 @@ export function registerMemoryRoutes(
       roles: query.roles ? query.roles.split(",") : undefined,
       userId: query.userId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.get(memoryWorkingMemoryPath, async (c) => {
@@ -133,7 +141,7 @@ export function registerMemoryRoutes(
       scope: query.scope === "user" ? "user" : "conversation",
       userId: query.userId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.post(MEMORY_ROUTES.saveMessages.path, async (c) => {
@@ -143,7 +151,7 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for save messages", { error });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace("POST /api/memory/save-messages - saving messages", {
       messageCount: Array.isArray(body?.messages) ? body.messages.length : 0,
@@ -152,7 +160,7 @@ export function registerMemoryRoutes(
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.post(MEMORY_ROUTES.createConversation.path, async (c) => {
@@ -162,14 +170,14 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for create conversation", { error });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace("POST /api/memory/conversations - creating conversation");
     const response = await handleCreateMemoryConversation(deps, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.patch(MEMORY_ROUTES.updateConversation.path, async (c) => {
@@ -180,14 +188,14 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for update conversation", { error, conversationId });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace(`PATCH /api/memory/conversations/${conversationId} - updating conversation`);
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.delete(MEMORY_ROUTES.deleteConversation.path, async (c) => {
@@ -197,7 +205,7 @@ export function registerMemoryRoutes(
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.post(MEMORY_ROUTES.cloneConversation.path, async (c) => {
@@ -208,14 +216,14 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for clone conversation", { error, conversationId });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace(`POST /api/memory/conversations/${conversationId}/clone - cloning conversation`);
     const response = await handleCloneMemoryConversation(deps, conversationId, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.post(MEMORY_ROUTES.updateWorkingMemory.path, async (c) => {
@@ -226,7 +234,7 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for update working memory", { error, conversationId });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace(
       `POST /api/memory/conversations/${conversationId}/working-memory - updating working memory`,
@@ -235,7 +243,7 @@ export function registerMemoryRoutes(
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.post(MEMORY_ROUTES.deleteMessages.path, async (c) => {
@@ -245,14 +253,14 @@ export function registerMemoryRoutes(
       body = await c.req.json();
     } catch (error) {
       logger.warn("Invalid JSON body for delete messages", { error });
-      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+      return jsonResponse(c, { success: false, error: "Invalid JSON body" }, 400);
     }
     logger.trace("POST /api/memory/messages/delete - deleting messages");
     const response = await handleDeleteMemoryMessages(deps, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 
   app.get(MEMORY_ROUTES.searchMemory.path, async (c) => {
@@ -266,6 +274,6 @@ export function registerMemoryRoutes(
       conversationId: query.conversationId,
       userId: query.userId,
     });
-    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+    return jsonResponse(c, response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 }

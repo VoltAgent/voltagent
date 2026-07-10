@@ -72,4 +72,70 @@ describe.sequential("message persistence e2e (libsql)", () => {
       client.close();
     }
   });
+
+  it("persists working memory across libsql memory instances", async () => {
+    libsqlTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "voltagent-e2e-libsql-"));
+    const dbPath = path.join(libsqlTempDir, "working-memory.db");
+    const dbUrl = `file:${dbPath}`;
+    const tablePrefix = `voltagent_e2e_libsql_wm_${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    const userId = `user-${randomUUID()}`;
+    const conversationId = `conversation-${randomUUID()}`;
+
+    const firstMemory = new Memory({
+      storage: new LibSQLMemoryAdapter({
+        url: dbUrl,
+        tablePrefix,
+      }),
+      workingMemory: {
+        enabled: true,
+      },
+    });
+
+    await firstMemory.createConversation({
+      id: conversationId,
+      userId,
+      resourceId: "working-memory-e2e-agent",
+      title: "Working Memory E2E",
+      metadata: {},
+    });
+    await firstMemory.updateWorkingMemory({
+      conversationId,
+      userId,
+      content: "Preferred language: Turkish",
+    });
+
+    const secondMemory = new Memory({
+      storage: new LibSQLMemoryAdapter({
+        url: dbUrl,
+        tablePrefix,
+      }),
+      workingMemory: {
+        enabled: true,
+      },
+    });
+    const persistedWorkingMemory = await secondMemory.getWorkingMemory({
+      conversationId,
+      userId,
+    });
+
+    expect(persistedWorkingMemory).toBe("Preferred language: Turkish");
+
+    const client = createClient({ url: dbUrl });
+    try {
+      const conversationRows = await client.execute({
+        sql: `SELECT metadata FROM ${tablePrefix}_conversations WHERE id = ?`,
+        args: [conversationId],
+      });
+      expect(conversationRows.rows).toHaveLength(1);
+      const rawMetadata = conversationRows.rows[0]?.metadata;
+      if (typeof rawMetadata !== "string") {
+        throw new Error("Expected libsql metadata to be JSON string.");
+      }
+      expect(JSON.parse(rawMetadata)).toMatchObject({
+        workingMemory: "Preferred language: Turkish",
+      });
+    } finally {
+      client.close();
+    }
+  });
 });

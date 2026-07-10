@@ -7,6 +7,10 @@ slug: /getting-started/model-router
 
 VoltAgent can resolve models from strings like `openai/gpt-4o-mini` without requiring you to import provider packages. This is powered by a bundled provider registry and a small model router in `@voltagent/core`.
 
+:::note VoltAgent 2.x migration
+The AI SDK-first agent API does not change model string routing. Existing `model: "provider/model"` usage continues to work. You only need to update provider packages if you import ai-sdk providers directly.
+:::
+
 For the full provider directory and model lists, see [Models](/models-docs/).
 
 ## Model String Format

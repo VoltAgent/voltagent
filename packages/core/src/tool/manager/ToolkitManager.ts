@@ -1,15 +1,18 @@
 import type { Logger } from "@voltagent/internal";
-import type { AgentTool, VercelTool } from "../index";
+import type { AgentTool, NamedAiSdkTool, VercelTool } from "../index";
 import type { Toolkit } from "../toolkit";
 import { BaseToolManager } from "./BaseToolManager";
 
-export class ToolkitManager extends BaseToolManager<AgentTool | VercelTool, never> {
+export class ToolkitManager extends BaseToolManager<
+  AgentTool | VercelTool | NamedAiSdkTool,
+  never
+> {
   /**
    * Constructor does not accept toolkits - only tools
    * */
   constructor(
     readonly name: string,
-    items: (AgentTool | VercelTool)[] = [],
+    items: (AgentTool | VercelTool | NamedAiSdkTool)[] = [],
     /**
      * A brief description of what the toolkit does or what tools it contains.
      * Optional.

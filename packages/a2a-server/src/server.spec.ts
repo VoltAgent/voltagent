@@ -261,6 +261,17 @@ describe("A2AServer", () => {
       cachedInputTokens: 0,
       reasoningTokens: 0,
     });
+    expect(streamText).toHaveBeenCalledTimes(1);
+    const [input, options] = streamText.mock.calls[0];
+    expect(input).toBe("Hello");
+    expect(options).toEqual(
+      expect.objectContaining({
+        conversationId: chunks.at(-1)?.result?.contextId,
+        abortSignal: expect.any(AbortSignal),
+      }),
+    );
+    expect(options).not.toHaveProperty("prompt");
+    expect(options).not.toHaveProperty("messages");
   });
 
   it("propagates cancellation to streaming agents and returns a canceled task", async () => {

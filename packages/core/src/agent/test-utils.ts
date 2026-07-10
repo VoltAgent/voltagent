@@ -57,9 +57,6 @@ export const defaultMockResponse = {
       textTokens: 5,
       reasoningTokens: 0,
     },
-    cachedInputTokens: 0,
-    reasoningTokens: 0,
-    raw: undefined,
   } as LanguageModelUsage,
   warnings: [],
 };
@@ -396,6 +393,22 @@ export function createMockToolCall(toolName: string, args: any, result?: any) {
  */
 export function createMockStepResult(options?: Partial<StepResult<any>>): StepResult<any> {
   return {
+    ...options,
+    callId: options?.callId || String(mockId()),
+    stepNumber: options?.stepNumber ?? 0,
+    model: options?.model || { provider: "mock-provider", modelId: "mock-model" },
+    toolsContext: options?.toolsContext || {},
+    runtimeContext: options?.runtimeContext || {},
+    performance: options?.performance || {
+      effectiveOutputTokensPerSecond: 0,
+      outputTokensPerSecond: undefined,
+      inputTokensPerSecond: undefined,
+      effectiveTotalTokensPerSecond: 0,
+      stepTimeMs: 0,
+      responseTimeMs: 0,
+      toolExecutionMs: {},
+      timeToFirstOutputMs: undefined,
+    },
     text: options?.text || "",
     content: options?.content || [],
     reasoning: options?.reasoning || [],
@@ -420,7 +433,6 @@ export function createMockStepResult(options?: Partial<StepResult<any>>): StepRe
     rawFinishReason: options?.rawFinishReason,
     usage: options?.usage || defaultMockResponse.usage,
     warnings: options?.warnings || [],
-    ...options,
   };
 }
 
@@ -498,10 +510,9 @@ export function createAutoAbortController(delay: number): AbortController {
  */
 export function createMockStreamTextResult(overrides?: any) {
   const textContent = overrides?.text || "Mock streamed text";
-  return {
-    text: Promise.resolve(textContent),
-    textStream: convertArrayToAsyncIterable(textContent.split(" ")),
-    fullStream: convertArrayToAsyncIterable([
+  const stream =
+    overrides?.stream ??
+    convertArrayToAsyncIterable([
       { type: "text-delta" as const, id: "text-1", delta: "Mock ", text: "Mock " },
       { type: "text-delta" as const, id: "text-1", delta: "streamed ", text: "streamed " },
       { type: "text-delta" as const, id: "text-1", delta: "text", text: "text" },
@@ -511,14 +522,19 @@ export function createMockStreamTextResult(overrides?: any) {
         usage: overrides?.usage || defaultMockResponse.usage,
         totalUsage: overrides?.totalUsage || defaultMockResponse.usage,
       },
-    ]),
+    ]);
+  return {
+    text: Promise.resolve(textContent),
+    textStream: convertArrayToAsyncIterable(textContent.split(" ")),
+    stream,
+    fullStream: stream,
     usage: Promise.resolve(overrides?.usage || defaultMockResponse.usage),
     finishReason: Promise.resolve(overrides?.finishReason || "stop"),
     rawResponse: overrides?.rawResponse,
     warnings: overrides?.warnings || [],
 
     // Include the onFinish callback if provided
-    onFinish: overrides?.onFinish ? Promise.resolve().then(overrides.onFinish) : undefined,
+    onEnd: overrides?.onFinish ? Promise.resolve().then(overrides.onFinish) : undefined,
 
     // Include any other overrides
     ...overrides,

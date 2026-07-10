@@ -8,25 +8,24 @@ VoltAgent allows you to extend the capabilities of your AI agents by providing t
 
 ## Defining a Single Tool
 
-The most basic way to define a tool is using the `createTool` helper function (or instantiating the `Tool` class directly).
+For new VoltAgent 3.x code, define custom tools with the AI SDK-style `tool()` helper and pass them to agents as a `ToolSet` object. The tool name comes from the object key.
 
 A tool requires:
 
-- `name`: A unique name for the tool (used by the LLM to call it).
 - `description`: A clear description of what the tool does (used by the LLM to decide when to use it).
-- `parameters`: A Zod schema defining the input arguments the tool expects.
+- `inputSchema`: A Zod schema defining the input arguments the tool expects.
 - `execute`: An asynchronous function that contains the tool's logic, taking the validated arguments as input.
 - `outputSchema` (optional): A Zod schema defining the expected output format. When provided, the tool's output will be validated against this schema.
+- `voltagent` (optional): VoltAgent-only metadata such as tags, hooks, and static approval metadata.
 
 ```typescript
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Define a simple weather tool
-const getWeatherTool = createTool({
-  name: "get_weather",
+const getWeatherTool = tool({
   description: "Fetches the current weather for a given location.",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city and state, e.g., San Francisco, CA"),
   }),
   execute: async ({ location }) => {
@@ -43,47 +42,46 @@ const agent = new Agent({
   name: "WeatherAgent",
   instructions: "An agent that can fetch weather information.",
   model: "openai/gpt-4o-mini",
-  tools: [getWeatherTool], // Add the tool to the agent
+  tools: {
+    get_weather: getWeatherTool,
+  },
 });
 
 // Now the agent can use the 'get_weather' tool when asked about weather.
 ```
 
-## Accessing Operation Context in Tools
+## Accessing Tool Context
 
-Tools can access operation metadata, user context, and control mechanisms through the second parameter:
+The `execute` function receives AI SDK tool execution options such as `toolCallId`, `messages`, and `abortSignal`. VoltAgent lifecycle context is available through `voltagent.hooks`.
 
 ```typescript
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-// Tool that uses operation context
-const contextAwareWeatherTool = createTool({
-  name: "get_weather",
+// Tool that observes VoltAgent lifecycle context
+const contextAwareWeatherTool = tool({
   description: "Fetches weather with user preferences",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city name"),
   }),
   execute: async ({ location }, options) => {
-    // Access user-defined context
-    const units = options?.context?.get("preferredUnits") || "celsius";
-    const userId = options?.userId;
-
-    // Use operation-scoped logger
-    options?.logger?.info(`Fetching weather for ${location} in ${units}`);
-
-    // Check abort signal
-    if (options?.abortSignal?.aborted) {
+    if (options.abortSignal?.aborted) {
       throw new Error("Request was cancelled");
     }
 
-    // Call weather API with user preferences
-    const response = await fetch(
-      `https://api.weather.com/current?city=${location}&units=${units}`,
-      { signal: options?.abortSignal }
-    );
+    const response = await fetch(`https://api.weather.com/current?city=${location}`, {
+      signal: options.abortSignal,
+    });
 
     return await response.json();
+  },
+  voltagent: {
+    hooks: {
+      onStart: ({ args, options }) => {
+        const units = options?.context?.get("preferredUnits") || "celsius";
+        options?.logger?.info(`Fetching weather for ${args.location} in ${units}`);
+      },
+    },
   },
 });
 
@@ -95,24 +93,27 @@ const agent = new Agent({
   name: "WeatherAgent",
   instructions: "An agent that respects user preferences",
   model: "openai/gpt-4o-mini",
-  tools: [contextAwareWeatherTool],
+  tools: {
+    get_weather: contextAwareWeatherTool,
+  },
 });
 
 const response = await agent.generateText("What's the weather in Paris?", {
-  userId: "user123",
+  memory: {
+    userId: "user123",
+  },
   context,
 });
 ```
 
-The `options` parameter includes:
+In `voltagent.hooks`, the `options` parameter includes:
 
 - **Operation metadata**: `operationId`, `userId`, `conversationId`
 - **User context**: `context` (Map for custom data)
-- **Control mechanisms**: `abortController`, `abortSignal`
 - **Logging**: `logger` (operation-scoped logger)
-- **AI SDK data**: `toolCallId`, `messages`
+- **Tool context**: `toolContext.callId`, `toolContext.messages`, `toolContext.abortSignal`
 
-For more details, see the [Tools documentation](/docs/agents/tools#accessing-operation-context).
+For more details, see the [Tools documentation](/docs/agents/tools#accessing-tool-context).
 
 ## Tool Output Schema Validation
 
@@ -127,7 +128,7 @@ VoltAgent supports optional output schema validation for tools. This feature ens
 ### Example with Output Schema
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Define the output schema
@@ -144,10 +145,9 @@ const weatherOutputSchema = z.object({
 });
 
 // Create a tool with output validation
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get current weather with forecast",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City name"),
   }),
   outputSchema: weatherOutputSchema, // Optional output schema
@@ -195,18 +195,22 @@ const weatherTool = createTool({
 
 Often, several tools work together logically. For instance, tools for step-by-step reasoning (`think`, `analyze`) or a set of tools interacting with the same API. For these scenarios, VoltAgent provides **Toolkits**.
 
+For new standalone agent tools, prefer `tool()` and a ToolSet object as shown above. The current toolkit helper still accepts class-style tool instances for compatibility; use the toolkit examples below only when you need toolkit-level instructions today.
+
 A `Toolkit` allows you to:
 
 1.  **Group related tools:** Keep your tool management organized.
 2.  **Define shared instructions:** Provide common guidance to the LLM on how to use all tools within the toolkit.
 3.  **Control instruction injection:** Decide if the toolkit's shared instructions should be automatically added to the agent's system prompt.
 
-### Defining a Toolkit
+### Defining a Toolkit with Compatibility Tools
+
+`createToolkit` currently groups named class-style tools. This keeps existing toolkit behavior working while VoltAgent moves standalone tools to the AI SDK-style `tool()` helper.
 
 A `Toolkit` is an object with the following structure:
 
 ```typescript
-import { createTool, createToolkit, type Tool, type Toolkit } from "@voltagent/core";
+import { createTool, createToolkit } from "@voltagent/core";
 
 const myCalculatorToolkit = createToolkit({
   name: "calculator_toolkit",
@@ -231,11 +235,11 @@ const myCalculatorToolkit = createToolkit({
 
 ### Adding Tools and Toolkits to an Agent
 
-The `tools` option in the `Agent` constructor now accepts an array containing both individual `Tool` objects and `Toolkit` objects. The `ToolManager` handles both seamlessly.
+The `tools` option in the `Agent` constructor accepts a ToolSet object for AI SDK-style tools, or an array containing class-style tools, provider-defined tools, and `Toolkit` objects. Use a ToolSet object for new standalone tools; use arrays when you need toolkits.
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, createTool, createToolkit, type Toolkit } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
 // ... import other tools and toolkits ...
 
 const agent = new Agent({

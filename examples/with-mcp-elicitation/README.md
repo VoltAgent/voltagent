@@ -4,7 +4,7 @@ This example shows how to handle MCP `elicitation/create` requests from a VoltAg
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - OpenAI API key
 
 ## Setup

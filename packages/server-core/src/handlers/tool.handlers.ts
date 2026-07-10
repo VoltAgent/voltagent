@@ -1,4 +1,10 @@
-import { type Tool, zodSchemaToJsonUI } from "@voltagent/core";
+import {
+  type NamedAiSdkTool,
+  type ProviderTool,
+  type Tool,
+  getVoltAgentToolMetadata,
+  zodSchemaToJsonUI,
+} from "@voltagent/core";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse } from "../types";
@@ -6,9 +12,12 @@ import type { ApiResponse } from "../types";
 type ToolMetadata = {
   id?: string;
   name: string;
+  displayName?: string;
+  purpose?: string;
   description?: string;
   parameters?: any;
   status?: string;
+  metadata?: Record<string, unknown>;
   agents?: Array<{
     id: string;
     name?: string;
@@ -16,16 +25,19 @@ type ToolMetadata = {
   tags?: string[];
 };
 
+type ToolAgentEntry = NonNullable<ToolMetadata["agents"]>[number];
+type ListableTool = Tool | NamedAiSdkTool | ProviderTool;
+
 type AgentWithTools = {
   id: string;
   name?: string;
-  getTools: () => Tool[];
+  getTools: () => ListableTool[];
 };
 
 function findTool(
   deps: ServerProviderDeps,
   toolName: string,
-): { tool: Tool; agent: AgentWithTools } | undefined {
+): { tool: ListableTool; agent: AgentWithTools } | undefined {
   const agents = deps.agentRegistry.getAllAgents();
 
   for (const agent of agents) {
@@ -62,17 +74,133 @@ const isZodLikeSchema = (
   );
 
 const extractToolTags = (tool: unknown): string[] | undefined => {
-  const candidate = tool as { tags?: unknown };
-  if (!candidate || !Array.isArray(candidate.tags)) {
+  const metadata = getVoltAgentToolMetadata(tool);
+  const rawTags = Array.isArray(metadata?.tags)
+    ? metadata.tags
+    : (tool as { tags?: unknown } | undefined)?.tags;
+  if (!Array.isArray(rawTags)) {
     return undefined;
   }
 
-  const normalized = candidate.tags
+  const normalized = rawTags
     .filter((tag): tag is string => typeof tag === "string")
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
   return normalized.length > 0 ? normalized : undefined;
+};
+
+const getMetadataString = (value: unknown): string | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const getExistingVoltAgentMetadata = (tool: unknown): Record<string, unknown> => {
+  const existingMetadata =
+    tool && typeof tool === "object"
+      ? (tool as { metadata?: { voltagent?: unknown } }).metadata
+      : undefined;
+  const existingVoltAgentMetadata = existingMetadata?.voltagent;
+  return existingVoltAgentMetadata && typeof existingVoltAgentMetadata === "object"
+    ? (existingVoltAgentMetadata as Record<string, unknown>)
+    : {};
+};
+
+const createToolMetadataPayload = (tool: unknown): Record<string, unknown> | undefined => {
+  const metadata = getVoltAgentToolMetadata(tool);
+  const displayName = getMetadataString(metadata?.name);
+  const purpose = getMetadataString(metadata?.purpose);
+  const tags = extractToolTags(tool);
+  const userMetadata =
+    metadata?.metadata && typeof metadata.metadata === "object" ? metadata.metadata : undefined;
+  const api = metadata?.api && typeof metadata.api === "object" ? metadata.api : undefined;
+  const voltagent = {
+    ...getExistingVoltAgentMetadata(tool),
+    ...(displayName ? { name: displayName } : {}),
+    ...(purpose ? { purpose } : {}),
+    ...(tags ? { tags } : {}),
+    ...(userMetadata ? { metadata: userMetadata } : {}),
+    ...(api ? { api } : {}),
+  };
+
+  if (Object.keys(voltagent).length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...((tool as { metadata?: Record<string, unknown> } | undefined)?.metadata ?? {}),
+    voltagent,
+  };
+};
+
+const mergeToolMetadata = (
+  existing: ToolMetadata,
+  update: {
+    agent: ToolAgentEntry;
+    displayName?: string;
+    purpose?: string;
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  },
+): void => {
+  const alreadyAdded = existing.agents?.some((agent) => agent.id === update.agent.id);
+  if (!alreadyAdded) {
+    existing.agents = [...(existing.agents ?? []), update.agent];
+  }
+
+  if (update.tags && update.tags.length > 0) {
+    const merged = new Set([...(existing.tags ?? []), ...update.tags]);
+    existing.tags = Array.from(merged);
+  }
+
+  existing.displayName ??= update.displayName;
+  existing.purpose ??= update.purpose;
+  existing.metadata ??= update.metadata;
+};
+
+const createToolListEntry = (
+  tool: ListableTool,
+  agent: ToolAgentEntry,
+  parameters: unknown,
+): ToolMetadata => {
+  const tags = extractToolTags(tool);
+  const metadata = getVoltAgentToolMetadata(tool);
+  const displayName = getMetadataString(metadata?.name);
+  const purpose = getMetadataString(metadata?.purpose);
+  const toolMetadata = createToolMetadataPayload(tool);
+
+  return {
+    id: tool.id,
+    name: tool.name,
+    ...(displayName ? { displayName } : {}),
+    ...(purpose ? { purpose } : {}),
+    description: tool.description,
+    parameters,
+    status: "ready",
+    ...(toolMetadata ? { metadata: toolMetadata } : {}),
+    agents: [agent],
+    tags,
+  };
+};
+
+const getToolParameters = (tool: ListableTool): unknown => {
+  return "parameters" in tool ? tool.parameters : undefined;
+};
+
+const getToolExecute = (
+  tool: ListableTool,
+):
+  | ((input: unknown, options: Record<string, unknown>) => Promise<unknown> | unknown)
+  | undefined => {
+  return "execute" in tool && typeof tool.execute === "function"
+    ? (tool.execute as (
+        input: unknown,
+        options: Record<string, unknown>,
+      ) => Promise<unknown> | unknown)
+    : undefined;
 };
 
 export async function handleListTools(
@@ -88,39 +216,30 @@ export async function handleListTools(
 
       for (const tool of agentTools) {
         // Only expose tools that can run server-side
-        if (!tool?.execute) {
+        if (!getToolExecute(tool)) {
           continue;
         }
 
+        const toolParameters = getToolParameters(tool);
         const parameters =
-          tool.parameters && typeof tool.parameters === "object"
-            ? zodSchemaToJsonUI(tool.parameters)
+          toolParameters && typeof toolParameters === "object"
+            ? zodSchemaToJsonUI(toolParameters)
             : undefined;
-
-        const tags = extractToolTags(tool);
 
         const existing = toolsByName.get(tool.name);
         const agentEntry = { id: agent.id, name: agent.name };
 
         if (existing) {
-          const alreadyAdded = existing.agents?.some((a) => a.id === agentEntry.id);
-          if (!alreadyAdded) {
-            existing.agents = [...(existing.agents ?? []), agentEntry];
-          }
-          if (tags && tags.length > 0) {
-            const merged = new Set([...(existing.tags ?? []), ...tags]);
-            existing.tags = Array.from(merged);
-          }
-        } else {
-          toolsByName.set(tool.name, {
-            id: tool.id,
-            name: tool.name,
-            description: tool.description,
-            parameters,
-            status: "ready",
-            agents: [agentEntry],
-            tags,
+          const metadata = getVoltAgentToolMetadata(tool);
+          mergeToolMetadata(existing, {
+            agent: agentEntry,
+            displayName: getMetadataString(metadata?.name),
+            purpose: getMetadataString(metadata?.purpose),
+            metadata: createToolMetadataPayload(tool),
+            tags: extractToolTags(tool),
           });
+        } else {
+          toolsByName.set(tool.name, createToolListEntry(tool, agentEntry, parameters));
         }
       }
     }
@@ -164,7 +283,8 @@ export async function handleExecuteTool(
 
   const { tool, agent } = lookup;
 
-  if (!tool.execute) {
+  const execute = getToolExecute(tool);
+  if (!execute) {
     return {
       success: false,
       error: `Tool ${toolName} cannot be executed on the server`,
@@ -174,12 +294,14 @@ export async function handleExecuteTool(
 
   // Validate input using Zod if available
   let parsedInput = input;
-  if (tool.parameters && isZodLikeSchema(tool.parameters)) {
-    const parsed = tool.parameters.safeParse(input ?? {});
+  const toolParameters = getToolParameters(tool);
+  if (toolParameters && isZodLikeSchema(toolParameters)) {
+    const parsed = toolParameters.safeParse(input ?? {});
     if (!parsed.success) {
+      const parseError = parsed.error as { format?: () => unknown; issues?: unknown };
       return {
         success: false,
-        error: `Invalid tool input: ${safeStringify(parsed.error.format ? parsed.error.format() : (parsed.error.issues ?? parsed.error))}`,
+        error: `Invalid tool input: ${safeStringify(parseError.format ? parseError.format() : (parseError.issues ?? parseError))}`,
         httpStatus: 400,
       };
     }
@@ -197,7 +319,7 @@ export async function handleExecuteTool(
       body?.conversationId;
 
     // Build a minimal execution context for tools
-    const result = await tool.execute(parsedInput, {
+    const result = await execute(parsedInput, {
       userId,
       conversationId,
       context: contextMap,

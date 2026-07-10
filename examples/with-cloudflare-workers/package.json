@@ -3,11 +3,11 @@
   "description": "VoltAgent example for Cloudflare Workers deployment with in-memory storage",
   "version": "1.0.0",
   "dependencies": {
-    "@voltagent/core": "^2.9.0",
-    "@voltagent/serverless-hono": "^2.0.12",
-    "ai": "^6.0.0",
+    "@voltagent/core": "^3.0.0-next.1",
+    "@voltagent/serverless-hono": "^3.0.0-next.0",
+    "ai": "^7.0.0",
     "hono": "^4.7.7",
-    "zod": "^3.25.76"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250408.0",

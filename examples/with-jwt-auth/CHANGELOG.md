@@ -1,5 +1,15 @@
 # with-jwt-auth
 
+## 1.0.6-next.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @voltagent/core@3.0.0-next.0
+  - @voltagent/libsql@3.0.0-next.0
+  - @voltagent/logger@3.0.0-next.0
+  - @voltagent/server-hono@3.0.0-next.0
+
 ## 1.0.5
 
 ### Patch Changes

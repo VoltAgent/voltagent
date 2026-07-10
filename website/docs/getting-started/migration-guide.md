@@ -1,6 +1,640 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+# Migration guide: 2.x → 3.x
+
+VoltAgent 3.x aligns the framework with AI SDK v7. This is a major release, so the runtime boundary is intentionally stricter: Node.js 22 or later and ESM-only packages. The agent, memory, tool, workflow, guardrail, observability, server, MCP, A2A, AG-UI, and VoltOps features remain available, but some AI SDK-facing names and result fields changed.
+
+If you are still on 1.x, follow the **Migration guide: 1.x → 2.x** section first, then come back here.
+
+## What changed
+
+- Runtime: Node.js `>=22` is required.
+- Module format: VoltAgent 3.x is ESM-only. CommonJS `require("@voltagent/core")` is no longer supported.
+- AI SDK: `ai` moves to `^7`.
+- AI SDK provider packages need v7-compatible majors, for example `@ai-sdk/openai@^4`.
+- Zod: `zod` moves to `^4`. Zod 3 is no longer a supported peer dependency in VoltAgent 3.x.
+- AI SDK callbacks use `onEnd` and `onStepEnd`.
+- `stepCountIs` is now `isStepCount`.
+- `streamText` detailed events are exposed as `stream`. `fullStream` remains as a deprecated alias during the transition.
+- Structured output uses `output`, not `experimental_output`.
+- `generateObject` and `streamObject` are still available as deprecated compatibility wrappers. Prefer `generateText`/`streamText` with `Output.object`.
+
+## Step 1. Upgrade your runtime to Node.js 22
+
+Before installing VoltAgent 3.x, make sure local development, CI, and production all use Node.js 22 or later:
+
+```bash
+node --version
+```
+
+Update your application package metadata:
+
+```json
+{
+  "engines": {
+    "node": ">=22"
+  }
+}
+```
+
+If you cannot move off Node.js 20 yet, stay on VoltAgent 2.x until your runtime is ready.
+
+## Step 2. Move your app to ESM
+
+VoltAgent 3.x publishes ESM runtime entrypoints. Use ESM imports and mark your package as a module:
+
+```json
+{
+  "type": "module"
+}
+```
+
+Before:
+
+```js
+const { Agent } = require("@voltagent/core");
+const { openai } = require("@ai-sdk/openai");
+```
+
+After:
+
+```ts
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+```
+
+For TypeScript projects, use a module resolution mode that matches your toolchain. `NodeNext` and `Bundler` are both common choices:
+
+```json
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  }
+}
+```
+
+## Step 3. Update packages
+
+### 3.1 Update VoltAgent packages
+
+Use the Volt CLI if your project already has it:
+
+```bash
+npm run volt update
+```
+
+Or update the packages manually:
+
+```bash
+pnpm add @voltagent/core@latest @voltagent/server-hono@latest @voltagent/logger@latest
+```
+
+If you use memory/storage/server/protocol packages, update all `@voltagent/*` packages to the same major version.
+
+### 3.2 Update AI SDK packages
+
+Install AI SDK v7 and v7-compatible provider packages:
+
+```bash
+pnpm add ai@^7 @ai-sdk/openai@^4
+pnpm add @ai-sdk/provider@^4 @ai-sdk/provider-utils@^5
+pnpm add zod@^4
+```
+
+If you use AI SDK UI helpers:
+
+```bash
+pnpm add @ai-sdk/react@^4
+```
+
+Provider package majors vary by provider. Common upgrades:
+
+| Package                     | Use with AI SDK v7 |
+| --------------------------- | ------------------ |
+| `@ai-sdk/openai`            | `^4`               |
+| `@ai-sdk/anthropic`         | `^4`               |
+| `@ai-sdk/google`            | `^4`               |
+| `@ai-sdk/azure`             | `^4`               |
+| `@ai-sdk/groq`              | `^4`               |
+| `@ai-sdk/mistral`           | `^4`               |
+| `@ai-sdk/perplexity`        | `^4`               |
+| `@ai-sdk/openai-compatible` | `^3`               |
+| `@ai-sdk/amazon-bedrock`    | `^5`               |
+| `@ai-sdk/google-vertex`     | `^5`               |
+
+After changing dependencies, reinstall and refresh the lockfile:
+
+```bash
+pnpm install
+```
+
+### 3.3 Update Zod
+
+VoltAgent 3.x is Zod 4-only. Remove Zod 3 pins from your app and templates:
+
+```bash
+pnpm add zod@^4
+```
+
+If you have custom code that imports Zod 3-specific internals or `zod/v3`, update it to the public Zod 4 API before upgrading VoltAgent.
+
+## Step 4. Keep using the AI SDK-style agent call shape
+
+The object-style call shape introduced in 2.x remains the preferred API. Keep AI SDK generation settings at the top level and VoltAgent runtime options under `voltagent`:
+
+VoltAgent 3.x derives most public generation options from AI SDK v7 `generateText` and `streamText`, so AI SDK settings such as `timeout`, `headers`, `include`, `activeTools`, `toolOrder`, `experimental_download`, `onChunk`, and stream lifecycle callbacks can be used directly on the agent call.
+
+```ts
+const result = await agent.generateText({
+  prompt: "Summarize this ticket",
+  temperature: 0.2,
+  maxOutputTokens: 500,
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "ticket-456",
+    },
+    context: {
+      requestId: "req-789",
+    },
+  },
+});
+```
+
+The same shape works for `streamText`:
+
+```ts
+const result = await agent.streamText({
+  prompt: "Write a short release note",
+  timeout: {
+    totalMs: 30_000,
+    chunkMs: 5_000,
+  },
+  include: {
+    rawChunks: true,
+  },
+  onChunk: async ({ chunk }) => {
+    // Native AI SDK stream callback.
+  },
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "release-456",
+    },
+  },
+});
+```
+
+VoltAgent composes a small set of fields instead of passing them through unchanged: `model`, `prompt`/`messages`, `tools`, `abortSignal`, `maxRetries`, `onStepEnd`, `onEnd`/`onFinish`, and `onError`. You still pass the callbacks at the top level; VoltAgent invokes them after its memory, guardrail, hook, tracing, and recovery work has run.
+
+Top-level AI SDK `toolsContext` is passed through for native AI SDK tools that declare `contextSchema`. Use it for per-tool AI SDK execution context. Top-level AI SDK `runtimeContext`, `telemetry`, and `experimental_telemetry` are intentionally not supported on VoltAgent calls. Use `voltagent.context` for per-call application context and VoltAgent observability/OpenTelemetry configuration for telemetry.
+
+Legacy positional calls are still accepted:
+
+```ts
+const result = await agent.generateText("Summarize this ticket", {
+  memory: {
+    userId: "user-123",
+    conversationId: "ticket-456",
+  },
+});
+```
+
+For new code, prefer the object-style form because it matches AI SDK field names and keeps VoltAgent-specific runtime concerns explicit.
+
+## Step 5. Rename `stepCountIs` to `isStepCount`
+
+AI SDK v7 renamed `stepCountIs` to `isStepCount`. VoltAgent re-exports `isStepCount` for convenience.
+
+Before:
+
+```ts
+import { stepCountIs } from "ai";
+
+const result = await agent.generateText({
+  prompt: "Research and summarize",
+  stopWhen: stepCountIs(5),
+});
+```
+
+After:
+
+```ts
+import { isStepCount } from "@voltagent/core";
+
+const result = await agent.generateText({
+  prompt: "Research and summarize",
+  stopWhen: isStepCount(5),
+});
+```
+
+You can also import `isStepCount` directly from `ai`.
+
+## Step 6. Rename stream result access from `fullStream` to `stream`
+
+AI SDK v7 exposes detailed stream parts on `stream`. VoltAgent follows that name. `fullStream` remains available as a deprecated alias, but new code should use `stream`.
+
+Before:
+
+```ts
+const result = await agent.streamText("Write a changelog");
+
+for await (const part of result.fullStream) {
+  if (part.type === "text-delta") {
+    process.stdout.write(part.text);
+  }
+}
+```
+
+After:
+
+```ts
+const result = await agent.streamText("Write a changelog");
+
+for await (const part of result.stream) {
+  if (part.type === "text-delta") {
+    process.stdout.write(part.text);
+  }
+}
+```
+
+`textStream`, `toUIMessageStream`, `toUIMessageStreamResponse`, `pipeTextStreamToResponse`, and `toTextStreamResponse` remain available on stream results.
+
+## Step 7. Rename lifecycle callbacks
+
+AI SDK v7 uses `onEnd` and `onStepEnd`. Update callback names in per-call options and hooks.
+
+Before:
+
+```ts
+const result = await agent.streamText({
+  prompt: "Plan the task",
+  onFinish: async (event) => {
+    console.log(event.finishReason);
+  },
+  hooks: {
+    onStepFinish: async ({ step }) => {
+      console.log(step.finishReason);
+    },
+  },
+});
+```
+
+After:
+
+```ts
+const result = await agent.streamText({
+  prompt: "Plan the task",
+  onEnd: async (event) => {
+    console.log(event.finishReason);
+  },
+  hooks: {
+    onStepEnd: async ({ step }) => {
+      console.log(step.finishReason);
+    },
+  },
+});
+```
+
+Agent-level hooks use the same names:
+
+```ts
+const agent = new Agent({
+  name: "assistant",
+  model,
+  instructions: "You are a helpful assistant.",
+  hooks: {
+    onEnd: async ({ output, error }) => {
+      // Persist metadata, emit logs, or update your own analytics.
+    },
+    onStepEnd: async ({ step }) => {
+      // Inspect each AI SDK step.
+    },
+  },
+});
+```
+
+## Step 8. Use `instructions` for system prompts
+
+AI SDK v7 separates instructions from regular model messages. For VoltAgent agents, keep using the `instructions` field:
+
+```ts
+const agent = new Agent({
+  name: "support",
+  model,
+  instructions: "Answer support questions with short, direct replies.",
+});
+```
+
+For per-call overrides, prefer `instructions`:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Draft a reply",
+  instructions: "Write in a calm support tone.",
+});
+```
+
+VoltAgent normalizes older system-message input where possible, but new code should not add `{ role: "system" }` messages to the request message list.
+
+## Step 9. Update structured output
+
+Use AI SDK v7 `output` with `Output.object`. Do not use `experimental_output`.
+
+Before:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Create a user profile",
+  experimental_output: Output.object({ schema }),
+});
+```
+
+After:
+
+```ts
+import { Output } from "ai";
+
+const result = await agent.generateText({
+  prompt: "Create a user profile",
+  output: Output.object({ schema }),
+});
+
+console.log(result.output);
+```
+
+`generateObject` and `streamObject` still work as compatibility wrappers, but they are deprecated. Prefer:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Create a user profile",
+  output: Output.object({ schema }),
+});
+```
+
+For streaming structured output:
+
+```ts
+const result = await agent.streamText({
+  prompt: "Create a user profile",
+  output: Output.object({ schema }),
+});
+
+for await (const partial of result.partialOutputStream ?? []) {
+  console.log(partial);
+}
+```
+
+## Step 10. Prefer AI SDK-style tools for new custom tools
+
+VoltAgent 3.x accepts AI SDK-style `ToolSet` records directly on agents. For new code, prefer AI SDK `tool()` from `ai`. The tool name comes from the `tools` object key and the schema field is `inputSchema`.
+
+Before:
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get weather for a city",
+  parameters: z.object({
+    city: z.string(),
+  }),
+  execute: async ({ city }) => {
+    return { city, temperature: 72 };
+  },
+});
+```
+
+After:
+
+```ts
+import { tool } from "ai";
+import { Agent } from "@voltagent/core";
+import { z } from "zod";
+
+const agent = new Agent({
+  name: "assistant",
+  model,
+  instructions: "You are a helpful assistant.",
+  tools: {
+    get_weather: tool({
+      description: "Get weather for a city",
+      inputSchema: z.object({
+        city: z.string(),
+      }),
+      execute: async ({ city }) => {
+        return { city, temperature: 72 };
+      },
+    }),
+  },
+});
+```
+
+Native AI SDK tool features such as `contextSchema` and call-level `toolsContext` pass through unchanged:
+
+```ts
+import { tool } from "ai";
+
+const agent = new Agent({
+  name: "assistant",
+  model,
+  instructions: "You are a helpful assistant.",
+  tools: {
+    get_weather: tool({
+      description: "Get weather for a city",
+      inputSchema: z.object({
+        city: z.string(),
+      }),
+      contextSchema: z.object({
+        apiKey: z.string(),
+        defaultUnit: z.enum(["celsius", "fahrenheit"]),
+      }),
+      execute: async ({ city }, { context }) => {
+        return fetchWeather(city, {
+          apiKey: context.apiKey,
+          unit: context.defaultUnit,
+        });
+      },
+    }),
+  },
+});
+
+await agent.generateText({
+  prompt: "What is the weather in San Francisco?",
+  toolsContext: {
+    get_weather: {
+      apiKey: process.env.WEATHER_API_KEY!,
+      defaultUnit: "fahrenheit",
+    },
+  },
+});
+```
+
+VoltAgent-specific tool metadata is optional and additive. Use `withVoltAgentMetadata` to attach it to a raw AI SDK tool without changing the native tool definition or sending metadata to the model provider:
+
+```ts
+import { tool } from "ai";
+import { withVoltAgentMetadata } from "@voltagent/core";
+
+const refundCustomer = withVoltAgentMetadata(
+  tool({
+    description: "Refund a customer order",
+    inputSchema: z.object({
+      orderId: z.string(),
+      reason: z.string(),
+    }),
+    contextSchema: z.object({
+      actorId: z.string(),
+      permissions: z.array(z.string()),
+    }),
+    execute: async ({ orderId, reason }, { context }) => {
+      if (!context.permissions.includes("refund:write")) {
+        throw new Error("Not allowed to refund orders");
+      }
+
+      return issueRefund({
+        orderId,
+        reason,
+        actorId: context.actorId,
+      });
+    },
+  }),
+  {
+    name: "Refund Customer",
+    purpose: "Issue customer refunds",
+    tags: ["billing", "dangerous", "customer-support"],
+    metadata: {
+      owner: "payments-team",
+      riskLevel: "high",
+    },
+  }
+);
+```
+
+For new approval flows, prefer AI SDK v7's native call-level `toolApproval` option. It takes precedence over tool-level `needsApproval`:
+
+```ts
+import { tool } from "ai";
+
+const result = await agent.generateText({
+  prompt: "Delete the stale report",
+  tools: {
+    delete_file: tool({
+      description: "Delete a file",
+      inputSchema: z.object({
+        path: z.string(),
+      }),
+      execute: async ({ path }) => deleteFile(path),
+    }),
+  },
+  toolApproval: {
+    delete_file: "user-approval",
+  },
+});
+```
+
+`createTool` is now a legacy compatibility helper for existing class-style tools. New custom tools should use `tool()`. When migrating from `createTool` to `tool()`:
+
+- move `name` to the `tools` object key.
+- rename `parameters` to `inputSchema`.
+- move `tags`, `hooks`, and other VoltAgent-only metadata to `withVoltAgentMetadata`.
+- use VoltAgent metadata `name` only as display metadata. Telemetry and tool calls keep using the ToolSet key as canonical `tool.name`; metadata `name` is exposed as `tool.display_name`.
+- keep `execute`, `outputSchema`, `providerOptions`, and `toModelOutput` in the AI SDK tool definition.
+- keep AI SDK `contextSchema` in the tool definition and pass matching per-tool values through call-level `toolsContext`.
+- use `voltagent.context` on the agent call for general per-request application context, and VoltAgent observability/OpenTelemetry configuration for telemetry.
+
+Use call-level `toolApproval` when approval should be controlled per request, per user, or per runtime context. Use `voltagent.needsApproval` only for static tool metadata or compatibility with existing VoltAgent tool policies.
+
+If you type the AI SDK tool execution options, import the v7-compatible type from `@ai-sdk/provider-utils`:
+
+```ts
+import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
+```
+
+If you use `toModelOutput`, keep the AI SDK v7 argument object shape:
+
+```ts
+const screenshotTool = tool({
+  description: "Capture a screenshot",
+  inputSchema: z.object({
+    url: z.string(),
+  }),
+  execute: async ({ url }) => captureScreenshot(url),
+  toModelOutput: ({ output }) => ({
+    type: "content",
+    value: [
+      {
+        type: "media",
+        data: output.imageBase64,
+        mediaType: "image/png",
+      },
+    ],
+  }),
+});
+```
+
+`tool()` from `@voltagent/core` remains available as a convenience wrapper when you prefer inline `voltagent` metadata, but raw AI SDK tools are first-class and do not require a VoltAgent wrapper.
+
+Provider-defined AI SDK tools can also be passed in the same `tools` object. Provider-owned tools are still passed through to AI SDK unchanged; use `withVoltAgentMetadata` when VoltAgent should apply hooks, preserve tags, or attach approval/API metadata around a user-executed AI SDK tool.
+
+## Step 11. Update direct AI SDK tests and mocks
+
+If your tests import AI SDK mocks directly, update them to the v7 mock names and result shapes:
+
+```ts
+import { MockLanguageModelV3 } from "ai/test";
+```
+
+Also update assertions that read AI SDK stream results:
+
+```ts
+expect(result.stream).toBeDefined();
+```
+
+Use `result.output` for structured output assertions instead of `result.experimental_output`.
+
+## Step 12. Validate the migration
+
+Run your normal checks after the package and code changes:
+
+```bash
+pnpm lint
+pnpm build
+pnpm test
+```
+
+For VoltAgent monorepos, also validate package boundaries and docs/examples if applicable:
+
+```bash
+pnpm build:all
+pnpm test:all
+pnpm publint:all
+pnpm --dir website build
+```
+
+## Quick checklist
+
+- [ ] Node.js is `>=22` everywhere.
+- [ ] The app is ESM (`"type": "module"` or ESM output from your framework).
+- [ ] `ai` is `^7`.
+- [ ] AI SDK provider packages are v7-compatible.
+- [ ] `@ai-sdk/react` is `^4` if used.
+- [ ] `zod` is `^4`.
+- [ ] CommonJS `require()` imports are replaced with ESM imports.
+- [ ] `stepCountIs` is replaced with `isStepCount`.
+- [ ] `result.fullStream` is replaced with `result.stream` in new code.
+- [ ] `onFinish`/`onStepFinish` usages are replaced with `onEnd`/`onStepEnd`.
+- [ ] `experimental_output` is replaced with `output`.
+- [ ] New custom tools use AI SDK `tool()` + `inputSchema`; VoltAgent-only metadata uses `withVoltAgentMetadata` when needed.
+- [ ] New approval flows use call-level `toolApproval` where possible.
+- [ ] New structured output code uses `generateText`/`streamText` with `Output.object`.
+
+---
+
 # Migration guide: 1.x → 2.x
 
 VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. There are no breaking changes in VoltAgent APIs. If you only use VoltAgent APIs, follow the steps below. If your app calls AI SDK functions directly, also review the upstream AI SDK v6 migration guide.
@@ -67,9 +701,66 @@ Notes:
 - If you use `useChat` or other UI helpers, upgrade `@ai-sdk/react` to `^3`.
 - If you are in a monorepo, update all `@voltagent/*` packages to the same major version.
 
-## Step 2. Update custom tools (only if you use advanced tool hooks)
+## Step 2. Adopt object-style agent calls (recommended)
 
-### 2.1 Tool output mapping signature change
+Existing positional calls still work:
+
+```ts
+const result = await agent.generateText("Summarize this ticket", {
+  temperature: 0.2,
+  memory: {
+    userId: "user-123",
+    conversationId: "ticket-456",
+  },
+  context: {
+    requestId: "req-789",
+  },
+});
+```
+
+For new code, prefer the AI SDK-style object shape. Keep model generation settings at the top level and move VoltAgent runtime options under `voltagent`:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Summarize this ticket",
+  temperature: 0.2,
+  voltagent: {
+    memory: {
+      userId: "user-123",
+      conversationId: "ticket-456",
+    },
+    context: {
+      requestId: "req-789",
+    },
+  },
+});
+```
+
+The same shape works for `streamText`. REST requests use the same namespace inside `options.voltagent`:
+
+```json
+{
+  "input": "Summarize this ticket",
+  "options": {
+    "temperature": 0.2,
+    "voltagent": {
+      "memory": {
+        "userId": "user-123",
+        "conversationId": "ticket-456"
+      },
+      "context": {
+        "requestId": "req-789"
+      }
+    }
+  }
+}
+```
+
+Legacy top-level runtime options such as `memory`, `userId`, `conversationId`, `context`, `feedback`, `hooks`, `guardrails`, and `requestHeaders` are still accepted during the transition. If both legacy fields and `voltagent.*` are provided, `voltagent.*` takes precedence.
+
+## Step 3. Update custom tools (only if you use advanced tool hooks)
+
+### 3.1 Tool output mapping signature change
 
 If you use `toModelOutput`, it now receives `{ output }`:
 
@@ -77,7 +768,7 @@ If you use `toModelOutput`, it now receives `{ output }`:
 toModelOutput: ({ output }) => ({ type: "text", value: output }),
 ```
 
-### 2.2 Tool execution options type rename (if you type it)
+### 3.2 Tool execution options type rename (if you type it)
 
 If you type the second `execute` parameter, use:
 
@@ -85,7 +776,7 @@ If you type the second `execute` parameter, use:
 import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
 ```
 
-## Step 3. Structured output (if you use generateObject/streamObject)
+## Step 4. Structured output (if you use generateObject/streamObject)
 
 VoltAgent 2.x deprecates `generateObject` and `streamObject`. Migrate to `generateText`/`streamText` with `Output.object`.
 
@@ -122,14 +813,16 @@ const schema = z.object({
   age: z.number(),
 });
 
-const result = await agent.generateText("Create a profile", {
+const result = await agent.generateText({
+  prompt: "Create a profile",
   output: Output.object({ schema }),
 });
 console.log(result.output);
 ```
 
 ```ts
-const stream = await agent.streamText("Create a profile", {
+const stream = await agent.streamText({
+  prompt: "Create a profile",
   output: Output.object({ schema }),
 });
 
@@ -138,7 +831,7 @@ for await (const partial of stream.partialOutputStream ?? []) {
 }
 ```
 
-## Step 4. Tests (if you use AI SDK mocks directly)
+## Step 5. Tests (if you use AI SDK mocks directly)
 
 Update V2 mocks to V3 mocks:
 
@@ -569,7 +1262,7 @@ supervisorConfig: {
 If you want prefixed labels, use the stream metadata from ai-sdk and add it yourself:
 
 ```ts
-for await (const evt of response.fullStream!) {
+for await (const evt of response.stream) {
   if (evt.subAgentName && evt.type === "tool-call") {
     console.log(`[${evt.subAgentName}] Using: ${evt.toolName}`);
   }
@@ -581,10 +1274,10 @@ Example (streamText):
 ```ts
 const res = await agent.streamText("hi");
 
-// ai-sdk v5 fullStream
-if (res.fullStream) {
-  for await (const part of res.fullStream) {
-    if (part.type === "text-delta") process.stdout.write(part.textDelta);
+// ai-sdk v7 stream
+if (res.stream) {
+  for await (const part of res.stream) {
+    if (part.type === "text-delta") process.stdout.write(part.text);
     else if (part.type === "tool-call") console.log("tool:", part.toolName);
     else if (part.type === "tool-result") console.log("done:", part.toolName);
     else if (part.type === "finish") console.log("usage:", part.usage);
@@ -607,7 +1300,7 @@ console.log(out.context); // VoltAgent Map
 ### stopWhen override (advanced)
 
 - You can pass a custom ai-sdk `stopWhen` predicate in method options to control when to stop step execution.
-- This overrides VoltAgent's default `stepCountIs(maxSteps)` guard.
+- This overrides VoltAgent's default `isStepCount(maxSteps)` guard.
 - Be cautious: permissive predicates can lead to long-running or looping generations; overly strict ones may stop before tools complete.
 
 ### prepareStep callback (advanced)
@@ -810,7 +1503,7 @@ If you previously relied on core’s internal server exports (custom endpoints, 
 
 ### Convenience exports & logger
 
-- Convenience from `@voltagent/core`: `zodSchemaToJsonUI`, `stepCountIs`, `hasToolCall`, `convertUsage`.
+- Convenience from `@voltagent/core`: `zodSchemaToJsonUI`, `isStepCount`, `hasToolCall`, `convertUsage`.
 - Logger helpers: `LoggerProxy`, `getGlobalLogger`, `getGlobalLogBuffer`. Logger is SSR/Edge-friendly via `globalThis` in Next.js.
 
 ### Runtime & TypeScript

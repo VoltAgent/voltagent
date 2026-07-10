@@ -19,7 +19,7 @@ vi.mock("ai", () => ({
   generateObject: vi.fn(),
   streamObject: vi.fn(),
   convertToModelMessages: vi.fn((messages) => messages),
-  stepCountIs: vi.fn(() => vi.fn(() => false)),
+  isStepCount: vi.fn(() => vi.fn(() => false)),
   validateUIMessages: vi.fn(async ({ messages }) => messages),
 }));
 
@@ -270,6 +270,7 @@ describe("Agent Semantic Search", () => {
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
+        maxRetries: 0,
       });
 
       // Replace the memory manager's getMessages method
@@ -311,6 +312,7 @@ describe("Agent Semantic Search", () => {
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
+        maxRetries: 0,
       });
 
       const memoryManager = (agent as any).memoryManager;
@@ -345,6 +347,7 @@ describe("Agent Semantic Search", () => {
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
+        maxRetries: 0,
       });
 
       const memoryManager = (agent as any).memoryManager;

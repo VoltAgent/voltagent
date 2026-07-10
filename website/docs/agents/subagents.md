@@ -68,6 +68,10 @@ By default, sub-agents use the `streamText` method. You can specify different me
 See: [Advanced Configuration](#advanced-configuration)
 :::
 
+:::note Compatibility
+The AI SDK-first agent call shape does not change sub-agent orchestration. Supervisor routing, delegation metadata, streaming events, and bail behavior remain the same. For new structured sub-agent outputs, prefer `generateText` or `streamText` with `output: Output.object(...)`; `generateObject` and `streamObject` remain available as compatibility wrappers.
+:::
+
 ## Customizing Supervisor Behavior
 
 Supervisor agents use an automatically generated system message that includes guidelines for managing sub-agents. Customize this behavior using the `supervisorConfig` option.
@@ -244,7 +248,7 @@ supervisorConfig: {
 
 // Usage with custom error handling:
 const result = await supervisor.streamText("Process data");
-for await (const event of result.fullStream) {
+for await (const event of result.stream) {
   if (event.type === "error") {
     // Provide custom user-friendly error message
     console.log("We're having trouble processing your request. Please try again.");
@@ -311,7 +315,7 @@ the model provider or injected into the LLM messages.
 const result = await supervisorAgent.streamText("Create and edit content");
 
 // Process different event types
-for await (const event of result.fullStream) {
+for await (const event of result.stream) {
   if (event.type === "tool-call") {
     if (event.subAgentName) {
       console.log(`[${event.subAgentName}] Tool called: ${event.toolName}`);
@@ -336,7 +340,7 @@ Identify which events come from sub-agents by checking for `subAgentId` and `sub
 ```ts
 const result = await supervisorAgent.streamText("Create and edit content");
 
-for await (const event of result.fullStream) {
+for await (const event of result.stream) {
   if (event.subAgentId && event.subAgentName) {
     console.log(
       `Event from sub-agent ${event.subAgentName} (path: ${event.agentPath?.join(" > ")})`

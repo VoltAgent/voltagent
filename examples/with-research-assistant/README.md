@@ -64,7 +64,7 @@ This example demonstrates how to build an AI-powered research assistant using Vo
 
 ## Prerequisites
 
-- Node.js (v18 or later recommended)
+- Node.js 22 or later
 - pnpm (or npm/yarn)
 - An OpenAI API key (or setup for another supported LLM provider)
 - An Exa API key (sign up at [https://exa.ai/](https://exa.ai/))

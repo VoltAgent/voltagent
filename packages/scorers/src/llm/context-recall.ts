@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 const CONTEXT_RECALL_EXTRACT_PROMPT = `Given the context and ground truth (expected output), extract all factual statements from the ground truth.
 
@@ -134,8 +135,8 @@ export function createContextRecallScorer<
         contextText,
       ).replace("{{expected}}", payload.expected);
 
-      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA);
-      const statements = extractResponse.object.statements;
+      const extractResponse = await generateStructuredObject(agent, extractPrompt, EXTRACT_SCHEMA);
+      const statements = extractResponse.statements;
 
       if (statements.length === 0) {
         context.results.raw.contextRecallStatements = [];
@@ -152,11 +153,11 @@ export function createContextRecallScorer<
           contextText,
         ).replace("{{statement}}", statement);
 
-        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA);
+        const verifyResponse = await generateStructuredObject(agent, verifyPrompt, VERIFY_SCHEMA);
         verdicts.push({
           statement,
-          verdict: verifyResponse.object.verdict,
-          reasoning: verifyResponse.object.reasoning,
+          verdict: verifyResponse.verdict,
+          reasoning: verifyResponse.reasoning,
         });
       }
 

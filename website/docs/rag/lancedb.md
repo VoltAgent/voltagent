@@ -11,7 +11,7 @@ slug: /rag/lancedb
 
 Before starting, ensure you have:
 
-- Node.js 20+ installed
+- Node.js 22+ installed
 - OpenAI API key (for embeddings)
 - (Optional) LanceDB Cloud account if deploying to production
 

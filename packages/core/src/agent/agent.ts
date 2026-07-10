@@ -14,12 +14,13 @@ import { safeStringify } from "@voltagent/internal/utils";
 import type {
   StreamTextResult as AIStreamTextResult,
   Tool as AITool,
-  CallSettings,
   GenerateObjectResult,
   GenerateTextResult,
   LanguageModel,
   PrepareStepFunction,
   StepResult,
+  ToolApprovalConfiguration,
+  ToolApprovalStatus,
   ToolChoice,
   ToolSet,
   UIMessage,
@@ -28,9 +29,10 @@ import {
   type AsyncIterableStream,
   type FinishReason,
   type InferGenerateOutput,
+  type Instructions,
   type LanguageModelUsage,
   NoOutputGeneratedError,
-  type Output,
+  Output,
   type Warning,
   consumeStream,
   convertToModelMessages,
@@ -38,12 +40,10 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   generateId,
-  generateObject,
   generateText,
+  isStepCount,
   pipeTextStreamToResponse,
   pipeUIMessageStreamToResponse,
-  stepCountIs,
-  streamObject,
   streamText,
   validateUIMessages,
 } from "ai";
@@ -60,8 +60,17 @@ import { type ObservabilityFlushState, flushObservability } from "../observabili
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { ProviderTool, Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
+import type {
+  NamedAiSdkTool,
+  ProviderTool,
+  Tool,
+  ToolExecutionResult,
+  Toolkit,
+  VercelTool,
+  VoltAgentToolMetadata,
+} from "../tool";
 import { createTool } from "../tool";
+import { getRawAiSdkTool, isNamedAiSdkTool } from "../tool";
 import { isProviderTool } from "../tool/manager";
 import { ToolManager } from "../tool/manager";
 import { createEmbeddingToolSearchStrategy } from "../tool/routing";
@@ -137,6 +146,7 @@ import {
   AGENT_REF_CONTEXT_KEY,
   FORCED_TOOL_CHOICE_CONTEXT_KEY,
   SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY,
+  TOOL_APPROVAL_CONTEXT_KEY,
   TOOL_ROUTING_CONTEXT_KEY,
   TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY,
 } from "./context-keys";
@@ -202,6 +212,7 @@ import type {
   AgentModelValue,
   AgentOptions,
   AgentSummarizationOptions,
+  AgentToolInput,
   AgentToolRoutingState,
   ApiToolInfo,
   CommonResolvedRuntimeMemoryOptions,
@@ -216,6 +227,7 @@ import type {
   RuntimeMemoryEnvelope,
   SemanticMemoryOptions,
   SupervisorConfig,
+  VoltAgentRuntimeOptions,
 } from "./types";
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
@@ -260,12 +272,22 @@ const DEFAULT_MESSAGE_METADATA_PERSISTENCE_OPTIONS: ResolvedMessageMetadataPersi
 };
 
 type ResponseMessage = AssistantModelMessage | ToolModelMessage;
+type ValidationIssue = Parameters<typeof coerceStringifiedJsonToolArgs>[1][number];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   isRecord(value) && !Array.isArray(value);
+
+const getValidationIssues = (error: unknown): ValidationIssue[] => {
+  if (!isRecord(error)) {
+    return [];
+  }
+
+  const issues = error.issues ?? error.errors;
+  return Array.isArray(issues) ? (issues as ValidationIssue[]) : [];
+};
 
 const stringIncludesTemperature = (value: unknown): boolean =>
   typeof value === "string" && value.toLowerCase().includes("temperature");
@@ -693,23 +715,29 @@ function sanitizeConversationTitle(text: string, maxLength: number): string {
  */
 export type StreamTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  OUTPUT = unknown,
+  OUTPUT extends OutputSpec = OutputSpec,
 > = {
   // All methods from AIStreamTextResult
-  readonly text: AIStreamTextResult<TOOLS, any>["text"];
-  readonly textStream: AIStreamTextResult<TOOLS, any>["textStream"];
+  readonly text: AIStreamTextResult<TOOLS, any, OUTPUT>["text"];
+  readonly textStream: AIStreamTextResult<TOOLS, any, OUTPUT>["textStream"];
+  readonly stream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
+  /** @deprecated Use `stream` instead. */
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
-  readonly usage: AIStreamTextResult<TOOLS, any>["usage"];
-  readonly totalUsage: AIStreamTextResult<TOOLS, any>["totalUsage"];
-  readonly steps: AIStreamTextResult<TOOLS, any>["steps"];
-  readonly finishReason: AIStreamTextResult<TOOLS, any>["finishReason"];
+  readonly usage: AIStreamTextResult<TOOLS, any, OUTPUT>["usage"];
+  readonly totalUsage: AIStreamTextResult<TOOLS, any, OUTPUT>["totalUsage"];
+  readonly steps: AIStreamTextResult<TOOLS, any, OUTPUT>["steps"];
+  readonly finishReason: AIStreamTextResult<TOOLS, any, OUTPUT>["finishReason"];
   // Partial output stream for streaming structured objects
-  readonly partialOutputStream?: AIStreamTextResult<TOOLS, any>["partialOutputStream"];
-  toUIMessageStream: AIStreamTextResult<TOOLS, any>["toUIMessageStream"];
-  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, any>["toUIMessageStreamResponse"];
-  pipeUIMessageStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeUIMessageStreamToResponse"];
-  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeTextStreamToResponse"];
-  toTextStreamResponse: AIStreamTextResult<TOOLS, any>["toTextStreamResponse"];
+  readonly partialOutputStream?: AIStreamTextResult<TOOLS, any, OUTPUT>["partialOutputStream"];
+  toUIMessageStream: AIStreamTextResult<TOOLS, any, OUTPUT>["toUIMessageStream"];
+  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, any, OUTPUT>["toUIMessageStreamResponse"];
+  pipeUIMessageStreamToResponse: AIStreamTextResult<
+    TOOLS,
+    any,
+    OUTPUT
+  >["pipeUIMessageStreamToResponse"];
+  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, any, OUTPUT>["pipeTextStreamToResponse"];
+  toTextStreamResponse: AIStreamTextResult<TOOLS, any, OUTPUT>["toTextStreamResponse"];
   // Additional context field
   context: Map<string | symbol, unknown>;
   // Feedback metadata for the trace, if enabled
@@ -737,22 +765,20 @@ export interface StreamObjectResultWithContext<T> {
 /**
  * Extended GenerateTextResult that includes context
  */
-type BaseGenerateTextResult<TOOLS extends ToolSet = Record<string, any>> = Omit<
-  GenerateTextResult<TOOLS, any>,
-  "experimental_output" | "output"
-> & {
-  experimental_output: unknown;
+type BaseGenerateTextResult<
+  TOOLS extends ToolSet = Record<string, any>,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Omit<GenerateTextResult<TOOLS, any, OUTPUT>, "output"> & {
   output: unknown;
 };
 
 export interface GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT extends OutputSpec = OutputSpec,
-> extends BaseGenerateTextResult<TOOLS> {
+> extends BaseGenerateTextResult<TOOLS, OUTPUT> {
   // Additional context field
   context: Map<string | symbol, unknown>;
   // Typed structured output override if provided by callers
-  experimental_output: OutputValue<OUTPUT>;
   output: OutputValue<OUTPUT>;
   // Feedback metadata for the trace, if enabled
   feedback?: AgentFeedbackHandle | null;
@@ -777,7 +803,7 @@ function cloneGenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT extends OutputSpec = OutputSpec,
 >(
-  result: GenerateTextResult<TOOLS, OUTPUT>,
+  result: GenerateTextResult<TOOLS, any, OUTPUT>,
   overrides: Partial<
     Pick<
       GenerateTextResultWithContext<TOOLS, OUTPUT>,
@@ -807,10 +833,76 @@ function cloneGenerateTextResultWithContext<
   return clone;
 }
 
-type AITextCallOptions = Partial<CallSettings> & {
+type AIGenerateTextOptions = Parameters<typeof generateText>[0];
+type AIStreamTextOptions = Parameters<typeof streamText>[0];
+type AITextGenerationOptions = AIGenerateTextOptions & AIStreamTextOptions;
+type VoltAgentControlledAISDKOption =
+  | "model"
+  | "prompt"
+  | "messages"
+  | "tools"
+  | "output"
+  | "providerOptions"
+  | "abortSignal"
+  | "maxRetries"
+  | "runtimeContext"
+  | "toolsContext"
+  | "telemetry"
+  | "experimental_telemetry"
+  | "onStepEnd"
+  | "onStepFinish"
+  | "onEnd"
+  | "onFinish"
+  | "onError"
+  | "_internal";
+type AISDKPassthroughOptions = Partial<
+  Omit<AITextGenerationOptions, VoltAgentControlledAISDKOption>
+>;
+type AISDKManagedCallbacks = Pick<
+  Partial<AITextGenerationOptions>,
+  "onStepEnd" | "onStepFinish" | "onEnd" | "onFinish" | "onError"
+>;
+
+type AITextCallOptions = AISDKPassthroughOptions & {
+  instructions?: Instructions;
+  system?: Instructions;
+  stop?: string | string[];
   toolChoice?: ToolChoice<Record<string, unknown>>;
+  toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
+  experimental_toolApprovalSecret?: string | Uint8Array;
+  toolsContext?: Record<string, unknown>;
   prepareStep?: PrepareStepFunction<Record<string, AITool>>;
+  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
+  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
+  onEnd?: AISDKManagedCallbacks["onEnd"];
+  onFinish?: AISDKManagedCallbacks["onFinish"];
+  onError?: AISDKManagedCallbacks["onError"];
 };
+
+type VoltAgentGenerateTextCallOptions = Omit<AIGenerateTextOptions, "toolsContext"> & {
+  toolsContext?: Record<string, unknown>;
+};
+type VoltAgentStreamTextCallOptions = Omit<AIStreamTextOptions, "toolsContext"> & {
+  toolsContext?: Record<string, unknown>;
+};
+type VoltAgentGenerateTextReturn = ReturnType<typeof generateText<any, any, any>>;
+type VoltAgentStreamTextReturn = ReturnType<typeof streamText<any, any, any>>;
+
+function generateTextWithVoltAgentTools(
+  options: VoltAgentGenerateTextCallOptions,
+): VoltAgentGenerateTextReturn {
+  // VoltAgent resolves ToolSet entries dynamically at runtime, so TypeScript
+  // cannot infer which tools declare AI SDK `contextSchema`. The AI SDK runtime
+  // supports `toolsContext`; this boundary keeps the cast localized.
+  return generateText(options as unknown as AIGenerateTextOptions) as VoltAgentGenerateTextReturn;
+}
+
+function streamTextWithVoltAgentTools(
+  options: VoltAgentStreamTextCallOptions,
+): VoltAgentStreamTextReturn {
+  // See `generateTextWithVoltAgentTools` for why this cast is localized here.
+  return streamText(options as unknown as AIStreamTextOptions) as VoltAgentStreamTextReturn;
+}
 
 function applyForcedToolChoice(
   aiSDKOptions: AITextCallOptions,
@@ -873,8 +965,11 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * Extends AI SDK's CallSettings for full compatibility
  */
 export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions = ProviderOptions>
-  extends Partial<CallSettings> {
+  extends AISDKPassthroughOptions {
   // === VoltAgent Specific ===
+  // New namespace for VoltAgent runtime-specific options.
+  voltagent?: VoltAgentRuntimeOptions;
+
   // Context
   /**
    * Runtime memory envelope for per-call memory identity and behavior overrides.
@@ -904,6 +999,12 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   parentOperationContext?: OperationContext;
   parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
   inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
+  /**
+   * External abort signal for this operation. VoltAgent wires this into its
+   * operation context so memory, tools, guardrails, tracing, and the model call
+   * are cancelled together.
+   */
+  abortSignal?: AbortSignal;
 
   // Memory
   /**
@@ -927,17 +1028,29 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
 
   // Steps control
   maxSteps?: number;
+  /**
+   * VoltAgent retry/fallback count for model attempts.
+   *
+   * The underlying AI SDK call receives `maxRetries: 0`; VoltAgent owns retries
+   * so fallback models, tracing, memory persistence, and hooks stay consistent.
+   */
+  maxRetries?: number;
   feedback?: boolean | AgentFeedbackOptions;
   /**
+   * When true, avoids wiring the HTTP abort signal into streams so clients can resume later.
+   * Non-streaming calls ignore this option.
+   */
+  resumableStream?: boolean;
+  /**
    * Custom stop condition for ai-sdk step execution.
-   * When provided, this overrides VoltAgent's default `stepCountIs(maxSteps)`.
+   * When provided, this overrides VoltAgent's default `isStepCount(maxSteps)`.
    * Use with care: incorrect predicates can cause early termination or
    * unbounded loops depending on provider behavior and tool usage.
    */
   stopWhen?: StopWhen;
 
   // Tools (can provide additional tools dynamically)
-  tools?: (Tool<any, any> | Toolkit)[];
+  tools?: AgentToolInput;
   /**
    * Optional per-call tool routing override.
    */
@@ -961,10 +1074,9 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   // Structured output (for schema-guided generation)
   output?: OutputSpec;
 
-  // === Inherited from AI SDK CallSettings ===
-  // maxOutputTokens, temperature, topP, topK,
-  // presencePenalty, frequencyPenalty, stopSequences,
-  // seed, maxRetries, abortSignal, headers
+  // === AI SDK generation settings ===
+  // BaseGenerationOptions inherits AI SDK generateText/streamText settings.
+  // VoltAgent composes a small set of lifecycle and runtime options below.
   /**
    * Optional explicit stop sequences to pass through to the underlying provider.
    * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
@@ -977,11 +1089,97 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
   toolChoice?: ToolChoice<Record<string, unknown>>;
 
   /**
+   * AI SDK native tool approval configuration.
+   *
+   * This takes precedence over tool-level `needsApproval` during AI SDK tool
+   * execution. VoltAgent also reads it inside tool routing so hidden pool tools
+   * can follow the same approval policy when called through `callTool`.
+   */
+  toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
+
+  /**
+   * AI SDK per-tool execution context.
+   *
+   * Use this with native AI SDK tools that declare `contextSchema`. VoltAgent
+   * forwards the value to the underlying AI SDK call so tool `execute`
+   * handlers receive it as `options.context`.
+   */
+  toolsContext?: Record<string, unknown>;
+
+  /**
+   * Secret used by AI SDK to sign native tool approval requests.
+   */
+  experimental_toolApprovalSecret?: string | Uint8Array;
+
+  /**
    * Step preparation callback (ai-sdk `prepareStep`).
    * Called before each step to control tool availability, tool choice, etc.
    * Overrides the agent-level `prepareStep` if provided.
    */
   prepareStep?: PrepareStep;
+
+  /**
+   * AI SDK step callback. VoltAgent invokes this from its managed step handler
+   * after internal memory/tracing work, preserving native callback access while
+   * keeping framework behavior intact.
+   */
+  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
+  /**
+   * Deprecated AI SDK alias for `onStepEnd`.
+   */
+  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
+  /**
+   * AI SDK completion callback. VoltAgent invokes it after guardrails,
+   * middleware, memory persistence, and tracing have produced the final result.
+   */
+  onEnd?: AISDKManagedCallbacks["onEnd"];
+  /**
+   * Deprecated AI SDK alias for `onEnd`.
+   */
+  onFinish?: AISDKManagedCallbacks["onFinish"];
+  /**
+   * AI SDK stream error callback. VoltAgent invokes it from its managed stream
+   * error handler after framework recovery/error handling has run.
+   */
+  onError?: AISDKManagedCallbacks["onError"];
+}
+
+function normalizeInstructions(instructions: Instructions | undefined): SystemModelMessage[] {
+  if (!instructions) {
+    return [];
+  }
+  if (typeof instructions === "string") {
+    return [{ role: "system", content: instructions }];
+  }
+  return Array.isArray(instructions) ? instructions : [instructions];
+}
+
+function splitInstructionsFromMessages(
+  messages: ModelMessage[],
+  existingInstructions?: Instructions,
+): { instructions?: Instructions; messages: ModelMessage[] } {
+  const systemMessages: SystemModelMessage[] = [];
+  const modelMessages: ModelMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      systemMessages.push(message as SystemModelMessage);
+    } else {
+      modelMessages.push(message);
+    }
+  }
+
+  const mergedInstructions = [...normalizeInstructions(existingInstructions), ...systemMessages];
+
+  return {
+    instructions:
+      mergedInstructions.length === 0
+        ? undefined
+        : mergedInstructions.length === 1
+          ? mergedInstructions[0]
+          : mergedInstructions,
+    messages: modelMessages,
+  };
 }
 
 export type GenerateTextOptions<
@@ -993,18 +1191,245 @@ export type GenerateTextOptions<
 export type StreamTextOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
   BaseGenerationOptions<TProviderOptions> & {
     onFinish?: (result: any) => void | Promise<void>;
-    /**
-     * When true, avoids wiring the HTTP abort signal into the stream so clients can resume later.
-     * Use with a resumable stream store to prevent orphaned streams.
-     */
-    resumableStream?: boolean;
   };
+type TextGenerationInput = string | UIMessage[] | BaseMessage[];
+type TextGenerationRequest<TOptions> = (
+  | {
+      prompt: string;
+      messages?: never;
+    }
+  | {
+      messages: UIMessage[] | BaseMessage[];
+      prompt?: never;
+    }
+) &
+  TOptions & {
+    options?: TOptions;
+  };
+export type GenerateTextRequest<
+  OUTPUT extends OutputSpec = OutputSpec,
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+> = TextGenerationRequest<GenerateTextOptions<OUTPUT, TProviderOptions>>;
+export type StreamTextRequest<TProviderOptions extends ProviderOptions = ProviderOptions> =
+  TextGenerationRequest<StreamTextOptions<TProviderOptions>>;
 export type GenerateObjectOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
   BaseGenerationOptions<TProviderOptions>;
 export type StreamObjectOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
   BaseGenerationOptions<TProviderOptions> & {
     onFinish?: (result: any) => void | Promise<void>;
   };
+
+function normalizeVoltAgentRuntimeOptions<TOptions extends BaseGenerationOptions | undefined>(
+  options: TOptions,
+): TOptions {
+  if (!options || !("voltagent" in options)) {
+    return options;
+  }
+
+  const { voltagent, ...legacyOptions } = options;
+  if (!voltagent) {
+    return legacyOptions as TOptions;
+  }
+
+  const {
+    guardrails,
+    middleware,
+    inputGuardrails,
+    outputGuardrails,
+    inputMiddlewares,
+    outputMiddlewares,
+    maxMiddlewareRetries,
+    ...runtimeOptions
+  } = voltagent;
+  const normalizedOptions = {
+    ...legacyOptions,
+    ...runtimeOptions,
+    ...(guardrails?.input !== undefined || inputGuardrails !== undefined
+      ? { inputGuardrails: guardrails?.input ?? inputGuardrails }
+      : {}),
+    ...(guardrails?.output !== undefined || outputGuardrails !== undefined
+      ? { outputGuardrails: guardrails?.output ?? outputGuardrails }
+      : {}),
+    ...(middleware?.input !== undefined || inputMiddlewares !== undefined
+      ? { inputMiddlewares: middleware?.input ?? inputMiddlewares }
+      : {}),
+    ...(middleware?.output !== undefined || outputMiddlewares !== undefined
+      ? { outputMiddlewares: middleware?.output ?? outputMiddlewares }
+      : {}),
+    ...(middleware?.maxRetries !== undefined || maxMiddlewareRetries !== undefined
+      ? { maxMiddlewareRetries: middleware?.maxRetries ?? maxMiddlewareRetries }
+      : {}),
+  };
+
+  return normalizedOptions as TOptions;
+}
+
+type GenerationFinishCallback = (result: any) => void | PromiseLike<void>;
+type GenerationStepEndCallback = (event: StepResult<ToolSet>) => void | PromiseLike<void>;
+type GenerationErrorCallback = (event: { error: unknown }) => void | PromiseLike<void>;
+
+type GenerationOptionsWithManagedCallbacks<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+> = BaseGenerationOptions<TProviderOptions> & {
+  onFinish?: GenerationFinishCallback;
+  onEnd?: GenerationFinishCallback;
+  onStepEnd?: GenerationStepEndCallback;
+  onStepFinish?: GenerationStepEndCallback;
+  onError?: GenerationErrorCallback;
+};
+type GenerationOptionsWithBlockedAISDKFields<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+> = GenerationOptionsWithManagedCallbacks<TProviderOptions> & {
+  runtimeContext?: unknown;
+  telemetry?: unknown;
+  experimental_telemetry?: unknown;
+};
+
+function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = ProviderOptions>(
+  options?: GenerationOptionsWithManagedCallbacks<TProviderOptions>,
+): {
+  aiSDKOptions: AITextCallOptions;
+  output?: OutputSpec;
+  providerOptions?: TProviderOptions;
+  onFinish?: GenerationFinishCallback;
+  onStepEnd?: GenerationStepEndCallback;
+  onError?: GenerationErrorCallback;
+} {
+  const {
+    voltagent: _voltagent,
+    userId: _userId,
+    conversationId: _conversationId,
+    memory: _memory,
+    context: _context,
+    requestHeaders: _requestHeaders,
+    elicitation: _elicitation,
+    parentAgentId: _parentAgentId,
+    parentOperationContext: _parentOperationContext,
+    parentSpan: _parentSpan,
+    inheritParentSpan: _inheritParentSpan,
+    hooks: _hooks,
+    feedback: _feedback,
+    maxSteps: _maxSteps,
+    tools: _tools,
+    toolRouting: _toolRouting,
+    contextLimit: _contextLimit,
+    semanticMemory: _semanticMemory,
+    conversationPersistence: _conversationPersistence,
+    messageMetadataPersistence: _messageMetadataPersistence,
+    inputGuardrails: _inputGuardrails,
+    outputGuardrails: _outputGuardrails,
+    inputMiddlewares: _inputMiddlewares,
+    outputMiddlewares: _outputMiddlewares,
+    maxMiddlewareRetries: _maxMiddlewareRetries,
+    resumableStream: _resumableStream,
+    output,
+    providerOptions,
+    runtimeContext: _runtimeContext,
+    telemetry: _telemetry,
+    experimental_telemetry: _experimentalTelemetry,
+    onFinish,
+    onEnd,
+    onStepEnd,
+    onStepFinish,
+    onError,
+    ...aiSDKOptions
+  } = (options ?? {}) as GenerationOptionsWithBlockedAISDKFields<TProviderOptions>;
+
+  return {
+    aiSDKOptions: aiSDKOptions as AITextCallOptions,
+    output,
+    providerOptions,
+    onFinish: onEnd ?? onFinish,
+    onStepEnd: onStepEnd ?? onStepFinish,
+    onError,
+  };
+}
+
+function isTextGenerationRequest<TOptions>(
+  input: TextGenerationInput | TextGenerationRequest<TOptions>,
+): input is TextGenerationRequest<TOptions> {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    !Array.isArray(input) &&
+    ("prompt" in input || "messages" in input)
+  );
+}
+
+function normalizeTextGenerationArgs<TOptions extends object>(
+  inputOrRequest: TextGenerationInput | TextGenerationRequest<TOptions>,
+  options?: TOptions,
+): { input: TextGenerationInput; options?: TOptions } {
+  if (!isTextGenerationRequest(inputOrRequest)) {
+    return {
+      input: inputOrRequest,
+      options: options
+        ? (normalizeVoltAgentRuntimeOptions(
+            options as TOptions & BaseGenerationOptions,
+          ) as TOptions)
+        : undefined,
+    };
+  }
+
+  const {
+    prompt,
+    messages,
+    options: nestedOptions,
+    ...topLevelOptions
+  } = inputOrRequest as TextGenerationRequest<TOptions> & {
+    prompt?: string;
+    messages?: UIMessage[] | BaseMessage[];
+  };
+  const input = prompt ?? messages;
+
+  if (input === undefined) {
+    throw new Error("Agent text request must include prompt or messages");
+  }
+
+  const mergedOptions = {
+    ...(nestedOptions ?? {}),
+    ...topLevelOptions,
+    ...(options ?? {}),
+  } as TOptions;
+
+  return {
+    input,
+    options:
+      Object.keys(mergedOptions).length > 0
+        ? (normalizeVoltAgentRuntimeOptions(
+            mergedOptions as TOptions & BaseGenerationOptions,
+          ) as TOptions)
+        : undefined,
+  };
+}
+
+type LegacyToolInputItem = Tool<any, any> | Toolkit | VercelTool;
+type ManagedToolInfo = BaseTool | ProviderTool | NamedAiSdkTool;
+
+function splitAgentToolInput(input: AgentToolInput | undefined): {
+  items: LegacyToolInputItem[];
+  toolSet?: ToolSet;
+} {
+  if (!input) {
+    return { items: [] };
+  }
+
+  if (Array.isArray(input)) {
+    return { items: input };
+  }
+
+  return { items: [], toolSet: input };
+}
+
+function addAgentToolInputToManager(manager: ToolManager, input: AgentToolInput | undefined): void {
+  const { items, toolSet } = splitAgentToolInput(input);
+  if (items.length > 0) {
+    manager.addItems(items);
+  }
+  if (toolSet) {
+    manager.addToolSet(toolSet);
+  }
+}
 
 // ============================================================================
 // Agent Implementation
@@ -1016,7 +1441,7 @@ export class Agent {
   readonly purpose?: string;
   readonly instructions: InstructionsDynamicValue;
   readonly model: AgentModelValue;
-  readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  readonly dynamicTools?: DynamicValue<AgentToolInput>;
   hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
@@ -1168,8 +1593,9 @@ export class Agent {
     const workspaceToolkits = buildWorkspaceToolkits(this.workspace, options.workspaceToolkits);
 
     // Initialize tool manager with static tools
-    const staticTools = typeof options.tools === "function" ? [] : options.tools;
-    this.toolManager = new ToolManager(staticTools, this.logger);
+    const staticTools = typeof options.tools === "function" ? undefined : options.tools;
+    this.toolManager = new ToolManager([], this.logger);
+    addAgentToolInputToManager(this.toolManager, staticTools);
     if (options.toolkits) {
       this.toolManager.addItems(options.toolkits);
     }
@@ -1203,7 +1629,27 @@ export class Agent {
   >(
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions<OUTPUT, TProviderOptions>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>>;
+  async generateText<
+    OUTPUT extends OutputSpec = OutputSpec,
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+  >(
+    request: GenerateTextRequest<OUTPUT, TProviderOptions>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>>;
+  async generateText<
+    OUTPUT extends OutputSpec = OutputSpec,
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+  >(
+    inputOrRequest:
+      | string
+      | UIMessage[]
+      | BaseMessage[]
+      | GenerateTextRequest<OUTPUT, TProviderOptions>,
+    requestOptions?: GenerateTextOptions<OUTPUT, TProviderOptions>,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
+    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions);
+    const input = normalizedArgs.input;
+    const options = normalizedArgs.options;
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -1315,27 +1761,13 @@ export class Agent {
               tools: tools ? Object.keys(tools) : [],
             });
 
-            // Extract VoltAgent-specific options
             const {
-              userId,
-              conversationId,
-              memory: _memory,
-              context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
-              requestHeaders: _requestHeaders,
-              parentAgentId,
-              parentOperationContext,
-              hooks,
-              feedback: _feedback,
-              maxSteps: userMaxSteps,
-              tools: userTools,
-              contextLimit: _contextLimit,
-              semanticMemory: _semanticMemory,
-              conversationPersistence: _conversationPersistence,
-              messageMetadataPersistence: _messageMetadataPersistence,
+              aiSDKOptions,
               output,
               providerOptions,
-              ...aiSDKOptions
-            } = options || {};
+              onFinish: userOnFinish,
+              onStepEnd: userOnStepEnd,
+            } = extractAISDKCallOptions(options);
 
             // Apply agent-level prepareStep as default (per-call overrides)
             if (this.prepareStep && !aiSDKOptions.prepareStep) {
@@ -1346,6 +1778,15 @@ export class Agent {
               | ToolChoice<Record<string, unknown>>
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
+            const {
+              instructions: explicitInstructions,
+              system: explicitSystem,
+              ...aiSDKCallOptions
+            } = aiSDKOptions;
+            const promptOptions = splitInstructionsFromMessages(messages, [
+              ...normalizeInstructions(explicitInstructions),
+              ...normalizeInstructions(explicitSystem),
+            ]);
 
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
@@ -1383,16 +1824,16 @@ export class Agent {
 
                 try {
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
-                    generateText({
+                    generateTextWithVoltAgentTools({
                       model: resolvedModel,
-                      messages,
+                      ...promptOptions,
                       tools,
                       // Default values
                       temperature: this.temperature,
                       maxOutputTokens: this.maxOutputTokens,
-                      stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+                      stopWhen: options?.stopWhen ?? this.stopWhen ?? isStepCount(maxSteps),
                       // User overrides from AI SDK options
-                      ...aiSDKOptions,
+                      ...aiSDKCallOptions,
                       maxRetries: 0,
                       // Structured output if provided
                       output,
@@ -1400,7 +1841,7 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepFinish: this.createStepHandler(oc, options),
+                      onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
                     }),
                   );
 
@@ -1603,13 +2044,19 @@ export class Agent {
               });
             })();
 
-            return cloneGenerateTextResultWithContext(result, {
+            const finalResult = cloneGenerateTextResultWithContext(result, {
               text: finalText,
               context: oc.context,
               toolCalls: aggregatedToolCalls,
               toolResults: aggregatedToolResults,
               feedback: feedbackValue,
             });
+
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+
+            return finalResult;
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
@@ -1749,7 +2196,17 @@ export class Agent {
   async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions<TProviderOptions>,
+  ): Promise<StreamTextResultWithContext>;
+  async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
+    request: StreamTextRequest<TProviderOptions>,
+  ): Promise<StreamTextResultWithContext>;
+  async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
+    inputOrRequest: string | UIMessage[] | BaseMessage[] | StreamTextRequest<TProviderOptions>,
+    requestOptions?: StreamTextOptions<TProviderOptions>,
   ): Promise<StreamTextResultWithContext> {
+    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions);
+    const input = normalizedArgs.input;
+    const options = normalizedArgs.options;
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const feedbackOptions = this.resolveFeedbackOptions(options);
@@ -1983,28 +2440,14 @@ export class Agent {
         // Setup abort signal listener
         this.setupAbortSignalListener(oc);
 
-        // Extract VoltAgent-specific options
         const {
-          userId,
-          conversationId,
-          memory: _memory,
-          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
-          requestHeaders: _requestHeaders,
-          parentAgentId,
-          parentOperationContext,
-          hooks,
-          feedback: _feedback,
-          maxSteps: userMaxSteps,
-          tools: userTools,
-          onFinish: userOnFinish,
-          contextLimit: _contextLimit,
-          semanticMemory: _semanticMemory,
-          conversationPersistence: _conversationPersistence,
-          messageMetadataPersistence: _messageMetadataPersistence,
+          aiSDKOptions,
           output,
           providerOptions,
-          ...aiSDKOptions
-        } = options || {};
+          onFinish: userOnFinish,
+          onStepEnd: userOnStepEnd,
+          onError: userOnError,
+        } = extractAISDKCallOptions(options);
 
         // Apply agent-level prepareStep as default (per-call overrides)
         if (this.prepareStep && !aiSDKOptions.prepareStep) {
@@ -2015,6 +2458,15 @@ export class Agent {
           | ToolChoice<Record<string, unknown>>
           | undefined;
         applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
+        const {
+          instructions: explicitInstructions,
+          system: explicitSystem,
+          ...aiSDKCallOptions
+        } = aiSDKOptions;
+        const promptOptions = splitInstructionsFromMessages(messages, [
+          ...normalizeInstructions(explicitInstructions),
+          ...normalizeInstructions(explicitSystem),
+        ]);
 
         const responseMessageId = await this.ensureStreamingResponseMessageId(oc, buffer);
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
@@ -2058,16 +2510,16 @@ export class Agent {
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-            const streamResult = streamText({
+            const streamResult = streamTextWithVoltAgentTools({
               model: resolvedModel,
-              messages,
+              ...promptOptions,
               tools,
               // Default values
               temperature: this.temperature,
               maxOutputTokens: this.maxOutputTokens,
-              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              stopWhen: options?.stopWhen ?? this.stopWhen ?? isStepCount(maxSteps),
               // User overrides from AI SDK options
-              ...aiSDKOptions,
+              ...aiSDKCallOptions,
               maxRetries: 0,
               // Structured output if provided
               output,
@@ -2075,8 +2527,8 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepFinish: this.createStepHandler(oc, options),
-              onError: async (errorData) => {
+              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
+              onError: async (errorData: any) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
                 const actualError = (errorData as any)?.error || errorData;
@@ -2156,7 +2608,7 @@ export class Agent {
                 }
 
                 // Call error hooks if they exist
-                this.getMergedHooks(options).onError?.({
+                await this.getMergedHooks(options).onError?.({
                   agent: this,
                   error: actualError as Error,
                   context: oc,
@@ -2169,14 +2621,18 @@ export class Agent {
                 // The onError callback should return void for AI SDK compatibility
                 // Ensure spans are flushed on error
                 // Uses waitUntil if available to avoid blocking
-                await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
-                  "streamText:onError",
-                );
+                try {
+                  await userOnError?.(errorData as { error: unknown });
+                } finally {
+                  await flushObservability(
+                    this.getObservability(),
+                    oc.logger ?? this.logger,
+                    this.observabilityAuthWarningState,
+                    "streamText:onError",
+                  );
+                }
               },
-              onFinish: async (finalResult) => {
+              onEnd: async (finalResult: any) => {
                 latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
@@ -2381,7 +2837,7 @@ export class Agent {
               },
             });
 
-            const originalFullStream = streamResult.fullStream;
+            const originalFullStream = streamResult.stream;
             const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
             const streamResultForConsumption = this.withProbedFullStream(
               streamResult,
@@ -2390,7 +2846,7 @@ export class Agent {
             );
 
             if (probeResult.status === "error") {
-              this.discardStream(streamResultForConsumption.fullStream);
+              this.discardStream(streamResultForConsumption.stream);
               const fallbackEligible = this.shouldFallbackOnError(probeResult.error);
               if (!fallbackEligible || isLastModel) {
                 throw probeResult.error;
@@ -2500,7 +2956,7 @@ export class Agent {
           };
 
           const parentStream = applyResponseMessageIdToStream(
-            normalizeFinishUsageStream(wrapWithAbortHandling(result.fullStream)),
+            normalizeFinishUsageStream(wrapWithAbortHandling(result.stream)),
           );
 
           if (agent.subAgentManager.hasSubAgents()) {
@@ -2675,13 +3131,15 @@ export class Agent {
         ): ToUIMessageStreamReturn => {
           if (!guardrailPipeline) {
             return applySpeculativeInputGuardrailToUIStream({
-              baseStream: result.toUIMessageStream(streamOptions),
+              baseStream: result.toUIMessageStream(streamOptions as any),
               guardrail: speculativeInputGuardrail,
               responseMessageId: responseMessageId ?? undefined,
             });
           }
           return applySpeculativeInputGuardrailToUIStream({
-            baseStream: guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn,
+            baseStream: guardrailPipeline.createUIStream(
+              streamOptions as any,
+            ) as ToUIMessageStreamReturn,
             guardrail: speculativeInputGuardrail,
             responseMessageId: responseMessageId ?? undefined,
           });
@@ -2796,7 +3254,7 @@ export class Agent {
           const stream = toUIMessageStreamSanitized(streamOptions);
           const initOptions = init ? { ...init } : {};
           pipeUIMessageStreamToResponse({
-            response,
+            response: response as any,
             stream,
             ...initOptions,
           });
@@ -2809,6 +3267,9 @@ export class Agent {
           },
           get textStream() {
             return getGuardrailAwareTextStream();
+          },
+          get stream() {
+            return getGuardrailAwareFullStream();
           },
           get fullStream() {
             return getGuardrailAwareFullStream();
@@ -2836,13 +3297,13 @@ export class Agent {
           pipeTextStreamToResponse: (response, init) => {
             pipeTextStreamToResponse({
               response,
-              textStream: getGuardrailAwareTextStream(),
+              stream: getGuardrailAwareTextStream() as ReadableStream<string>,
               ...(init ?? {}),
             });
           },
           toTextStreamResponse: (init) => {
             return createTextStreamResponse({
-              textStream: getGuardrailAwareTextStream(),
+              stream: getGuardrailAwareTextStream() as ReadableStream<string>,
               ...(init ?? {}),
             });
           },
@@ -2879,8 +3340,9 @@ export class Agent {
   >(
     input: string | UIMessage[] | BaseMessage[],
     schema: T,
-    options?: GenerateObjectOptions<TProviderOptions>,
+    rawOptions?: GenerateObjectOptions<TProviderOptions>,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const options = normalizeVoltAgentRuntimeOptions(rawOptions);
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -2922,6 +3384,7 @@ export class Agent {
               options,
             );
             const schemaName = schema.description || "unknown";
+            const objectOutput = Output.object({ schema, description: schema.description });
 
             // Add model attributes and all options
             addModelAttributesToSpan(
@@ -2968,48 +3431,53 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Extract VoltAgent-specific options
             const {
-              userId,
-              conversationId,
-              memory: _memory,
-              context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
-              requestHeaders: _requestHeaders,
-              parentAgentId,
-              parentOperationContext,
-              hooks,
-              feedback: _feedback,
-              maxSteps: userMaxSteps,
-              tools: userTools,
-              contextLimit: _contextLimit,
-              semanticMemory: _semanticMemory,
-              conversationPersistence: _conversationPersistence,
-              messageMetadataPersistence: _messageMetadataPersistence,
-              output: _output,
+              aiSDKOptions,
               providerOptions,
-              ...aiSDKOptions
-            } = options || {};
+              onFinish: userOnFinish,
+              onStepEnd: userOnStepEnd,
+            } = extractAISDKCallOptions(options);
+            const {
+              instructions: explicitInstructions,
+              system: explicitSystem,
+              ...aiSDKCallOptions
+            } = aiSDKOptions;
+            const promptOptions = splitInstructionsFromMessages(messages, [
+              ...normalizeInstructions(explicitInstructions),
+              ...normalizeInstructions(explicitSystem),
+            ]);
 
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
               operation: "generateObject",
               options,
               run: async ({ model: resolvedModel }) => {
-                return await generateObject({
+                const response = await generateTextWithVoltAgentTools({
                   model: resolvedModel,
-                  messages,
-                  schema,
+                  ...promptOptions,
                   // Default values
                   maxOutputTokens: this.maxOutputTokens,
                   temperature: this.temperature,
                   // User overrides from AI SDK options
-                  ...aiSDKOptions,
+                  ...aiSDKCallOptions,
                   maxRetries: 0,
+                  // Structured output is routed through the AI SDK output API.
+                  output: objectOutput,
                   // Provider-specific options
                   providerOptions,
                   // VoltAgent controlled
                   abortSignal: oc.abortController.signal,
+                  onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
                 });
+
+                await this.ensureStructuredOutputGenerated({
+                  result: response,
+                  output: objectOutput,
+                  tools: {},
+                  maxSteps: 1,
+                });
+
+                return response;
               },
             });
 
@@ -3033,8 +3501,9 @@ export class Agent {
               (result as { providerMetadata?: unknown }).providerMetadata,
             );
             const usageInfo = convertUsage(usageForFinish);
+            const generatedObject = result.output as z.infer<T>;
             const middlewareObject = await runOutputMiddlewares<z.infer<T>>(
-              result.object,
+              generatedObject,
               oc,
               middlewareSet.output as NormalizedOutputMiddleware<z.infer<T>>[],
               "generateObject",
@@ -3154,11 +3623,19 @@ export class Agent {
             );
 
             // Return result with same context reference for consistency
-            return {
+            const finalResult = {
               ...result,
+              reasoning: result.reasoningText,
               object: finalObject,
+              toJsonResponse: (init?: ResponseInit) => Response.json(finalObject, init),
               context: oc.context,
             };
+
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+
+            return finalResult;
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
@@ -3221,8 +3698,9 @@ export class Agent {
   >(
     input: string | UIMessage[] | BaseMessage[],
     schema: T,
-    options?: StreamObjectOptions<TProviderOptions>,
+    rawOptions?: StreamObjectOptions<TProviderOptions>,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const options = normalizeVoltAgentRuntimeOptions(rawOptions);
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
@@ -3298,6 +3776,7 @@ export class Agent {
           options,
         );
         const schemaName = schema.description || "unknown";
+        const objectOutput = Output.object({ schema, description: schema.description });
 
         // Add model attributes and all options
         addModelAttributesToSpan(
@@ -3344,28 +3823,22 @@ export class Agent {
 
         // Event tracking now handled by OpenTelemetry spans
 
-        // Extract VoltAgent-specific options
         const {
-          userId,
-          conversationId,
-          memory: _memory,
-          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
-          requestHeaders: _requestHeaders,
-          parentAgentId,
-          parentOperationContext,
-          hooks,
-          feedback: _feedback,
-          maxSteps: userMaxSteps,
-          tools: userTools,
-          onFinish: userOnFinish,
-          contextLimit: _contextLimit,
-          semanticMemory: _semanticMemory,
-          conversationPersistence: _conversationPersistence,
-          messageMetadataPersistence: _messageMetadataPersistence,
-          output: _output,
+          aiSDKOptions,
           providerOptions,
-          ...aiSDKOptions
-        } = options || {};
+          onFinish: userOnFinish,
+          onStepEnd: userOnStepEnd,
+          onError: userOnError,
+        } = extractAISDKCallOptions(options);
+        const {
+          instructions: explicitInstructions,
+          system: explicitSystem,
+          ...aiSDKCallOptions
+        } = aiSDKOptions;
+        const promptOptions = splitInstructionsFromMessages(messages, [
+          ...normalizeInstructions(explicitInstructions),
+          ...normalizeInstructions(explicitSystem),
+        ]);
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
@@ -3386,21 +3859,22 @@ export class Agent {
             const attemptState: { hasOutput: boolean; lastError?: unknown } = {
               hasOutput: false,
             };
-            const streamResult = streamObject({
+            const streamResult = streamTextWithVoltAgentTools({
               model: resolvedModel,
-              messages,
-              schema,
+              ...promptOptions,
+              output: objectOutput,
               // Default values
               maxOutputTokens: this.maxOutputTokens,
               temperature: this.temperature,
               // User overrides from AI SDK options
-              ...aiSDKOptions,
+              ...aiSDKCallOptions,
               maxRetries: 0,
               // Provider-specific options
               providerOptions,
               // VoltAgent controlled
               abortSignal: oc.abortController.signal,
-              onError: async (errorData) => {
+              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
+              onError: async (errorData: any) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
                 const actualError = (errorData as any)?.error || errorData;
@@ -3462,7 +3936,7 @@ export class Agent {
                 }
 
                 // Call error hooks if they exist
-                this.getMergedHooks(options).onError?.({
+                await this.getMergedHooks(options).onError?.({
                   agent: this,
                   error: actualError as Error,
                   context: oc,
@@ -3476,14 +3950,18 @@ export class Agent {
                 // The onError callback should return void for AI SDK compatibility
                 // Ensure spans are flushed on error
                 // Uses waitUntil if available to avoid blocking
-                await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
-                  "streamObject:onError",
-                );
+                try {
+                  await userOnError?.(errorData as { error: unknown });
+                } finally {
+                  await flushObservability(
+                    this.getObservability(),
+                    oc.logger ?? this.logger,
+                    this.observabilityAuthWarningState,
+                    "streamObject:onError",
+                  );
+                }
               },
-              onFinish: async (finalResult: any) => {
+              onEnd: async (finalResult: any) => {
                 try {
                   const providerUsage = finalResult.usage
                     ? await Promise.resolve(finalResult.usage)
@@ -3499,10 +3977,10 @@ export class Agent {
                     finalResult.providerMetadata,
                   );
                   const usageInfo = convertUsage(usageForFinish);
-                  let finalObject = finalResult.object as z.infer<T>;
+                  let finalObject = (await streamResult.output) as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
                     finalObject = await executeOutputGuardrails({
-                      output: finalResult.object as z.infer<T>,
+                      output: finalObject,
                       operationContext: oc,
                       guardrails: guardrailSet.output,
                       operation: "streamObject",
@@ -3550,7 +4028,11 @@ export class Agent {
                   oc.traceContext.setOutput(finalObject);
 
                   // Set output in operation context
-                  oc.output = finalObject;
+                  oc.output =
+                    typeof finalObject === "string" ||
+                    (typeof finalObject === "object" && finalObject !== null)
+                      ? finalObject
+                      : safeStringify(finalObject);
 
                   await this.getMergedHooks(options).onEnd?.({
                     conversationId: oc.conversationId || "",
@@ -3570,11 +4052,10 @@ export class Agent {
                   });
 
                   if (userOnFinish) {
-                    const guardrailedResult =
-                      guardrailSet.output.length > 0
-                        ? { ...finalResult, object: finalObject }
-                        : finalResult;
-                    await userOnFinish(guardrailedResult);
+                    await userOnFinish({
+                      ...finalResult,
+                      object: finalObject,
+                    });
                   }
 
                   const tokenInfo = usageForFinish
@@ -3623,7 +4104,7 @@ export class Agent {
               },
             });
 
-            const originalFullStream = streamResult.fullStream;
+            const originalFullStream = streamResult.stream;
             const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
             const streamResultForConsumption = this.withProbedFullStream(
               streamResult,
@@ -3632,7 +4113,7 @@ export class Agent {
             );
 
             if (probeResult.status === "error") {
-              this.discardStream(streamResultForConsumption.fullStream);
+              this.discardStream(streamResultForConsumption.stream);
               const fallbackEligible = this.shouldFallbackOnError(probeResult.error);
               if (!fallbackEligible || isLastModel) {
                 throw probeResult.error;
@@ -3657,8 +4138,11 @@ export class Agent {
             resolveGuardrailObject = resolve;
             rejectGuardrailObject = reject;
           });
+          void Promise.resolve(result.output as PromiseLike<z.infer<T>>).catch((error) => {
+            rejectGuardrailObject?.(error);
+          });
         } else {
-          guardrailObjectPromise = result.object;
+          guardrailObjectPromise = Promise.resolve(result.output as PromiseLike<z.infer<T>>);
         }
 
         // Create a wrapper that includes context and delegates to the original result
@@ -3668,14 +4152,14 @@ export class Agent {
           object: guardrailObjectPromise,
           // Use getter for lazy access to avoid stream locking
           get partialObjectStream() {
-            return result.partialObjectStream;
+            return result.partialOutputStream;
           },
           get textStream() {
             return result.textStream;
           },
-          warnings: result.warnings,
-          usage: result.usage,
-          finishReason: result.finishReason,
+          warnings: Promise.resolve(result.warnings),
+          usage: Promise.resolve(result.usage),
+          finishReason: Promise.resolve(result.finishReason),
           // Delegate response conversion methods
           pipeTextStreamToResponse: (response, init) =>
             result.pipeTextStreamToResponse(response, init),
@@ -3800,11 +4284,13 @@ export class Agent {
     tools: Record<string, any>;
     maxSteps: number;
   }> {
-    const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
-
-    // Merge agent tools with option tools
-    const optionToolsArray = options?.tools || [];
-    const adHocTools = [...dynamicToolList, ...optionToolsArray];
+    const dynamicToolInput = await this.resolveValue(this.dynamicTools, oc);
+    const dynamicTools = splitAgentToolInput(dynamicToolInput);
+    const optionTools = splitAgentToolInput(options?.tools);
+    const adHocTools = [...dynamicTools.items, ...optionTools.items];
+    const adHocToolSets = [dynamicTools.toolSet, optionTools.toolSet].filter(
+      (toolSet): toolSet is ToolSet => Boolean(toolSet),
+    );
     const runtimeToolkits = this.extractToolkits(adHocTools);
 
     // Prepare messages (system + memory + input) as UIMessages
@@ -3835,7 +4321,7 @@ export class Agent {
     const modelName = this.getModelName();
 
     // Prepare tools with execution context
-    const tools = await this.prepareTools(adHocTools, oc, maxSteps, options);
+    const tools = await this.prepareTools(adHocTools, oc, maxSteps, options, adHocToolSets);
 
     return {
       messages,
@@ -3847,10 +4333,10 @@ export class Agent {
   }
 
   private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT extends OutputSpec>(
-    result: GenerateTextResult<TOOLS, OUTPUT>,
+    result: GenerateTextResult<TOOLS, any, OUTPUT>,
   ): {
-    toolCalls: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
-    toolResults: GenerateTextResult<TOOLS, OUTPUT>["toolResults"];
+    toolCalls: GenerateTextResult<TOOLS, any, OUTPUT>["toolCalls"];
+    toolResults: GenerateTextResult<TOOLS, any, OUTPUT>["toolResults"];
   } {
     const steps = result.steps ?? [];
 
@@ -3867,7 +4353,7 @@ export class Agent {
     TOOLS extends ToolSet,
     OUTPUT extends OutputSpec,
   >(params: {
-    result: GenerateTextResult<TOOLS, OUTPUT>;
+    result: GenerateTextResult<TOOLS, any, OUTPUT>;
     output: OUTPUT | undefined;
     tools: Record<string, any>;
     maxSteps: number;
@@ -4923,6 +5409,7 @@ export class Agent {
           messages.push({ role: "system", content: systemPrompt });
         }
         messages.push({ role: "user", content: limitedInput });
+        const promptOptions = splitInstructionsFromMessages(messages as ModelMessage[]);
         const modelName = this.getModelName(resolvedModel);
         const llmSpan = this.createLLMSpan(context, {
           operation: "generateTitle",
@@ -4942,7 +5429,7 @@ export class Agent {
           const result = await context.traceContext.withSpan(llmSpan, () =>
             generateText({
               model: resolvedModel,
-              messages,
+              ...promptOptions,
               ...(temperature !== undefined ? { temperature } : {}),
               maxOutputTokens,
               abortSignal: context.abortController.signal,
@@ -5625,7 +6112,7 @@ export class Agent {
     return content;
   }
 
-  private extractToolkits(items: (BaseTool | Toolkit)[]): Toolkit[] {
+  private extractToolkits(items: LegacyToolInputItem[]): Toolkit[] {
     return items.filter(
       (item): item is Toolkit =>
         typeof item === "object" &&
@@ -6231,17 +6718,17 @@ export class Agent {
       : { status: "error", error, stream: passthroughStream };
   }
 
-  private cloneResultWithFullStream<
+  private cloneResultWithStream<
     TResult extends {
-      fullStream: AsyncIterableStream<unknown>;
+      stream: AsyncIterableStream<unknown>;
     },
-  >(result: TResult, fullStream: TResult["fullStream"]): TResult {
+  >(result: TResult, stream: TResult["stream"]): TResult {
     const prototype = Object.getPrototypeOf(result);
     const clone = Object.create(prototype) as TResult;
     const descriptors = Object.getOwnPropertyDescriptors(result);
     Object.defineProperties(clone, descriptors);
-    Object.defineProperty(clone, "fullStream", {
-      value: fullStream,
+    Object.defineProperty(clone, "stream", {
+      value: stream,
       writable: true,
       configurable: true,
       enumerable: true,
@@ -6251,12 +6738,12 @@ export class Agent {
 
   private withProbedFullStream<
     TResult extends {
-      fullStream: AsyncIterableStream<unknown>;
+      stream: AsyncIterableStream<unknown>;
     },
   >(
     result: TResult,
-    originalFullStream: TResult["fullStream"],
-    probedFullStream: TResult["fullStream"],
+    originalFullStream: TResult["stream"],
+    probedFullStream: TResult["stream"],
   ): TResult {
     if (probedFullStream === originalFullStream) {
       return result;
@@ -6268,13 +6755,13 @@ export class Agent {
       return result;
     }
 
-    return this.cloneResultWithFullStream(result, probedFullStream);
+    return this.cloneResultWithStream(result, probedFullStream);
   }
 
   private usesGetterBasedTeeingFullStream(result: {
-    fullStream: AsyncIterableStream<unknown>;
+    stream: AsyncIterableStream<unknown>;
   }): boolean {
-    const descriptor = this.findPropertyDescriptor(result, "fullStream");
+    const descriptor = this.findPropertyDescriptor(result, "stream");
     return (
       typeof descriptor?.get === "function" &&
       typeof (result as { teeStream?: unknown }).teeStream === "function"
@@ -6329,16 +6816,21 @@ export class Agent {
    * Prepare tools with execution context
    */
   private async prepareTools(
-    adHocTools: (BaseTool | Toolkit)[],
+    adHocTools: LegacyToolInputItem[],
     oc: OperationContext,
     maxSteps: number,
     options?: BaseGenerationOptions,
+    adHocToolSets: ToolSet[] = [],
   ): Promise<Record<string, any>> {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const hooks = this.getMergedHooks(options);
     const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
+    const createAiSdkToolExecuteFunction = this.createAiSdkToolExecutionFactory(oc, hooks);
+    if (options?.toolApproval !== undefined) {
+      oc.systemContext.set(TOOL_APPROVAL_CONTEXT_KEY, options.toolApproval);
+    }
 
-    const runtimeTools: (BaseTool | Toolkit)[] = [...adHocTools];
+    const runtimeTools: LegacyToolInputItem[] = [...adHocTools];
 
     // Add delegate tool if we have subagents
     if (this.subAgentManager.hasSubAgents()) {
@@ -6359,10 +6851,18 @@ export class Agent {
     }
 
     const tempManager = new ToolManager(runtimeTools, this.logger);
+    for (const toolSet of adHocToolSets) {
+      tempManager.addToolSet(toolSet);
+    }
 
-    const preparedDynamicTools = tempManager.prepareToolsForExecution(createToolExecuteFunction);
-    const preparedStaticTools =
-      this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
+    const preparedDynamicTools = tempManager.prepareToolsForExecution(
+      createToolExecuteFunction,
+      createAiSdkToolExecuteFunction,
+    );
+    const preparedStaticTools = this.toolManager.prepareToolsForExecution(
+      createToolExecuteFunction,
+      createAiSdkToolExecuteFunction,
+    );
 
     const toolRouting = this.resolveToolRouting(options);
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
@@ -6411,7 +6911,7 @@ export class Agent {
     if (!parseResult.success) {
       const error = new Error(`Output validation failed: ${parseResult.error.message}`);
       Object.assign(error, {
-        validationErrors: parseResult.error.errors,
+        validationErrors: getValidationIssues(parseResult.error),
         actualOutput: result,
       });
 
@@ -6421,11 +6921,333 @@ export class Agent {
     return parseResult.data;
   }
 
+  private createAiSdkToolExecutionFactory(
+    oc: OperationContext,
+    hooks: AgentHooks,
+  ): (
+    name: string,
+    tool: AITool<any, any, any>,
+    metadata?: VoltAgentToolMetadata,
+  ) => (args: any, options?: ToolExecutionOptions<any>) => ToolExecutionResult<any> {
+    return (name, tool, metadata) => {
+      const execute = (tool as { execute?: unknown }).execute;
+      const toolDisplayName =
+        typeof metadata?.name === "string" && metadata.name.trim().length > 0
+          ? metadata.name.trim()
+          : undefined;
+      const toolPurpose =
+        typeof metadata?.purpose === "string" && metadata.purpose.trim().length > 0
+          ? metadata.purpose.trim()
+          : undefined;
+      const toolInfo = {
+        name,
+        displayName: toolDisplayName,
+        purpose: toolPurpose,
+        description:
+          typeof (tool as { description?: unknown }).description === "string"
+            ? (tool as { description: string }).description
+            : "",
+        parameters:
+          (tool as { inputSchema?: unknown; args?: unknown }).inputSchema ??
+          (tool as { args?: unknown }).args,
+        outputSchema: (tool as { outputSchema?: unknown }).outputSchema,
+        tags: metadata?.tags,
+        needsApproval:
+          metadata?.needsApproval ??
+          (tool as { needsApproval?: Tool<any, any>["needsApproval"] }).needsApproval,
+        providerOptions: (tool as { providerOptions?: unknown }).providerOptions,
+        toModelOutput: (tool as { toModelOutput?: unknown }).toModelOutput,
+        hooks: metadata?.hooks,
+        execute,
+        isClientSide: () => typeof execute !== "function",
+      } as unknown as Tool<any, any>;
+
+      return (args: any, options?: ToolExecutionOptions<any>) => {
+        const toolCallId = options?.toolCallId ?? randomUUID();
+        const messages = options?.messages ?? [];
+        const abortSignal = options?.abortSignal;
+        const executionOptions: ToolExecuteOptions = {
+          ...oc,
+          toolContext: {
+            name,
+            callId: toolCallId,
+            messages,
+            abortSignal,
+          },
+        };
+        executionOptions.hooks = hooks;
+
+        const toolTags = metadata?.tags;
+        const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${name}`, "tool", {
+          label: name,
+          attributes: {
+            "tool.name": name,
+            ...(toolDisplayName ? { "tool.display_name": toolDisplayName } : {}),
+            ...(toolPurpose ? { "tool.purpose": toolPurpose } : {}),
+            "tool.call.id": toolCallId,
+            "tool.description": toolInfo.description,
+            ...(toolTags && toolTags.length > 0 ? { "tool.tags": safeStringify(toolTags) } : {}),
+            "tool.parameters": safeStringify(toolInfo.parameters),
+            input: args ? safeStringify(args) : undefined,
+          },
+          kind: SpanKind.CLIENT,
+        });
+
+        oc.systemContext.set("agentId", this.id);
+        oc.systemContext.set("historyEntryId", oc.operationId);
+        executionOptions.parentToolSpan = toolSpan;
+
+        const hasOutputOverride = (
+          value: unknown,
+        ): value is {
+          output?: unknown;
+        } => {
+          if (!value || typeof value !== "object") {
+            return false;
+          }
+          return Object.prototype.hasOwnProperty.call(value, "output");
+        };
+
+        const runToolStartHooks = async () => {
+          await metadata?.hooks?.onStart?.({
+            tool: toolInfo,
+            args,
+            options: executionOptions,
+          });
+          await hooks.onToolStart?.({
+            agent: this,
+            tool: toolInfo,
+            context: oc,
+            args,
+            options: executionOptions,
+          });
+        };
+
+        let spanOutcome:
+          | { status: "completed"; output?: unknown }
+          | { status: "error"; error?: Error | any }
+          | null = null;
+
+        const finalizeToolSpan = () => {
+          const shouldEnd =
+            typeof toolSpan.isRecording === "function" ? toolSpan.isRecording() : true;
+          if (!shouldEnd) {
+            return;
+          }
+          const status = spanOutcome?.status ?? "completed";
+          oc.traceContext.endChildSpan(toolSpan, status, {
+            output: spanOutcome?.status === "completed" ? spanOutcome.output : undefined,
+            error: spanOutcome?.status === "error" ? spanOutcome.error : undefined,
+          });
+        };
+
+        const resolveToolEndOutput = async (currentOutput: any) => {
+          let output = currentOutput;
+          let overrideProvided = false;
+
+          const toolHookResult = await metadata?.hooks?.onEnd?.({
+            tool: toolInfo,
+            args,
+            output,
+            error: undefined,
+            options: executionOptions,
+          });
+          if (hasOutputOverride(toolHookResult)) {
+            output = toolHookResult.output;
+            overrideProvided = true;
+          }
+
+          const agentHookResult = await hooks.onToolEnd?.({
+            agent: this,
+            tool: toolInfo,
+            output,
+            error: undefined,
+            context: oc,
+            options: executionOptions,
+          });
+          if (hasOutputOverride(agentHookResult)) {
+            output = agentHookResult.output;
+            overrideProvided = true;
+          }
+
+          if (overrideProvided) {
+            output = await this.validateToolOutput(output, toolInfo);
+          }
+
+          return output;
+        };
+
+        const handleToolSuccess = async (_result: any, validatedResult: any) => {
+          const finalOutput = await resolveToolEndOutput(validatedResult);
+          spanOutcome = { status: "completed", output: finalOutput };
+          return finalOutput;
+        };
+
+        const handleToolError = async (errorValue: unknown) => {
+          const error = errorValue instanceof Error ? errorValue : new Error(String(errorValue));
+          const voltAgentError = createVoltAgentError(error, {
+            stage: "tool_execution",
+            toolError: {
+              toolCallId,
+              toolName: name,
+              toolExecutionError: error,
+              toolArguments: args,
+            },
+          });
+          let errorOutputOverride: unknown;
+          let hasErrorOutputOverride = false;
+
+          spanOutcome = { status: "error", error: voltAgentError };
+
+          await metadata?.hooks?.onEnd?.({
+            tool: toolInfo,
+            args,
+            output: undefined,
+            error: voltAgentError,
+            options: executionOptions,
+          });
+
+          const onToolErrorResult = await hooks.onToolError?.({
+            agent: this,
+            tool: toolInfo,
+            args,
+            error: voltAgentError,
+            originalError: error,
+            context: oc,
+            options: executionOptions,
+          });
+          if (hasOutputOverride(onToolErrorResult)) {
+            errorOutputOverride = onToolErrorResult.output;
+            hasErrorOutputOverride = true;
+          }
+
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool: toolInfo,
+            output: undefined,
+            error: voltAgentError,
+            context: oc,
+            options: executionOptions,
+          });
+
+          if (isToolDeniedError(errorValue)) {
+            oc.abortController.abort(errorValue);
+          }
+
+          if (hasErrorOutputOverride) {
+            return errorOutputOverride;
+          }
+
+          return buildToolErrorResult(error, toolCallId, name);
+        };
+
+        if (typeof execute !== "function") {
+          return oc.traceContext.withSpan(toolSpan, async () => {
+            try {
+              throw new Error(`Tool ${name} does not have "execute" method`);
+            } catch (e) {
+              return await handleToolError(e);
+            } finally {
+              finalizeToolSpan();
+            }
+          });
+        }
+
+        if (isAsyncGeneratorFunction(execute)) {
+          const agent = this;
+          return (async function* (): AsyncGenerator<any, void, void> {
+            try {
+              await agent.waitForSpeculativeInputGuardrail(oc);
+              await oc.traceContext.withSpan(toolSpan, async () => {
+                await runToolStartHooks();
+              });
+
+              const result = execute(args, options);
+              if (!isAsyncIterable(result)) {
+                const resolved = await result;
+                const validatedResult = await agent.validateToolOutput(resolved, toolInfo);
+                const finalOutput = await oc.traceContext.withSpan(toolSpan, async () => {
+                  return await handleToolSuccess(resolved, validatedResult);
+                });
+                yield finalOutput;
+                return;
+              }
+
+              const iterator = result[Symbol.asyncIterator]();
+              let pendingOutput: any = undefined;
+              let validatedResult: any = undefined;
+              let hasOutput = false;
+
+              while (true) {
+                const next = await oc.traceContext.withSpan(toolSpan, () => iterator.next());
+                if (next.done) {
+                  break;
+                }
+
+                if (hasOutput) {
+                  yield pendingOutput;
+                }
+
+                pendingOutput = next.value;
+                hasOutput = true;
+                validatedResult = await agent.validateToolOutput(pendingOutput, toolInfo);
+              }
+
+              if (!hasOutput) {
+                validatedResult = await agent.validateToolOutput(pendingOutput, toolInfo);
+              }
+
+              const finalOutput = await oc.traceContext.withSpan(toolSpan, async () => {
+                return await handleToolSuccess(pendingOutput, validatedResult);
+              });
+
+              if (hasOutput || finalOutput !== undefined) {
+                yield finalOutput;
+              }
+            } catch (e) {
+              const errorResult = await oc.traceContext.withSpan(toolSpan, async () => {
+                return await handleToolError(e);
+              });
+              yield errorResult;
+            } finally {
+              finalizeToolSpan();
+            }
+          })();
+        }
+
+        return oc.traceContext.withSpan(toolSpan, async () => {
+          try {
+            await this.waitForSpeculativeInputGuardrail(oc);
+            await runToolStartHooks();
+
+            let result = await execute(args, options);
+            if (isAsyncIterable(result)) {
+              let lastOutput: any = undefined;
+              for await (const output of result) {
+                lastOutput = output;
+              }
+              result = lastOutput;
+            }
+
+            const validatedResult = await this.validateToolOutput(result, toolInfo);
+            return await handleToolSuccess(result, validatedResult);
+          } catch (e) {
+            return await handleToolError(e);
+          } finally {
+            finalizeToolSpan();
+          }
+        });
+      };
+    };
+  }
+
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => ToolExecutionResult<any> {
-    return (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => {
+  ): (
+    tool: BaseTool,
+  ) => (args: any, options?: ToolExecutionOptions<any>) => ToolExecutionResult<any> {
+    return (tool: BaseTool) => (args: any, options?: ToolExecutionOptions<any>) => {
       // AI SDK passes ToolExecutionOptions with fields: toolCallId, messages, abortSignal
       const toolCallId = options?.toolCallId ?? randomUUID();
       const messages = options?.messages ?? [];
@@ -6718,14 +7540,14 @@ export class Agent {
     return new Set([TOOL_ROUTING_SEARCH_TOOL_NAME, TOOL_ROUTING_CALL_TOOL_NAME]);
   }
 
-  private isToolRoutingSupportTool(tool: BaseTool | ProviderTool): boolean {
+  private isToolRoutingSupportTool(tool: ManagedToolInfo): boolean {
     if (!tool || typeof tool !== "object") {
       return false;
     }
     return Object.prototype.hasOwnProperty.call(tool, TOOL_ROUTING_INTERNAL_TOOL_SYMBOL);
   }
 
-  private isToolExecutableForRouting(tool: BaseTool | ProviderTool): boolean {
+  private isToolExecutableForRouting(tool: ManagedToolInfo): boolean {
     if (isProviderTool(tool)) {
       const callableFlag = (tool as { callable?: boolean }).callable;
       if (callableFlag === false) {
@@ -7132,14 +7954,8 @@ export class Agent {
         if (schema && typeof schema.safeParse === "function") {
           const parsed = schema.safeParse(rawArgs);
           if (!parsed.success) {
-            const issues =
-              (parsed.error as { issues?: unknown; errors?: unknown }).issues ??
-              (parsed.error as { issues?: unknown; errors?: unknown }).errors ??
-              [];
-            const coercedArgs = coerceStringifiedJsonToolArgs(
-              rawArgs,
-              Array.isArray(issues) ? issues : [],
-            );
+            const issues = getValidationIssues(parsed.error);
+            const coercedArgs = coerceStringifiedJsonToolArgs(rawArgs, issues);
 
             if (coercedArgs) {
               const reparsed = schema.safeParse(coercedArgs);
@@ -7149,19 +7965,40 @@ export class Agent {
                 const error = new Error(
                   `Invalid arguments for tool "${name}": ${reparsed.error.message}`,
                 );
-                Object.assign(error, { validationErrors: reparsed.error.errors });
+                Object.assign(error, { validationErrors: getValidationIssues(reparsed.error) });
                 throw error;
               }
             } else {
               const error = new Error(
                 `Invalid arguments for tool "${name}": ${parsed.error.message}`,
               );
-              Object.assign(error, { validationErrors: parsed.error.errors });
+              Object.assign(error, { validationErrors: issues });
               throw error;
             }
           } else {
             parsedArgs = parsed.data as Record<string, unknown>;
           }
+        }
+
+        if (isNamedAiSdkTool(target)) {
+          await this.ensureToolApproval(target as any, parsedArgs, executionOptions, toolCallId);
+
+          const execute = this.createAiSdkToolExecutionFactory(oc, hooks)(
+            target.name,
+            getRawAiSdkTool(target),
+            {
+              tags: target.tags,
+              needsApproval: target.needsApproval,
+              hooks: target.hooks,
+            },
+          );
+
+          return await execute(parsedArgs, {
+            toolCallId,
+            messages: executionOptions.toolContext?.messages ?? [],
+            abortSignal: executionOptions.toolContext?.abortSignal,
+            context: undefined,
+          });
         }
 
         await this.ensureToolApproval(
@@ -7176,6 +8013,7 @@ export class Agent {
           toolCallId,
           messages: executionOptions.toolContext?.messages ?? [],
           abortSignal: executionOptions.toolContext?.abortSignal,
+          context: undefined,
         });
       },
     });
@@ -7311,12 +8149,115 @@ export class Agent {
     return toolResult.output;
   }
 
+  private getToolApprovalFromContext(
+    options?: ToolExecuteOptions,
+  ): ToolApprovalConfiguration<ToolSet, any> | undefined {
+    const contextValue =
+      options?.systemContext?.get(TOOL_APPROVAL_CONTEXT_KEY) ??
+      options?.context?.get(TOOL_APPROVAL_CONTEXT_KEY);
+    return contextValue as ToolApprovalConfiguration<ToolSet, any> | undefined;
+  }
+
+  private normalizeToolApprovalStatus(status: ToolApprovalStatus): {
+    type: "not-applicable" | "approved" | "denied" | "user-approval";
+    reason?: string;
+  } {
+    if (!status) {
+      return { type: "not-applicable" };
+    }
+
+    if (typeof status === "string") {
+      return { type: status };
+    }
+
+    return {
+      type: status.type,
+      reason: "reason" in status ? status.reason : undefined,
+    };
+  }
+
+  private async resolveToolApprovalStatus(params: {
+    toolApproval: ToolApprovalConfiguration<ToolSet, any>;
+    tool: Tool<any, any> | ProviderTool | NamedAiSdkTool;
+    args: Record<string, unknown>;
+    options: ToolExecuteOptions;
+    toolCallId: string;
+  }): Promise<ToolApprovalStatus> {
+    const { toolApproval, tool, args, options, toolCallId } = params;
+    const messages = (options.toolContext?.messages ?? []) as ModelMessage[];
+
+    if (typeof toolApproval === "function") {
+      return await (toolApproval as any)({
+        toolCall: {
+          type: "tool-call",
+          toolCallId,
+          toolName: tool.name,
+          input: args,
+          dynamic: true,
+        },
+        tools: undefined,
+        toolsContext: {},
+        runtimeContext: undefined,
+        messages,
+      });
+    }
+
+    const approvalForTool = (toolApproval as Record<string, unknown>)[tool.name];
+    if (typeof approvalForTool === "function") {
+      return await (approvalForTool as any)(args, {
+        toolCallId,
+        messages,
+        toolContext: undefined,
+        runtimeContext: undefined,
+      });
+    }
+
+    return approvalForTool as ToolApprovalStatus;
+  }
+
+  private throwToolApprovalError(
+    tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
+    status: ReturnType<Agent["normalizeToolApprovalStatus"]>,
+  ): never {
+    if (status.type === "denied") {
+      throw new ToolDeniedError({
+        toolName: tool.name,
+        message: status.reason ?? `Tool ${tool.name} was denied by tool approval policy.`,
+        code: "TOOL_FORBIDDEN",
+        httpStatus: 403,
+      });
+    }
+
+    throw new ToolDeniedError({
+      toolName: tool.name,
+      message: `Tool ${tool.name} requires user approval.`,
+      code: "TOOL_APPROVAL_REQUIRED",
+      httpStatus: 403,
+    });
+  }
+
   private async ensureToolApproval(
-    tool: Tool<any, any> | ProviderTool,
+    tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
     args: Record<string, unknown>,
     options: ToolExecuteOptions,
     toolCallId: string,
   ): Promise<void> {
+    const toolApproval = this.getToolApprovalFromContext(options);
+    if (toolApproval !== undefined) {
+      const approvalStatus = await this.resolveToolApprovalStatus({
+        toolApproval,
+        tool,
+        args,
+        options,
+        toolCallId,
+      });
+      const normalizedStatus = this.normalizeToolApprovalStatus(approvalStatus);
+      if (normalizedStatus.type === "approved" || normalizedStatus.type === "not-applicable") {
+        return;
+      }
+      this.throwToolApprovalError(tool, normalizedStatus);
+    }
+
     const needsApproval = (tool as { needsApproval?: Tool<any, any>["needsApproval"] })
       .needsApproval;
     if (!needsApproval) {
@@ -7328,7 +8269,7 @@ export class Agent {
         ? await needsApproval(args as any, {
             toolCallId,
             messages: (options.toolContext?.messages ?? []) as ModelMessage[],
-            experimental_context: undefined,
+            context: undefined,
           })
         : needsApproval;
 
@@ -7350,7 +8291,7 @@ export class Agent {
     output?: OutputSpec;
     toolChoice?: ToolChoice<Record<string, unknown>>;
     temperature?: number;
-  }): Promise<GenerateTextResult<ToolSet, OutputSpec>> {
+  }): Promise<GenerateTextResult<ToolSet, any, OutputSpec>> {
     const { oc, modelValue, messages, tools, output, toolChoice, temperature } = params;
     const model = await this.resolveModel(modelValue ?? this.model, oc);
     const modelName = this.getModelName(model);
@@ -7366,18 +8307,19 @@ export class Agent {
       },
     });
     const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+    const promptOptions = splitInstructionsFromMessages(messages);
 
     try {
       const response = await oc.traceContext.withSpan(llmSpan, () =>
         generateText({
           model,
-          messages,
+          ...promptOptions,
           tools,
           output,
           toolChoice,
           temperature,
           maxRetries: 0,
-          stopWhen: stepCountIs(1),
+          stopWhen: isStepCount(1),
           abortSignal: oc.abortController.signal,
         }),
       );
@@ -7419,7 +8361,11 @@ export class Agent {
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
+  private createStepHandler(
+    oc: OperationContext,
+    options?: BaseGenerationOptions,
+    userOnStepEnd?: GenerationStepEndCallback,
+  ) {
     const buffer = this.getConversationBuffer(oc);
     const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
@@ -7481,7 +8427,8 @@ export class Agent {
 
       // Call hooks
       const hooks = this.getMergedHooks(options);
-      await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
+      await hooks.onStepEnd?.({ agent: this, step: event, context: oc });
+      await userOnStepEnd?.(event);
     };
   }
 
@@ -7842,9 +8789,9 @@ export class Agent {
         }
         return undefined;
       },
-      onStepFinish: async (...args) => {
-        await options.hooks?.onStepFinish?.(...args);
-        await this.hooks.onStepFinish?.(...args);
+      onStepEnd: async (...args) => {
+        await options.hooks?.onStepEnd?.(...args);
+        await this.hooks.onStepEnd?.(...args);
       },
       onRetry: async (...args) => {
         await options.hooks?.onRetry?.(...args);
@@ -8197,7 +9144,7 @@ export class Agent {
       node_id: createNodeId(NodeType.AGENT, this.id),
 
       tools: (() => {
-        const merged = new Map<string, BaseTool | ProviderTool>();
+        const merged = new Map<string, ManagedToolInfo>();
         for (const tool of [
           ...this.toolManager.getAllTools(),
           ...this.toolPoolManager.getAllTools(),
@@ -8349,8 +9296,8 @@ export class Agent {
   /**
    * Get all tools
    */
-  public getTools() {
-    return this.toolManager.getAllBaseTools();
+  public getTools(): Array<Tool<any, any> | ProviderTool | NamedAiSdkTool> {
+    return this.toolManager.getAllTools();
   }
 
   /**

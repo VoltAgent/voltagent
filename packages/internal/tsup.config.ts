@@ -2,7 +2,7 @@ import { type Options as TsupConfigOptions, defineConfig } from "tsup";
 import { markAsExternalPlugin } from "../shared/tsup-plugins/mark-as-external";
 
 const baseConfig = {
-  format: ["cjs", "esm"],
+  format: ["esm"],
   splitting: false,
   sourcemap: true,
   clean: false,

@@ -6,7 +6,7 @@ An [VoltAgent](https://github.com/vercel/voltagent) application.
 
 ### Prerequisites
 
-- Node.js (v20 or newer)
+- Node.js 22 or newer
 - npm, yarn, or pnpm
 
 ### Installation

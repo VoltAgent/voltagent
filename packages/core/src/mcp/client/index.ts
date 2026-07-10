@@ -14,9 +14,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import type { ListResourcesResult } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@voltagent/internal";
-import { z } from "zod";
+import type { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
-import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
@@ -387,9 +386,7 @@ export class MCPClient extends SimpleEventEmitter {
         inputSchema: unknown;
       }[]) {
         try {
-          const zodSchema = ("toJSONSchema" in z
-            ? convertJsonSchemaToZod
-            : convertJsonSchemaToZodV3)(
+          const zodSchema = convertJsonSchemaToZod(
             toolDef.inputSchema as Record<string, unknown>,
           ) as unknown as z.ZodType;
           const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`;
@@ -405,10 +402,8 @@ export class MCPClient extends SimpleEventEmitter {
             name: namespacedToolName,
             description: toolDef.description || `Executes the remote tool: ${toolDef.name}`,
             parameters: zodSchema,
-            execute: async (
-              args: Record<string, unknown>,
-              execOptions?: ToolExecuteOptions,
-            ): Promise<unknown> => {
+            execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
+              const toolArgs = args as Record<string, unknown>;
               // If elicitation handler is provided in options, set it temporarily
               const elicitationHandler = execOptions?.elicitation as UserInputHandler | undefined;
               const hadPreviousHandler = elicitationBridge.hasHandler;
@@ -427,7 +422,7 @@ export class MCPClient extends SimpleEventEmitter {
                 const result = await this.callTool(
                   {
                     name: toolDef.name,
-                    arguments: args,
+                    arguments: toolArgs,
                   },
                   capturedOptions,
                 );

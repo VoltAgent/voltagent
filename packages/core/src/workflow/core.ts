@@ -1594,9 +1594,10 @@ export function createWorkflow<
             result: null,
           });
         } else {
+          const workflowResult = result as WorkflowResult<RESULT_SCHEMA>;
           stateManager.update({
-            data: result,
-            result,
+            data: workflowResult,
+            result: workflowResult,
           });
         }
 
@@ -1721,9 +1722,10 @@ export function createWorkflow<
             result: null,
           });
         } else {
+          const workflowResult = finalResult as WorkflowResult<RESULT_SCHEMA>;
           stateManager.update({
-            data: finalResult,
-            result: finalResult,
+            data: workflowResult,
+            result: workflowResult,
           });
         }
 
@@ -2323,7 +2325,7 @@ export function createWorkflow<
               // Execute step within span context with automatic signal checking for immediate suspension
               const result = await traceContext.withSpan(attemptSpan, async () => {
                 return await executeWithSignalCheck(
-                  () => step.execute(stepContext),
+                  () => step.execute(stepContext as Parameters<typeof step.execute>[0]),
                   options?.suspendController?.signal,
                   options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
                 );

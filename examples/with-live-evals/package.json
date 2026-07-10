@@ -1,11 +1,11 @@
 {
   "name": "example-with-live-evals",
-  "version": "0.0.5",
+  "version": "0.0.6-next.0",
   "dependencies": {
-    "@voltagent/core": "^2.0.2",
-    "@voltagent/scorers": "^2.0.2",
-    "@voltagent/server-hono": "^2.0.2",
-    "zod": "^3.25.76"
+    "@voltagent/core": "^3.0.0-next.0",
+    "@voltagent/scorers": "^3.0.0-next.0",
+    "@voltagent/server-hono": "^3.0.0-next.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

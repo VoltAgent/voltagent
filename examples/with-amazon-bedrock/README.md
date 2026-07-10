@@ -56,7 +56,7 @@ npm create voltagent-app@latest -- --example with-amazon-bedrock
 
 ### Prerequisites
 
-- Node.js (v20 or newer)
+- Node.js 22 or newer
 - npm, yarn, or pnpm
 - AWS Account with Amazon Bedrock access
 - AWS credentials configured

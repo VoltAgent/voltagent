@@ -158,9 +158,7 @@ describe("Agent guardrail integration", () => {
     expect(streamedText).toContain("[redacted digits]");
     expect(streamedText).not.toMatch(/\d/);
 
-    const fullChunks = await collectStream<VoltAgentTextStreamPart<string>>(
-      streamResult.fullStream,
-    );
+    const fullChunks = await collectStream<VoltAgentTextStreamPart<string>>(streamResult.stream);
     const emittedText = fullChunks
       .filter((chunk) => chunk.type === "text-delta")
       .map((chunk) => chunk.delta ?? chunk.text ?? "")
@@ -333,7 +331,7 @@ describe("Agent guardrail integration", () => {
 
     const fullStreamResult = await agent.streamText("hello");
     const fullChunks = await collectStream<VoltAgentTextStreamPart<string>>(
-      fullStreamResult.fullStream,
+      fullStreamResult.stream,
     );
     const fullStreamText = fullChunks
       .filter((chunk) => chunk.type === "text-delta")

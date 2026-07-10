@@ -14,7 +14,7 @@ npm create voltagent-app@latest -- --example with-chat-sdk
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - pnpm
 - A Slack workspace where you can install apps
 - Redis instance

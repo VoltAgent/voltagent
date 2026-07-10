@@ -171,6 +171,16 @@ export function createServerCoreSchemas(zod: ZodNamespace = defaultZ) {
     .passthrough()
     .describe("Feedback options for the generated trace");
 
+  const ToolApprovalStatusSchema = z.union([
+    z.enum(["not-applicable", "approved", "denied", "user-approval"]),
+    z
+      .object({
+        type: z.enum(["not-applicable", "approved", "denied", "user-approval"]),
+        reason: z.string().optional(),
+      })
+      .passthrough(),
+  ]);
+
   const SemanticMemoryOptionsSchema = z
     .object({
       enabled: z
@@ -268,9 +278,78 @@ export function createServerCoreSchemas(zod: ZodNamespace = defaultZ) {
     })
     .passthrough();
 
-  // Generation options schema
-  const GenerateOptionsSchema = z
+  const VoltAgentRuntimeOptionsSchema: defaultZ.ZodTypeAny = z
     .object({
+      memory: RuntimeMemoryEnvelopeSchema.optional().describe(
+        "Runtime memory envelope for this call",
+      ),
+      userId: z.string().optional().describe("Deprecated: use voltagent.memory.userId"),
+      conversationId: z
+        .string()
+        .optional()
+        .describe("Deprecated: use voltagent.memory.conversationId"),
+      context: z
+        .record(z.string(), z.unknown())
+        .nullish()
+        .describe("User context for dynamic agent behavior"),
+      requestHeaders: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe("Request headers for runtime callbacks; server request headers take precedence"),
+      contextLimit: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe("Deprecated: use voltagent.memory.options.contextLimit"),
+      semanticMemory: SemanticMemoryOptionsSchema.optional().describe(
+        "Deprecated: use voltagent.memory.options.semanticMemory",
+      ),
+      conversationPersistence: ConversationPersistenceOptionsSchema.optional().describe(
+        "Deprecated: use voltagent.memory.options.conversationPersistence",
+      ),
+      messageMetadataPersistence: MessageMetadataPersistenceConfigSchema.optional().describe(
+        "Deprecated: use voltagent.memory.options.messageMetadataPersistence",
+      ),
+      maxSteps: z.number().int().positive().optional().describe("Maximum steps for this request"),
+      feedback: z
+        .union([z.boolean(), FeedbackOptionsSchema])
+        .optional()
+        .describe("Enable or configure feedback tokens for the trace"),
+      resumableStream: z
+        .boolean()
+        .optional()
+        .describe("When true, avoids wiring the HTTP abort signal into resumable streams"),
+      toolRouting: z
+        .union([z.literal(false), z.record(z.string(), z.unknown())])
+        .optional()
+        .describe("Per-call tool routing override"),
+      guardrails: z
+        .object({
+          input: z.array(z.unknown()).optional(),
+          output: z.array(z.unknown()).optional(),
+        })
+        .passthrough()
+        .optional()
+        .describe("Per-call guardrail overrides"),
+      middleware: z
+        .object({
+          input: z.array(z.unknown()).optional(),
+          output: z.array(z.unknown()).optional(),
+          maxRetries: z.number().int().min(0).optional(),
+        })
+        .passthrough()
+        .optional()
+        .describe("Per-call middleware overrides"),
+    })
+    .passthrough();
+
+  // Generation options schema
+  const GenerateOptionsSchema: defaultZ.ZodTypeAny = z
+    .object({
+      voltagent: VoltAgentRuntimeOptionsSchema.optional().describe(
+        "VoltAgent runtime-specific options. Values here override legacy top-level runtime options during the transition.",
+      ),
       memory: RuntimeMemoryEnvelopeSchema.optional().describe(
         "Runtime memory envelope (preferred): memory.userId/memory.conversationId + memory.options.*",
       ),
@@ -348,6 +427,16 @@ export function createServerCoreSchemas(zod: ZodNamespace = defaultZ) {
         .describe(
           "Provider-specific options for AI SDK providers (e.g., OpenAI's reasoningEffort)",
         ),
+      toolApproval: z
+        .record(z.string(), ToolApprovalStatusSchema)
+        .optional()
+        .describe(
+          "AI SDK native per-tool approval status map. Use 'user-approval', 'approved', 'denied', or 'not-applicable'. Function approvals are only available when calling the Agent directly in code.",
+        ),
+      experimental_toolApprovalSecret: z
+        .string()
+        .optional()
+        .describe("Secret used by AI SDK to sign native tool approval requests"),
       resumableStream: z
         .boolean()
         .optional()

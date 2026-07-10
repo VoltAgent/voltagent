@@ -11,7 +11,7 @@ slug: /rag/pinecone
 
 Before starting, ensure you have:
 
-- Node.js 18+ installed
+- Node.js 22+ installed
 - Pinecone account (free tier available)
 - Pinecone API key
 - OpenAI API key (for embeddings)

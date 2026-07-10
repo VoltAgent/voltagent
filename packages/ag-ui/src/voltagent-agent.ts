@@ -107,7 +107,7 @@ export class VoltAgentAGUI extends AbstractAgent {
           debugLog("calling agent.streamText", { messagesLength: voltMessages.length });
           const result = await this.agent.streamText(voltMessages as any, streamOptions);
 
-          for await (const part of result.fullStream) {
+          for await (const part of result.stream) {
             debugLog("fullStream part", { partType: part.type, id: (part as any).id });
             if ((part.type === "start" || part.type === "start-step") && part.messageId) {
               currentMessageId = part.messageId;

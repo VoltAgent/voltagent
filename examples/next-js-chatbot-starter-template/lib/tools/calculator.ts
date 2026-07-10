@@ -1,15 +1,14 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * Calculator Tool
  * Performs basic arithmetic calculations
  */
-export const calculatorTool = createTool({
-  name: "calculator",
+export const calculatorTool = tool({
   description:
     "Perform basic arithmetic calculations (addition, subtraction, multiplication, division, exponents, etc.)",
-  parameters: z.object({
+  inputSchema: z.object({
     expression: z
       .string()
       .describe("Mathematical expression to evaluate (e.g., '2 + 2', '10 * 5', '2 ** 8')"),

@@ -4,7 +4,7 @@ Demonstrates agent summarization with a short trigger window so you can see summ
 
 ## Prerequisites
 
-- Node.js (v20 or newer)
+- Node.js 22 or newer
 - OpenAI API key (with access to `openai/gpt-5.1`)
 
 ## Setup

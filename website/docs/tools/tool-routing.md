@@ -22,8 +22,9 @@ Only `searchTools`, `callTool`, and any tools listed in `toolRouting.expose` are
 
 This configuration enables embedding-based tool search and exposes only `searchTools` and `callTool` to the model.
 
+`toolRouting.pool` and `toolRouting.expose` currently use named compatibility tools and toolkits. For normal agent tools, prefer the AI SDK-style `tool()` helper; for routing pools, keep using named tools until ToolSet support is added to the routing config.
+
 ```ts
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 

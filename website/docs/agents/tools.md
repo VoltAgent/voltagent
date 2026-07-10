@@ -9,42 +9,211 @@ Tools enable agents to interact with external systems, APIs, databases, and perf
 
 ## Creating a Tool
 
-Use `createTool` to define a tool with type-safe parameters and execution logic.
+For new VoltAgent 3.x code, use AI SDK `tool()` from `ai` and pass tools as a `ToolSet` object. The tool name comes from the object key and the input schema uses `inputSchema`, matching AI SDK conventions. Raw AI SDK tools are first-class in VoltAgent.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "ai";
+import { Agent } from "@voltagent/core";
 import { z } from "zod";
 
-const weatherTool = createTool({
-  name: "get_weather",
-  description: "Get current weather for a location",
-  parameters: z.object({
-    location: z.string().describe("The city name"),
-  }),
-  execute: async ({ location }) => {
-    // Call weather API
-    const response = await fetch(`https://api.weather.com/current?city=${location}`);
-    const data = await response.json();
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Answer weather questions using the weather tool.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string().describe("The city name"),
+      }),
+      execute: async ({ location }) => {
+        // Call weather API
+        const response = await fetch(`https://api.weather.com/current?city=${location}`);
+        const data = await response.json();
 
-    return {
-      location,
-      temperature: data.temp,
-      conditions: data.conditions,
-    };
+        return {
+          location,
+          temperature: data.temp,
+          conditions: data.conditions,
+        };
+      },
+    }),
   },
 });
 ```
 
-Each tool has:
+Native AI SDK tool options pass through unchanged. For example, use `contextSchema` on the tool and `toolsContext` on the agent call for per-tool runtime context:
 
-- **name**: Unique identifier
+```ts
+import { tool } from "ai";
+
+const agent = new Agent({
+  name: "Weather Assistant",
+  instructions: "Answer weather questions using the weather tool.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string(),
+      }),
+      contextSchema: z.object({
+        apiKey: z.string(),
+        defaultUnit: z.enum(["celsius", "fahrenheit"]),
+      }),
+      execute: async ({ location }, { context }) => {
+        return fetchWeather(location, {
+          apiKey: context.apiKey,
+          unit: context.defaultUnit,
+        });
+      },
+    }),
+  },
+});
+
+await agent.generateText({
+  prompt: "What is the weather in San Francisco?",
+  toolsContext: {
+    get_weather: {
+      apiKey: process.env.WEATHER_API_KEY!,
+      defaultUnit: "fahrenheit",
+    },
+  },
+});
+```
+
+VoltAgent-specific tool metadata is optional and additive. Attach it with `withVoltAgentMetadata`; metadata is stored out-of-band and is not sent to the model provider:
+
+```ts
+import { tool } from "ai";
+import { withVoltAgentMetadata } from "@voltagent/core";
+
+const getWeather = withVoltAgentMetadata(
+  tool({
+    description: "Get current weather for a location",
+    inputSchema: z.object({
+      location: z.string(),
+    }),
+    execute: async ({ location }) => {
+      return { location, temperature: 22, conditions: "sunny" };
+    },
+  }),
+  {
+    name: "Get Weather",
+    purpose: "Fetch current weather for a location",
+    tags: ["weather", "external-api"],
+    hooks: {
+      onStart: ({ tool }) => {
+        console.log(`[tool] ${tool.name} starting`);
+      },
+    },
+  }
+);
+```
+
+Each AI SDK-style tool has:
+
+- **object key**: Unique identifier, such as `get_weather`
 - **description**: Explains what the tool does (the model uses this to decide when to call it)
-- **parameters**: Input schema defined with Zod
+- **inputSchema**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
+- **outputSchema** (optional): Output schema for validating tool results
+- **contextSchema** (optional): AI SDK context schema for per-tool runtime context
 - **providerOptions** (optional): Provider-specific options for advanced features
-- **tags** (optional): Optional user-defined tags for organizing or labeling tools.
+- **toModelOutput** (optional): Converts rich tool results into AI SDK model output
+- **VoltAgent metadata `name`** (optional): VoltAgent-facing name for display or metadata consumers. The ToolSet key remains the execution name.
+- **VoltAgent metadata `purpose`** (optional): VoltAgent-facing purpose for display or metadata consumers.
+- **VoltAgent metadata `tags`** (optional): Optional user-defined tags for organizing or labeling tools.
+- **VoltAgent metadata `hooks`** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
+- **VoltAgent metadata `needsApproval`** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
+
+VoltAgent observability and tool execution use the ToolSet key as the canonical `tool.name`. If you set metadata `name`, it is exposed as display metadata (`tool.display_name`) for the Console and telemetry consumers without changing the name the model calls.
+
+VoltAgent also exports a convenience `tool()` helper that accepts inline `voltagent` metadata, but raw AI SDK `tool()` from `ai` is the primary API and supports native AI SDK options directly. See [AI SDK Compatibility Boundaries](/docs/agents/overview#ai-sdk-compatibility-boundaries) for the agent-level ownership rules.
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+## Using AI SDK Provider Tools
+
+AI SDK user-defined tools and provider-defined tools can be used together on the same agent. Use `withVoltAgentMetadata` when VoltAgent should provide hooks, tags, approval metadata, API metadata, and observability around a user-defined tool. Use provider-defined tools when the model provider owns the tool implementation.
+
+```ts
+import { tool } from "ai";
+import { Agent, type ProviderTool } from "@voltagent/core";
+import { z } from "zod";
+
+const webSearchTool: ProviderTool = {
+  name: "web_search",
+  description: "Search the web using the model provider's hosted search tool.",
+  type: "provider",
+  id: "openai.web_search_preview",
+  args: {},
+};
+
+const agent = new Agent({
+  name: "Research Assistant",
+  instructions: "Use the right tool for weather or current web research.",
+  model: "openai/gpt-4o",
+  tools: {
+    get_weather: tool({
+      description: "Get current weather for a location",
+      inputSchema: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => {
+        return { location, temperature: 22, conditions: "sunny" };
+      },
+    }),
+    web_search: webSearchTool,
+  },
+});
+```
+
+Provider-defined tools are passed through to the AI SDK unchanged. Use the exact `id` and `args` shape from your provider's AI SDK docs. They are not wrapped with VoltAgent tool hooks or `execute` handlers, so use user-defined AI SDK tools plus `withVoltAgentMetadata` for tools that need VoltAgent-managed lifecycle metadata or application-side execution.
+
+## Native Tool Approval
+
+Use AI SDK v7's native `toolApproval` option when approval should be decided per request. This takes precedence over tool-level `needsApproval`.
+
+```ts
+const result = await agent.generateText({
+  prompt: "Delete the stale report",
+  tools: {
+    delete_file: tool({
+      description: "Delete a file",
+      inputSchema: z.object({
+        path: z.string(),
+      }),
+      execute: async ({ path }) => deleteFile(path),
+    }),
+  },
+  toolApproval: {
+    delete_file: "user-approval",
+  },
+});
+```
+
+Use `voltagent.needsApproval` only when approval should be static tool metadata or part of an existing VoltAgent tool policy. If both are provided, call-level `toolApproval` takes precedence:
+
+```ts
+const agent = new Agent({
+  name: "Workspace Assistant",
+  instructions: "Manage workspace files.",
+  model: "openai/gpt-4o",
+  tools: {
+    delete_file: tool({
+      description: "Delete a file",
+      inputSchema: z.object({
+        path: z.string(),
+      }),
+      execute: async ({ path }) => deleteFile(path),
+      voltagent: {
+        needsApproval: true,
+      },
+    }),
+  },
+});
+```
 
 ## Tool Hooks
 
@@ -58,22 +227,23 @@ You can attach tool-specific hooks to observe or post-process a tool result. Too
 > Overrides are re-validated if the tool has an `outputSchema`. For streaming tools (AsyncIterable), overrides apply only to the final output.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const summarizeTool = createTool({
-  name: "summarize_text",
+const summarizeTool = tool({
   description: "Summarize text with a hard cap",
-  parameters: z.object({ text: z.string() }),
+  inputSchema: z.object({ text: z.string() }),
   execute: async ({ text }) => text,
-  hooks: {
-    onStart: ({ tool }) => {
-      console.log(`[tool] ${tool.name} starting`);
-    },
-    onEnd: ({ output }) => {
-      if (typeof output === "string") {
-        return { output: output.slice(0, 500) };
-      }
+  voltagent: {
+    hooks: {
+      onStart: ({ tool }) => {
+        console.log(`[tool] ${tool.name} starting`);
+      },
+      onEnd: ({ output }) => {
+        if (typeof output === "string") {
+          return { output: output.slice(0, 500) };
+        }
+      },
     },
   },
 });
@@ -85,7 +255,7 @@ If your tool can provide progress or intermediate status, return an `AsyncIterab
 Each `yield` is emitted as a preliminary tool result, and the **last yielded value** is treated as the final result.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 const weatherOutputSchema = z.discriminatedUnion("status", [
@@ -104,10 +274,9 @@ const weatherOutputSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get the current weather for a location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city name"),
   }),
   outputSchema: weatherOutputSchema,
@@ -136,28 +305,27 @@ const weatherTool = createTool({
 Tags are optional string labels that help organize and categorize tools.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Example: Database tools with tags
-const queryTool = createTool({
-  name: "query_database",
+const queryTool = tool({
   description: "Execute a read-only SQL query",
-  tags: ["database", "read-only", "sql"],
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("SQL query to execute"),
   }),
   execute: async ({ query }) => {
     // Execute query
     return { results: [] };
   },
+  voltagent: {
+    tags: ["database", "read-only", "sql"],
+  },
 });
 
-const updateTool = createTool({
-  name: "update_record",
+const updateTool = tool({
   description: "Update database records",
-  tags: ["database", "write", "sql", "destructive"],
-  parameters: z.object({
+  inputSchema: z.object({
     table: z.string().describe("Table name"),
     id: z.string().describe("Record ID"),
     data: z.record(z.unknown()).describe("Data to update"),
@@ -166,19 +334,23 @@ const updateTool = createTool({
     // Update record
     return { success: true };
   },
+  voltagent: {
+    tags: ["database", "write", "sql", "destructive"],
+  },
 });
 
 // Example: External API tools
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get current weather data",
-  tags: ["weather", "external-api", "read-only"],
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City name"),
   }),
   execute: async ({ location }) => {
     // Fetch weather
     return { temperature: 72, conditions: "sunny" };
+  },
+  voltagent: {
+    tags: ["weather", "external-api", "read-only"],
   },
 });
 ```
@@ -196,13 +368,12 @@ You can pass provider-specific options to enable advanced features like caching.
 Anthropic's prompt caching can reduce costs and latency for repeated tool calls:
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const cityAttractionsTool = createTool({
-  name: "get_city_attractions",
+const cityAttractionsTool = tool({
   description: "Get tourist attractions for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     city: z.string().describe("The city name"),
   }),
   providerOptions: {
@@ -229,7 +400,9 @@ const agent = new Agent({
   name: "Weather Assistant",
   instructions: "An assistant that provides weather information",
   model: "openai/gpt-4o",
-  tools: [weatherTool],
+  tools: {
+    get_weather: weatherTool,
+  },
 });
 
 // The model calls the tool when appropriate
@@ -243,10 +416,9 @@ console.log(response.text);
 Agents can use multiple tools together to answer complex queries.
 
 ```ts
-const calculatorTool = createTool({
-  name: "calculate",
+const calculatorTool = tool({
   description: "Perform mathematical calculations",
-  parameters: z.object({
+  inputSchema: z.object({
     expression: z.string().describe("The mathematical expression to evaluate"),
   }),
   execute: async ({ expression }) => {
@@ -260,7 +432,10 @@ const agent = new Agent({
   name: "Multi-Tool Assistant",
   instructions: "An assistant that can check weather and perform calculations",
   model: "openai/gpt-4o",
-  tools: [weatherTool, calculatorTool],
+  tools: {
+    get_weather: weatherTool,
+    calculate: calculatorTool,
+  },
 });
 
 const response = await agent.generateText("What's the weather in Paris? Also, what is 24 * 7?");
@@ -269,136 +444,74 @@ const response = await agent.generateText("What's the weather in Paris? Also, wh
 
 ### Dynamic Tool Registration
 
-Add tools to an agent after creation or provide them per request.
+Provide additional tools per request with the same ToolSet shape.
 
 ```ts
-// Add tools after agent creation
-agent.addTools([calculatorTool]);
-
 // Provide tools for a specific request only
 const response = await agent.generateText("Calculate 123 * 456", {
-  tools: [calculatorTool],
-});
-```
-
-## Accessing Operation Context
-
-The `execute` function receives a `ToolExecuteOptions` object as its second parameter, which extends `Partial<OperationContext>` and provides access to all operation metadata and control mechanisms.
-
-```ts
-const debugTool = createTool({
-  name: "log_debug_info",
-  description: "Logs debugging information",
-  parameters: z.object({
-    message: z.string().describe("Debug message to log"),
-  }),
-  execute: async (args, options) => {
-    // Access tool context (tool-specific metadata)
-    const { name, callId, messages } = options?.toolContext || {};
-    console.log("Tool name:", name);
-    console.log("Tool call ID:", callId);
-    console.log("Message history length:", messages?.length);
-
-    // Access operation metadata directly from options
-    console.log("Operation ID:", options?.operationId);
-    console.log("User ID:", options?.userId);
-    console.log("Conversation ID:", options?.conversationId);
-
-    // Access the original input
-    console.log("Original input:", options?.input);
-
-    // Access user-defined context Map
-    const customValue = options?.context?.get("customKey");
-
-    // Use the operation-scoped logger with tool name
-    options?.logger?.info(`${name}: Logging ${args.message}`);
-
-    // Check if operation is still active
-    if (!options?.isActive) {
-      throw new Error("Operation has been cancelled");
-    }
-
-    return `Logged: ${args.message}`;
+  tools: {
+    calculate: calculatorTool,
   },
 });
 ```
 
-The `options` parameter includes all `OperationContext` fields plus an **optional** `toolContext` object:
+## Accessing Tool Context
 
-**Tool execution context (`toolContext?` - optional):**
+The `execute` function follows the AI SDK tool signature. Its second parameter includes AI SDK execution data such as `toolCallId`, `messages`, and `abortSignal`.
 
-> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called from external systems (e.g., MCP servers). Always use optional chaining: `options?.toolContext?.name`.
-
-- `toolContext.name`: Name of the tool being executed
-- `toolContext.callId`: Unique identifier for this specific tool call (from AI SDK)
-- `toolContext.messages`: Message history at the time of tool call (from AI SDK)
-- `toolContext.abortSignal`: Abort signal for detecting cancellation (from AI SDK)
-
-**From OperationContext:**
-
-- `operationId`: Unique identifier for this operation
-- `userId`: Optional user identifier
-- `conversationId`: Optional conversation identifier
-- `workspace`: Workspace instance configured on the agent (if available)
-- `context`: Map for user-provided context values
-- `systemContext`: Map for internal system values
-- `isActive`: Whether the operation is still active
-- `input`: The original input (string, UIMessage[], or BaseMessage[])
-- `abortController`: AbortController for cancelling the operation
-- `logger`: Execution-scoped logger with full context
-- `traceContext`: OpenTelemetry trace context
-- `elicitation`: Optional function for requesting user input
-
-> - Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.)
-
-Example: reading workspace content inside a custom tool call:
+VoltAgent operation context is available in `voltagent.hooks`, where `options` contains the operation-scoped logger, `context` map, user/conversation identifiers, trace context, and tool metadata.
 
 ```ts
-const readWorkspaceData = createTool({
-  name: "read_workspace_data",
-  description: "Read a workspace file and inspect sandbox output",
-  parameters: z.object({ path: z.string() }),
-  execute: async ({ path }, options) => {
-    const workspace = options?.workspace;
-    if (!workspace) {
-      return "No workspace configured";
+const debugTool = tool({
+  description: "Logs debugging information",
+  inputSchema: z.object({
+    message: z.string().describe("Debug message to log"),
+  }),
+  execute: async (args, options) => {
+    console.log("Tool call ID:", options.toolCallId);
+    console.log("Message history length:", options.messages.length);
+
+    if (options.abortSignal?.aborted) {
+      throw new Error("Tool call was cancelled");
     }
 
-    const content = await workspace.filesystem.read(path);
-    const sandboxResult = await workspace.sandbox?.execute({
-      command: "cat",
-      args: [path],
-      operationContext: options as any,
-    });
-
-    return `filesystem=${content}\nsandbox=${sandboxResult?.stdout ?? ""}`;
+    return `Logged: ${args.message}`;
+  },
+  voltagent: {
+    hooks: {
+      onStart: ({ args, options }) => {
+        options?.logger?.info("Starting debug tool", {
+          args,
+          operationId: options.operationId,
+          userId: options.userId,
+          conversationId: options.conversationId,
+          requestId: options.context?.get("requestId"),
+        });
+      },
+    },
   },
 });
 ```
 
 ## Cancellation with AbortController
 
-Tools can respond to cancellation signals and cancel the entire operation when needed.
+Tools can respond to cancellation signals from the active generation call.
 
 ```ts
-const searchTool = createTool({
-  name: "search_web",
+const searchTool = tool({
   description: "Search the web for information",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query"),
   }),
   execute: async (args, options) => {
-    const abortController = options?.abortController;
-    const signal = abortController?.signal;
+    const signal = options.abortSignal;
 
     // Check if already aborted
     if (signal?.aborted) {
       throw new Error("Search was cancelled before it started");
     }
 
-    // Tool can trigger abort to cancel the entire operation
     if (args.query.includes("forbidden")) {
-      abortController?.abort("Forbidden query detected");
       throw new Error("Search query contains forbidden terms");
     }
 
@@ -406,9 +519,7 @@ const searchTool = createTool({
       // Pass signal to fetch for cancellation support
       const response = await fetch(`https://api.search.com?q=${args.query}`, { signal });
 
-      // Abort based on response
       if (!response.ok && response.status === 429) {
-        abortController?.abort("Rate limit exceeded");
         throw new Error("API rate limit exceeded");
       }
 
@@ -452,19 +563,20 @@ try {
 Some tools should not run automatically because they trigger sensitive actions (payments, file changes, command execution, etc). Set `needsApproval` to require explicit user approval before the tool executes.
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const runCommandTool = createTool({
-  name: "runCommand",
+const runCommandTool = tool({
   description: "Run a shell command",
-  parameters: z.object({
+  inputSchema: z.object({
     command: z.string().describe("Command to execute"),
   }),
-  needsApproval: true,
   execute: async ({ command }) => {
     // Execute safely
     return { ok: true, command };
+  },
+  voltagent: {
+    needsApproval: true,
   },
 });
 ```
@@ -472,16 +584,17 @@ const runCommandTool = createTool({
 `needsApproval` can also be a function for dynamic policies:
 
 ```ts
-const processPaymentTool = createTool({
-  name: "processPayment",
+const processPaymentTool = tool({
   description: "Charge a customer",
-  parameters: z.object({
+  inputSchema: z.object({
     amount: z.number(),
     customerId: z.string(),
   }),
-  needsApproval: async ({ amount }) => amount > 1000,
   execute: async ({ amount, customerId }) => {
     return { success: true, amount, customerId };
+  },
+  voltagent: {
+    needsApproval: async ({ amount }) => amount > 1000,
   },
 });
 ```
@@ -566,25 +679,29 @@ A tool without an `execute` function is automatically client-side.
 
 ```ts
 // Client-side tool (no execute function)
-const getLocationTool = createTool({
-  name: "getLocation",
+const getLocationTool = tool({
   description: "Get the user's current location",
-  parameters: z.object({}),
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
   // No execute = client-side
 });
 
 // Another client-side tool
-const readClipboardTool = createTool({
-  name: "readClipboard",
+const readClipboardTool = tool({
   description: "Read content from the user's clipboard",
-  parameters: z.object({}),
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    text: z.string(),
+  }),
 });
 
 // Server-side tool (has execute)
-const getWeatherTool = createTool({
-  name: "getWeather",
+const getWeatherTool = tool({
   description: "Get current weather for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     city: z.string().describe("City name"),
   }),
   execute: async ({ city }) => {
@@ -764,7 +881,9 @@ const agent = new Agent({
   name: "Assistant with Tool Hooks",
   instructions: "An assistant that logs tool execution",
   model: "openai/gpt-4o",
-  tools: [weatherTool],
+  tools: {
+    get_weather: weatherTool,
+  },
   hooks: hooks,
 });
 ```
@@ -801,7 +920,11 @@ const agent = new Agent({
   name: "Controlled Assistant",
   instructions: "An assistant with tag-based access control",
   model: "openai/gpt-4o",
-  tools: [queryTool, updateTool, weatherTool],
+  tools: {
+    query_database: queryTool,
+    update_record: updateTool,
+    get_weather: weatherTool,
+  },
   hooks: hooks,
 });
 
@@ -874,14 +997,13 @@ Tools can return images and media content to the LLM using the `toModelOutput` f
 #### Screenshot Tool Example
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import fs from "fs";
 
-const screenshotTool = createTool({
-  name: "take_screenshot",
+const screenshotTool = tool({
   description: "Takes a screenshot of the screen",
-  parameters: z.object({
+  inputSchema: z.object({
     region: z.string().optional().describe("Region to capture"),
   }),
   execute: async ({ region }) => {
@@ -974,10 +1096,9 @@ Provide clear descriptions for tools and parameters. The model relies on these t
 **Bad:**
 
 ```ts
-const badTool = createTool({
-  name: "search",
+const badTool = tool({
   description: "Searches things", // Too vague
-  parameters: z.object({
+  inputSchema: z.object({
     q: z.string(), // No description
   }),
   execute: async (args) => {
@@ -989,11 +1110,10 @@ const badTool = createTool({
 **Good:**
 
 ```ts
-const goodTool = createTool({
-  name: "search_web",
+const goodTool = tool({
   description:
     "Searches the web for current information. Use when you need recent or factual information not in your training data.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query. Be specific about what information is needed."),
     results_count: z
       .number()
@@ -1036,9 +1156,8 @@ execute: async (args, options) => {
 
   try {
     // Listen to parent abort if provided
-    const parentController = options?.abortController;
-    if (parentController?.signal) {
-      parentController.signal.addEventListener("abort", () => {
+    if (options.abortSignal) {
+      options.abortSignal.addEventListener("abort", () => {
         timeoutController.abort("Parent operation aborted");
         clearTimeout(timeoutId);
       });

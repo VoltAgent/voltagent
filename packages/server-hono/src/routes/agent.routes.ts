@@ -554,8 +554,8 @@ export const workspaceReadFileRoute = createRoute({
     }),
     query: z.object({
       path: z.string().describe("File path to read"),
-      offset: z.number({ coerce: true }).optional().describe("Line offset (0-indexed)"),
-      limit: z.number({ coerce: true }).optional().describe("Max lines to read"),
+      offset: z.coerce.number().optional().describe("Line offset (0-indexed)"),
+      limit: z.coerce.number().optional().describe("Max lines to read"),
     }),
   },
   responses: {
@@ -616,7 +616,7 @@ export const workspaceListSkillsRoute = createRoute({
       id: agentIdParam(),
     }),
     query: z.object({
-      refresh: z.boolean({ coerce: true }).optional().describe("Refresh skill discovery"),
+      refresh: z.coerce.boolean().optional().describe("Refresh skill discovery"),
     }),
   },
   responses: {

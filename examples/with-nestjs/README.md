@@ -22,7 +22,7 @@ This example demonstrates how to integrate VoltAgent with a NestJS application *
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
+- Node.js 22+ and pnpm
 - OpenAI API key
 
 ### Installation

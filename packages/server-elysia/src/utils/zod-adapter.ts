@@ -1,6 +1,5 @@
 import { type TSchema, Type } from "@sinclair/typebox";
-import type { ZodType, ZodTypeDef } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { type ZodType, z } from "zod";
 
 function getOptions(schema: any) {
   const options = { ...schema };
@@ -55,7 +54,11 @@ function mapJsonSchemaToTypeBox(schema: any): TSchema {
   switch (schema.type) {
     case "object": {
       const properties: Record<string, TSchema> = {};
-      const required = new Set(schema.required || []);
+      const required = new Set(
+        (schema.required || []).filter(
+          (key: string) => schema.properties?.[key]?.default === undefined,
+        ),
+      );
 
       if (schema.properties) {
         for (const [key, value] of Object.entries(schema.properties)) {
@@ -114,10 +117,12 @@ function mapJsonSchemaToTypeBox(schema: any): TSchema {
  * This allows us to reuse Zod schemas from @voltagent/server-core
  * while maintaining Elysia's TypeBox-based validation pipeline.
  */
-export function zodToTypeBox<T extends ZodType<any, ZodTypeDef, any>>(zodSchema: T): TSchema {
-  const jsonSchema = zodToJsonSchema(zodSchema, {
-    target: "jsonSchema7",
-    $refStrategy: "none",
+export function zodToTypeBox<T extends ZodType>(zodSchema: T): TSchema {
+  const jsonSchema = z.toJSONSchema(zodSchema, {
+    target: "draft-7",
+    unrepresentable: "any",
+    reused: "inline",
+    cycles: "throw",
   });
 
   return mapJsonSchemaToTypeBox(jsonSchema);

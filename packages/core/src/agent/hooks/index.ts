@@ -205,7 +205,7 @@ export type AgentHookOnPrepareModelMessages = (
   args: OnPrepareModelMessagesHookArgs,
 ) => Promise<OnPrepareModelMessagesHookResult> | OnPrepareModelMessagesHookResult;
 export type AgentHookOnError = (args: OnErrorHookArgs) => Promise<void> | void;
-export type AgentHookOnStepFinish = (args: OnStepFinishHookArgs) => Promise<void> | void;
+export type AgentHookOnStepEnd = (args: OnStepFinishHookArgs) => Promise<void> | void;
 export type AgentHookOnRetry = (args: OnRetryHookArgs) => Promise<void> | void;
 export type AgentHookOnFallback = (args: OnFallbackHookArgs) => Promise<void> | void;
 
@@ -224,7 +224,7 @@ export type AgentHooks = {
   onPrepareModelMessages?: AgentHookOnPrepareModelMessages;
   // Additional (kept for convenience)
   onError?: AgentHookOnError;
-  onStepFinish?: AgentHookOnStepFinish;
+  onStepEnd?: AgentHookOnStepEnd;
   onRetry?: AgentHookOnRetry;
   onFallback?: AgentHookOnFallback;
 };
@@ -243,7 +243,7 @@ const defaultHooks: Required<AgentHooks> = {
   onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
   onPrepareModelMessages: async (_args: OnPrepareModelMessagesHookArgs) => ({}),
   onError: async (_args: OnErrorHookArgs) => {},
-  onStepFinish: async (_args: OnStepFinishHookArgs) => {},
+  onStepEnd: async (_args: OnStepFinishHookArgs) => {},
   onRetry: async (_args: OnRetryHookArgs) => {},
   onFallback: async (_args: OnFallbackHookArgs) => {},
 };
@@ -263,7 +263,7 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,
     onPrepareModelMessages: hooks.onPrepareModelMessages || defaultHooks.onPrepareModelMessages,
     onError: hooks.onError || defaultHooks.onError,
-    onStepFinish: hooks.onStepFinish || defaultHooks.onStepFinish,
+    onStepEnd: hooks.onStepEnd || defaultHooks.onStepEnd,
     onRetry: hooks.onRetry || defaultHooks.onRetry,
     onFallback: hooks.onFallback || defaultHooks.onFallback,
   };

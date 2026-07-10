@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { generateStructuredObject } from "./structured-output";
 
 export interface ModerationScorerOptions {
   id?: string;
@@ -30,6 +31,11 @@ type ModerationPayload = Record<string, unknown>;
 
 type ModerationRawScores = Record<string, number | null>;
 type ModerationScores = Record<string, number>;
+type ModerationSchemaOutput = {
+  flagged: boolean;
+  scores: ModerationRawScores;
+  reason: string | null;
+};
 
 type ModerationResult = {
   flagged: boolean;
@@ -54,19 +60,15 @@ const DEFAULT_CATEGORIES: readonly string[] = [
   "violence/graphic",
 ];
 
-function buildScoresSchema(categories: readonly string[]): z.ZodObject<z.ZodRawShape> {
-  const shape: Record<string, z.ZodTypeAny> = {};
+function buildScoresSchema(categories: readonly string[]): z.ZodType<ModerationRawScores> {
+  const shape: Record<string, z.ZodType<number | null>> = {};
   for (const category of categories) {
     shape[category] = z.number().min(0).max(1).nullable();
   }
-  return z.object(shape);
+  return z.object(shape) as z.ZodType<ModerationRawScores>;
 }
 
-function createModerationSchema(categories: readonly string[]): z.ZodObject<{
-  flagged: z.ZodBoolean;
-  scores: z.ZodObject<z.ZodRawShape>;
-  reason: z.ZodNullable<z.ZodString>;
-}> {
+function createModerationSchema(categories: readonly string[]): z.ZodType<ModerationSchemaOutput> {
   return z.object({
     flagged: z.boolean(),
     scores: buildScoresSchema(categories),
@@ -261,11 +263,11 @@ async function runModerationJudge(args: {
       "You are a safety classifier. Respond with JSON that matches the provided schema containing flagged, scores, and reason.",
   });
 
-  const response = await agent.generateObject(prompt, schema, {
+  const response = await generateStructuredObject(agent, prompt, schema, {
     maxOutputTokens,
   });
 
-  const parsed = mapModerationResponse(response.object, threshold, schema);
+  const parsed = mapModerationResponse(response, threshold, schema);
 
   return {
     ...parsed,

@@ -84,6 +84,7 @@ type GuardrailPipelineUIFactory = <UI_MESSAGE extends UIMessage>(
 
 export interface GuardrailPipeline {
   runner: OutputGuardrailStreamRunner | null;
+  stream: AsyncIterableStream<VoltAgentTextStreamPart>;
   fullStream: AsyncIterableStream<VoltAgentTextStreamPart>;
   textStream: AsyncIterableStream<string>;
   createUIStream: GuardrailPipelineUIFactory;
@@ -97,9 +98,11 @@ export function createGuardrailPipeline(
   _fallbackTextId = "guardrailed-output",
 ): GuardrailPipeline {
   if (!context || context.guardrails.length === 0) {
+    const stream = iterableToStream(baseFullStream);
     return {
       runner: null,
-      fullStream: iterableToStream(baseFullStream),
+      stream,
+      fullStream: stream,
       textStream: _baseTextStream,
       createUIStream: <UI_MESSAGE extends UIMessage>(
         _options?: UIMessageStreamOptions<UI_MESSAGE>,
@@ -211,7 +214,7 @@ export function createGuardrailPipeline(
     const uiStream = createUIMessageStream<UI_MESSAGE>({
       originalMessages: streamOptions.originalMessages,
       onError,
-      onFinish: streamOptions.onFinish,
+      onEnd: streamOptions.onFinish,
       generateId: streamOptions.generateMessageId,
       execute: async ({ writer }) => {
         const reader = currentReadable.getReader();
@@ -275,6 +278,7 @@ export function createGuardrailPipeline(
 
   return {
     runner,
+    stream: fullStream,
     fullStream,
     textStream,
     createUIStream,

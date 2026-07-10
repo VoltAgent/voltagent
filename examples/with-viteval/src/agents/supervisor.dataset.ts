@@ -10,7 +10,7 @@ export default defineDataset({
       categories.map(async ({ name, description }) => {
         const { object } = await generateObject({
           model: "openai/gpt-5",
-          system: `
+          instructions: `
           You are an expert at generating test data. You will generate a question and the expected answer based on the provided category.
           Be succinct in you questions and answers. The question should be a single sentence, and the answer should be a single sentence or less.
           `,

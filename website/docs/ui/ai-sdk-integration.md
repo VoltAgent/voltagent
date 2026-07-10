@@ -457,7 +457,7 @@ curl "http://localhost:3141/api/memory/conversations/conv-1/messages?agentId=ass
 | `providerOptions.google.thinkingConfig`   | object   | Gemini thinking budget/configuration               |
 | `providerOptions.xai.reasoningEffort`     | string   | xAI reasoning effort                               |
 | `providerOptions.extraOptions`            | object   | Additional provider-specific options               |
-| `providerOptions.onStepFinish`            | function | Callback when a step completes                     |
+| `providerOptions.onStepEnd`               | function | Callback when a step completes                     |
 
 ### Semantic Memory Options
 

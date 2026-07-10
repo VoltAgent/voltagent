@@ -315,7 +315,7 @@ export async function POST(req: Request) {
 
   return result.toUIMessageStreamResponse({
     consumeSseStream: session.consumeSseStream,
-    onFinish: session.onFinish,
+    onEnd: session.onEnd,
   });
 }
 ```
@@ -634,7 +634,7 @@ const session = createResumableChatSession({
 const result = await agent.streamText(input, { conversationId, userId });
 return result.toUIMessageStreamResponse({
   consumeSseStream: session.consumeSseStream,
-  onFinish: session.onFinish,
+  onEnd: session.onEnd,
 });
 ```
 

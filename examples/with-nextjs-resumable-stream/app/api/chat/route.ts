@@ -66,7 +66,7 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse({
       consumeSseStream: session.consumeSseStream,
-      onFinish: session.onFinish,
+      onEnd: session.onEnd,
     });
   } catch (error) {
     console.error("[API] Chat error:", error);

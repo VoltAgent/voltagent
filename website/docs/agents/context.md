@@ -81,6 +81,24 @@ const response = await agent.generateText("Hello!", {
 console.log("Language:", response.context?.get("language"));
 ```
 
+For object-style calls, put operation-specific context under `voltagent.context`:
+
+```typescript
+const response = await agent.generateText({
+  prompt: "Hello!",
+  voltagent: {
+    context: {
+      language: "English",
+      requestId: "req-123",
+    },
+  },
+});
+
+console.log("Language:", response.context?.get("language"));
+```
+
+Legacy top-level `context` is still supported, but `voltagent.context` is preferred for new object-style calls. If both are supplied, `voltagent.context` takes precedence.
+
 ## Sending User Information
 
 You can pass user information to the agent using the `context`. This information is automatically picked up by the tracing system and associated with the trace.
@@ -108,26 +126,40 @@ context.set("user.email", "john@example.com");
 context.set("user.avatar", "https://example.com/avatar.jpg");
 context.set("user.metadata", { plan: "pro" });
 
-await agent.generateText("Hello", { userId: "user_123", context });
+await agent.generateText({
+  prompt: "Hello",
+  voltagent: {
+    memory: {
+      userId: "user_123",
+    },
+    context,
+  },
+});
 ```
 
   </TabItem>
   <TabItem value="api" label="REST API">
 
-When using the REST API, you can pass user information in the `context` object. You can use either a nested `user` object or flat keys.
+When using the REST API, pass user information in `options.voltagent.context`. You can use either a nested `user` object or flat keys.
 
 **Option 1: Nested User Object**
 
 ```json
 {
-  "prompt": "Hello",
-  "userId": "user_123",
-  "context": {
-    "user": {
-      "name": "John Doe",
-      "email": "john@example.com",
-      "avatar": "https://example.com/avatar.jpg",
-      "metadata": { "plan": "pro" }
+  "input": "Hello",
+  "options": {
+    "voltagent": {
+      "memory": {
+        "userId": "user_123"
+      },
+      "context": {
+        "user": {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "avatar": "https://example.com/avatar.jpg",
+          "metadata": { "plan": "pro" }
+        }
+      }
     }
   }
 }
@@ -137,13 +169,19 @@ When using the REST API, you can pass user information in the `context` object. 
 
 ```json
 {
-  "prompt": "Hello",
-  "userId": "user_123",
-  "context": {
-    "user.name": "John Doe",
-    "user.email": "john@example.com",
-    "user.avatar": "https://example.com/avatar.jpg",
-    "user.metadata": { "plan": "pro" }
+  "input": "Hello",
+  "options": {
+    "voltagent": {
+      "memory": {
+        "userId": "user_123"
+      },
+      "context": {
+        "user.name": "John Doe",
+        "user.email": "john@example.com",
+        "user.avatar": "https://example.com/avatar.jpg",
+        "user.metadata": { "plan": "pro" }
+      }
+    }
   }
 }
 ```

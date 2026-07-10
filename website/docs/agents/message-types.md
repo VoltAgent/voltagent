@@ -247,9 +247,9 @@ const agent = new Agent({
 });
 
 // Streaming with SubAgent tracking
-const stream = await agent.streamText("Write and edit a blog post");
+const result = await agent.streamText("Write and edit a blog post");
 
-for await (const part of stream.fullStream) {
+for await (const part of result.stream) {
   if (part.type === "text-delta") {
     // Check which SubAgent is responding
     if (part.subAgentId) {
@@ -391,12 +391,12 @@ const coordinator = new Agent({
   subAgents: [researchAgent, writerAgent],
 });
 
-const stream = await coordinator.streamText("Research and write about AI");
+const result = await coordinator.streamText("Research and write about AI");
 
 // Track which agent is responding
 let currentAgent = null;
 
-for await (const part of stream.fullStream) {
+for await (const part of result.stream) {
   if (part.type === "text-delta") {
     // Detect agent switches
     if (part.subAgentId && part.subAgentId !== currentAgent) {
@@ -516,7 +516,7 @@ extractText(uiMessage); // UIMessage
 **A**: Check the `subAgentId` and `subAgentName` properties:
 
 ```typescript
-for await (const part of stream.fullStream) {
+for await (const part of result.stream) {
   if (part.subAgentId) {
     console.log(`SubAgent: ${part.subAgentName}`);
   } else {

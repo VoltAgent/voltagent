@@ -1,5 +1,15 @@
 # voltagent-with-copilotkit-server
 
+## 0.0.4-next.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @voltagent/ag-ui@2.0.0-next.0
+  - @voltagent/cli@1.0.0-next.0
+  - @voltagent/core@3.0.0-next.0
+  - @voltagent/server-hono@3.0.0-next.0
+
 ## 0.0.3
 
 ### Patch Changes

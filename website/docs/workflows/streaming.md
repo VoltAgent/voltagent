@@ -216,8 +216,8 @@ Asynchronously forwards events from an agent's fullStream to the workflow stream
     const agent = new Agent({ /* ... */ });
     const response = await agent.streamText(prompt);
 
-    if (response.fullStream) {
-      await writer.pipeFrom(response.fullStream, {
+    if (response.stream) {
+      await writer.pipeFrom(response.stream, {
         prefix: "agent-",      // Prefix for event types
         agentId: agent.id,     // Override 'from' field
         filter: (part) => {    // Filter events

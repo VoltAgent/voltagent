@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/logger",
   "description": "VoltAgent logger - @voltagent/logger",
-  "version": "2.0.2",
+  "version": "3.0.0-next.0",
   "dependencies": {
     "@opentelemetry/api-logs": "^0.204.0",
     "@opentelemetry/instrumentation": "^0.204.0",
     "@opentelemetry/instrumentation-pino": "^0.50.1",
     "@opentelemetry/sdk-logs": "^0.204.0",
-    "@voltagent/internal": "^1.0.2",
+    "@voltagent/internal": "^2.0.0-next.0",
     "pino": "^9.7.0",
     "pino-pretty": "^13.0.0"
   },
@@ -16,14 +16,9 @@
   },
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -31,7 +26,7 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/VoltAgent/voltagent.git",
@@ -47,5 +42,6 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "type": "module",
   "types": "dist/index.d.ts"
 }

@@ -1129,7 +1129,7 @@ export class VoltAgentExporter implements SpanExporter {
           : "gen_ai.finishReason" in attributes // Legacy support for ai SDK versions < 4.0.0
             ? (attributes["gen_ai.finishReason"]?.toString() ?? null)
             : null,
-      system:
+      instructions:
         "gen_ai.system" in attributes
           ? (attributes["gen_ai.system"]?.toString() ?? null)
           : "ai.model.provider" in attributes
