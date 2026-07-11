@@ -147,11 +147,14 @@ packages/core/docs
 # Create VoltAgent App
 !packages/create-voltagent-app/templates/base/.env
 
-# cursor
-.cursor/*
-!.cursor/rules/
-.cursor/rules/*
-!.cursor/rules/agents.mdc
+# Local coding-agent and IDE config directories/files.
+# Keep shared instruction files such as AGENTS.md and CLAUDE.md tracked instead.
+.agents/
+.claude
+.codex/
+.cursor/
+.windsurf/
+/.mcp.json
 
 # vite and vitest
 vite.config.*.timestamp*
@@ -163,8 +166,6 @@ vitest.config.*.timestamp*
 # vscode
 .vscode
 
-# claude
-.claude
 skills
 !packages/core/src/workspace/skills
 !packages/core/src/workspace/skills/**

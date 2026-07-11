@@ -1,40 +1,45 @@
 # Repository Structure
 
-This monorepo is organized using pnpm workspaces and Lerna with the following main directories:
+This monorepo is organized using pnpm workspaces, Lerna, and Nx with the following main directories:
 
-## Overview
+## Quick Reference
 
 ```
 voltagent/
 ├── packages/       # Core packages and integrations
 ├── examples/       # Example implementations
 ├── website/        # Documentation website and marketplace
-├── docs/           # Project documentation
+├── contributing/   # Contributor and project documentation
 ├── scripts/        # Build and utility scripts
+├── tools/          # Repository tooling packages
+├── archive/        # Deprecated packages and historical code
 ├── .changeset/     # Changeset configuration
 └── package.json    # Root package configuration
 ```
 
-## Details
+## Directory Details
 
 ### `packages/`
 
 Core packages, AI provider integrations, and utilities:
 
+- **a2a-server** - Agent-to-Agent protocol server implementation
+- **ag-ui** - AG-UI adapter for agents and CopilotKit runtimes
 - **cli** - VoltAgent CLI for project scaffolding and management
-- **core** - Main VoltAgent framework with agent orchestration, memory management, tools, and observability. Includes the `ConversationBuffer` (merges model/tool messages into UI messages for persistence) and `MemoryPersistQueue` (debounced memory write pipeline).
+- **cloudflare-d1**, **libsql**, **postgres**, **supabase**, **voltagent-memory** - Memory and storage adapters
+- **core** - Main VoltAgent framework with agent orchestration, memory management, tools, workflows, observability, workspaces, and VoltOps integration
 - **create-voltagent-app** - Project initialization tool
 - **docs-mcp** - Model Context Protocol documentation server
+- **evals**, **scorers** - Evaluation and scoring utilities
 - **internal** - Internal utilities and shared types used across packages
-- **langfuse-exporter** - LangFuse telemetry exporter
-- **libsql** - LibSQL database integration
+- **langfuse-exporter**, **vercel-ai-exporter** - Telemetry exporters
 - **logger** - Universal logger implementation
-- **postgres** - PostgreSQL database integration
+- **mcp-server** - Model Context Protocol server implementation
+- **rag**, **resumable-streams** - Retrieval and streaming utilities
+- **sandbox-daytona**, **sandbox-e2b** - Sandbox provider integrations
 - **sdk** - JavaScript/TypeScript SDK for VoltAgent API
 - **server-core** - Core server handlers, schemas, and business logic
-- **server-hono** - Hono-based server implementation with API routes
-- **supabase** - Supabase client integration
-- **vercel-ai-exporter** - Vercel AI telemetry exporter
+- **server-elysia**, **server-hono**, **serverless-hono** - Server runtime integrations
 - **voice** - Voice interaction capabilities
 
 #### Conventions
@@ -70,14 +75,32 @@ Documentation website built with Docusaurus:
 - **blog/** - Blog posts and tutorials
 - **static/** - Static assets and images
 
-### `docs/`
+### `contributing/`
 
-Project-level documentation:
+Contributor and project-level documentation:
 
+- **README.md** - Contributor documentation index and repository links
 - **structure.md** - This file, describing repository organization
 - **tooling.md** - Development tools and workflows
-- Additional architecture and design documents
+- **testing.md** - Testing guidelines and commands
+- **linting.md** - Formatting and linting guidelines
+- **changesets.md** - Package versioning and changelog guidelines
+- **coding-agents.md** - Supported coding-agent instruction files
 
 ### `scripts/`
 
 Reusable scripts for the project, for repeatable development tasks.
+
+### `tools/`
+
+Repository tooling packages and generators used by the monorepo.
+
+### `archive/`
+
+Deprecated packages and historical code. Prefer current package patterns before using archived code as a reference.
+
+## Related Docs
+
+- [Development tooling](./tooling.md)
+- [Testing](./testing.md)
+- [Coding-agent compatibility](./coding-agents.md)
