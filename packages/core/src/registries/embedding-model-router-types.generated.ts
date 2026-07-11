@@ -29,6 +29,7 @@ export type EmbeddingModelsMap = {
   readonly huggingface: readonly ["Qwen/Qwen3-Embedding-4B", "Qwen/Qwen3-Embedding-8B"];
   readonly inference: readonly ["qwen/qwen3-embedding-4b"];
   readonly mistral: readonly ["mistral-embed"];
+  readonly nearai: readonly ["Qwen/Qwen3-Embedding-0.6B"];
   readonly nvidia: readonly ["nvidia/llama-embed-nemotron-8b"];
   readonly openai: readonly [
     "text-embedding-3-large",
