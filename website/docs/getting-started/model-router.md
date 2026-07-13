@@ -80,6 +80,14 @@ OpenAI-compatible providers may also require a base URL. You can override it wit
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 ```
 
+Registry entries can define their own API key and base URL variables. For example, an OpenAI-compatible TokenLab entry
+would be configured with:
+
+```bash
+TOKENLAB_API_KEY=your-tokenlab-api-key
+TOKENLAB_BASE_URL=https://api.tokenlab.sh/v1
+```
+
 ## When to Use ai-sdk Providers Directly
 
 Use model strings for quick setup and dynamic routing. If you need provider-specific configuration or advanced options, pass a `LanguageModel` from an ai-sdk provider instead:
