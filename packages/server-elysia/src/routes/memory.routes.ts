@@ -2,6 +2,7 @@ import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
   MEMORY_ROUTES,
+  type MemoryAuthenticatedUser,
   handleCloneMemoryConversation,
   handleCreateMemoryConversation,
   handleDeleteMemoryConversation,
@@ -41,6 +42,13 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+function getAuthenticatedUser(
+  store?: Record<string, unknown>,
+): MemoryAuthenticatedUser | undefined {
+  const user = store?.authenticatedUser;
+  return user && typeof user === "object" ? (user as MemoryAuthenticatedUser) : undefined;
+}
+
 type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
   getWorkingMemory?: { path: string };
 };
@@ -54,12 +62,13 @@ const memoryWorkingMemoryPath =
  * Register memory routes
  */
 export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logger: Logger) {
-  app.get(MEMORY_ROUTES.listConversations.path, async ({ query, set }) => {
+  app.get(MEMORY_ROUTES.listConversations.path, async ({ query, set, store }) => {
     logger.trace("GET /api/memory/conversations - fetching conversations", { query });
     const response = await handleListMemoryConversations(deps, {
       agentId: query.agentId as string | undefined,
       resourceId: query.resourceId as string | undefined,
       userId: query.userId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
       limit: parseNumber(query.limit as string | number | undefined),
       offset: parseNumber(query.offset as string | number | undefined),
       orderBy: query.orderBy as "created_at" | "updated_at" | "title" | undefined,
@@ -69,17 +78,18 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
     return response;
   });
 
-  app.get(MEMORY_ROUTES.getConversation.path, async ({ params, query, set }) => {
+  app.get(MEMORY_ROUTES.getConversation.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`GET /api/memory/conversations/${conversationId} - fetching conversation`);
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.get(MEMORY_ROUTES.listMessages.path, async ({ params, query, set }) => {
+  app.get(MEMORY_ROUTES.listMessages.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`GET /api/memory/conversations/${conversationId}/messages - fetching messages`, {
       query,
@@ -91,12 +101,13 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
       after: parseDate(query.after as string | undefined),
       roles: query.roles ? String(query.roles).split(",") : undefined,
       userId: query.userId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.get(memoryWorkingMemoryPath, async ({ params, query, set }) => {
+  app.get(memoryWorkingMemoryPath, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(
       `GET /api/memory/conversations/${conversationId}/working-memory - fetching working memory`,
@@ -106,12 +117,13 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
       agentId: query.agentId as string | undefined,
       scope: query.scope === "user" ? "user" : "conversation",
       userId: query.userId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.post(MEMORY_ROUTES.saveMessages.path, async ({ body, query, set }) => {
+  app.post(MEMORY_ROUTES.saveMessages.path, async ({ body, query, set, store }) => {
     const payload = body as Record<string, unknown> | undefined;
     logger.trace("POST /api/memory/save-messages - saving messages", {
       messageCount: Array.isArray(payload?.messages) ? payload?.messages.length : 0,
@@ -119,57 +131,62 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
     const response = await handleSaveMemoryMessages(deps, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.post(MEMORY_ROUTES.createConversation.path, async ({ body, query, set }) => {
+  app.post(MEMORY_ROUTES.createConversation.path, async ({ body, query, set, store }) => {
     const payload = body as Record<string, unknown> | undefined;
     logger.trace("POST /api/memory/conversations - creating conversation");
     const response = await handleCreateMemoryConversation(deps, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.patch(MEMORY_ROUTES.updateConversation.path, async ({ params, body, query, set }) => {
+  app.patch(MEMORY_ROUTES.updateConversation.path, async ({ params, body, query, set, store }) => {
     const conversationId = params.conversationId;
     const payload = body as Record<string, unknown> | undefined;
     logger.trace(`PATCH /api/memory/conversations/${conversationId} - updating conversation`);
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.delete(MEMORY_ROUTES.deleteConversation.path, async ({ params, query, set }) => {
+  app.delete(MEMORY_ROUTES.deleteConversation.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`DELETE /api/memory/conversations/${conversationId} - deleting conversation`);
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.post(MEMORY_ROUTES.cloneConversation.path, async ({ params, body, query, set }) => {
+  app.post(MEMORY_ROUTES.cloneConversation.path, async ({ params, body, query, set, store }) => {
     const conversationId = params.conversationId;
     const payload = body as Record<string, unknown> | undefined;
     logger.trace(`POST /api/memory/conversations/${conversationId}/clone - cloning conversation`);
     const response = await handleCloneMemoryConversation(deps, conversationId, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.post(MEMORY_ROUTES.updateWorkingMemory.path, async ({ params, body, query, set }) => {
+  app.post(MEMORY_ROUTES.updateWorkingMemory.path, async ({ params, body, query, set, store }) => {
     const conversationId = params.conversationId;
     const payload = body as Record<string, unknown> | undefined;
     logger.trace(
@@ -178,23 +195,25 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
     const response = await handleUpdateMemoryWorkingMemory(deps, conversationId, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.post(MEMORY_ROUTES.deleteMessages.path, async ({ body, query, set }) => {
+  app.post(MEMORY_ROUTES.deleteMessages.path, async ({ body, query, set, store }) => {
     const payload = body as Record<string, unknown> | undefined;
     logger.trace("POST /api/memory/messages/delete - deleting messages");
     const response = await handleDeleteMemoryMessages(deps, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.get(MEMORY_ROUTES.searchMemory.path, async ({ query, set }) => {
+  app.get(MEMORY_ROUTES.searchMemory.path, async ({ query, set, store }) => {
     logger.trace("GET /api/memory/search - searching memory", { query });
     const response = await handleSearchMemory(deps, {
       agentId: query.agentId as string | undefined,
@@ -203,6 +222,7 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
       threshold: parseFloatValue(query.threshold as string | number | undefined),
       conversationId: query.conversationId as string | undefined,
       userId: query.userId as string | undefined,
+      authenticatedUser: getAuthenticatedUser(store as Record<string, unknown>),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
