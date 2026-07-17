@@ -103,6 +103,13 @@ const scenarios: Scenario[] = [
     ide: "none",
   },
   {
+    name: "atlascloud-hono-pnpm-none",
+    server: "hono",
+    packageManager: "pnpm",
+    aiProvider: "atlascloud",
+    ide: "none",
+  },
+  {
     name: "ollama-elysia-bun-none",
     server: "elysia",
     packageManager: "bun",
@@ -317,7 +324,15 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
     expect(serverCoverage).toEqual(new Set<ServerProvider>(["hono", "elysia"]));
     expect(packageManagerCoverage).toEqual(new Set<PackageManager>(["pnpm", "bun", "yarn", "npm"]));
     expect(providerCoverage).toEqual(
-      new Set<AIProvider>(["openai", "anthropic", "google", "groq", "mistral", "ollama"]),
+      new Set<AIProvider>([
+        "openai",
+        "anthropic",
+        "google",
+        "groq",
+        "mistral",
+        "atlascloud",
+        "ollama",
+      ]),
     );
     expect(ideCoverage).toEqual(
       new Set<NonNullable<ProjectOptions["ide"]>>(["none", "cursor", "windsurf", "vscode"]),
