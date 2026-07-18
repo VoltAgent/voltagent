@@ -314,21 +314,25 @@ export async function handleChatStream(
       );
     }
 
+    const resumableStreamAdapter = deps.resumableStream;
+
     if (resumableStreamEnabled) {
-      options.abortSignal = undefined;
+      // Preserve abortSignal so client can still cancel the LLM stream.
+      const clientSignal = options.abortSignal;
+
+      // Make clearActiveStream fire-and-forget — don't await it on the hot path,
+      // and don't let client abort block this cleanup.
+      if (resumableStreamAdapter && conversationId && userId) {
+        resumableStreamAdapter.clearActiveStream({ conversationId, agentId, userId }).catch((error) => {
+          logger.warn("Failed to clear active resumable stream", { error });
+        });
+      }
+
+      // Restore signal so streamText can still be cancelled by the client.
+      options.abortSignal = clientSignal;
     }
 
     options.resumableStream = resumableStreamEnabled;
-
-    const resumableStreamAdapter = deps.resumableStream;
-    if (resumableStreamEnabled && resumableStreamAdapter && conversationId && userId) {
-      try {
-        await resumableStreamAdapter.clearActiveStream({ conversationId, agentId, userId });
-      } catch (error) {
-        logger.warn("Failed to clear active resumable stream", { error });
-      }
-    }
-
     const result = await agent.streamText(input, options);
     let activeStreamId: string | null = null;
 
