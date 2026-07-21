@@ -160,6 +160,14 @@ const EXTRA_PROVIDER_REGISTRY: ModelProviderRegistryEntry[] = [
     env: ["MINIMAX_API_KEY"],
     doc: "https://platform.minimaxi.com/docs/api-reference/api-overview",
   },
+  {
+    id: "edenai",
+    name: "Eden AI",
+    npm: "@ai-sdk/openai-compatible",
+    api: "https://api.edenai.run/v3",
+    env: ["EDENAI_API_KEY"],
+    doc: "https://www.edenai.co/docs",
+  },
 ];
 
 // EXTRA entries first so they take precedence over auto-generated entries
