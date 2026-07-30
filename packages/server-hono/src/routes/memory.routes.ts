@@ -41,6 +41,17 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+function getAuthenticatedUserId(c: { get?: (key: string) => unknown }): string | undefined {
+  const user = c.get?.("authenticatedUser") as { id?: unknown; sub?: unknown } | null | undefined;
+  if (typeof user?.id === "string") {
+    return user.id;
+  }
+  if (typeof user?.sub === "string") {
+    return user.sub;
+  }
+  return undefined;
+}
+
 const orderByAllowlist = new Set(["created_at", "updated_at", "title"]);
 
 function parseOrderBy(value?: string): "created_at" | "updated_at" | "title" | undefined {
@@ -100,6 +111,7 @@ export function registerMemoryRoutes(
     logger.trace(`GET /api/memory/conversations/${conversationId} - fetching conversation`);
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      requestingUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -117,6 +129,7 @@ export function registerMemoryRoutes(
       after: parseDate(query.after),
       roles: query.roles ? query.roles.split(",") : undefined,
       userId: query.userId,
+      requestingUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -186,6 +199,7 @@ export function registerMemoryRoutes(
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
+      requestingUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -196,6 +210,7 @@ export function registerMemoryRoutes(
     logger.trace(`DELETE /api/memory/conversations/${conversationId} - deleting conversation`);
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      requestingUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });

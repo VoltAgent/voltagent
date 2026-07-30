@@ -41,6 +41,17 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+function getAuthenticatedUserId(store: { authenticatedUser?: unknown }): string | undefined {
+  const user = store.authenticatedUser as { id?: unknown; sub?: unknown } | null | undefined;
+  if (typeof user?.id === "string") {
+    return user.id;
+  }
+  if (typeof user?.sub === "string") {
+    return user.sub;
+  }
+  return undefined;
+}
+
 type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
   getWorkingMemory?: { path: string };
 };
@@ -69,17 +80,18 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
     return response;
   });
 
-  app.get(MEMORY_ROUTES.getConversation.path, async ({ params, query, set }) => {
+  app.get(MEMORY_ROUTES.getConversation.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`GET /api/memory/conversations/${conversationId} - fetching conversation`);
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId as string | undefined,
+      requestingUserId: getAuthenticatedUserId(store),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.get(MEMORY_ROUTES.listMessages.path, async ({ params, query, set }) => {
+  app.get(MEMORY_ROUTES.listMessages.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`GET /api/memory/conversations/${conversationId}/messages - fetching messages`, {
       query,
@@ -91,6 +103,7 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
       after: parseDate(query.after as string | undefined),
       roles: query.roles ? String(query.roles).split(",") : undefined,
       userId: query.userId as string | undefined,
+      requestingUserId: getAuthenticatedUserId(store),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
@@ -135,23 +148,25 @@ export function registerMemoryRoutes(app: Elysia, deps: ServerProviderDeps, logg
     return response;
   });
 
-  app.patch(MEMORY_ROUTES.updateConversation.path, async ({ params, body, query, set }) => {
+  app.patch(MEMORY_ROUTES.updateConversation.path, async ({ params, body, query, set, store }) => {
     const conversationId = params.conversationId;
     const payload = body as Record<string, unknown> | undefined;
     logger.trace(`PATCH /api/memory/conversations/${conversationId} - updating conversation`);
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...(payload ?? {}),
       agentId: (payload?.agentId as string | undefined) ?? (query.agentId as string | undefined),
+      requestingUserId: getAuthenticatedUserId(store),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
   });
 
-  app.delete(MEMORY_ROUTES.deleteConversation.path, async ({ params, query, set }) => {
+  app.delete(MEMORY_ROUTES.deleteConversation.path, async ({ params, query, set, store }) => {
     const conversationId = params.conversationId;
     logger.trace(`DELETE /api/memory/conversations/${conversationId} - deleting conversation`);
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId as string | undefined,
+      requestingUserId: getAuthenticatedUserId(store),
     });
     set.status = response.success ? 200 : (response.httpStatus ?? 500);
     return response;
