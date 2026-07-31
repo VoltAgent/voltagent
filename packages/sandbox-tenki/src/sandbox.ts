@@ -26,9 +26,21 @@ import {
   isCommandTimeoutError,
   normalizeEnv,
   resolveOutput,
+  resolveWithin,
   stringToReadableStream,
   timedOutResult,
 } from "./utils";
+
+/**
+ * Upper bound on how long a queued lifecycle transition waits for
+ * `session.resume()`. The resume RPC has no transport deadline, so without a
+ * bound one dead connection would hold {@link TenkiSandbox.lifecycleTransition}
+ * — and every later `stop()`/`start()`/`execute()` on a paused sandbox —
+ * hostage forever. Matches the SDK's own `waitResumed` default. On expiry the
+ * sandbox stays `paused`, and retrying is safe: the engine treats a resume on
+ * an already-RUNNING session as idempotent.
+ */
+const RESUME_TRANSITION_TIMEOUT_MS = 180_000;
 
 /**
  * The underlying Tenki SDK session type, re-exported for consumers that reach
@@ -348,8 +360,15 @@ export class TenkiSandbox implements WorkspaceSandbox {
   /**
    * Resume the microVM when a previous {@link stop} paused it, returning the
    * sandbox to `ready` so commands can run again. No-op otherwise.
+   *
+   * `signal` is the requesting `execute()`'s cancellation: a canceled execute
+   * has already returned by the time its queued transition reaches the head of
+   * the queue, so the transition bails out instead of issuing a resume RPC
+   * nobody is waiting for. The RPC itself is bounded by
+   * {@link RESUME_TRANSITION_TIMEOUT_MS} so an unresponsive resume cannot wedge
+   * every later lifecycle transition.
    */
-  private async resumeIfPaused(session: Session): Promise<void> {
+  private async resumeIfPaused(session: Session, signal?: AbortSignal): Promise<void> {
     return this.serializeLifecycleTransition(async () => {
       if (this.status === "destroyed" || this.session !== session) {
         throw new Error("Sandbox has been destroyed");
@@ -357,9 +376,16 @@ export class TenkiSandbox implements WorkspaceSandbox {
       if (!this.paused) {
         return;
       }
+      if (signal?.aborted) {
+        throw new Error("Sandbox resume canceled: the requesting execute() timed out or aborted");
+      }
 
       const generation = this.generation;
-      await session.resume();
+      await resolveWithin(
+        session.resume(),
+        RESUME_TRANSITION_TIMEOUT_MS,
+        `timed out waiting for session ${session.id} to resume`,
+      );
 
       // Destruction eagerly invalidates the generation and drops the owned
       // session. A resume RPC may still finish afterward, but it must neither
@@ -574,7 +600,9 @@ export class TenkiSandbox implements WorkspaceSandbox {
         }
       }
     } catch {
-      // ignore stream errors; result bytes are used as a fallback
+      // A dead pump leaves the buffer silently short; flag it so resolveOutput
+      // prefers the resolved run's complete aggregate bytes over partial ones.
+      buffer.failed = true;
     } finally {
       // Flush any bytes the decoder is still holding for a partial code point.
       if (decoder) {
@@ -731,7 +759,9 @@ export class TenkiSandbox implements WorkspaceSandbox {
       // does not exist yet, so `requestKill()` would have nothing to kill. This
       // is the only await left between the guards and `session.run()`; the
       // `runOptions` build below is synchronous.
-      const resumed = await raceCancellation(this.resumeIfPaused(session));
+      const resumed = await raceCancellation(
+        this.resumeIfPaused(session, cancellationController.signal),
+      );
       if (resumed === cancellationMarker) {
         return cancellationResult();
       }

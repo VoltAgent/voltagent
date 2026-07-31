@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { TenkiSandbox } from "./sandbox";
 
 /**
+ * The slice of {@link TenkiSandbox} that {@link createTenkiToolkit} depends on.
+ */
+export type TenkiToolkitSandbox = Pick<TenkiSandbox, "getSandbox" | "authorizeSshKey">;
+
+/**
  * Build a toolkit of Tenki-specific tools that reach past the
  * `WorkspaceSandbox` seam: exposing a preview URL for a port, and authorizing
  * an SSH public key. Both reuse the adapter's single cached session — preview
@@ -12,7 +17,7 @@ import type { TenkiSandbox } from "./sandbox";
  * These are intentionally separate from the core `execute_command` adapter so a
  * consumer can opt in without them.
  */
-export function createTenkiToolkit(sandbox: TenkiSandbox): Toolkit {
+export function createTenkiToolkit(sandbox: TenkiToolkitSandbox): Toolkit {
   const exposePreviewUrl = createTool({
     name: "expose_preview_url",
     description:
@@ -52,6 +57,12 @@ export function createTenkiToolkit(sandbox: TenkiSandbox): Toolkit {
     parameters: z.object({
       publicKey: z
         .string()
+        // `updateSshAuthorizedKeys` would accept a blank or newline-carrying
+        // value verbatim; reject obvious non-entries before mutating the set.
+        .refine(
+          (value) => value.trim().length > 0 && !/[\r\n]/.test(value),
+          "publicKey must be a non-empty, single-line authorized_keys entry",
+        )
         .describe("SSH public key in authorized_keys format (e.g. 'ssh-ed25519 AAAA... user')"),
     }),
     outputSchema: z.object({
