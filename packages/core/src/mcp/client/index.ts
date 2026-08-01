@@ -81,7 +81,10 @@ function createMCPServerUrl(rawUrl: string): URL {
 }
 
 function isLocalOrPrivateHost(hostname: string): boolean {
-  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const normalized = hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/\.+$/g, "");
   if (!normalized || normalized === "localhost" || normalized.endsWith(".localhost")) {
     return true;
   }
@@ -112,7 +115,28 @@ function isPrivateIPv4(hostname: string): boolean {
   );
 }
 
+function getIPv4FromMappedIPv6(hostname: string): string | undefined {
+  const mappedMatch = hostname.match(/^::ffff:(?:(0):)?([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (!mappedMatch) {
+    return undefined;
+  }
+
+  const [, , highHex, lowHex] = mappedMatch;
+  const high = Number.parseInt(highHex, 16);
+  const low = Number.parseInt(lowHex, 16);
+  if (high > 0xffff || low > 0xffff) {
+    return undefined;
+  }
+
+  return `${(high >> 8) & 0xff}.${high & 0xff}.${(low >> 8) & 0xff}.${low & 0xff}`;
+}
+
 function isPrivateIPv6(hostname: string): boolean {
+  const mappedIPv4 = getIPv4FromMappedIPv6(hostname);
+  if (mappedIPv4) {
+    return isPrivateIPv4(mappedIPv4);
+  }
+
   return (
     hostname === "::1" ||
     hostname.startsWith("fc") ||

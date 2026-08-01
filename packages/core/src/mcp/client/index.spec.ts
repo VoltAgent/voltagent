@@ -198,21 +198,25 @@ describe("MCPClient", () => {
     });
 
     it("should reject MCP server URLs that target local or private addresses", () => {
-      expect(
-        () =>
-          new MCPClient({
-            clientInfo: mockClientInfo,
-            server: { type: "streamable-http", url: "http://127.0.0.1:8080/mcp" },
-          }),
-      ).toThrow("MCP server URL host is not allowed");
+      const blockedUrls = [
+        "http://127.0.0.1:8080/mcp",
+        "https://localhost/mcp",
+        "http://127.0.0.1.:8080/mcp",
+        "https://localhost./mcp",
+        "http://[::ffff:127.0.0.1]:8080/mcp",
+        "http://[::ffff:10.0.0.1]:8080/mcp",
+        "http://[::ffff:192.168.0.1]:8080/mcp",
+      ];
 
-      expect(
-        () =>
-          new MCPClient({
-            clientInfo: mockClientInfo,
-            server: { type: "http", url: "https://localhost/mcp" },
-          }),
-      ).toThrow("MCP server URL host is not allowed");
+      for (const url of blockedUrls) {
+        expect(
+          () =>
+            new MCPClient({
+              clientInfo: mockClientInfo,
+              server: { type: "streamable-http", url },
+            }),
+        ).toThrow("MCP server URL host is not allowed");
+      }
     });
 
     it("should throw an error for unsupported server config", () => {
