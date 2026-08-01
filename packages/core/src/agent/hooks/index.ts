@@ -59,6 +59,19 @@ export interface OnToolStartHookArgs {
   options?: ToolExecuteOptions;
 }
 
+export interface ToolGuardArgs extends OnToolStartHookArgs {}
+
+export type ToolGuardResult =
+  | boolean
+  | {
+      allowed?: boolean;
+      denied?: boolean;
+      reason?: string;
+    }
+  | undefined;
+
+export type AgentToolGuard = (args: ToolGuardArgs) => Promise<ToolGuardResult> | ToolGuardResult;
+
 export interface OnToolEndHookArgs {
   agent: Agent;
   tool: AgentTool;

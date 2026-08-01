@@ -1489,6 +1489,77 @@ Use pandas and summarize findings.`.split("\n"),
       operationContext.traceContext.end("completed");
     });
 
+    it("blocks tool execution when toolGuard denies the tool", async () => {
+      const execute = vi.fn().mockResolvedValue("should-not-run");
+      const toolGuard = vi.fn().mockResolvedValue({
+        denied: true,
+        reason: "read-only agent",
+      });
+      const onToolError = vi.fn();
+      const onToolEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolGuard,
+        hooks: createHooks({ onToolError, onToolEnd }),
+      });
+
+      const protectedTool = new Tool({
+        name: "delete-note",
+        description: "Deletes a note",
+        parameters: z.object({ id: z.string() }),
+        execute,
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const result = await executeFactory(protectedTool)({ id: "note-1" });
+
+      expect(execute).not.toHaveBeenCalled();
+      expect(toolGuard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent,
+          tool: protectedTool,
+          args: { id: "note-1" },
+          context: operationContext,
+        }),
+      );
+      expect(result).toMatchObject({
+        error: true,
+        toolName: "delete-note",
+        code: "TOOL_FORBIDDEN",
+      });
+      expect(result.message).toContain("read-only agent");
+      expect(onToolError).toHaveBeenCalledTimes(1);
+      const toolErrorArgs = onToolError.mock.calls[0][0];
+      expect(toolErrorArgs.tool).toBe(protectedTool);
+      expect(toolErrorArgs.args).toEqual({ id: "note-1" });
+      expect(toolErrorArgs.originalError).toMatchObject({
+        code: "TOOL_FORBIDDEN",
+        message: "read-only agent",
+      });
+      expect(toolErrorArgs.error).toMatchObject({
+        message: "read-only agent",
+        stage: "tool_execution",
+      });
+
+      expect(onToolEnd).toHaveBeenCalledTimes(1);
+      const toolEndArgs = onToolEnd.mock.calls[0][0];
+      expect(toolEndArgs.tool).toBe(protectedTool);
+      expect(toolEndArgs.output).toBeUndefined();
+      expect(toolEndArgs.error).toMatchObject({
+        message: "read-only agent",
+        stage: "tool_execution",
+      });
+
+      operationContext.traceContext.end("completed");
+    });
+
     it("calls onToolError when a tool throws", async () => {
       const onToolError = vi.fn();
       const onToolEnd = vi.fn();

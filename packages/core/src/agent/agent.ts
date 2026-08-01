@@ -106,7 +106,12 @@ import {
   type EnqueueEvalScoringArgs,
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
-import type { AgentHooks, OnToolEndHookResult, OnToolErrorHookResult } from "./hooks";
+import type {
+  AgentHooks,
+  AgentToolGuard,
+  OnToolEndHookResult,
+  OnToolErrorHookResult,
+} from "./hooks";
 import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import {
@@ -1044,6 +1049,7 @@ export class Agent {
   private readonly workspaceToolkitOptions: AgentOptions["workspaceToolkits"];
   private readonly workspaceSkillsPromptOption: AgentOptions["workspaceSkillsPrompt"];
   private readonly configuredHooks?: AgentHooks;
+  private readonly toolGuard?: AgentToolGuard;
   private readonly maxStepsConfigured: boolean;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
@@ -1078,6 +1084,7 @@ export class Agent {
     this.workspaceToolkitOptions = options.workspaceToolkits;
     this.workspaceSkillsPromptOption = options.workspaceSkillsPrompt;
     this.configuredHooks = options.hooks;
+    this.toolGuard = options.toolGuard;
     this.maxStepsConfigured = options.maxSteps !== undefined;
     const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
     const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
@@ -6421,6 +6428,46 @@ export class Agent {
     return parseResult.data;
   }
 
+  private async assertToolGuardAllows(
+    tool: BaseTool | ProviderTool,
+    args: any,
+    oc: OperationContext,
+    options?: ToolExecuteOptions,
+  ): Promise<void> {
+    if (!this.toolGuard) {
+      return;
+    }
+
+    const result = await this.toolGuard({
+      agent: this,
+      tool: tool as any,
+      context: oc,
+      args,
+      options,
+    });
+
+    const denied =
+      result === false ||
+      (typeof result === "object" &&
+        result !== null &&
+        (result.denied === true || result.allowed === false));
+    if (!denied) {
+      return;
+    }
+
+    const reason =
+      typeof result === "object" && result !== null && typeof result.reason === "string"
+        ? result.reason
+        : "Tool execution denied by toolGuard.";
+
+    throw new ToolDeniedError({
+      toolName: tool.name,
+      message: reason,
+      code: "TOOL_FORBIDDEN",
+      httpStatus: 403,
+    });
+  }
+
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
@@ -6623,6 +6670,7 @@ export class Agent {
           try {
             await this.waitForSpeculativeInputGuardrail(oc);
             await oc.traceContext.withSpan(toolSpan, async () => {
+              await this.assertToolGuardAllows(tool, args, oc, executionOptions);
               await runToolStartHooks();
             });
 
@@ -6683,7 +6731,8 @@ export class Agent {
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
           await this.waitForSpeculativeInputGuardrail(oc);
-          // Call tool start hook - can throw ToolDeniedError
+          // Call tool guard and start hook - both can throw ToolDeniedError
+          await this.assertToolGuardAllows(tool, args, oc, executionOptions);
           await runToolStartHooks();
 
           // Execute tool with merged options
@@ -7242,6 +7291,7 @@ export class Agent {
           `Provider tool "${tool.name}" received arguments that do not match callTool input.`,
         );
       }
+      await this.assertToolGuardAllows(tool, callInput, oc, executionOptions);
       await hooks.onToolStart?.({
         agent: this,
         tool: tool as any,
