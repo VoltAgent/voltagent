@@ -38,6 +38,90 @@ import type {
 import type { UserInputHandler } from "./user-input-bridge";
 import { UserInputBridge } from "./user-input-bridge";
 
+const SAFE_STDIO_ENV_KEYS = new Set([
+  "PATH",
+  "Path",
+  "HOME",
+  "USERPROFILE",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "TMP",
+  "TEMP",
+  "SystemRoot",
+  "ComSpec",
+]);
+
+function buildStdioEnvironment(explicitEnv?: Record<string, string>): Record<string, string> {
+  const safeDefaultEnvironment: Record<string, string> = {};
+  const defaultEnvironment = getDefaultEnvironment();
+
+  for (const [key, value] of Object.entries(defaultEnvironment)) {
+    if (SAFE_STDIO_ENV_KEYS.has(key)) {
+      safeDefaultEnvironment[key] = value;
+    }
+  }
+
+  return {
+    ...safeDefaultEnvironment,
+    ...(explicitEnv || {}),
+  };
+}
+
+function createMCPServerUrl(rawUrl: string): URL {
+  const url = new URL(rawUrl);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`Unsupported MCP server URL protocol: ${url.protocol}`);
+  }
+
+  if (isLocalOrPrivateHost(url.hostname)) {
+    throw new Error(`MCP server URL host is not allowed: ${url.hostname}`);
+  }
+
+  return url;
+}
+
+function isLocalOrPrivateHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (!normalized || normalized === "localhost" || normalized.endsWith(".localhost")) {
+    return true;
+  }
+
+  return isPrivateIPv4(normalized) || isPrivateIPv6(normalized);
+}
+
+function isPrivateIPv4(hostname: string): boolean {
+  const octets = hostname.split(".");
+  if (octets.length !== 4) {
+    return false;
+  }
+
+  const values = octets.map((octet) => Number.parseInt(octet, 10));
+  if (values.some((value, index) => !/^\d+$/.test(octets[index]) || value < 0 || value > 255)) {
+    return false;
+  }
+
+  const [first, second] = values;
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 100 && second >= 64 && second <= 127)
+  );
+}
+
+function isPrivateIPv6(hostname: string): boolean {
+  return (
+    hostname === "::1" ||
+    hostname.startsWith("fc") ||
+    hostname.startsWith("fd") ||
+    hostname.startsWith("fe80:") ||
+    hostname === "0:0:0:0:0:0:0:1"
+  );
+}
+
 /**
  * Client for interacting with Model Context Protocol (MCP) servers.
  * Wraps the official MCP SDK client to provide a higher-level interface.
@@ -159,19 +243,19 @@ export class MCPClient extends SimpleEventEmitter {
 
     if (this.isHTTPServer(config.server)) {
       // HTTP type: Try streamable HTTP first with SSE fallback
-      this.transport = new StreamableHTTPClientTransport(new URL(config.server.url), {
+      this.transport = new StreamableHTTPClientTransport(createMCPServerUrl(config.server.url), {
         requestInit: config.server.requestInit,
       });
       this.shouldAttemptFallback = true;
     } else if (this.isSSEServer(config.server)) {
       // Explicit SSE transport
-      this.transport = new SSEClientTransport(new URL(config.server.url), {
+      this.transport = new SSEClientTransport(createMCPServerUrl(config.server.url), {
         requestInit: config.server.requestInit,
         eventSourceInit: config.server.eventSourceInit,
       });
     } else if (this.isStreamableHTTPServer(config.server)) {
       // Explicit streamable HTTP transport (no fallback)
-      this.transport = new StreamableHTTPClientTransport(new URL(config.server.url), {
+      this.transport = new StreamableHTTPClientTransport(createMCPServerUrl(config.server.url), {
         requestInit: config.server.requestInit,
         sessionId: config.server.sessionId,
       });
@@ -181,7 +265,7 @@ export class MCPClient extends SimpleEventEmitter {
         command: config.server.command,
         args: config.server.args || [],
         cwd: config.server.cwd,
-        env: { ...getDefaultEnvironment(), ...(config.server.env || {}) },
+        env: buildStdioEnvironment(config.server.env),
       });
     } else {
       throw new Error(
@@ -292,7 +376,7 @@ export class MCPClient extends SimpleEventEmitter {
       throw new Error("Invalid server config for SSE fallback");
     }
 
-    this.transport = new SSEClientTransport(new URL(this.serverConfig.url), {
+    this.transport = new SSEClientTransport(createMCPServerUrl(this.serverConfig.url), {
       requestInit: this.serverConfig.requestInit,
       eventSourceInit: this.serverConfig.eventSourceInit,
     });

@@ -1,6 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
@@ -23,7 +26,12 @@ vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js", () => ({
 
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
   StdioClientTransport: vi.fn(),
-  getDefaultEnvironment: vi.fn().mockReturnValue({}),
+  getDefaultEnvironment: vi.fn().mockReturnValue({
+    PATH: "/usr/bin",
+    HOME: "/home/test",
+    OPENAI_API_KEY: "secret-openai-key",
+    AWS_SECRET_ACCESS_KEY: "secret-aws-key",
+  }),
 }));
 
 vi.mock("zod-from-json-schema", () => ({
@@ -152,6 +160,59 @@ describe("MCPClient", () => {
         cwd: mockStdioServerConfig.cwd,
         env: expect.any(Object),
       });
+    });
+
+    it("should not pass sensitive parent environment variables to stdio servers", () => {
+      new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockStdioServerConfig,
+      });
+
+      expect(getDefaultEnvironment).toHaveBeenCalled();
+      const transportOptions = (StdioClientTransport as vi.Mock).mock.calls.at(-1)?.[0];
+      expect(transportOptions.env).toMatchObject({
+        PATH: "/usr/bin",
+        HOME: "/home/test",
+        TEST: "true",
+      });
+      expect(transportOptions.env).not.toHaveProperty("OPENAI_API_KEY");
+      expect(transportOptions.env).not.toHaveProperty("AWS_SECRET_ACCESS_KEY");
+    });
+
+    it("should reject unsupported MCP server URL protocols", () => {
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "http", url: "file:///etc/passwd" },
+          }),
+      ).toThrow("Unsupported MCP server URL protocol");
+
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "sse", url: "ftp://example.com/mcp" },
+          }),
+      ).toThrow("Unsupported MCP server URL protocol");
+    });
+
+    it("should reject MCP server URLs that target local or private addresses", () => {
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "streamable-http", url: "http://127.0.0.1:8080/mcp" },
+          }),
+      ).toThrow("MCP server URL host is not allowed");
+
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "http", url: "https://localhost/mcp" },
+          }),
+      ).toThrow("MCP server URL host is not allowed");
     });
 
     it("should throw an error for unsupported server config", () => {
