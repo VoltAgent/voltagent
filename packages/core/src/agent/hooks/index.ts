@@ -1,6 +1,6 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { UIMessage } from "ai";
-import type { AgentTool } from "../../tool";
+import type { AgentTool, ProviderTool } from "../../tool";
 import type { Agent } from "../agent";
 import type { AbortError, CancellationError, VoltAgentError } from "../errors";
 import type { ToolExecuteOptions, UsageInfo } from "../providers/base/types";
@@ -51,9 +51,11 @@ export interface OnHandoffCompleteHookArgs {
   bail: (transformedResult?: string) => void;
 }
 
+export type AgentHookTool = AgentTool | ProviderTool;
+
 export interface OnToolStartHookArgs {
   agent: Agent;
-  tool: AgentTool;
+  tool: AgentHookTool;
   context: OperationContext;
   args: any;
   options?: ToolExecuteOptions;
@@ -61,20 +63,30 @@ export interface OnToolStartHookArgs {
 
 export interface ToolGuardArgs extends OnToolStartHookArgs {}
 
-export type ToolGuardResult =
-  | boolean
+export type ToolGuardObjectResult =
   | {
-      allowed?: boolean;
-      denied?: boolean;
+      allowed: true;
+      denied?: never;
       reason?: string;
     }
-  | undefined;
+  | {
+      allowed: false;
+      denied?: never;
+      reason?: string;
+    }
+  | {
+      denied: true;
+      allowed?: never;
+      reason?: string;
+    };
+
+export type ToolGuardResult = boolean | ToolGuardObjectResult | undefined;
 
 export type AgentToolGuard = (args: ToolGuardArgs) => Promise<ToolGuardResult> | ToolGuardResult;
 
 export interface OnToolEndHookArgs {
   agent: Agent;
-  tool: AgentTool;
+  tool: AgentHookTool;
   /** The successful output from the tool. Undefined on error. */
   output: unknown | undefined;
   /** The error if the tool execution failed. */
@@ -89,7 +101,7 @@ export interface OnToolEndHookResult {
 
 export interface OnToolErrorHookArgs {
   agent: Agent;
-  tool: AgentTool;
+  tool: AgentHookTool;
   args: any;
   /** Structured VoltAgentError for this failure. */
   error: VoltAgentError | AbortError;

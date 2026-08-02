@@ -1497,6 +1497,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       const onToolError = vi.fn();
       const onToolEnd = vi.fn();
+      const toolOnEnd = vi.fn();
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test",
@@ -1510,6 +1511,9 @@ Use pandas and summarize findings.`.split("\n"),
         description: "Deletes a note",
         parameters: z.object({ id: z.string() }),
         execute,
+        hooks: {
+          onEnd: toolOnEnd,
+        },
       });
 
       const operationContext = (agent as any).createOperationContext("input");
@@ -1549,6 +1553,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       expect(onToolEnd).toHaveBeenCalledTimes(1);
+      expect(toolOnEnd).toHaveBeenCalledTimes(1);
       const toolEndArgs = onToolEnd.mock.calls[0][0];
       expect(toolEndArgs.tool).toBe(protectedTool);
       expect(toolEndArgs.output).toBeUndefined();
@@ -1558,6 +1563,88 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       operationContext.traceContext.end("completed");
+    });
+
+    it("blocks routed provider tool execution before invoking the provider", async () => {
+      const toolGuard = vi.fn().mockResolvedValue({
+        denied: true,
+        reason: "read-only agent",
+      });
+      const onToolError = vi.fn();
+      const onToolEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        toolGuard,
+        hooks: createHooks({ onToolError, onToolEnd }),
+      });
+
+      const providerTool = {
+        type: "provider",
+        id: "provider.deleteNote",
+        name: "provider-delete-note",
+        description: "Deletes a note through a provider tool",
+        args: { id: { type: "string" } },
+      } as any;
+      const operationContext = (agent as any).createOperationContext("input");
+      const executionOptions = {
+        ...operationContext,
+        hooks: agent.hooks,
+        toolContext: {
+          name: providerTool.name,
+          callId: "provider-call-1",
+          messages: [],
+          abortSignal: operationContext.abortController.signal,
+        },
+      };
+      const runInternalGenerateText = vi
+        .spyOn(agent as any, "runInternalGenerateText")
+        .mockRejectedValue(new Error("provider should not run"));
+
+      const result = await (agent as any).executeProviderToolViaCallTool({
+        tool: providerTool,
+        args: { id: "note-1" },
+        oc: operationContext,
+        hooks: agent.hooks,
+        executionOptions,
+      });
+
+      expect(runInternalGenerateText).not.toHaveBeenCalled();
+      expect(toolGuard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent,
+          tool: providerTool,
+          args: { id: "note-1" },
+          context: operationContext,
+        }),
+      );
+      expect(result).toMatchObject({
+        error: true,
+        toolName: "provider-delete-note",
+        code: "TOOL_FORBIDDEN",
+      });
+      expect(onToolError).toHaveBeenCalledTimes(1);
+      expect(onToolError.mock.calls[0][0]).toMatchObject({
+        tool: providerTool,
+        args: { id: "note-1" },
+        error: expect.objectContaining({
+          message: "read-only agent",
+          stage: "tool_execution",
+        }),
+      });
+      expect(onToolEnd).toHaveBeenCalledTimes(1);
+      expect(onToolEnd.mock.calls[0][0]).toMatchObject({
+        tool: providerTool,
+        output: undefined,
+        error: expect.objectContaining({
+          message: "read-only agent",
+          stage: "tool_execution",
+        }),
+      });
+
+      operationContext.traceContext.end("completed");
+      runInternalGenerateText.mockRestore();
     });
 
     it("calls onToolError when a tool throws", async () => {

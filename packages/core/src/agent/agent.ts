@@ -6440,7 +6440,7 @@ export class Agent {
 
     const result = await this.toolGuard({
       agent: this,
-      tool: tool as any,
+      tool,
       context: oc,
       args,
       options,
@@ -6613,14 +6613,6 @@ export class Agent {
         let hasErrorOutputOverride = false;
 
         spanOutcome = { status: "error", error: voltAgentError };
-
-        await tool.hooks?.onEnd?.({
-          tool,
-          args,
-          output: undefined,
-          error: voltAgentError,
-          options: executionOptions,
-        });
 
         await tool.hooks?.onEnd?.({
           tool,
@@ -7252,6 +7244,62 @@ export class Agent {
       executionOptions.toolContext?.callId ?? randomUUID(),
     );
 
+    const hasOutputOverride = (
+      value: unknown,
+    ): value is {
+      output?: unknown;
+    } => {
+      if (!value || typeof value !== "object") {
+        return false;
+      }
+      return Object.prototype.hasOwnProperty.call(value, "output");
+    };
+
+    try {
+      await this.assertToolGuardAllows(tool, args, oc, executionOptions);
+    } catch (errorValue) {
+      const error = errorValue instanceof Error ? errorValue : new Error(String(errorValue));
+      const toolCallId = executionOptions.toolContext?.callId ?? randomUUID();
+      const voltAgentError = createVoltAgentError(error, {
+        stage: "tool_execution",
+        toolError: {
+          toolCallId,
+          toolName: tool.name,
+          toolExecutionError: error,
+          toolArguments: args,
+        },
+      });
+
+      const onToolErrorResult = await hooks.onToolError?.({
+        agent: this,
+        tool,
+        args,
+        error: voltAgentError,
+        originalError: error,
+        context: oc,
+        options: executionOptions,
+      });
+
+      await hooks.onToolEnd?.({
+        agent: this,
+        tool,
+        output: undefined,
+        error: voltAgentError,
+        context: oc,
+        options: executionOptions,
+      });
+
+      if (isToolDeniedError(errorValue)) {
+        oc.abortController.abort(errorValue);
+      }
+
+      if (hasOutputOverride(onToolErrorResult)) {
+        return onToolErrorResult.output;
+      }
+
+      return buildToolErrorResult(error, toolCallId, tool.name);
+    }
+
     const tools: Record<string, any> = {
       [tool.name]: tool,
     };
@@ -7291,10 +7339,9 @@ export class Agent {
           `Provider tool "${tool.name}" received arguments that do not match callTool input.`,
         );
       }
-      await this.assertToolGuardAllows(tool, callInput, oc, executionOptions);
       await hooks.onToolStart?.({
         agent: this,
-        tool: tool as any,
+        tool,
         args: callInput,
         context: oc,
         options: executionOptions,
@@ -7304,17 +7351,6 @@ export class Agent {
     if (!toolResult) {
       throw new Error("Provider tool did not return a result.");
     }
-
-    const hasOutputOverride = (
-      value: unknown,
-    ): value is {
-      output?: unknown;
-    } => {
-      if (!value || typeof value !== "object") {
-        return false;
-      }
-      return Object.prototype.hasOwnProperty.call(value, "output");
-    };
 
     const toolError =
       toolResult.output && typeof toolResult.output === "object" && "error" in toolResult.output
@@ -7329,7 +7365,7 @@ export class Agent {
     if (toolError && hookError) {
       const onToolErrorResult = await hooks.onToolError?.({
         agent: this,
-        tool: tool as any,
+        tool,
         args,
         error: hookError,
         originalError: new Error(toolError),
@@ -7344,7 +7380,7 @@ export class Agent {
 
     await hooks.onToolEnd?.({
       agent: this,
-      tool: tool as any,
+      tool,
       output: toolError ? undefined : toolResult.output,
       error: hookError,
       context: oc,
