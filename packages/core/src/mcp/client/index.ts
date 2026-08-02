@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import {
@@ -132,17 +133,21 @@ function getIPv4FromMappedIPv6(hostname: string): string | undefined {
 }
 
 function isPrivateIPv6(hostname: string): boolean {
+  if (isIP(hostname) !== 6) {
+    return false;
+  }
+
   const mappedIPv4 = getIPv4FromMappedIPv6(hostname);
   if (mappedIPv4) {
     return isPrivateIPv4(mappedIPv4);
   }
 
+  const firstHextet = Number.parseInt(hostname.split(":")[0] || "0", 16);
   return (
     hostname === "::1" ||
-    hostname.startsWith("fc") ||
-    hostname.startsWith("fd") ||
-    hostname.startsWith("fe80:") ||
-    hostname === "0:0:0:0:0:0:0:1"
+    hostname === "0:0:0:0:0:0:0:1" ||
+    (firstHextet >= 0xfc00 && firstHextet <= 0xfdff) ||
+    (firstHextet >= 0xfe80 && firstHextet <= 0xfebf)
   );
 }
 

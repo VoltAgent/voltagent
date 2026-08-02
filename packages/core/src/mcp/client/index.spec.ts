@@ -203,20 +203,46 @@ describe("MCPClient", () => {
         "https://localhost/mcp",
         "http://127.0.0.1.:8080/mcp",
         "https://localhost./mcp",
+        "http://10.0.0.1/mcp",
+        "http://192.168.1.1/mcp",
+        "http://172.16.0.1/mcp",
+        "http://172.31.255.254/mcp",
+        "http://169.254.169.254/mcp",
+        "http://100.64.0.1/mcp",
         "http://[::ffff:127.0.0.1]:8080/mcp",
         "http://[::ffff:10.0.0.1]:8080/mcp",
+        "http://[::ffff:169.254.169.254]/mcp",
         "http://[::ffff:192.168.0.1]:8080/mcp",
+        "http://[fc00::1]/mcp",
+        "http://[fd12::1]/mcp",
+        "http://[fe80::1]/mcp",
+        "http://[fe90::1]/mcp",
+        "http://[fea0::1]/mcp",
+        "http://[febf::1]/mcp",
       ];
+      const transportTypes = ["http", "sse", "streamable-http"] as const;
 
-      for (const url of blockedUrls) {
-        expect(
-          () =>
-            new MCPClient({
-              clientInfo: mockClientInfo,
-              server: { type: "streamable-http", url },
-            }),
-        ).toThrow("MCP server URL host is not allowed");
+      for (const type of transportTypes) {
+        for (const url of blockedUrls) {
+          expect(
+            () =>
+              new MCPClient({
+                clientInfo: mockClientInfo,
+                server: { type, url },
+              }),
+          ).toThrow("MCP server URL host is not allowed");
+        }
       }
+    });
+
+    it("should allow public hostnames that start with private IPv6 prefixes", () => {
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "streamable-http", url: "https://fc-public.example.com/mcp" },
+          }),
+      ).not.toThrow();
     });
 
     it("should throw an error for unsupported server config", () => {
