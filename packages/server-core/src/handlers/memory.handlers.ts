@@ -3,6 +3,7 @@ import {
   type Conversation,
   ConversationAlreadyExistsError,
   ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
   EmbeddingAdapterNotConfiguredError,
   type Memory,
   type ServerProviderDeps,
@@ -118,7 +119,7 @@ function assertConversationOwner(
   conversation: Conversation,
   requestingUserId?: string,
 ): ApiResponse | null {
-  if (requestingUserId && conversation.userId !== requestingUserId) {
+  if (requestingUserId !== undefined && conversation.userId !== requestingUserId) {
     return buildForbiddenResponse();
   }
 
@@ -135,6 +136,7 @@ export async function handleListMemoryConversations(
     offset?: number;
     orderBy?: "created_at" | "updated_at" | "title";
     orderDirection?: "ASC" | "DESC";
+    requestingUserId?: string;
   },
 ): Promise<
   ApiResponse<{ conversations: Conversation[]; total: number; limit: number; offset: number }>
@@ -150,9 +152,10 @@ export async function handleListMemoryConversations(
     }
 
     const resourceId = query.resourceId ?? resolved.resourceId;
+    const userId = query.requestingUserId ?? query.userId;
     const [conversations, total] = await Promise.all([
       resolved.memory.queryConversations({
-        userId: query.userId,
+        userId,
         resourceId,
         limit: query.limit,
         offset: query.offset,
@@ -160,7 +163,7 @@ export async function handleListMemoryConversations(
         orderDirection: query.orderDirection,
       }),
       resolved.memory.countConversations({
-        userId: query.userId,
+        userId,
         resourceId,
       }),
     ]);
@@ -579,7 +582,13 @@ export async function handleUpdateMemoryConversation(
       return ownershipError;
     }
 
-    const conversation = await resolved.memory.updateConversation(conversationId, updates);
+    const mutationOptions =
+      body.requestingUserId !== undefined ? { expectedUserId: body.requestingUserId } : undefined;
+    const conversation = await resolved.memory.updateConversation(
+      conversationId,
+      updates,
+      mutationOptions,
+    );
     return {
       success: true,
       data: { conversation },
@@ -591,6 +600,9 @@ export async function handleUpdateMemoryConversation(
         error: error.message,
         httpStatus: 404,
       };
+    }
+    if (error instanceof ConversationOwnershipMismatchError) {
+      return buildForbiddenResponse();
     }
     return buildErrorResponse(error);
   }
@@ -625,7 +637,9 @@ export async function handleDeleteMemoryConversation(
       return ownershipError;
     }
 
-    await resolved.memory.deleteConversation(conversationId);
+    const mutationOptions =
+      query.requestingUserId !== undefined ? { expectedUserId: query.requestingUserId } : undefined;
+    await resolved.memory.deleteConversation(conversationId, mutationOptions);
     return {
       success: true,
       data: { deleted: true },
@@ -637,6 +651,9 @@ export async function handleDeleteMemoryConversation(
         error: error.message,
         httpStatus: 404,
       };
+    }
+    if (error instanceof ConversationOwnershipMismatchError) {
+      return buildForbiddenResponse();
     }
     return buildErrorResponse(error);
   }

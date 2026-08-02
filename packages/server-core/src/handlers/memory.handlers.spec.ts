@@ -1,11 +1,15 @@
-import { Memory } from "@voltagent/core";
+import {
+  ConversationOwnershipMismatchError,
+  InMemoryStorageAdapter,
+  Memory,
+} from "@voltagent/core";
 import type { Agent, Logger, ServerProviderDeps, VoltOpsClient } from "@voltagent/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { InMemoryStorageAdapter } from "../../../core/src/memory/adapters/storage/in-memory";
 import {
   handleDeleteMemoryConversation,
   handleGetMemoryConversation,
   handleListMemoryConversationMessages,
+  handleListMemoryConversations,
   handleUpdateMemoryConversation,
 } from "./memory.handlers";
 
@@ -80,6 +84,7 @@ describe("memory handlers ownership checks", () => {
   const ownerUserId = "user-alice";
   const otherUserId = "user-bob";
   const conversationId = "conv-private";
+  const otherConversationId = "conv-bob";
 
   beforeEach(async () => {
     memory = new Memory({
@@ -91,6 +96,14 @@ describe("memory handlers ownership checks", () => {
       resourceId: agentId,
       userId: ownerUserId,
       title: "Alice Private",
+      metadata: {},
+    });
+
+    await memory.createConversation({
+      id: otherConversationId,
+      resourceId: agentId,
+      userId: otherUserId,
+      title: "Bob Private",
       metadata: {},
     });
 
@@ -117,6 +130,31 @@ describe("memory handlers ownership checks", () => {
     expect(result.httpStatus).toBe(403);
   });
 
+  it("rejects reading a conversation when the authenticated identity is empty", async () => {
+    const result = await handleGetMemoryConversation(deps, conversationId, {
+      agentId,
+      requestingUserId: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.httpStatus).toBe(403);
+  });
+
+  it("lists conversations for the authenticated user instead of a client-supplied userId", async () => {
+    const result = await handleListMemoryConversations(deps, {
+      agentId,
+      userId: ownerUserId,
+      requestingUserId: otherUserId,
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.total).toBe(1);
+    expect(result.data.conversations).toHaveLength(1);
+    expect(result.data.conversations[0]?.id).toBe(otherConversationId);
+    expect(result.data.conversations[0]?.userId).toBe(otherUserId);
+  });
+
   it("rejects listing messages for a conversation owned by a different authenticated user", async () => {
     const result = await handleListMemoryConversationMessages(deps, conversationId, {
       agentId,
@@ -141,6 +179,26 @@ describe("memory handlers ownership checks", () => {
     expect(conversation?.title).toBe("Alice Private");
   });
 
+  it("returns forbidden when a guarded storage update no longer affects the owner", async () => {
+    const updateSpy = vi
+      .spyOn(memory, "updateConversation")
+      .mockRejectedValueOnce(new ConversationOwnershipMismatchError(conversationId));
+
+    const result = await handleUpdateMemoryConversation(deps, conversationId, {
+      agentId,
+      requestingUserId: ownerUserId,
+      title: "Updated title",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.httpStatus).toBe(403);
+    expect(updateSpy).toHaveBeenCalledWith(
+      conversationId,
+      { title: "Updated title" },
+      { expectedUserId: ownerUserId },
+    );
+  });
+
   it("rejects deleting a conversation owned by a different authenticated user", async () => {
     const result = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId,
@@ -151,6 +209,21 @@ describe("memory handlers ownership checks", () => {
     expect(result.httpStatus).toBe(403);
 
     await expect(memory.getConversation(conversationId)).resolves.not.toBeNull();
+  });
+
+  it("returns forbidden when a guarded storage delete no longer affects the owner", async () => {
+    const deleteSpy = vi
+      .spyOn(memory, "deleteConversation")
+      .mockRejectedValueOnce(new ConversationOwnershipMismatchError(conversationId));
+
+    const result = await handleDeleteMemoryConversation(deps, conversationId, {
+      agentId,
+      requestingUserId: ownerUserId,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.httpStatus).toBe(403);
+    expect(deleteSpy).toHaveBeenCalledWith(conversationId, { expectedUserId: ownerUserId });
   });
 
   it("allows the owning authenticated user to manage the conversation", async () => {

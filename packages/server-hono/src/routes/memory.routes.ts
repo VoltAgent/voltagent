@@ -96,6 +96,7 @@ export function registerMemoryRoutes(
       agentId: query.agentId,
       resourceId: query.resourceId,
       userId: query.userId,
+      requestingUserId: getAuthenticatedUserId(c),
       limit: parseNumber(query.limit),
       offset: parseNumber(query.offset),
       orderBy: parseOrderBy(query.orderBy),
