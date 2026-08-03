@@ -239,6 +239,105 @@ describe("BackgroundQueue", () => {
     }, 5000);
   });
 
+  describe("Timeout timers", () => {
+    it("should clear the timeout timer when a task fails", async () => {
+      vi.useFakeTimers();
+      try {
+        const timerQueue = new BackgroundQueue({
+          maxConcurrency: 1,
+          defaultTimeout: 30000,
+          defaultRetries: 0,
+        });
+
+        timerQueue.enqueue({
+          id: "failing-task",
+          operation: async () => {
+            throw new Error("Task failed");
+          },
+        });
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("should clear the timeout timer of every retried attempt", async () => {
+      vi.useFakeTimers();
+      try {
+        const timerQueue = new BackgroundQueue({
+          maxConcurrency: 1,
+          defaultTimeout: 30000,
+          defaultRetries: 2,
+        });
+
+        timerQueue.enqueue({
+          id: "always-failing-task",
+          operation: async () => {
+            throw new Error("Task failed");
+          },
+        });
+
+        // Long enough to cover the 50ms and 100ms waits between the three attempts.
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("should clear the timeout timer when a task succeeds", async () => {
+      vi.useFakeTimers();
+      try {
+        const timerQueue = new BackgroundQueue({
+          maxConcurrency: 1,
+          defaultTimeout: 30000,
+          defaultRetries: 0,
+        });
+
+        timerQueue.enqueue({ id: "succeeding-task", operation: async () => "result" });
+
+        await vi.advanceTimersByTimeAsync(10);
+
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("should still time out a task that never settles", async () => {
+      vi.useFakeTimers();
+      try {
+        const timerQueue = new BackgroundQueue({
+          maxConcurrency: 1,
+          defaultTimeout: 1000,
+          defaultRetries: 0,
+        });
+        let settled = false;
+
+        timerQueue.enqueue({
+          id: "hanging-task",
+          operation: () =>
+            new Promise<string>((resolve) => {
+              setTimeout(() => {
+                settled = true;
+                resolve("too late");
+              }, 60000);
+            }),
+        });
+
+        await vi.advanceTimersByTimeAsync(1500);
+
+        expect(settled).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe("Configuration options", () => {
     it("should use custom configuration", () => {
       const customQueue = new BackgroundQueue({
