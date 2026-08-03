@@ -22,8 +22,10 @@ function toMcpTool(tool: Tool, name: string, title?: string): MCPTool {
     outputSchema,
     annotations: {
       title: title ?? tool.name,
+      ...tool.mcp?.annotations,
     },
     _meta: {
+      ...tool.mcp?._meta,
       toolId: tool.id,
       toolType: "tool",
     },
