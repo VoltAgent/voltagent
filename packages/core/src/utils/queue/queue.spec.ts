@@ -314,23 +314,30 @@ describe("BackgroundQueue", () => {
         const timerQueue = new BackgroundQueue({
           maxConcurrency: 1,
           defaultTimeout: 1000,
-          defaultRetries: 0,
+          defaultRetries: 1,
         });
         let settled = false;
+        let attempts = 0;
 
         timerQueue.enqueue({
           id: "hanging-task",
-          operation: () =>
-            new Promise<string>((resolve) => {
+          operation: () => {
+            attempts += 1;
+            return new Promise<string>((resolve) => {
               setTimeout(() => {
                 settled = true;
                 resolve("too late");
               }, 60000);
-            }),
+            });
+          },
         });
 
+        // Past the 1000ms timeout of the first attempt and the 50ms wait before
+        // the retry, but well short of the 60000ms the operation needs.
         await vi.advanceTimersByTimeAsync(1500);
 
+        // A second attempt only starts if the first one was timed out.
+        expect(attempts).toBe(2);
         expect(settled).toBe(false);
       } finally {
         vi.useRealTimers();
