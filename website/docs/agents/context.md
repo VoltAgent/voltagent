@@ -228,76 +228,59 @@ await agent.generateText("Hello!", { context });
 
 ## Tools Access Context
 
-Tools receive the full operation context through the second parameter (`options`), which includes all `OperationContext` fields directly accessible:
+AI SDK-style tools receive AI SDK execution options as the second parameter. Use `contextSchema` and call-level `toolsContext` for tool-specific runtime values:
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const loggerTool = createTool({
-  name: "log_message",
+const loggerTool = tool({
   description: "Logs a message with user context",
-  parameters: z.object({
+  inputSchema: z.object({
     message: z.string(),
   }),
-  execute: async ({ message }, options) => {
-    // Access user-defined context directly
-    const language = options?.context?.get("language");
-    const requestId = options?.context?.get("requestId");
-
-    // Access operation metadata
-    const userId = options?.userId;
-    const operationId = options?.operationId;
-
-    // Use the operation-scoped logger
-    options?.logger?.info(`[${requestId}] User ${userId}: ${message}`);
-
+  contextSchema: z.object({
+    language: z.string(),
+    requestId: z.string(),
+  }),
+  execute: async ({ message }, { context, toolCallId, abortSignal }) => {
+    const { language, requestId } = context;
     console.log(`[${requestId}] Language ${language}: ${message}`);
+    console.log(`Tool call: ${toolCallId}`);
 
-    // Write to context
-    const ctx = options?.context;
-    if (ctx) {
-      const logs = ctx.get("logs") || [];
-      logs.push({
-        message,
-        timestamp: new Date().toISOString(),
-        userId,
-        operationId,
-      });
-      ctx.set("logs", logs);
+    if (abortSignal.aborted) {
+      return { logged: false, reason: "aborted" };
     }
 
-    return `Message logged for language ${language}`;
+    return { logged: true, message };
   },
 });
 
 const agentWithTool = new Agent({
   name: "ToolAgent",
   model: "openai/gpt-4o",
-  tools: [loggerTool],
+  tools: {
+    log_message: loggerTool,
+  },
   instructions: "Use the log_message tool to log what the user says.",
 });
 
-// Usage
-const context = new Map();
-context.set("language", "English");
-context.set("requestId", "req-456");
-
 const response = await agentWithTool.generateText("Log this: Hello world!", {
-  context,
   userId: "user123",
+  toolsContext: {
+    log_message: {
+      language: "English",
+      requestId: "req-456",
+    },
+  },
 });
-
-// Check what was logged
-const logs = response.context?.get("logs");
-console.log("All logs:", logs);
 ```
 
-### What's Available in Tool Options?
+Use `voltagent.context` for framework runtime state that should be visible to memory, hooks, guardrails, middleware, retrievers, and dynamic values. Use `toolsContext` for values that should be passed into native AI SDK tool `execute` functions.
 
-The `options` parameter in tool `execute` functions combines `ToolExecuteOptions` and `Partial<OperationContext>`:
+### What's Available in VoltAgent Hooks?
 
-**From OperationContext:**
+VoltAgent hooks receive the full `OperationContext`:
 
 - `operationId` - Unique operation identifier
 - `userId` - User identifier (if provided)
@@ -311,7 +294,7 @@ The `options` parameter in tool `execute` functions combines `ToolExecuteOptions
 - `input` - Original input to the agent
 - `isActive` - Whether operation is still active
 
-**Tool-specific context (from `toolContext?` - optional):**
+Tool hooks and agent `onToolStart`/`onToolEnd` hooks also receive tool-specific context:
 
 > **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called externally.
 
@@ -322,31 +305,25 @@ The `options` parameter in tool `execute` functions combines `ToolExecuteOptions
 
 ```typescript
 // Example: Authorization check using context
-const sensitiveDataTool = createTool({
-  name: "get_sensitive_data",
+const sensitiveDataTool = tool({
   description: "Retrieves sensitive user data",
-  parameters: z.object({
+  inputSchema: z.object({
     dataType: z.string(),
   }),
-  execute: async ({ dataType }, options) => {
-    // Check user role from context
-    const userRole = options?.context?.get("userRole");
-
-    if (userRole !== "admin") {
+  contextSchema: z.object({
+    userRole: z.string(),
+  }),
+  execute: async ({ dataType }, { context }) => {
+    if (context.userRole !== "admin") {
       throw new Error("Unauthorized: Admin role required");
     }
-
-    // Log access with full context including tool name
-    const toolName = options?.toolContext?.name;
-    options?.logger?.warn(`${toolName}: Sensitive data accessed: ${dataType}`, {
-      userId: options?.userId,
-      operationId: options?.operationId,
-    });
 
     return await fetchSensitiveData(dataType);
   },
 });
 ```
+
+`createTool` remains available as a legacy compatibility helper for existing tools that need direct execute-time access to the full VoltAgent `OperationContext`. New tools should prefer AI SDK `tool()` plus `toolsContext`.
 
 ## Access Input and Output in Context
 
@@ -357,20 +334,19 @@ The `OperationContext` provides access to both the input and output of the curre
 The `input` field contains the original input provided to the agent operation:
 
 ```typescript
-import { createTool } from "@voltagent/core";
-import { z } from "zod";
+import { Agent, createHooks } from "@voltagent/core";
 
-const logTool = createTool({
-  name: "log_input",
-  description: "Logs the original user input",
-  parameters: z.object({}),
-  execute: async (args, options) => {
-    const input = options?.operationContext?.input;
-    console.log("Original input:", input);
-    // input can be: string, UIMessage[], or BaseMessage[]
-
-    return "Input logged successfully";
-  },
+const agent = new Agent({
+  name: "InputLogger",
+  model: "openai/gpt-4o",
+  instructions: "Answer concisely.",
+  hooks: createHooks({
+    onStart: ({ context }) => {
+      const input = context.input;
+      console.log("Original input:", input);
+      // input can be: string, UIMessage[], or ModelMessage[]
+    },
+  }),
 });
 ```
 
@@ -776,7 +752,7 @@ For more details on sub-agent architecture, see the [Sub-Agents guide](./subagen
 Here's how all pieces work together:
 
 ```typescript
-import { Agent, createHooks, createTool, BaseRetriever } from "@voltagent/core";
+import { Agent, BaseRetriever, createHooks, tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple retriever
@@ -790,18 +766,14 @@ class BasicRetriever extends BaseRetriever {
 }
 
 // Simple tool
-const counterTool = createTool({
-  name: "increment_counter",
+const counterTool = tool({
   description: "Increments a counter",
-  parameters: z.object({}),
-  execute: async (_, options) => {
-    const ctx = options?.context;
-    if (ctx) {
-      const count = (ctx.get("counter") || 0) + 1;
-      ctx.set("counter", count);
-      return `Counter is now: ${count}`;
-    }
-    return "Counter incremented";
+  inputSchema: z.object({}),
+  contextSchema: z.object({
+    current: z.number(),
+  }),
+  execute: async (_, { context }) => {
+    return { count: context.current + 1 };
   },
 });
 
@@ -810,11 +782,18 @@ const fullAgent = new Agent({
   name: "FullAgent",
   model: "openai/gpt-4o",
   retriever: new BasicRetriever(),
-  tools: [counterTool],
+  tools: {
+    increment_counter: counterTool,
+  },
   hooks: createHooks({
     onStart: (context) => {
       console.log("🚀 Operation started");
       context.context.set("operationId", `op-${Date.now()}`);
+    },
+    onToolEnd: ({ context, output }) => {
+      if (output && typeof output === "object" && "count" in output) {
+        context.context.set("counter", output.count);
+      }
     },
     onEnd: (context) => {
       const opId = context.context.get("operationId");
@@ -834,16 +813,24 @@ const fullAgent = new Agent({
 async function demonstrateFlow() {
   const initialContext = new Map();
   initialContext.set("language", "English");
+  initialContext.set("counter", 0);
 
-  const response = await fullAgent.generateText(
-    "Use the increment tool and search for information",
-    { context: initialContext }
-  );
+  const response = await fullAgent.generateText({
+    prompt: "Use the increment tool and search for information",
+    voltagent: {
+      context: initialContext,
+    },
+    toolsContext: {
+      increment_counter: {
+        current: Number(initialContext.get("counter") ?? 0),
+      },
+    },
+  });
 
   console.log("Text:", response.text);
   const finalContext = response.context;
   for (const [key, value] of finalContext.entries()) {
-    console.log(`${String(key)}: ${JSON.stringify(value)}`);
+    console.log(`${String(key)}: ${String(value)}`);
   }
 }
 ```
@@ -853,7 +840,7 @@ async function demonstrateFlow() {
 ### Context Access by Component
 
 1. **Hooks**: Access via `context.context` in `onStart`/`onEnd` callbacks
-2. **Tools**: Access via `options.operationContext.context` in `execute` function
+2. **Tools**: Access AI SDK tool context via `contextSchema` and `toolsContext`
 3. **Retrievers**: Access via `options.context` in `retrieve` method
 4. **Sub-Agents**: Automatically receive parent's `context` Map reference
 5. **Response**: Access final state via `response.context`

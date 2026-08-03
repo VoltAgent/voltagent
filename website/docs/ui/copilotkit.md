@@ -31,15 +31,14 @@ Use the built-in helper to wrap your VoltAgent agents and register the CopilotKi
 
 ```typescript title="examples/with-copilotkit/server/src/index.ts"
 import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, tool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Optional tool (used by the math agent)
-const weatherTool = createTool({
-  name: "getWeather",
+const weatherTool = tool({
   description: "Get the current weather for a specific location",
-  parameters: z.object({ location: z.string() }),
+  inputSchema: z.object({ location: z.string() }),
   outputSchema: z.object({
     weather: z.object({
       location: z.string(),
@@ -67,7 +66,9 @@ const mathAgent = new Agent({
   instructions:
     "You are a concise math tutor. Show steps briefly and give the final answer. You can also fetch weather if the user asks.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
 });
 
 const storyAgent = new Agent({

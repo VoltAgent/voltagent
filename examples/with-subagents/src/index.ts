@@ -4,7 +4,7 @@ import {
   Memory,
   VoltAgent,
   VoltAgentObservability,
-  createTool,
+  tool,
 } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -23,13 +23,12 @@ const memory = new Memory({
   vector: new InMemoryVectorAdapter(),
 });
 
-const uppercaseTool = createTool({
-  name: "uppercase",
+const uppercaseTool = tool({
   description: "Converts text to uppercase",
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe("The text to convert to uppercase"),
   }),
-  execute: async ({ text }: { text: string }, _oc) => {
+  execute: async ({ text }) => {
     return { result: text.toUpperCase() };
   },
 });
@@ -48,7 +47,9 @@ const formatterAgent = new Agent({
   purpose: "Cleans and formats text",
   instructions: "Formats and styles text content",
   model: "openai/gpt-4o-mini",
-  tools: [uppercaseTool],
+  tools: {
+    uppercase: uppercaseTool,
+  },
   memory,
 });
 

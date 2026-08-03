@@ -97,6 +97,8 @@ import { MCPServer } from "@voltagent/mcp-server";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
+// MCP-only named tools can use createTool when they need compatibility with
+// MCP exposure or direct VoltAgent operation context.
 const status = createTool({
   name: "status",
   description: "Return the current time",

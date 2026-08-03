@@ -101,31 +101,28 @@ for await (const event of response.stream) {
 
 ## Tool Cancellation
 
-Tools receive the `OperationContext` as the second parameter. Access `abortController` through the context to respond to or trigger cancellation:
+AI SDK-style tools receive AI SDK execution options as the second parameter. Use `abortSignal` to stop long-running work when the agent operation is cancelled:
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const dataProcessingTool = createTool({
-  name: "process_data",
+const dataProcessingTool = tool({
   description: "Process large datasets",
-  parameters: z.object({
+  inputSchema: z.object({
     dataset: z.string(),
     operation: z.string(),
   }),
-  execute: async (args, context) => {
-    const abortController = context?.abortController;
-    const signal = abortController?.signal;
+  execute: async (args, { abortSignal }) => {
+    const signal = abortSignal;
 
     // Check if already aborted
     if (signal?.aborted) {
       return { error: "Operation was already cancelled" };
     }
 
-    // Tool can trigger abort based on conditions
+    // Stop before starting expensive work
     if (args.dataset === "restricted") {
-      abortController?.abort("Access to restricted dataset denied");
       return { error: "Dataset access denied" };
     }
 
@@ -147,6 +144,8 @@ const dataProcessingTool = createTool({
   },
 });
 ```
+
+`createTool` remains available as a legacy compatibility helper for tools that need direct access to VoltAgent's full `OperationContext`, including `abortController`. New tools should prefer AI SDK `abortSignal` semantics.
 
 ## Multi-Agent Cancellation
 

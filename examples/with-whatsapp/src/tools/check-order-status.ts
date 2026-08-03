@@ -1,17 +1,20 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const checkOrderStatusTool = createTool({
-  name: "checkOrderStatus",
+const customerContextSchema = z.object({
+  customerPhone: z.string(),
+});
+
+export const checkOrderStatusTool = tool({
   description: "Checks the status of a customer's order(s) from the database",
-  parameters: z.object({
+  inputSchema: z.object({
     orderId: z.number().optional().describe("Specific order ID to check"),
   }),
-  execute: async ({ orderId }, context) => {
+  contextSchema: customerContextSchema,
+  execute: async ({ orderId }, { context }) => {
     try {
-      // Always get customer phone from context
-      const customerPhone = context?.userId;
+      const customerPhone = context.customerPhone;
 
       if (!customerPhone) {
         return {

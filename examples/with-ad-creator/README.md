@@ -260,13 +260,12 @@ docker-compose up
 Create a new tool in `src/tools/image-generation/`:
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-export const generateLinkedInAdTool = createTool({
-  name: "generate_linkedin_ad",
+export const generateLinkedInAdTool = tool({
   description: "Generate LinkedIn ad (1200x627)",
-  parameters: z.object({
+  inputSchema: z.object({
     productName: z.string(),
     tagline: z.string(),
     adConcept: z.string(),

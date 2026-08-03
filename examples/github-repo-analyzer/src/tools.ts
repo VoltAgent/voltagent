@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 const octokit = new Octokit({
@@ -7,14 +7,13 @@ const octokit = new Octokit({
 });
 
 // Tool to fetch repository stars
-export const fetchRepoStarsTool = createTool({
-  name: "repo_stars",
+export const fetchRepoStarsTool = tool({
   description: "Fetches the number of stars for a GitHub repository",
-  parameters: z.object({
+  inputSchema: z.object({
     owner: z.string().describe("The owner of the repository"),
     repo: z.string().describe("The name of the repository"),
   }),
-  execute: async ({ owner, repo }: { owner: string; repo: string }) => {
+  execute: async ({ owner, repo }) => {
     try {
       const response = await octokit.repos.get({
         owner,
@@ -36,14 +35,13 @@ export const fetchRepoStarsTool = createTool({
 });
 
 // Tool to fetch repository contributors
-export const fetchRepoContributorsTool = createTool({
-  name: "repo_contributors",
+export const fetchRepoContributorsTool = tool({
   description: "Fetches the list of contributors for a GitHub repository",
-  parameters: z.object({
+  inputSchema: z.object({
     owner: z.string().describe("The owner of the repository"),
     repo: z.string().describe("The name of the repository"),
   }),
-  execute: async ({ owner, repo }: { owner: string; repo: string }) => {
+  execute: async ({ owner, repo }) => {
     try {
       const response = await octokit.repos.listContributors({
         owner,

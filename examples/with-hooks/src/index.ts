@@ -1,13 +1,12 @@
-import { Agent, Memory, Tool, ToolDeniedError, VoltAgent, messageHelpers } from "@voltagent/core";
+import { Agent, Memory, ToolDeniedError, VoltAgent, messageHelpers, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Simple tool for demonstration
-const weatherTool = new Tool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get the current weather for a location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The location to get weather for"),
   }),
   execute: async ({ location }: { location: string }) => {
@@ -25,7 +24,9 @@ const agent = new Agent({
   name: "HooksDemo",
   instructions: "Agent demonstrating all available hooks",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    get_weather: weatherTool,
+  },
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

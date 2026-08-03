@@ -199,6 +199,69 @@ describe("Agent runtime e2e", () => {
     );
   });
 
+  it("runs raw AI SDK tools with native toolsContext without VoltAgent metadata", async () => {
+    const execute = vi.fn(
+      async (
+        { city }: { city: string },
+        { context }: { context: { apiKey: string; defaultUnit: "celsius" | "fahrenheit" } },
+      ) => ({
+        city,
+        unit: context.defaultUnit,
+        usedApiKey: context.apiKey,
+      }),
+    );
+    const getWeather = aiTool({
+      description: "Get current weather",
+      inputSchema: z.object({
+        city: z.string(),
+      }),
+      contextSchema: z.object({
+        apiKey: z.string(),
+        defaultUnit: z.enum(["celsius", "fahrenheit"]),
+      }),
+      execute,
+    });
+
+    let generateCalls = 0;
+    const model = createModel(async () => {
+      generateCalls += 1;
+      return generateCalls === 1
+        ? toolCallGenerate("getWeather", { city: "Madrid" })
+        : textGenerate("Madrid is warm.");
+    });
+
+    const agent = new Agent({
+      name: "RawAiSdkToolAgent",
+      instructions: "Use tools when useful.",
+      model,
+      tools: {
+        getWeather,
+      },
+    });
+
+    const result = await agent.generateText({
+      prompt: "What is the weather in Madrid?",
+      toolsContext: {
+        getWeather: {
+          apiKey: "weather-key",
+          defaultUnit: "fahrenheit",
+        },
+      },
+    });
+
+    expect(result.text).toBe("Madrid is warm.");
+    expect(execute).toHaveBeenCalledWith(
+      { city: "Madrid" },
+      expect.objectContaining({
+        toolCallId: "getWeather-call",
+        context: {
+          apiKey: "weather-key",
+          defaultUnit: "fahrenheit",
+        },
+      }),
+    );
+  });
+
   it("streams through a tool call and final text", async () => {
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 12 }));
     const getWeather = tool({
@@ -1106,5 +1169,107 @@ describe("Agent runtime e2e", () => {
       code: "TOOL_APPROVAL_REQUIRED",
       name: "approvalHiddenLookup",
     });
+  });
+
+  it("passes AI SDK toolsContext and runtimeContext through routed raw AI SDK tools", async () => {
+    const execute = vi.fn(
+      async (
+        { orderId }: { orderId: string },
+        { context }: { context: { actorId: string; permissions: string[] } },
+      ) => ({
+        orderId,
+        actorId: context.actorId,
+        approved: context.permissions.includes("refund:write"),
+      }),
+    );
+    let approvalContext:
+      | {
+          toolContext: { actorId: string; permissions: string[] };
+          runtimeContext: { tenantId: string };
+        }
+      | undefined;
+    const approval = vi.fn(async (_input: { orderId: string }, context: any) => {
+      approvalContext = context;
+      return "approved" as const;
+    });
+    const routedRefund = withVoltAgentMetadata(
+      aiTool({
+        description: "Refund a hidden customer order",
+        inputSchema: z.object({
+          orderId: z.string(),
+        }),
+        contextSchema: z.object({
+          actorId: z.string(),
+          permissions: z.array(z.string()),
+        }),
+        execute,
+      }),
+      {
+        tags: ["billing"],
+      },
+    );
+
+    let generateCalls = 0;
+    const model = createModel(async () => {
+      generateCalls += 1;
+      if (generateCalls === 1) {
+        return toolCallGenerate("searchTools", { query: "hidden refund", topK: 1 });
+      }
+      if (generateCalls === 2) {
+        return toolCallGenerate("callTool", {
+          name: "routedRefund",
+          args: { orderId: "order-123" },
+        });
+      }
+      return textGenerate("Routed refund complete.");
+    });
+    const agent = new Agent({
+      name: "RawAiSdkRoutingContextAgent",
+      instructions: "Use routed refund tools.",
+      model,
+      tools: {
+        routedRefund,
+      },
+      toolRouting: {
+        topK: 1,
+      },
+    });
+
+    const result = await agent.generateText({
+      prompt: "Refund the hidden order.",
+      toolApproval: {
+        routedRefund: approval,
+      },
+      toolsContext: {
+        routedRefund: {
+          actorId: "user-42",
+          permissions: ["refund:write"],
+        },
+      },
+      runtimeContext: {
+        tenantId: "tenant-1",
+      },
+    });
+
+    expect(result.text).toBe("Routed refund complete.");
+    expect(approval).toHaveBeenCalledTimes(1);
+    expect(approvalContext).toMatchObject({
+      toolContext: {
+        actorId: "user-42",
+        permissions: ["refund:write"],
+      },
+      runtimeContext: {
+        tenantId: "tenant-1",
+      },
+    });
+    expect(execute).toHaveBeenCalledWith(
+      { orderId: "order-123" },
+      expect.objectContaining({
+        context: {
+          actorId: "user-42",
+          permissions: ["refund:write"],
+        },
+      }),
+    );
   });
 });

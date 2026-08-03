@@ -14,7 +14,7 @@ import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
-import { Tool, tool as aiSdkTool } from "../tool";
+import { Tool, tool as aiSdkTool, enhanceTool } from "../tool";
 import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
 import { SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY } from "./context-keys";
@@ -1608,7 +1608,7 @@ Use pandas and summarize findings.`.split("\n"),
       expect(startContext.conversationId).toBe("runtime-conv");
     });
 
-    it("should pass AI SDK v7 generateText options, strip VoltAgent-owned telemetry/runtime fields, and compose managed callbacks", async () => {
+    it("should pass AI SDK v7 generateText options and preserve raw managed callbacks", async () => {
       const hookOnStepEnd = vi.fn();
       const userOnStepEnd = vi.fn();
       const userOnEnd = vi.fn();
@@ -1626,7 +1626,7 @@ Use pandas and summarize findings.`.split("\n"),
         }),
       });
 
-      vi.mocked(ai.generateText).mockResolvedValue({
+      const rawOnEndResult = {
         text: "Response",
         content: [{ type: "text", text: "Response" }],
         reasoning: [],
@@ -1645,7 +1645,12 @@ Use pandas and summarize findings.`.split("\n"),
           messages: [],
         },
         steps: [],
-      } as any);
+      } as any;
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        await args.onEnd?.(rawOnEndResult);
+        return rawOnEndResult;
+      });
 
       await agent.generateText({
         prompt: "Hello",
@@ -1688,9 +1693,16 @@ Use pandas and summarize findings.`.split("\n"),
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       expect(callArgs.timeout).toEqual({ totalMs: 10_000, stepMs: 5_000 });
       expect(callArgs.headers).toEqual({ "x-provider-header": "provider-value" });
-      expect(callArgs.telemetry).toBeUndefined();
-      expect(callArgs.experimental_telemetry).toBeUndefined();
-      expect(callArgs.runtimeContext).toBeUndefined();
+      expect(callArgs.telemetry).toEqual({
+        isEnabled: false,
+        functionId: "generateText-test",
+      });
+      expect(callArgs.experimental_telemetry).toEqual({
+        isEnabled: false,
+      });
+      expect(callArgs.runtimeContext).toEqual({
+        tenantId: "tenant-1",
+      });
       expect(callArgs.toolsContext).toEqual({
         lookup_order: {
           requestId: "tool-request-1",
@@ -1704,13 +1716,10 @@ Use pandas and summarize findings.`.split("\n"),
       expect(callArgs.experimental_download).toBe(experimentalDownload);
       expect(callArgs.onStart).toBe(onStart);
       expect(callArgs.onStepStart).toBe(onStepStart);
-      expect(callArgs.onEnd).toBeUndefined();
+      expect(callArgs.onEnd).toBe(userOnEnd);
       expect(callArgs.onFinish).toBeUndefined();
       expect(userOnEnd).toHaveBeenCalledTimes(1);
-      expect(userOnEnd.mock.calls[0][0]).toMatchObject({
-        text: "Response",
-        context: expect.any(Map),
-      });
+      expect(userOnEnd).toHaveBeenCalledWith(rawOnEndResult);
 
       await callArgs.onStepEnd?.({
         content: [],
@@ -1721,6 +1730,9 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(hookOnStepEnd).toHaveBeenCalledTimes(1);
       expect(userOnStepEnd).toHaveBeenCalledTimes(1);
+      expect(userOnStepEnd.mock.invocationCallOrder[0]).toBeLessThan(
+        hookOnStepEnd.mock.invocationCallOrder[0],
+      );
     });
 
     it("should pass AI SDK v7 streamText options and compose managed callbacks", async () => {
@@ -2281,6 +2293,29 @@ Use pandas and summarize findings.`.split("\n"),
       expect(tools[0].name).toBe("testTool");
     });
 
+    it("should add AI SDK ToolSet tools", () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const weatherTool = ai.tool({
+        description: "Get weather",
+        inputSchema: z.object({ city: z.string() }),
+        execute: async ({ city }) => ({ city }),
+      });
+
+      const result = agent.addTools({
+        getWeather: weatherTool,
+      });
+
+      expect(result.added).toEqual({ getWeather: weatherTool });
+      const tools = agent.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("getWeather");
+    });
+
     it("should remove tools", () => {
       const tool = new Tool({
         name: "testTool",
@@ -2352,6 +2387,36 @@ Use pandas and summarize findings.`.split("\n"),
         purpose: "Fetch weather observations",
         description: "Get weather",
         tags: ["weather"],
+      });
+    });
+
+    it("should enhance frozen external AI SDK tools without rebuilding them", () => {
+      const rawTool = ai.tool({
+        description: "Get weather",
+        inputSchema: z.object({ city: z.string() }),
+        execute: async ({ city }) => ({ city }),
+      });
+      Object.freeze(rawTool);
+
+      const enhancedTool = enhanceTool(rawTool, {
+        name: "Weather Lookup",
+        tags: ["external"],
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        tools: {
+          getWeather: enhancedTool,
+        },
+      });
+
+      expect(enhancedTool).toBe(rawTool);
+      expect(agent.getTools()[0]).toMatchObject({
+        name: "getWeather",
+        displayName: "Weather Lookup",
+        tags: ["external"],
       });
     });
   });
@@ -4533,7 +4598,7 @@ Use pandas and summarize findings.`.split("\n"),
       expect(mockStream.toTextStreamResponse).toHaveBeenCalled();
     });
 
-    it("should apply streamObject output guardrails before result object and onFinish", async () => {
+    it("should apply streamObject output guardrails to the result while onEnd receives the raw AI SDK event", async () => {
       const outputGuardrail = vi.fn(({ output }) => ({
         pass: true,
         action: "modify" as const,
@@ -4579,7 +4644,7 @@ Use pandas and summarize findings.`.split("\n"),
       );
       expect(userOnFinish).toHaveBeenCalledWith(
         expect.objectContaining({
-          object: { message: "Safe" },
+          output: { message: "Unsafe" },
           finishReason: "stop",
           usage: streamObjectUsage,
         }),

@@ -55,6 +55,7 @@ export type NamedAiSdkTool = {
   description: string;
   parameters: unknown;
   inputSchema?: unknown;
+  contextSchema?: unknown;
   outputSchema?: unknown;
   tags?: string[];
   needsApproval?: boolean | ToolNeedsApprovalFunction<any, any>;
@@ -73,11 +74,16 @@ export type NamedAiSdkTool = {
 
 function setVoltAgentToolMetadata(target: object, metadata: VoltAgentToolMetadata): void {
   metadataStore.set(target, metadata);
-  Object.defineProperty(target, VOLTAGENT_TOOL_METADATA_SYMBOL, {
-    value: metadata,
-    enumerable: false,
-    configurable: false,
-  });
+  try {
+    Object.defineProperty(target, VOLTAGENT_TOOL_METADATA_SYMBOL, {
+      value: metadata,
+      enumerable: false,
+      configurable: false,
+    });
+  } catch {
+    // Some third-party AI SDK tools may be frozen. WeakMap metadata is enough
+    // for VoltAgent runtime lookups, so preserve the original tool object.
+  }
 }
 
 export function getVoltAgentToolMetadata(tool: unknown): VoltAgentToolMetadata | undefined {
@@ -123,6 +129,7 @@ export function createNamedAiSdkTool(
       ? (rawTool as { inputSchema?: unknown }).inputSchema
       : (rawTool as { args?: unknown }).args,
     inputSchema: (rawTool as { inputSchema?: unknown }).inputSchema,
+    contextSchema: (rawTool as { contextSchema?: unknown }).contextSchema,
     outputSchema: (rawTool as { outputSchema?: unknown }).outputSchema,
     tags: metadata?.tags,
     needsApproval:
@@ -198,6 +205,13 @@ export function withVoltAgentMetadata<T extends VercelTool<any, any, any>>(
   setVoltAgentToolMetadata(tool as object, metadata);
   return tool;
 }
+
+/**
+ * Add VoltAgent metadata to an existing AI SDK tool without reconstructing the
+ * tool definition. This is the preferred helper for tools created by external
+ * packages or shared libraries.
+ */
+export const enhanceTool = withVoltAgentMetadata;
 
 /**
  * AI SDK-compatible tool helper with a VoltAgent metadata namespace.

@@ -1,4 +1,4 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Define schemas for calendar event data
@@ -50,10 +50,9 @@ const mockCalendar = [
  * A tool for checking calendar events
  * With output schema validation to ensure consistent response format
  */
-export const checkCalendarTool = createTool({
-  name: "checkCalendar",
+export const checkCalendarTool = tool({
   description: "Check calendar events for a specific date",
-  parameters: z.object({
+  inputSchema: z.object({
     date: z.string().describe("The date to check calendar events for (YYYY-MM-DD)"),
   }),
   outputSchema: checkCalendarOutputSchema,
@@ -80,10 +79,9 @@ export const checkCalendarTool = createTool({
  * A tool for adding a calendar event
  * With output schema validation to ensure consistent response format
  */
-export const addCalendarEventTool = createTool({
-  name: "addCalendarEvent",
+export const addCalendarEventTool = tool({
   description: "Add a new event to the calendar",
-  parameters: z.object({
+  inputSchema: z.object({
     title: z.string().describe("The title of the event"),
     date: z.string().describe("The date of the event (YYYY-MM-DD)"),
     time: z.string().describe("The time of the event (HH:MM)"),

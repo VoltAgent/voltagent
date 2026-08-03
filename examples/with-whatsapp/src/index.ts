@@ -64,9 +64,13 @@ Order Flow:
    - Execute createOrder tool (with orders and deliveryAddress)
    - Confirm order and clear working memory
 
-Always be friendly and helpful. Start with "Welcome!" greeting.`,
+  Always be friendly and helpful. Start with "Welcome!" greeting.`,
   model: "openai/gpt-4o-mini",
-  tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
+  tools: {
+    listMenuItems: listMenuItemsTool,
+    createOrder: createOrderTool,
+    checkOrderStatus: checkOrderStatusTool,
+  },
   memory,
 });
 

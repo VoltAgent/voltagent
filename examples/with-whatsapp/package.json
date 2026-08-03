@@ -10,6 +10,7 @@
     "@voltagent/server-hono": "^3.0.0-next.0",
     "ai": "^7.0.0",
     "dotenv": "^16.4.5",
+    "hono": "4.9.1",
     "zod": "^4.1.11"
   },
   "devDependencies": {

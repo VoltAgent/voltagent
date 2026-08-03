@@ -1,10 +1,9 @@
-import { VoltOpsClient, createTool } from "@voltagent/core";
+import { VoltOpsClient, tool } from "@voltagent/core";
 import { z } from "zod";
 
-export const fetchGithubProfileTool = createTool({
-  name: "fetch_github_profile",
+export const fetchGithubProfileTool = tool({
   description: "Fetch GitHub profile metadata (followers, repos, location, etc.)",
-  parameters: z.object({
+  inputSchema: z.object({
     username: z.string().describe("GitHub username to inspect"),
   }),
   execute: async ({ username }) => {
@@ -40,14 +39,13 @@ export const fetchGithubProfileTool = createTool({
   },
 });
 
-export const shareDiscordStoryTool = createTool({
-  name: "share_discord_story",
+export const shareDiscordStoryTool = tool({
   description: "Send the celebration story to Discord via VoltOps Actions.",
-  parameters: z.object({
+  inputSchema: z.object({
     headline: z.string().describe("Short headline announcing the star"),
     story: z.string().describe("Markdown formatted story"),
   }),
-  execute: async ({ headline, story }: { headline: string; story: string }) => {
+  execute: async ({ headline, story }) => {
     const voltOpsClient = new VoltOpsClient({
       publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
       secretKey: process.env.VOLTAGENT_SECRET_KEY,

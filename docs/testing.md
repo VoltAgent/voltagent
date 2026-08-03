@@ -130,21 +130,20 @@ describe("Agent", () => {
 
 ```typescript
 import { z } from "zod";
-import { createTool } from "./index";
+import { tool } from "./index";
 
 describe("Tool", () => {
   it("should create tool with schema", () => {
-    const tool = createTool({
-      name: "testTool",
+    const testTool = tool({
       description: "A test tool",
-      parameters: z.object({
+      inputSchema: z.object({
         input: z.string(),
       }),
       execute: async ({ input }) => `Output: ${input}`,
     });
 
-    expect(tool.name).toBe("testTool");
-    expect(tool.execute).resolves.toBe("Output: test");
+    expect(testTool.description).toBe("A test tool");
+    expect(testTool.inputSchema).toBeDefined();
   });
 });
 ```

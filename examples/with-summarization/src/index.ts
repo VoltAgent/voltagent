@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -14,10 +14,9 @@ const memory = new Memory({
   generateTitle: true,
 });
 
-const statusTool = createTool({
-  name: "summarization_status",
+const statusTool = tool({
   description: "Return a lightweight status string for tool-call testing.",
-  parameters: z.object({
+  inputSchema: z.object({
     note: z.string().optional().describe("Optional note to include in the status"),
   }),
   execute: async ({ note }: { note?: string }) => {
@@ -30,7 +29,9 @@ const agent = new Agent({
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-5.1",
   memory,
-  tools: [statusTool],
+  tools: {
+    summarization_status: statusTool,
+  },
   summarization: {
     triggerTokens: 600,
     keepMessages: 6,

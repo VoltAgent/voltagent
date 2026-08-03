@@ -29,13 +29,12 @@ console.log(result.text);
 PlanAgent works like `Agent`, but adds planning, filesystem, and subagent tooling by default.
 
 ```ts
-import { PlanAgent, createTool } from "@voltagent/core";
+import { PlanAgent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const internetSearch = createTool({
-  name: "internet_search",
+const internetSearch = tool({
   description: "Search the web for information",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("Search query"),
     maxResults: z.number().optional().default(5),
   }),
@@ -56,7 +55,9 @@ const agent = new PlanAgent({
   name: "Researcher",
   systemPrompt: "You are an expert researcher. Produce clear, sourced answers.",
   model: "openai/gpt-4o",
-  tools: [internetSearch],
+  tools: {
+    internet_search: internetSearch,
+  },
 });
 
 const result = await agent.generateText("What is VoltAgent?");
@@ -165,7 +166,9 @@ const agent = new PlanAgent({
       name: "research-analyst",
       description: "Deep research and synthesis",
       systemPrompt: "Research thoroughly and return a concise report.",
-      tools: [internetSearch],
+      tools: {
+        internet_search: internetSearch,
+      },
     },
   ],
 });

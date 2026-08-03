@@ -188,7 +188,7 @@ Use `output` with `generateText`/`streamText` to get structured data while still
 See [Structured Output](/docs/agents/structured-output) for a dedicated guide.
 
 ```ts
-import { Output } from "ai";
+import { Output } from "@voltagent/core";
 import { z } from "zod";
 
 const recipeSchema = z.object({
@@ -283,17 +283,29 @@ When both legacy top-level runtime fields and `voltagent.*` are supplied, `volta
 
 ### AI SDK Compatibility Boundaries
 
-VoltAgent accepts most AI SDK generation settings, but it owns orchestration fields that affect memory, tools, retries, cancellation, hooks, and observability.
+VoltAgent treats the AI SDK model-call API as the source of truth. AI SDK options stay at the `agent.generateText()` / `agent.streamText()` call boundary, while VoltAgent runtime concerns stay under `voltagent` or agent `hooks`.
 
-| AI SDK field                           | VoltAgent behavior                                                                                          |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `runtimeContext`                       | Use VoltAgent `context`, `memory`, and hooks instead.                                                       |
-| `telemetry` / `experimental_telemetry` | Use VoltAgent OpenTelemetry and observability configuration.                                                |
-| `maxRetries`                           | VoltAgent owns retries and model fallback so tracing, memory, hooks, and fallback attempts stay consistent. |
-| `abortSignal`                          | VoltAgent wires cancellation through its operation context and forwards a managed signal to the model call. |
-| `onStepEnd`, `onEnd`, `onError`        | Supported, but invoked through VoltAgent's managed lifecycle after internal work has completed.             |
+`@voltagent/core` re-exports common AI SDK primitives such as `generateText`, `streamText`, `generateObject`, `streamObject`, `embed`, `embedMany`, `Output`, and `isStepCount` for convenience. These direct function exports preserve native AI SDK behavior. Use `agent.generateText()` and `agent.streamText()` when you also want VoltAgent orchestration features such as memory, guardrails, middleware, subagents, retries, tracing, and tool routing.
 
-Provider options, model settings, tool choice, stop conditions, structured output, `toolsContext`, and other AI SDK generation settings still belong at the top level. Use `toolsContext` for native AI SDK tools with `contextSchema`. Runtime context, memory identity, feedback, middleware, guardrails, and tool routing belong under `voltagent`.
+| Surface or field                                            | VoltAgent behavior                                                                                                                                       |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct `generateText`, `streamText`, `generateObject`, etc. | Re-exported AI SDK functions. They keep the native AI SDK contract and do not run VoltAgent agent orchestration.                                         |
+| `agent.generateText()` / `agent.streamText()`               | AI SDK-compatible call boundary plus VoltAgent orchestration. Most AI SDK options pass through unchanged.                                                |
+| `providerOptions`, `toolChoice`, `stopWhen`, `prepareStep`  | Forwarded to AI SDK. Agent-level defaults are used only when the call does not provide an override.                                                      |
+| `timeout`, `headers`, `include`, stream-only options        | Forwarded to AI SDK as native call options.                                                                                                              |
+| `runtimeContext`                                            | Passed through to AI SDK callbacks, tool approval, and telemetry. Use `voltagent.context` for VoltAgent runtime state.                                   |
+| `toolsContext`                                              | Passed through to native AI SDK tools with `contextSchema`; also available to VoltAgent tool routing approval/execution.                                 |
+| `telemetry` / `experimental_telemetry`                      | Passed through to AI SDK. VoltAgent OpenTelemetry remains additive and may emit its own spans/logs for agent, memory, guardrail, middleware, and tools.  |
+| `onStart`, `onStepStart`, `onChunk`, `onAbort`              | Forwarded to AI SDK with native payloads and timing.                                                                                                     |
+| `onStepEnd`, `onEnd`, `onError`                             | Composed only so VoltAgent can run additive work. Call-level callbacks receive raw AI SDK events; use `hooks.*` for VoltAgent post-processing context.   |
+| `model`                                                     | Resolved by VoltAgent so model strings, model lists, fallbacks, tracing, and per-model retries stay consistent.                                          |
+| `prompt` / `messages` / `instructions` / `system`           | Normalized by VoltAgent for memory, context, system instructions, and AI SDK v7 message shape.                                                           |
+| `tools`                                                     | Normalized by VoltAgent for ToolSet support, legacy tool compatibility, subagents, routing, metadata, hooks, and approval. Raw AI SDK tools are allowed. |
+| `abortSignal`                                               | Wired into VoltAgent's operation context and forwarded as a managed signal so memory, tools, guardrails, tracing, and the model call cancel together.    |
+| `maxRetries`                                                | Owned by VoltAgent. The underlying AI SDK call receives `maxRetries: 0`; VoltAgent handles retries/fallbacks around the full agent operation.            |
+| Result objects                                              | Preserve AI SDK result fields and add VoltAgent context/feedback helpers where applicable.                                                               |
+
+Provider options, model settings, tool choice, stop conditions, structured output, `runtimeContext`, `toolsContext`, telemetry, and other AI SDK generation settings belong at the top level. Memory identity, feedback, middleware, guardrails, tool routing, request headers for server adapters, and resumable stream behavior belong under `voltagent`.
 
 To migrate positional calls, move the prompt into `prompt` and runtime options into `voltagent`:
 
@@ -531,7 +543,10 @@ const agent = new Agent({
   // Optional
   id: "custom-id", // Unique ID (auto-generated if not provided)
   purpose: "Customer support agent", // Agent purpose for supervisor context
-  tools: [weatherTool, searchTool], // Available tools
+  tools: {
+    get_weather: weatherTool,
+    search: searchTool,
+  }, // AI SDK ToolSet; keys are the tool names
   memory: memoryStorage, // Memory instance (omit -> built-in in-memory, false -> disable)
   context: new Map([
     // Default context for all operations

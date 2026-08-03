@@ -1,16 +1,12 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import z from "zod";
 
-export const weatherTool = createTool({
-  id: "get-weather",
-  name: "getWeather",
+export const weatherTool = tool({
   description: "Return a mock weather report for the requested location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City or location to look up"),
   }),
-  execute: async ({ location }, context) => {
-    context?.logger.info(`Fetching weather for ${location}`);
-
+  execute: async ({ location }) => {
     const mockWeatherData = {
       location,
       temperature: Math.floor(Math.random() * 30) + 5,

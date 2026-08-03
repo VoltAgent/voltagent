@@ -24,6 +24,8 @@ type ConfirmationContent = {
   reason?: string;
 };
 
+// This tool uses createTool because it needs direct access to
+// operationContext.elicitation for MCP user confirmation.
 const customerDeleteTool = createTool({
   name: "customer_delete",
   description: "Delete a customer after the user confirms the action.",

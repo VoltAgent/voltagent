@@ -7,7 +7,9 @@ const assistant = new Agent({
   name: "serverless-assistant",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
 });
 
 const voltAgent = new VoltAgent({

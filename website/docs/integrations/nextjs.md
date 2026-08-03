@@ -88,14 +88,13 @@ If you run the built-in server as a separate process, make sure it loads the sam
 Create the agent in `voltagent/agents.ts`:
 
 ```typescript title="voltagent/agents.ts"
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple calculator tool
-const calculatorTool = createTool({
-  name: "calculate",
+const calculatorTool = tool({
   description: "Perform basic mathematical calculations",
-  parameters: z.object({
+  inputSchema: z.object({
     expression: z
       .string()
       .describe("Mathematical expression to evaluate (e.g., '2 + 2', '10 * 5')"),
@@ -116,7 +115,9 @@ export const agent = new Agent({
   instructions:
     "You are a helpful calculator assistant. When users ask you to calculate something, use the calculate tool to perform the math and then explain the result clearly.",
   model: "openai/gpt-4o-mini",
-  tools: [calculatorTool],
+  tools: {
+    calculate: calculatorTool,
+  },
 });
 ```
 

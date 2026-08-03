@@ -22,7 +22,9 @@ const starsFetcherAgent = new Agent({
   name: "Stars Fetcher",
   instructions: "Fetches the number of stars for a GitHub repository using the GitHub API",
   model: "openai/gpt-4o-mini",
-  tools: [fetchRepoStarsTool],
+  tools: {
+    repo_stars: fetchRepoStarsTool,
+  },
   memory: memory,
 });
 
@@ -31,7 +33,9 @@ const contributorsFetcherAgent = new Agent({
   name: "Contributors Fetcher",
   instructions: "Fetches the list of contributors for a GitHub repository using the GitHub API",
   model: "openai/gpt-4o-mini",
-  tools: [fetchRepoContributorsTool],
+  tools: {
+    repo_contributors: fetchRepoContributorsTool,
+  },
   memory: memory,
 });
 

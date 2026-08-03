@@ -1,15 +1,16 @@
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, tool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get the current weather for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City name, e.g. Berlin"),
   }),
-  tags: ["weather", "forecast"],
+  voltagent: {
+    tags: ["weather", "forecast"],
+  },
   execute: async ({ location }) => {
     return {
       location,
@@ -20,15 +21,16 @@ const weatherTool = createTool({
   },
 });
 
-const convertCurrencyTool = createTool({
-  name: "convert_currency",
+const convertCurrencyTool = tool({
   description: "Convert money between currencies using a sample rate table",
-  parameters: z.object({
+  inputSchema: z.object({
     amount: z.number().describe("Amount to convert"),
     from: z.string().describe("Source currency code, e.g. USD"),
     to: z.string().describe("Target currency code, e.g. EUR"),
   }),
-  tags: ["finance", "currency"],
+  voltagent: {
+    tags: ["finance", "currency"],
+  },
   execute: async ({ amount, from, to }) => {
     const rates: Record<string, number> = {
       USD: 1,
@@ -52,13 +54,14 @@ const convertCurrencyTool = createTool({
   },
 });
 
-const timeZoneTool = createTool({
-  name: "get_time_zone",
+const timeZoneTool = tool({
   description: "Get the time zone offset for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City name"),
   }),
-  tags: ["time", "timezone"],
+  voltagent: {
+    tags: ["time", "timezone"],
+  },
   execute: async ({ location }) => {
     return {
       location,
@@ -66,10 +69,6 @@ const timeZoneTool = createTool({
     };
   },
 });
-
-const weatherPool = [weatherTool, timeZoneTool];
-const financePool = [convertCurrencyTool];
-const toolPool = [...weatherPool, ...financePool];
 
 const logger = createPinoLogger({
   name: "with-tool-routing",
@@ -81,9 +80,13 @@ const agent = new Agent({
   instructions:
     "You are a helpful assistant. When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
   model: "openai/gpt-4o-mini",
+  tools: {
+    get_weather: weatherTool,
+    convert_currency: convertCurrencyTool,
+    get_time_zone: timeZoneTool,
+  },
   toolRouting: {
     embedding: "openai/text-embedding-3-small",
-    pool: toolPool,
     topK: 2,
   },
 });

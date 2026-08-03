@@ -878,6 +878,8 @@ Current finding: the first migration pass updated the core API docs and migratio
 
    Keep `createTool` only in migration/deprecation sections that explicitly explain legacy compatibility.
 
+   For externally created AI SDK tools, use `enhanceTool(existingTool, metadata)` instead of asking users to deconstruct and rebuild the tool. Raw AI SDK tools still work without any helper; `enhanceTool` is only for additive VoltAgent metadata.
+
    Priority docs:
    - `website/docs/agents/overview.md`
    - `website/docs/agents/tools.md`
@@ -935,9 +937,12 @@ Current finding: the first migration pass updated the core API docs and migratio
 3. Update agent docs for AI SDK compatibility boundaries.
 
    Add or expand a short section in agent docs explaining:
-   - AI SDK generation settings mostly pass through.
-   - VoltAgent owns `runtimeContext`, `toolsContext`, `telemetry`, `experimental_telemetry`, `maxRetries`, `abortSignal`, lifecycle callback composition, model resolution, messages, tools, and structured output wiring.
-   - Use VoltAgent `context`, `memory`, `voltagent` runtime options, hooks, and OpenTelemetry instead of AI SDK `runtimeContext`, `toolsContext`, or `telemetry`.
+   - AI SDK generation settings pass through wherever VoltAgent can preserve the native contract.
+   - AI SDK `runtimeContext`, `toolsContext`, `telemetry`, `experimental_telemetry`, and lifecycle callbacks remain top-level AI SDK concepts.
+   - Call-level AI SDK callbacks receive raw AI SDK events; VoltAgent `hooks.*` remain the framework hook surface for processed output, memory, guardrails, middleware, and tracing context.
+   - VoltAgent owns only the fields it must orchestrate directly: `model`, `prompt`/`messages`, `tools` wiring, `maxRetries`, `abortSignal`, and structured output wiring.
+   - Direct AI SDK function re-exports from `@voltagent/core` keep native behavior; `agent.generateText()` and `agent.streamText()` are the orchestrated VoltAgent path.
+   - Raw AI SDK tools from `ai` must remain first-class without VoltAgent wrappers. Use `@voltagent/core` `tool()` only when defining a new tool with inline VoltAgent metadata, and `enhanceTool()` for decorating existing AI SDK tools.
 
    Priority docs:
    - `website/docs/agents/overview.md`
@@ -1054,9 +1059,9 @@ Current finding: the first migration pass updated the core API docs and migratio
 
 8. Telemetry docs cleanup.
 
-   Ensure live docs do not imply AI SDK `telemetry` can be passed through `Agent` or `tool()`. The correct 3.x guidance is:
-   - Use VoltAgent OpenTelemetry/observability for Agent calls and VoltAgent-managed tools.
-   - Use AI SDK telemetry only when calling AI SDK directly outside VoltAgent.
+   Ensure live docs explain the telemetry boundary clearly:
+   - AI SDK `telemetry` and `experimental_telemetry` pass through at the agent call boundary.
+   - VoltAgent OpenTelemetry/observability remains additive and may emit its own spans/logs for Agent calls and VoltAgent-managed tools.
    - Provider-defined tools are passed through and may have provider-owned observability semantics.
 
    Priority docs:
@@ -1080,6 +1085,9 @@ rg -n "\"module\": \"CommonJS\"" examples/**/tsconfig.json
 Expected exceptions:
 
 - `website/docs/getting-started/migration-guide.md` may intentionally contain legacy before/after snippets.
+- `website/docs/tools/tool-routing.md`, `website/docs/tools/overview.md`, and workspace/MCP docs may intentionally show `createTool` only inside compatibility sections where named class-style tools, toolkits, workspace access, or `operationContext.elicitation` are still required.
+- Examples that need direct VoltAgent `OperationContext` or named compatibility objects may keep `createTool` until those features have an AI SDK-native bridge. Current known examples: Playwright browser tools, MCP server/elicitation tools, and ad-creator screenshot/context-sharing tools.
+- Retriever tools, `agent.toTool()`, MCP tool arrays, and toolkit arrays may continue to use `tools: [...]` because those objects are already named compatibility tools or toolkits, not new custom AI SDK `tool()` definitions.
 - Historical changelogs should not be rewritten.
 - Direct AI SDK examples can still use AI SDK-native APIs when they are not demonstrating VoltAgent agent wrappers.
 - REST API schema examples may still expose `userId` and `conversationId` if those are part of the HTTP contract.
@@ -1132,15 +1140,24 @@ Progress:
 - [x] AI SDK v7 codemods applied and reviewed.
 - [x] Core AI SDK boundary updated for v7 call options, stream result shape, callback names, usage shape, and tool approval.
 - [x] Added AI SDK-style `tool()` support with a VoltAgent metadata namespace and direct `ToolSet` support.
+- [x] Added `enhanceTool()` for decorating existing AI SDK tools without rebuilding them.
+- [x] Re-exported common AI SDK primitives (`generateText`, `streamText`, `Output`, embeddings, and related types) from `@voltagent/core` while keeping `agent.generateText`/`agent.streamText` as the orchestrated VoltAgent path.
 - [x] Added native AI SDK `toolApproval` pass-through and tool routing policy enforcement.
 - [x] Server/protocol/ecosystem packages updated.
 - [x] Initial migration guide, core docs, and templates updated for AI SDK 7, Node.js 22, and ESM-only.
 - [x] Follow-up audit cleanup started: core agent/tool docs, selected safe ToolSet examples, Node.js 22 README/docs references, and legacy `@voltagent/vercel-*` example dependencies.
-- [ ] Follow-up audit cleanup for remaining v2-era examples and website docs is complete.
+- [x] AI SDK-first callback/context boundary corrected: `runtimeContext`, `toolsContext`, telemetry, and raw lifecycle callback events pass through; VoltAgent hooks remain additive.
+- [x] Added e2e coverage for routed raw AI SDK tools receiving `toolsContext` and named `toolApproval` receiving `toolContext`/`runtimeContext`.
+- [x] Added runtime e2e coverage for raw `tool()` from `ai` using native `contextSchema` and call-level `toolsContext` without VoltAgent metadata.
+- [x] Documented the AI SDK compatibility matrix for direct re-exports vs `agent.generateText()`/`agent.streamText()` and VoltAgent-owned fields.
+- [x] Follow-up audit cleanup for remaining v2-era examples and website docs is complete.
 - [x] `pnpm --filter @voltagent/core typecheck` passes.
 - [x] `pnpm --filter @voltagent/core test` passes.
 - [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/agent-runtime.e2e.spec.ts` passes.
 - [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/message-persistence.libsql.e2e.spec.ts` passes.
+- [x] `pnpm lint:error` passes.
+- [x] `pnpm --dir website build` passes.
+- [x] Selected migrated example builds pass: `with-tools`, `with-tool-routing`, `with-voltagent-actions`, `with-airtable`, `with-whatsapp`, `with-google-drive-mcp/server`, `with-hooks`, `with-langfuse`, `with-voltagent-exporter`, `with-tavily-search`, `with-xquik-tools`, `github-repo-analyzer`, and `github-star-stories`.
 - [x] `pnpm --filter @voltagent/e2e lint` passes.
 - [x] `pnpm build:all` passes.
 - [x] `pnpm lint` passes with existing warnings only.

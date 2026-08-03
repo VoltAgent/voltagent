@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
@@ -135,25 +135,27 @@ const handleStream = async (c: Context) => {
       apps: ["googledrive"],
     });
 
-    const tools = googleDriveToolsSpec.map((toolSpec) =>
-      createTool({
-        name: toolSpec.function.name,
-        description: toolSpec.function.description || "",
-        parameters: convertJsonSchemaToZod(
-          toolSpec.function.parameters as any,
-        ) as unknown as z.ZodType,
-        execute: async (args) => {
-          console.log(`Executing tool: ${toolSpec.function.name} for user ${userId}`);
-          const result = await composioToolset.executeAction({
-            action: toolSpec.function.name,
-            params: args,
-            connectedAccountId: connectedAccountId, // Use the retrieved ID
-          });
-          return result;
-        },
-      }),
+    const tools = Object.fromEntries(
+      googleDriveToolsSpec.map((toolSpec) => [
+        toolSpec.function.name,
+        tool({
+          description: toolSpec.function.description || "",
+          inputSchema: convertJsonSchemaToZod(
+            toolSpec.function.parameters as any,
+          ) as unknown as z.ZodType,
+          execute: async (args) => {
+            console.log(`Executing tool: ${toolSpec.function.name} for user ${userId}`);
+            const result = await composioToolset.executeAction({
+              action: toolSpec.function.name,
+              params: args as Record<string, any>,
+              connectedAccountId: connectedAccountId, // Use the retrieved ID
+            });
+            return result;
+          },
+        }),
+      ]),
     );
-    console.log(`Prepared ${tools.length} Google Drive tools for the request.`);
+    console.log(`Prepared ${Object.keys(tools).length} Google Drive tools for the request.`);
 
     // 3. Set up SSE streaming with dynamic tools
     const stream = new ReadableStream({
@@ -162,7 +164,7 @@ const handleStream = async (c: Context) => {
           console.log(`Starting stream for user ${userId} with prompt: "${prompt}"`);
           const response = await agent.streamText(prompt, {
             userId: userId,
-            tools: tools, // Pass dynamically created tools
+            tools, // Pass dynamically created ToolSet
           });
 
           let finalContent = "";

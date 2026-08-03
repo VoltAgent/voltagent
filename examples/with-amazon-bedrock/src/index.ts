@@ -1,14 +1,13 @@
-import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Example tool to demonstrate capabilities
-const weatherTool = createTool({
-  name: "get_current_weather",
+const weatherTool = tool({
   description: "Get the current weather in a location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The location to get weather for"),
     unit: z.enum(["celsius", "fahrenheit"]).optional().describe("Temperature unit"),
   }),
@@ -43,7 +42,9 @@ const agent = new Agent({
   // Credentials are resolved from AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION,
   // and optionally AWS_SESSION_TOKEN.
   model: "amazon-bedrock/anthropic.claude-opus-4-1-20250805-v1:0",
-  tools: [weatherTool],
+  tools: {
+    get_current_weather: weatherTool,
+  },
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

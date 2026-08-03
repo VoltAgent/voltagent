@@ -73,7 +73,9 @@ const createWorker = (env: Env) => {
   const agent = new Agent({
     name: "Assistant",
     model: "openai/gpt-4o-mini",
-    tools: [weatherTool],
+    tools: {
+      getWeather: weatherTool,
+    },
     memory,
   });
 

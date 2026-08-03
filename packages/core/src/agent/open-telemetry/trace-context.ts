@@ -21,7 +21,6 @@ import {
 import { safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { VoltAgentObservability } from "../../observability";
-import type { BaseGenerationOptions } from "../agent";
 import type { BaseMessage } from "../providers/base/types";
 
 type SpanBridge = {
@@ -43,6 +42,7 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
   typeof value === "object" && value !== null && typeof (value as any).then === "function";
 
 type SpanAttributes = Record<string, unknown>;
+type ModelAttributeOptions = Record<string, any>;
 type ResolvedParentSpan = {
   span: Span;
   parentType: "agent" | "workflow" | "unknown";
@@ -571,7 +571,7 @@ export class AgentTraceContext {
 export function addModelAttributesToSpan(
   span: Span | undefined,
   modelName: string,
-  options?: BaseGenerationOptions,
+  options?: ModelAttributeOptions,
   defaultMaxOutputTokens?: number,
   defaultTemperature?: number,
 ): void {

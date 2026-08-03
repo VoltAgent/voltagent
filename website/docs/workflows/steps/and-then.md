@@ -155,13 +155,12 @@ createWorkflowChain({
 When you need streaming or custom tool handling, call the agent directly:
 
 ```typescript
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const searchTool = createTool({
-  name: "search_database",
+const searchTool = tool({
   description: "Search the product database",
-  parameters: z.object({ query: z.string() }),
+  inputSchema: z.object({ query: z.string() }),
   execute: async ({ query }) => {
     // Your database search logic
     return { results: [...] };
@@ -171,7 +170,9 @@ const searchTool = createTool({
 const agent = new Agent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
-  tools: [searchTool],
+  tools: {
+    search_database: searchTool,
+  },
 });
 
 // Use andThen to leverage agent's tools

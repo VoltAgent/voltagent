@@ -1,4 +1,4 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { actionsClient, actionsConfig } from "../config";
 
@@ -8,7 +8,7 @@ const optionalString = stringIdentifier.optional();
 const recordIdSchema = stringIdentifier.describe("The Airtable record ID.");
 
 const recordFieldsSchema = z
-  .record(z.unknown())
+  .record(z.string(), z.unknown())
   .describe(
     "Key-value pairs that will compose the Airtable record. Keys should match column names.",
   );
@@ -51,11 +51,10 @@ function wrapActionResult(
   };
 }
 
-export const createAirtableRecordTool = createTool({
-  name: "createAirtableRecord",
+export const createAirtableRecordTool = tool({
   description:
     "Create a new Airtable record by sending the payload through VoltOps Actions. Fields should map to Airtable column names.",
-  parameters: z.object({
+  inputSchema: z.object({
     fields: recordFieldsSchema,
     typecast: optionalBoolean,
     returnFieldsByFieldId: optionalBoolean,
@@ -69,9 +68,9 @@ export const createAirtableRecordTool = createTool({
   outputSchema: z.object({
     actionId: z.string(),
     provider: z.string(),
-    request: z.record(z.unknown()),
+    request: z.record(z.string(), z.unknown()),
     response: z.unknown(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
   }),
   execute: async (input) => {
     const { fields, typecast, returnFieldsByFieldId, baseId, tableId } = input;
@@ -91,11 +90,10 @@ export const createAirtableRecordTool = createTool({
   },
 });
 
-export const listAirtableRecordsTool = createTool({
-  name: "listAirtableRecords",
+export const listAirtableRecordsTool = tool({
   description:
     "Retrieve Airtable records through VoltOps Actions. Supports standard Airtable filter, view, field, and sorting options.",
-  parameters: z.object({
+  inputSchema: z.object({
     view: optionalString.describe("Limit results to a specific Airtable view."),
     filterByFormula: optionalString.describe("Airtable formula to filter results."),
     maxRecords: z.number().int().positive().optional(),
@@ -114,9 +112,9 @@ export const listAirtableRecordsTool = createTool({
   outputSchema: z.object({
     actionId: z.string(),
     provider: z.string(),
-    request: z.record(z.unknown()),
+    request: z.record(z.string(), z.unknown()),
     response: z.unknown(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
   }),
   execute: async (input) => {
     const {
@@ -152,11 +150,10 @@ export const listAirtableRecordsTool = createTool({
   },
 });
 
-export const updateAirtableRecordTool = createTool({
-  name: "updateAirtableRecord",
+export const updateAirtableRecordTool = tool({
   description:
     "Update an existing Airtable record via VoltOps Actions. Provide the record ID and any fields that should change.",
-  parameters: z.object({
+  inputSchema: z.object({
     recordId: recordIdSchema,
     fields: recordFieldsSchema.optional(),
     typecast: optionalBoolean,
@@ -171,9 +168,9 @@ export const updateAirtableRecordTool = createTool({
   outputSchema: z.object({
     actionId: z.string(),
     provider: z.string(),
-    request: z.record(z.unknown()),
+    request: z.record(z.string(), z.unknown()),
     response: z.unknown(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
   }),
   execute: async (input) => {
     const { recordId, fields, typecast, returnFieldsByFieldId, baseId, tableId } = input;
@@ -194,11 +191,10 @@ export const updateAirtableRecordTool = createTool({
   },
 });
 
-export const deleteAirtableRecordTool = createTool({
-  name: "deleteAirtableRecord",
+export const deleteAirtableRecordTool = tool({
   description:
     "Delete an Airtable record by ID using VoltOps Actions. Be careful—this permanently removes the row.",
-  parameters: z.object({
+  inputSchema: z.object({
     recordId: recordIdSchema,
     baseId: stringIdentifier
       .describe("Override the default Airtable base ID for this call.")
@@ -210,9 +206,9 @@ export const deleteAirtableRecordTool = createTool({
   outputSchema: z.object({
     actionId: z.string(),
     provider: z.string(),
-    request: z.record(z.unknown()),
+    request: z.record(z.string(), z.unknown()),
     response: z.unknown(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
   }),
   execute: async (input) => {
     const { recordId, baseId, tableId } = input;
@@ -230,11 +226,10 @@ export const deleteAirtableRecordTool = createTool({
   },
 });
 
-export const getAirtableRecordTool = createTool({
-  name: "getAirtableRecord",
+export const getAirtableRecordTool = tool({
   description:
     "Fetch a single Airtable record by ID via VoltOps Actions. Supports returning fields keyed by ID.",
-  parameters: z.object({
+  inputSchema: z.object({
     recordId: recordIdSchema,
     returnFieldsByFieldId: optionalBoolean,
     baseId: stringIdentifier
@@ -247,9 +242,9 @@ export const getAirtableRecordTool = createTool({
   outputSchema: z.object({
     actionId: z.string(),
     provider: z.string(),
-    request: z.record(z.unknown()),
+    request: z.record(z.string(), z.unknown()),
     response: z.unknown(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
   }),
   execute: async (input) => {
     const { recordId, returnFieldsByFieldId, baseId, tableId } = input;

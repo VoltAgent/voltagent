@@ -16,7 +16,12 @@ const agent = new Agent({
   name: "Base Agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
+  tools: {
+    getWeather: weatherTool,
+    search: searchTool,
+    checkCalendar: checkCalendarTool,
+    addCalendarEvent: addCalendarEventTool,
+  },
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

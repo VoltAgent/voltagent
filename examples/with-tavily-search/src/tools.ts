@@ -1,11 +1,10 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-export const tavilySearchTool = createTool({
-  name: "tavilySearch",
+export const tavilySearchTool = tool({
   description:
     "Search the web for real-time information using Tavily's advanced search API. This tool provides comprehensive web search results with content extraction and AI-powered answers. IMPORTANT: This tool should ONLY be used when the user explicitly requests web search or when you need to verify information from your database. Do NOT use this tool automatically - always ask the user first if they want you to search the web for additional information.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z
       .string()
       .describe(
@@ -133,11 +132,10 @@ export const tavilySearchTool = createTool({
   },
 });
 
-export const tavilyExtractTool = createTool({
-  name: "tavilyExtract",
+export const tavilyExtractTool = tool({
   description:
     "Extract content from a specific URL using Tavily's content extraction API. Useful for getting detailed information from any website, news articles, or documents.",
-  parameters: z.object({
+  inputSchema: z.object({
     url: z.string().describe("URL to extract content from"),
     includeRawContent: z.boolean().optional().describe("Include raw HTML content (default: false)"),
   }),

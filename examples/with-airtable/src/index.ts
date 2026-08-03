@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
+import { Agent, VoltAgent, createTriggers, tool } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import { createPinoLogger } from "@voltagent/logger";
 import { VoltOpsClient } from "@voltagent/sdk";
@@ -24,12 +24,11 @@ const voltOps = new VoltOpsClient({
   secretKey: process.env.VOLTAGENT_SECRET_KEY ?? "",
 });
 
-const updateAirtableRecord = createTool({
-  name: "updateAirtableRecord",
+const updateAirtableRecord = tool({
   description: "Update an Airtable record with summary, priority, status, and next steps.",
-  parameters: z.object({
+  inputSchema: z.object({
     recordId: z.string().describe("Airtable record ID to update"),
-    fields: z.record(z.unknown()).describe("Fields to update on the record"),
+    fields: z.record(z.string(), z.unknown()).describe("Fields to update on the record"),
     baseId: z.string().optional().describe("Override Airtable base ID"),
     tableId: z.string().optional().describe("Override Airtable table ID"),
   }),
@@ -64,7 +63,9 @@ const airtableAgent = new Agent({
   name: "airtable-agent",
   instructions: `You process newly created Airtable records.
 Create a concise summary, assign a priority (High/Medium/Low), set a status (New/In Progress/Blocked/Done), and list next steps.`,
-  tools: [updateAirtableRecord],
+  tools: {
+    updateAirtableRecord,
+  },
   model: "openai/gpt-4o-mini",
 });
 

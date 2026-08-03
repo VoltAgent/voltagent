@@ -5,13 +5,28 @@ import {
   Output,
   type UIMessage,
   tool as rawAiTool,
+  type generateText as rawGenerateText,
+  type streamText as rawStreamText,
 } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
+import {
+  Output as VoltAgentOutput,
+  generateText as voltAgentGenerateText,
+  streamText as voltAgentStreamText,
+  tool as voltAgentTool,
+} from "../index";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
-import { Tool, type Toolkit, tool as aiSdkTool, createTool, withVoltAgentMetadata } from "../tool";
+import {
+  Tool,
+  type Toolkit,
+  tool as aiSdkTool,
+  createTool,
+  enhanceTool,
+  withVoltAgentMetadata,
+} from "../tool";
 import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
@@ -22,7 +37,6 @@ import {
   type AgentHooks,
   type GenerateObjectResultWithContext,
   type GenerateTextOptions,
-  type GenerateTextResultWithContext,
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
 } from "./agent";
@@ -222,6 +236,36 @@ describe("Agent Type System", () => {
       expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
 
+    it("should expose AI SDK-compatible primitives from @voltagent/core", () => {
+      expectTypeOf(voltAgentGenerateText).toEqualTypeOf<typeof rawGenerateText>();
+      expectTypeOf(voltAgentStreamText).toEqualTypeOf<typeof rawStreamText>();
+      expectTypeOf(VoltAgentOutput.object).toEqualTypeOf<typeof Output.object>();
+
+      const weatherTool = voltAgentTool({
+        description: "Get weather",
+        inputSchema: z.object({ city: z.string() }),
+        contextSchema: z.object({ apiKey: z.string() }),
+        execute: async ({ city }, { context }) => {
+          expectTypeOf(context.apiKey).toEqualTypeOf<string>();
+          return { city };
+        },
+        voltagent: {
+          tags: ["weather"],
+        },
+      });
+
+      const agent = new Agent({
+        name: "Weather",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          weather: weatherTool,
+        },
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
     it("should accept AI SDK ToolSet tools", () => {
       const agent = new Agent({
         name: "Test",
@@ -303,6 +347,45 @@ describe("Agent Type System", () => {
         model: mockModel,
         tools: {
           refundCustomer,
+        },
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should enhance externally created AI SDK tools without rebuilding them", () => {
+      const externalWeatherTool = rawAiTool({
+        description: "Get weather",
+        inputSchema: z.object({
+          city: z.string(),
+        }),
+        contextSchema: z.object({
+          apiKey: z.string(),
+          defaultUnit: z.enum(["celsius", "fahrenheit"]),
+        }),
+        execute: async ({ city }, { context }) => {
+          expectTypeOf(context.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(context.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return { city, unit: context.defaultUnit };
+        },
+      });
+
+      const weather = enhanceTool(externalWeatherTool, {
+        name: "Weather lookup",
+        tags: ["weather", "external"],
+        metadata: {
+          owner: "platform-team",
+        },
+      });
+
+      expectTypeOf(weather).toEqualTypeOf<typeof externalWeatherTool>();
+
+      const agent = new Agent({
+        name: "Weather",
+        instructions: "Test",
+        model: mockModel,
+        tools: {
+          weather,
         },
       });
 
@@ -469,7 +552,8 @@ describe("Agent Type System", () => {
       });
 
       const result = await agent.generateText("Test input");
-      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+      expectTypeOf(result.text).toEqualTypeOf<string>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
       expectTypeOf(result.text).toBeString();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
@@ -517,7 +601,8 @@ describe("Agent Type System", () => {
         temperature: 0.2,
       });
 
-      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+      expectTypeOf(result.text).toEqualTypeOf<string>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
       expectTypeOf(result.output).toEqualTypeOf<{ answer: string; count: number }>();
       expectTypeOf(result.output.answer).toEqualTypeOf<string>();
       expectTypeOf(result.output.count).toEqualTypeOf<number>();
@@ -550,7 +635,8 @@ describe("Agent Type System", () => {
         experimental_toolApprovalSecret: new Uint8Array([1, 2, 3]),
       });
 
-      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+      expectTypeOf(result.text).toEqualTypeOf<string>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 
     it("should infer streamText return type", async () => {
@@ -619,7 +705,15 @@ describe("Agent Type System", () => {
         lookup_order: aiSdkTool({
           description: "Lookup an order",
           inputSchema: z.object({ orderId: z.string() }),
-          execute: async ({ orderId }) => ({ orderId }),
+          contextSchema: z.object({
+            tenantId: z.string(),
+            defaultRegion: z.enum(["us", "eu"]),
+          }),
+          execute: async ({ orderId }, { context }) => {
+            expectTypeOf(context.tenantId).toEqualTypeOf<string>();
+            expectTypeOf(context.defaultRegion).toEqualTypeOf<"us" | "eu">();
+            return { orderId, tenantId: context.tenantId };
+          },
         }),
       };
 
@@ -644,9 +738,12 @@ describe("Agent Type System", () => {
           requestMessages: true,
           responseBody: true,
         },
-        experimental_download: async (downloads) => downloads.map(() => null),
+        experimental_download: async (downloads: any[]) => downloads.map(() => null),
         toolsContext: {
-          lookup_order: {},
+          lookup_order: {
+            tenantId: "tenant-1",
+            defaultRegion: "us",
+          },
         },
         onStart: async () => {},
         onStepStart: async () => {},
@@ -655,19 +752,139 @@ describe("Agent Type System", () => {
         onToolExecutionStart: async () => {},
         onToolExecutionEnd: async () => {},
         onStepEnd: async (step) => {
-          expectTypeOf(step).toMatchTypeOf<unknown>();
+          expectTypeOf(step.toolsContext.lookup_order.tenantId).toEqualTypeOf<string>();
+          expectTypeOf(step.toolsContext.lookup_order.defaultRegion).toEqualTypeOf<"us" | "eu">();
         },
         onEnd: async (finish) => {
           expectTypeOf(finish).toMatchTypeOf<unknown>();
         },
       });
 
-      expectTypeOf(result).toMatchTypeOf<GenerateTextResultWithContext>();
+      expectTypeOf(result.text).toEqualTypeOf<string>();
     });
 
-    it("should accept toolsContext and reject VoltAgent-owned runtime/telemetry fields", () => {
+    it("should infer toolsContext from raw AI SDK tool contextSchema", async () => {
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+      });
+
+      const weather = rawAiTool({
+        description: "Get weather",
+        inputSchema: z.object({
+          city: z.string(),
+        }),
+        contextSchema: z.object({
+          apiKey: z.string(),
+          defaultUnit: z.enum(["celsius", "fahrenheit"]),
+        }),
+        execute: async ({ city }, { context }) => {
+          expectTypeOf(city).toEqualTypeOf<string>();
+          expectTypeOf(context.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(context.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return {
+            city,
+            unit: context.defaultUnit,
+          };
+        },
+      });
+
+      await agent.generateText({
+        prompt: "Weather in SF",
+        tools: { weather },
+        toolsContext: {
+          weather: {
+            apiKey: "weather-key",
+            defaultUnit: "fahrenheit",
+          },
+        },
+        prepareStep: async ({ toolsContext }) => {
+          expectTypeOf(toolsContext.weather.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(toolsContext.weather.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return {
+            toolsContext: {
+              weather: {
+                apiKey: "weather-key",
+                defaultUnit: "celsius",
+              },
+            },
+          };
+        },
+        onStepEnd: async ({ toolsContext }) => {
+          expectTypeOf(toolsContext.weather.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(toolsContext.weather.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+        },
+      });
+
+      await agent.streamText({
+        prompt: "Weather in SF",
+        tools: { weather },
+        toolsContext: {
+          weather: {
+            apiKey: "weather-key",
+            defaultUnit: "celsius",
+          },
+        },
+        onStepEnd: async ({ toolsContext }) => {
+          expectTypeOf(toolsContext.weather.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(toolsContext.weather.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+        },
+      });
+
+      // @ts-expect-error - defaultUnit is required by weather.contextSchema
+      await agent.generateText({
+        prompt: "Weather in SF",
+        tools: { weather },
+        toolsContext: {
+          weather: {
+            apiKey: "weather-key",
+          },
+        },
+      });
+
+      const constructorToolsAgent = new Agent({
+        name: "Constructor Tools Test",
+        instructions: "Test",
+        model: mockModel,
+        tools: { weather },
+      });
+
+      await constructorToolsAgent.generateText({
+        prompt: "Weather in SF",
+        toolsContext: {
+          weather: {
+            apiKey: "weather-key",
+            defaultUnit: "fahrenheit",
+          },
+        },
+        prepareStep: async ({ toolsContext }) => {
+          expectTypeOf(toolsContext.weather.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(toolsContext.weather.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+          return {};
+        },
+      });
+
+      await constructorToolsAgent.streamText({
+        prompt: "Weather in SF",
+        toolsContext: {
+          weather: {
+            apiKey: "weather-key",
+            defaultUnit: "celsius",
+          },
+        },
+        onStepEnd: async ({ toolsContext }) => {
+          expectTypeOf(toolsContext.weather.apiKey).toEqualTypeOf<string>();
+          expectTypeOf(toolsContext.weather.defaultUnit).toEqualTypeOf<"celsius" | "fahrenheit">();
+        },
+      });
+
+      // @ts-expect-error - constructor tools with contextSchema require toolsContext
+      await constructorToolsAgent.generateText("Weather in SF");
+    });
+
+    it("should accept AI SDK runtime, tools context, and telemetry fields", () => {
       const runtimeContextOptions: GenerateTextOptions = {
-        // @ts-expect-error - use `voltagent.context` instead
         runtimeContext: {
           tenantId: "tenant-1",
         },
@@ -680,14 +897,12 @@ describe("Agent Type System", () => {
       };
 
       const telemetryOptions: GenerateTextOptions = {
-        // @ts-expect-error - use VoltAgent observability/tracing instead
         telemetry: {
           isEnabled: false,
         },
       };
 
       const experimentalTelemetryOptions: GenerateTextOptions = {
-        // @ts-expect-error - use VoltAgent observability/tracing instead
         experimental_telemetry: {
           isEnabled: false,
         },

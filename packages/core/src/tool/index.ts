@@ -61,6 +61,7 @@ export type { Tool as VercelTool } from "ai";
 export type { ProviderOptions } from "@ai-sdk/provider-utils";
 export {
   createNamedAiSdkTool,
+  enhanceTool,
   getRawAiSdkTool,
   getVoltAgentToolMetadata,
   isNamedAiSdkTool,

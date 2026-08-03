@@ -1,4 +1,4 @@
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
 export interface MathInput {
@@ -11,10 +11,9 @@ export interface MathOutput {
   steps: string[];
 }
 
-const calculatorTool = createTool({
-  name: "calculator",
+const calculatorTool = tool({
   description: "Perform basic arithmetic operations",
-  parameters: z.object({
+  inputSchema: z.object({
     operation: z.string().describe("The mathematical operation to perform"),
     numbers: z.array(z.number()).describe("The numbers to operate on"),
   }),
@@ -47,5 +46,7 @@ Return your response in JSON format:
   "steps": ["step 1", "step 2", ...]
 }`,
   model: "openai/gpt-4o-mini",
-  tools: [calculatorTool],
+  tools: {
+    calculator: calculatorTool,
+  },
 });

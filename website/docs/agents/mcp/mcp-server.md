@@ -180,14 +180,13 @@ const tools = await mcpConfig.getTools();
 Sometimes you want MCP clients to see helpers that are not (yet) registered with VoltAgent. Provide them as keyed objects (just like the main `VoltAgent` config) via the `agents`, `workflows`, or `tools` fields to append entries that live only on the MCP side:
 
 ```ts title="src/mcp/server.ts"
-import { Agent, createTool, createWorkflowChain } from "@voltagent/core";
+import { Agent, createTool, createWorkflowChain, tool } from "@voltagent/core";
 import { MCPServer } from "@voltagent/mcp-server";
 import { z } from "zod";
 
-const statusTool = createTool({
-  name: "status",
+const statusTool = tool({
   description: "Return the current time",
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   async execute() {
     return { status: "ok", time: new Date().toISOString() };
   },
@@ -199,7 +198,9 @@ const supportAgent = new Agent({
   instructions:
     "Use internal knowledge to triage customer tickets and respond with routing guidance.",
   model: "openai/gpt-4o-mini",
-  tools: [statusTool],
+  tools: {
+    status: statusTool,
+  },
 });
 
 const incidentWorkflow = createWorkflowChain({
@@ -217,7 +218,7 @@ export const mcpServer = new MCPServer({
   version: "0.1.0",
   description: "VoltAgent MCP stdio example",
   tools: {
-    statusTool,
+    status: statusTool,
   },
   agents: {
     supportAgent,
@@ -307,7 +308,7 @@ export const mcpServer = new MCPServer({
 
 - The `adapters` block forwards MCP requests to any backend (VoltOps Prompt Manager, a documentation service, your own REST API).
 - When you change external data, call `await mcpServer.notifyPromptListChanged()` or `await mcpServer.notifyResourceListChanged()` so connected IDEs receive the standard `list_changed` notifications. If you update a specific resource at runtime, invoke `await mcpServer.notifyResourceUpdated("volt://docs/runbook")` to push an incremental update only to subscribers.
-- If an adapter provides a `sendRequest` method, MCP clients can make `elicitation/create` calls. VoltAgent forwards these requests to the adapter so you can collect data from the user and return an `ElicitResult`. Tools can consume the bridge via `operationContext.elicitation`:
+- If an adapter provides a `sendRequest` method, MCP clients can make `elicitation/create` calls. VoltAgent forwards these requests to the adapter so you can collect data from the user and return an `ElicitResult`. Tools that need direct access to `operationContext.elicitation` can use the legacy-compatible `createTool` helper:
 
 ```ts
 const confirmAction = createTool({

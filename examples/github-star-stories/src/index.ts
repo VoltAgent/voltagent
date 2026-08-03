@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Agent, VoltAgent, VoltOpsClient, createTool, createTriggers } from "@voltagent/core";
+import { Agent, VoltAgent, VoltOpsClient, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 /* import { honoServer } from "@voltagent/server-hono"; */
 import { serverlessHono } from "@voltagent/serverless-hono";
@@ -13,7 +13,10 @@ const logger = createPinoLogger({
 const storytellerAgent = new Agent({
   name: "StarStoryAgent",
   model: "openai/gpt-4o-mini",
-  tools: [fetchGithubProfileTool, shareDiscordStoryTool],
+  tools: {
+    fetch_github_profile: fetchGithubProfileTool,
+    share_discord_story: shareDiscordStoryTool,
+  },
   instructions: `You celebrate developers who star our GitHub repository with fun and creative messages!
 
 When the user says "celebrate <username>", do the following:

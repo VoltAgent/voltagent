@@ -1,12 +1,11 @@
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
 // Uppercase conversion tool
-const uppercaseTool = createTool({
-  name: "uppercase",
+const uppercaseTool = tool({
   description: "Convert text to uppercase",
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe("Text to convert to uppercase"),
   }),
   execute: async (args) => {
@@ -15,10 +14,9 @@ const uppercaseTool = createTool({
 });
 
 // Word count tool
-const wordCountTool = createTool({
-  name: "countWords",
+const wordCountTool = tool({
   description: "Count words in text",
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe("Text to count words in"),
   }),
   execute: async (args) => {
@@ -31,10 +29,9 @@ const wordCountTool = createTool({
 });
 
 // Story writing tool
-const storyWriterTool = createTool({
-  name: "writeStory",
+const storyWriterTool = tool({
   description: "Write a 50-word story about the given text",
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe("Text to write a story about"),
   }),
   execute: async (args) => {
@@ -49,7 +46,9 @@ export const uppercaseAgent = new Agent({
   instructions:
     "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
   model: "openai/gpt-4o-mini",
-  tools: [uppercaseTool],
+  tools: {
+    uppercase: uppercaseTool,
+  },
   memory: sharedMemory,
 });
 
@@ -59,7 +58,9 @@ export const wordCountAgent = new Agent({
   instructions:
     "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
   model: "openai/gpt-4o-mini",
-  tools: [wordCountTool],
+  tools: {
+    countWords: wordCountTool,
+  },
   memory: sharedMemory,
 });
 
@@ -69,7 +70,9 @@ export const storyWriterAgent = new Agent({
   instructions:
     "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
   model: "openai/gpt-4o-mini",
-  tools: [storyWriterTool],
+  tools: {
+    writeStory: storyWriterTool,
+  },
   memory: sharedMemory,
 });
 

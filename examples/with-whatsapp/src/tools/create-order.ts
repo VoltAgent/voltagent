@@ -1,11 +1,14 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const createOrderTool = createTool({
-  name: "createOrder",
+const customerContextSchema = z.object({
+  customerPhone: z.string(),
+});
+
+export const createOrderTool = tool({
   description: "Creates a new order with the items and delivery address from working memory",
-  parameters: z.object({
+  inputSchema: z.object({
     items: z
       .array(
         z.object({
@@ -19,10 +22,10 @@ export const createOrderTool = createTool({
     deliveryAddress: z.string().describe("Delivery address for the order"),
     customerNotes: z.string().optional().describe("Optional customer notes for the order"),
   }),
-  execute: async ({ items, deliveryAddress }, context) => {
+  contextSchema: customerContextSchema,
+  execute: async ({ items, deliveryAddress }, { context }) => {
     try {
-      // Get customer phone from context userId
-      const customerPhone = context?.userId || "unknown";
+      const customerPhone = context.customerPhone;
 
       // Calculate total amount
       const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);

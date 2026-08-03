@@ -1,4 +1,4 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 const weatherOutputSchema = z.object({
@@ -12,10 +12,9 @@ const weatherOutputSchema = z.object({
   message: z.string(),
 });
 
-export const weatherTool = createTool({
-  name: "getWeather",
+export const weatherTool = tool({
   description: "Get the current weather for a specific location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("City or location to get weather for (e.g., San Francisco)"),
   }),
   outputSchema: weatherOutputSchema,

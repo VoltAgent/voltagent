@@ -1,28 +1,26 @@
-import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
-const greetingTool = createTool({
-  name: "get_greeting",
+const greetingTool = tool({
   description: "Get a personalized greeting",
-  parameters: z.object({
+  inputSchema: z.object({
     name: z.string().describe("Person's name"),
   }),
-  execute: async ({ name }: { name: string }) => {
+  execute: async ({ name }) => {
     return `Hello ${name}! Nice to meet you!`;
   },
 });
 
 // Admin-only tool
-const adminTool = createTool({
-  name: "admin_action",
+const adminTool = tool({
   description: "Perform admin actions (admin only)",
-  parameters: z.object({
+  inputSchema: z.object({
     action: z.string().describe("Action to perform"),
   }),
-  execute: async ({ action }: { action: string }) => {
+  execute: async ({ action }) => {
     return `Admin action performed: ${action}`;
   },
 });
@@ -54,9 +52,13 @@ const dynamicAgent = new Agent({
   tools: ({ context }) => {
     const role = (context.get("role") as string) || "user";
     if (role === "admin") {
-      return [adminTool];
+      return {
+        admin_action: adminTool,
+      };
     }
-    return [greetingTool];
+    return {
+      get_greeting: greetingTool,
+    };
   },
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

@@ -1,11 +1,15 @@
 import { isDeepStrictEqual } from "node:util";
-import type {
-  AssistantModelMessage,
-  ModelMessage,
-  ProviderOptions,
-  SystemModelMessage,
-  ToolExecutionOptions,
-  ToolModelMessage,
+import {
+  type Context as AISDKContext,
+  type AssistantModelMessage,
+  type HasRequiredKey,
+  type InferToolSetContext,
+  type ModelMessage,
+  type ProviderOptions,
+  type SystemModelMessage,
+  type ToolExecutionOptions,
+  type ToolModelMessage,
+  validateTypes,
 } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode, context as otelContext } from "@opentelemetry/api";
@@ -144,6 +148,9 @@ import type { ConversationStepRecord } from "../memory/types";
 import { applySummarization } from "./apply-summarization";
 import {
   AGENT_REF_CONTEXT_KEY,
+  AI_SDK_RUNTIME_CONTEXT_KEY,
+  AI_SDK_TOOLS_CONTEXT_KEY,
+  AI_SDK_TOOLS_KEY,
   FORCED_TOOL_CHOICE_CONTEXT_KEY,
   SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY,
   TOOL_APPROVAL_CONTEXT_KEY,
@@ -833,9 +840,22 @@ function cloneGenerateTextResultWithContext<
   return clone;
 }
 
-type AIGenerateTextOptions = Parameters<typeof generateText>[0];
-type AIStreamTextOptions = Parameters<typeof streamText>[0];
-type AITextGenerationOptions = AIGenerateTextOptions & AIStreamTextOptions;
+type AIGenerateTextOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Parameters<typeof generateText<TOOLS, RUNTIME_CONTEXT, OUTPUT>>[0];
+type AIStreamTextOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Parameters<typeof streamText<TOOLS, RUNTIME_CONTEXT, OUTPUT>>[0];
+type AITextGenerationOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = AIGenerateTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT> &
+  AIStreamTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>;
 type VoltAgentControlledAISDKOption =
   | "model"
   | "prompt"
@@ -845,76 +865,126 @@ type VoltAgentControlledAISDKOption =
   | "providerOptions"
   | "abortSignal"
   | "maxRetries"
-  | "runtimeContext"
+  | "toolChoice"
+  | "toolApproval"
   | "toolsContext"
-  | "telemetry"
-  | "experimental_telemetry"
+  | "prepareStep"
+  | "experimental_toolApprovalSecret"
   | "onStepEnd"
   | "onStepFinish"
   | "onEnd"
   | "onFinish"
   | "onError"
   | "_internal";
-type AISDKPassthroughOptions = Partial<
-  Omit<AITextGenerationOptions, VoltAgentControlledAISDKOption>
+type AISDKPassthroughOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Partial<
+  Omit<AITextGenerationOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>, VoltAgentControlledAISDKOption>
 >;
-type AISDKManagedCallbacks = Pick<
-  Partial<AITextGenerationOptions>,
+type AISDKManagedCallbacks<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Pick<
+  Partial<AITextGenerationOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>>,
   "onStepEnd" | "onStepFinish" | "onEnd" | "onFinish" | "onError"
 >;
 
-type AITextCallOptions = AISDKPassthroughOptions & {
+type IsExactToolSet<TOOLS extends ToolSet> = [ToolSet] extends [TOOLS] ? true : false;
+type IsEmptyObject<OBJECT> = keyof OBJECT extends never ? true : false;
+type ToolsContextFor<TOOLS extends ToolSet> = IsExactToolSet<TOOLS> extends true
+  ? Record<string, unknown>
+  : InferToolSetContext<TOOLS>;
+type VoltAgentToolsContextParameter<TOOLS extends ToolSet> = IsExactToolSet<TOOLS> extends true
+  ? { toolsContext?: Record<string, unknown> }
+  : IsEmptyObject<InferToolSetContext<TOOLS>> extends true
+    ? { toolsContext?: never }
+    : HasRequiredKey<InferToolSetContext<TOOLS>> extends true
+      ? { toolsContext: InferToolSetContext<TOOLS> }
+      : { toolsContext?: InferToolSetContext<TOOLS> };
+
+type AITextCallOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = AISDKPassthroughOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT> & {
   instructions?: Instructions;
   system?: Instructions;
   stop?: string | string[];
-  toolChoice?: ToolChoice<Record<string, unknown>>;
-  toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
+  toolChoice?: ToolChoice<TOOLS>;
+  toolApproval?: ToolApprovalConfiguration<TOOLS, RUNTIME_CONTEXT>;
   experimental_toolApprovalSecret?: string | Uint8Array;
-  toolsContext?: Record<string, unknown>;
-  prepareStep?: PrepareStepFunction<Record<string, AITool>>;
-  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
-  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
-  onEnd?: AISDKManagedCallbacks["onEnd"];
-  onFinish?: AISDKManagedCallbacks["onFinish"];
-  onError?: AISDKManagedCallbacks["onError"];
+  toolsContext?: ToolsContextFor<TOOLS>;
+  prepareStep?: PrepareStepFunction<TOOLS, RUNTIME_CONTEXT>;
+  onStepEnd?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onStepEnd"];
+  onStepFinish?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onStepFinish"];
+  onEnd?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onEnd"];
+  onFinish?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onFinish"];
+  onError?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onError"];
 };
 
-type VoltAgentGenerateTextCallOptions = Omit<AIGenerateTextOptions, "toolsContext"> & {
-  toolsContext?: Record<string, unknown>;
-};
-type VoltAgentStreamTextCallOptions = Omit<AIStreamTextOptions, "toolsContext"> & {
-  toolsContext?: Record<string, unknown>;
-};
-type VoltAgentGenerateTextReturn = ReturnType<typeof generateText<any, any, any>>;
-type VoltAgentStreamTextReturn = ReturnType<typeof streamText<any, any, any>>;
+type AnyBaseGenerationOptions = Record<string, any>;
 
-function generateTextWithVoltAgentTools(
-  options: VoltAgentGenerateTextCallOptions,
-): VoltAgentGenerateTextReturn {
+type VoltAgentGenerateTextCallOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Omit<AIGenerateTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>, "toolsContext"> & {
+  toolsContext?: ToolsContextFor<TOOLS>;
+};
+type VoltAgentStreamTextCallOptions<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = Omit<AIStreamTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>, "toolsContext"> & {
+  toolsContext?: ToolsContextFor<TOOLS>;
+};
+
+function generateTextWithVoltAgentTools<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+>(
+  options: VoltAgentGenerateTextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+): Promise<GenerateTextResult<TOOLS, RUNTIME_CONTEXT, OUTPUT>> {
   // VoltAgent resolves ToolSet entries dynamically at runtime, so TypeScript
   // cannot infer which tools declare AI SDK `contextSchema`. The AI SDK runtime
   // supports `toolsContext`; this boundary keeps the cast localized.
-  return generateText(options as unknown as AIGenerateTextOptions) as VoltAgentGenerateTextReturn;
+  return generateText(
+    options as unknown as AIGenerateTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+  ) as Promise<GenerateTextResult<TOOLS, RUNTIME_CONTEXT, OUTPUT>>;
 }
 
-function streamTextWithVoltAgentTools(
-  options: VoltAgentStreamTextCallOptions,
-): VoltAgentStreamTextReturn {
+function streamTextWithVoltAgentTools<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+>(
+  options: VoltAgentStreamTextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+): AIStreamTextResult<TOOLS, RUNTIME_CONTEXT, OUTPUT> {
   // See `generateTextWithVoltAgentTools` for why this cast is localized here.
-  return streamText(options as unknown as AIStreamTextOptions) as VoltAgentStreamTextReturn;
+  return streamText(
+    options as unknown as AIStreamTextOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+  ) as AIStreamTextResult<TOOLS, RUNTIME_CONTEXT, OUTPUT>;
 }
 
-function applyForcedToolChoice(
-  aiSDKOptions: AITextCallOptions,
-  forcedToolChoice: ToolChoice<Record<string, unknown>> | undefined,
+function applyForcedToolChoice<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+>(
+  aiSDKOptions: AITextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+  forcedToolChoice: ToolChoice<TOOLS> | undefined,
 ): void {
   if (!forcedToolChoice || aiSDKOptions.toolChoice !== undefined) {
     return;
   }
 
   const userPrepareStep = aiSDKOptions.prepareStep;
-  aiSDKOptions.prepareStep = async (
-    options: Parameters<PrepareStepFunction<Record<string, AITool>>>[0],
+  const prepareStepWithForcedToolChoice = async (
+    options: Parameters<PrepareStepFunction<TOOLS, RUNTIME_CONTEXT>>[0],
   ) => {
     const prepared = userPrepareStep ? await userPrepareStep(options) : undefined;
     const isFirstStep = options.steps.length === 0;
@@ -928,6 +998,10 @@ function applyForcedToolChoice(
 
     return { toolChoice: forcedToolChoice };
   };
+
+  aiSDKOptions.prepareStep = prepareStepWithForcedToolChoice as NonNullable<
+    AITextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>["prepareStep"]
+  >;
 }
 
 type Deferred<T> = {
@@ -964,185 +1038,182 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * Base options for all generation methods
  * Extends AI SDK's CallSettings for full compatibility
  */
-export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions = ProviderOptions>
-  extends AISDKPassthroughOptions {
-  // === VoltAgent Specific ===
-  // New namespace for VoltAgent runtime-specific options.
-  voltagent?: VoltAgentRuntimeOptions;
+export type BaseGenerationOptions<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = AISDKPassthroughOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT> &
+  VoltAgentToolsContextParameter<TOOLS> & {
+    // === VoltAgent Specific ===
+    // New namespace for VoltAgent runtime-specific options.
+    voltagent?: VoltAgentRuntimeOptions;
 
-  // Context
-  /**
-   * Runtime memory envelope for per-call memory identity and behavior overrides.
-   */
-  memory?: RuntimeMemoryEnvelope;
-  /**
-   * @deprecated Use `memory.userId` instead.
-   */
-  userId?: string;
-  /**
-   * @deprecated Use `memory.conversationId` instead.
-   */
-  conversationId?: string;
-  context?: ContextInput;
-  /**
-   * HTTP request headers associated with this call.
-   *
-   * Server adapters populate this from the incoming request and expose it to
-   * dynamic `model`, `instructions`, and `tools` callbacks as `headers`.
-   * This is separate from AI SDK/provider `headers`.
-   */
-  requestHeaders?: Record<string, string>;
-  elicitation?: (request: unknown) => Promise<unknown>;
+    // Context
+    /**
+     * Runtime memory envelope for per-call memory identity and behavior overrides.
+     */
+    memory?: RuntimeMemoryEnvelope;
+    /**
+     * @deprecated Use `memory.userId` instead.
+     */
+    userId?: string;
+    /**
+     * @deprecated Use `memory.conversationId` instead.
+     */
+    conversationId?: string;
+    context?: ContextInput;
+    /**
+     * HTTP request headers associated with this call.
+     *
+     * Server adapters populate this from the incoming request and expose it to
+     * dynamic `model`, `instructions`, and `tools` callbacks as `headers`.
+     * This is separate from AI SDK/provider `headers`.
+     */
+    requestHeaders?: Record<string, string>;
+    elicitation?: (request: unknown) => Promise<unknown>;
 
-  // Parent tracking
-  parentAgentId?: string;
-  parentOperationContext?: OperationContext;
-  parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
-  inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
-  /**
-   * External abort signal for this operation. VoltAgent wires this into its
-   * operation context so memory, tools, guardrails, tracing, and the model call
-   * are cancelled together.
-   */
-  abortSignal?: AbortSignal;
+    // Parent tracking
+    parentAgentId?: string;
+    parentOperationContext?: OperationContext;
+    parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
+    inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
+    /**
+     * External abort signal for this operation. VoltAgent wires this into its
+     * operation context so memory, tools, guardrails, tracing, and the model call
+     * are cancelled together.
+     */
+    abortSignal?: AbortSignal;
 
-  // Memory
-  /**
-   * @deprecated Use `memory.options.contextLimit` instead.
-   */
-  contextLimit?: number;
+    // Memory
+    /**
+     * @deprecated Use `memory.options.contextLimit` instead.
+     */
+    contextLimit?: number;
 
-  // Semantic memory options
-  /**
-   * @deprecated Use `memory.options.semanticMemory` instead.
-   */
-  semanticMemory?: SemanticMemoryOptions;
-  /**
-   * @deprecated Use `memory.options.conversationPersistence` instead.
-   */
-  conversationPersistence?: AgentConversationPersistenceOptions;
-  /**
-   * @deprecated Use `memory.options.messageMetadataPersistence` instead.
-   */
-  messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
+    // Semantic memory options
+    /**
+     * @deprecated Use `memory.options.semanticMemory` instead.
+     */
+    semanticMemory?: SemanticMemoryOptions;
+    /**
+     * @deprecated Use `memory.options.conversationPersistence` instead.
+     */
+    conversationPersistence?: AgentConversationPersistenceOptions;
+    /**
+     * @deprecated Use `memory.options.messageMetadataPersistence` instead.
+     */
+    messageMetadataPersistence?: AgentMessageMetadataPersistenceConfig;
 
-  // Steps control
-  maxSteps?: number;
-  /**
-   * VoltAgent retry/fallback count for model attempts.
-   *
-   * The underlying AI SDK call receives `maxRetries: 0`; VoltAgent owns retries
-   * so fallback models, tracing, memory persistence, and hooks stay consistent.
-   */
-  maxRetries?: number;
-  feedback?: boolean | AgentFeedbackOptions;
-  /**
-   * When true, avoids wiring the HTTP abort signal into streams so clients can resume later.
-   * Non-streaming calls ignore this option.
-   */
-  resumableStream?: boolean;
-  /**
-   * Custom stop condition for ai-sdk step execution.
-   * When provided, this overrides VoltAgent's default `isStepCount(maxSteps)`.
-   * Use with care: incorrect predicates can cause early termination or
-   * unbounded loops depending on provider behavior and tool usage.
-   */
-  stopWhen?: StopWhen;
+    // Steps control
+    maxSteps?: number;
+    /**
+     * VoltAgent retry/fallback count for model attempts.
+     *
+     * The underlying AI SDK call receives `maxRetries: 0`; VoltAgent owns retries
+     * so fallback models, tracing, memory persistence, and hooks stay consistent.
+     */
+    maxRetries?: number;
+    feedback?: boolean | AgentFeedbackOptions;
+    /**
+     * When true, avoids wiring the HTTP abort signal into streams so clients can resume later.
+     * Non-streaming calls ignore this option.
+     */
+    resumableStream?: boolean;
+    /**
+     * Custom stop condition for ai-sdk step execution.
+     * When provided, this overrides VoltAgent's default `isStepCount(maxSteps)`.
+     * Use with care: incorrect predicates can cause early termination or
+     * unbounded loops depending on provider behavior and tool usage.
+     */
+    stopWhen?: StopWhen;
 
-  // Tools (can provide additional tools dynamically)
-  tools?: AgentToolInput;
-  /**
-   * Optional per-call tool routing override.
-   */
-  toolRouting?: ToolRoutingConfig | false;
+    // Tools (can provide additional tools dynamically)
+    tools?: AgentToolInput<TOOLS>;
+    /**
+     * Optional per-call tool routing override.
+     */
+    toolRouting?: ToolRoutingConfig | false;
 
-  // Hooks (can override agent hooks)
-  hooks?: AgentHooks;
+    // Hooks (can override agent hooks)
+    hooks?: AgentHooks;
 
-  // Guardrails (can override agent-level guardrails)
-  inputGuardrails?: InputGuardrail[];
-  outputGuardrails?: OutputGuardrail<any>[];
+    // Guardrails (can override agent-level guardrails)
+    inputGuardrails?: InputGuardrail[];
+    outputGuardrails?: OutputGuardrail<any>[];
 
-  // Middleware (can override agent-level middlewares)
-  inputMiddlewares?: InputMiddleware[];
-  outputMiddlewares?: OutputMiddleware<any>[];
-  maxMiddlewareRetries?: number;
+    // Middleware (can override agent-level middlewares)
+    inputMiddlewares?: InputMiddleware[];
+    outputMiddlewares?: OutputMiddleware<any>[];
+    maxMiddlewareRetries?: number;
 
-  // Provider-specific options
-  providerOptions?: TProviderOptions;
+    // Provider-specific options
+    providerOptions?: TProviderOptions;
 
-  // Structured output (for schema-guided generation)
-  output?: OutputSpec;
+    // Structured output (for schema-guided generation)
+    output?: OutputSpec;
 
-  // === AI SDK generation settings ===
-  // BaseGenerationOptions inherits AI SDK generateText/streamText settings.
-  // VoltAgent composes a small set of lifecycle and runtime options below.
-  /**
-   * Optional explicit stop sequences to pass through to the underlying provider.
-   * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
-   */
-  stop?: string | string[];
+    // === AI SDK generation settings ===
+    // BaseGenerationOptions inherits AI SDK generateText/streamText settings.
+    // VoltAgent forwards AI SDK options at the model-call boundary and keeps
+    // framework-specific lifecycle behavior under `hooks` / `voltagent`.
+    /**
+     * Optional explicit stop sequences to pass through to the underlying provider.
+     * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
+     */
+    stop?: string | string[];
 
-  /**
-   * Tool choice strategy for AI SDK calls.
-   */
-  toolChoice?: ToolChoice<Record<string, unknown>>;
+    /**
+     * Tool choice strategy for AI SDK calls.
+     */
+    toolChoice?: ToolChoice<TOOLS>;
 
-  /**
-   * AI SDK native tool approval configuration.
-   *
-   * This takes precedence over tool-level `needsApproval` during AI SDK tool
-   * execution. VoltAgent also reads it inside tool routing so hidden pool tools
-   * can follow the same approval policy when called through `callTool`.
-   */
-  toolApproval?: ToolApprovalConfiguration<ToolSet, any>;
+    /**
+     * AI SDK native tool approval configuration.
+     *
+     * This takes precedence over tool-level `needsApproval` during AI SDK tool
+     * execution. VoltAgent also reads it inside tool routing so hidden pool tools
+     * can follow the same approval policy when called through `callTool`.
+     */
+    toolApproval?: ToolApprovalConfiguration<TOOLS, RUNTIME_CONTEXT>;
 
-  /**
-   * AI SDK per-tool execution context.
-   *
-   * Use this with native AI SDK tools that declare `contextSchema`. VoltAgent
-   * forwards the value to the underlying AI SDK call so tool `execute`
-   * handlers receive it as `options.context`.
-   */
-  toolsContext?: Record<string, unknown>;
+    /**
+     * Secret used by AI SDK to sign native tool approval requests.
+     */
+    experimental_toolApprovalSecret?: string | Uint8Array;
 
-  /**
-   * Secret used by AI SDK to sign native tool approval requests.
-   */
-  experimental_toolApprovalSecret?: string | Uint8Array;
+    /**
+     * Step preparation callback (ai-sdk `prepareStep`).
+     * Called before each step to control tool availability, tool choice, etc.
+     * Overrides the agent-level `prepareStep` if provided.
+     */
+    prepareStep?: PrepareStepFunction<TOOLS, RUNTIME_CONTEXT>;
 
-  /**
-   * Step preparation callback (ai-sdk `prepareStep`).
-   * Called before each step to control tool availability, tool choice, etc.
-   * Overrides the agent-level `prepareStep` if provided.
-   */
-  prepareStep?: PrepareStep;
-
-  /**
-   * AI SDK step callback. VoltAgent invokes this from its managed step handler
-   * after internal memory/tracing work, preserving native callback access while
-   * keeping framework behavior intact.
-   */
-  onStepEnd?: AISDKManagedCallbacks["onStepEnd"];
-  /**
-   * Deprecated AI SDK alias for `onStepEnd`.
-   */
-  onStepFinish?: AISDKManagedCallbacks["onStepFinish"];
-  /**
-   * AI SDK completion callback. VoltAgent invokes it after guardrails,
-   * middleware, memory persistence, and tracing have produced the final result.
-   */
-  onEnd?: AISDKManagedCallbacks["onEnd"];
-  /**
-   * Deprecated AI SDK alias for `onEnd`.
-   */
-  onFinish?: AISDKManagedCallbacks["onFinish"];
-  /**
-   * AI SDK stream error callback. VoltAgent invokes it from its managed stream
-   * error handler after framework recovery/error handling has run.
-   */
-  onError?: AISDKManagedCallbacks["onError"];
-}
+    /**
+     * AI SDK step callback. Receives the raw AI SDK step event.
+     * VoltAgent runs its own memory/tracing/hooks work additively after this
+     * callback, without changing the event payload.
+     */
+    onStepEnd?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onStepEnd"];
+    /**
+     * Deprecated AI SDK alias for `onStepEnd`.
+     */
+    onStepFinish?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onStepFinish"];
+    /**
+     * AI SDK completion callback. Receives the raw AI SDK finish event.
+     * Use `hooks.onEnd` for VoltAgent's post-guardrail/post-middleware output.
+     */
+    onEnd?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onEnd"];
+    /**
+     * Deprecated AI SDK alias for `onEnd`.
+     */
+    onFinish?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onFinish"];
+    /**
+     * AI SDK stream error callback. Receives the raw AI SDK error event for
+     * unrecovered stream errors. Use `hooks.onError` for VoltAgent error context.
+     */
+    onError?: AISDKManagedCallbacks<TOOLS, RUNTIME_CONTEXT, OUTPUT>["onError"];
+  };
 
 function normalizeInstructions(instructions: Instructions | undefined): SystemModelMessage[] {
   if (!instructions) {
@@ -1185,14 +1256,27 @@ function splitInstructionsFromMessages(
 export type GenerateTextOptions<
   OUTPUT extends OutputSpec = OutputSpec,
   TProviderOptions extends ProviderOptions = ProviderOptions,
-> = Omit<BaseGenerationOptions<TProviderOptions>, "output"> & {
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+> = Omit<BaseGenerationOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>, "output"> & {
   output?: OUTPUT;
 };
-export type StreamTextOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
-  BaseGenerationOptions<TProviderOptions> & {
-    onFinish?: (result: any) => void | Promise<void>;
-  };
+export type StreamTextOptions<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = BaseGenerationOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT> & {
+  onFinish?: (result: any) => void | Promise<void>;
+};
 type TextGenerationInput = string | UIMessage[] | BaseMessage[];
+type TextGenerationOptionsArgs<TOptions, TOOLS extends ToolSet> = IsExactToolSet<TOOLS> extends true
+  ? [options?: TOptions]
+  : IsEmptyObject<InferToolSetContext<TOOLS>> extends true
+    ? [options?: TOptions]
+    : HasRequiredKey<InferToolSetContext<TOOLS>> extends true
+      ? [options: TOptions]
+      : [options?: TOptions];
 type TextGenerationRequest<TOptions> = (
   | {
       prompt: string;
@@ -1209,9 +1293,15 @@ type TextGenerationRequest<TOptions> = (
 export type GenerateTextRequest<
   OUTPUT extends OutputSpec = OutputSpec,
   TProviderOptions extends ProviderOptions = ProviderOptions,
-> = TextGenerationRequest<GenerateTextOptions<OUTPUT, TProviderOptions>>;
-export type StreamTextRequest<TProviderOptions extends ProviderOptions = ProviderOptions> =
-  TextGenerationRequest<StreamTextOptions<TProviderOptions>>;
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+> = TextGenerationRequest<GenerateTextOptions<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT>>;
+export type StreamTextRequest<
+  TProviderOptions extends ProviderOptions = ProviderOptions,
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+> = TextGenerationRequest<StreamTextOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>>;
 export type GenerateObjectOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
   BaseGenerationOptions<TProviderOptions>;
 export type StreamObjectOptions<TProviderOptions extends ProviderOptions = ProviderOptions> =
@@ -1219,7 +1309,7 @@ export type StreamObjectOptions<TProviderOptions extends ProviderOptions = Provi
     onFinish?: (result: any) => void | Promise<void>;
   };
 
-function normalizeVoltAgentRuntimeOptions<TOptions extends BaseGenerationOptions | undefined>(
+function normalizeVoltAgentRuntimeOptions<TOptions extends AnyBaseGenerationOptions | undefined>(
   options: TOptions,
 ): TOptions {
   if (!options || !("voltagent" in options)) {
@@ -1265,34 +1355,25 @@ function normalizeVoltAgentRuntimeOptions<TOptions extends BaseGenerationOptions
 }
 
 type GenerationFinishCallback = (result: any) => void | PromiseLike<void>;
-type GenerationStepEndCallback = (event: StepResult<ToolSet>) => void | PromiseLike<void>;
+type GenerationStepEndCallback<
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+> = (event: StepResult<TOOLS, RUNTIME_CONTEXT>) => void | PromiseLike<void>;
 type GenerationErrorCallback = (event: { error: unknown }) => void | PromiseLike<void>;
 
-type GenerationOptionsWithManagedCallbacks<
+function extractAISDKCallOptions<
   TProviderOptions extends ProviderOptions = ProviderOptions,
-> = BaseGenerationOptions<TProviderOptions> & {
-  onFinish?: GenerationFinishCallback;
-  onEnd?: GenerationFinishCallback;
-  onStepEnd?: GenerationStepEndCallback;
-  onStepFinish?: GenerationStepEndCallback;
-  onError?: GenerationErrorCallback;
-};
-type GenerationOptionsWithBlockedAISDKFields<
-  TProviderOptions extends ProviderOptions = ProviderOptions,
-> = GenerationOptionsWithManagedCallbacks<TProviderOptions> & {
-  runtimeContext?: unknown;
-  telemetry?: unknown;
-  experimental_telemetry?: unknown;
-};
-
-function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = ProviderOptions>(
-  options?: GenerationOptionsWithManagedCallbacks<TProviderOptions>,
+  TOOLS extends ToolSet = ToolSet,
+  RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  OUTPUT extends OutputSpec = OutputSpec,
+>(
+  options?: Record<string, any>,
 ): {
-  aiSDKOptions: AITextCallOptions;
-  output?: OutputSpec;
+  aiSDKOptions: AITextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>;
+  output?: OUTPUT;
   providerOptions?: TProviderOptions;
-  onFinish?: GenerationFinishCallback;
-  onStepEnd?: GenerationStepEndCallback;
+  onEnd?: GenerationFinishCallback;
+  onStepEnd?: GenerationStepEndCallback<TOOLS, RUNTIME_CONTEXT>;
   onError?: GenerationErrorCallback;
 } {
   const {
@@ -1324,25 +1405,41 @@ function extractAISDKCallOptions<TProviderOptions extends ProviderOptions = Prov
     resumableStream: _resumableStream,
     output,
     providerOptions,
-    runtimeContext: _runtimeContext,
-    telemetry: _telemetry,
-    experimental_telemetry: _experimentalTelemetry,
     onFinish,
     onEnd,
     onStepEnd,
     onStepFinish,
     onError,
     ...aiSDKOptions
-  } = (options ?? {}) as GenerationOptionsWithBlockedAISDKFields<TProviderOptions>;
+  } = options ?? {};
 
   return {
-    aiSDKOptions: aiSDKOptions as AITextCallOptions,
-    output,
-    providerOptions,
-    onFinish: onEnd ?? onFinish,
-    onStepEnd: onStepEnd ?? onStepFinish,
+    aiSDKOptions: aiSDKOptions as AITextCallOptions<TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+    output: output as OUTPUT | undefined,
+    providerOptions: providerOptions as TProviderOptions | undefined,
+    onEnd: onEnd ?? onFinish,
+    onStepEnd: (onStepEnd ?? onStepFinish) as
+      | GenerationStepEndCallback<TOOLS, RUNTIME_CONTEXT>
+      | undefined,
     onError,
   };
+}
+
+async function invokeAISDKCallbackSafely<TEvent>(
+  callback: ((event: TEvent) => void | PromiseLike<void>) | undefined,
+  event: TEvent,
+  logger: Logger | undefined,
+  callbackName: string,
+): Promise<void> {
+  if (!callback) {
+    return;
+  }
+
+  try {
+    await callback(event);
+  } catch (error) {
+    logger?.debug?.(`AI SDK ${callbackName} callback failed`, { error });
+  }
 }
 
 function isTextGenerationRequest<TOptions>(
@@ -1365,7 +1462,7 @@ function normalizeTextGenerationArgs<TOptions extends object>(
       input: inputOrRequest,
       options: options
         ? (normalizeVoltAgentRuntimeOptions(
-            options as TOptions & BaseGenerationOptions,
+            options as TOptions & AnyBaseGenerationOptions,
           ) as TOptions)
         : undefined,
     };
@@ -1397,7 +1494,7 @@ function normalizeTextGenerationArgs<TOptions extends object>(
     options:
       Object.keys(mergedOptions).length > 0
         ? (normalizeVoltAgentRuntimeOptions(
-            mergedOptions as TOptions & BaseGenerationOptions,
+            mergedOptions as TOptions & AnyBaseGenerationOptions,
           ) as TOptions)
         : undefined,
   };
@@ -1435,13 +1532,13 @@ function addAgentToolInputToManager(manager: ToolManager, input: AgentToolInput 
 // Agent Implementation
 // ============================================================================
 
-export class Agent {
+export class Agent<AGENT_TOOLS extends ToolSet = ToolSet> {
   readonly id: string;
   readonly name: string;
   readonly purpose?: string;
   readonly instructions: InstructionsDynamicValue;
   readonly model: AgentModelValue;
-  readonly dynamicTools?: DynamicValue<AgentToolInput>;
+  readonly dynamicTools?: DynamicValue<AgentToolInput<AGENT_TOOLS>>;
   hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
@@ -1492,7 +1589,7 @@ export class Agent {
   private toolRoutingPoolExplicit = false;
   private toolRoutingSearchStrategy?: ToolSearchStrategy;
 
-  constructor(options: AgentOptions) {
+  constructor(options: AgentOptions<AGENT_TOOLS>) {
     this.id = options.id || options.name;
     this.name = options.name;
     this.purpose = options.purpose;
@@ -1626,28 +1723,40 @@ export class Agent {
   async generateText<
     OUTPUT extends OutputSpec = OutputSpec,
     TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
   >(
     input: string | UIMessage[] | BaseMessage[],
-    options?: GenerateTextOptions<OUTPUT, TProviderOptions>,
-  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>>;
+    ...options: TextGenerationOptionsArgs<
+      GenerateTextOptions<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT>,
+      TOOLS
+    >
+  ): Promise<GenerateTextResultWithContext<TOOLS, OUTPUT>>;
   async generateText<
     OUTPUT extends OutputSpec = OutputSpec,
     TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
   >(
-    request: GenerateTextRequest<OUTPUT, TProviderOptions>,
-  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>>;
+    request: GenerateTextRequest<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT>,
+  ): Promise<GenerateTextResultWithContext<TOOLS, OUTPUT>>;
   async generateText<
     OUTPUT extends OutputSpec = OutputSpec,
     TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
   >(
     inputOrRequest:
       | string
       | UIMessage[]
       | BaseMessage[]
-      | GenerateTextRequest<OUTPUT, TProviderOptions>,
-    requestOptions?: GenerateTextOptions<OUTPUT, TProviderOptions>,
-  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
-    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions);
+      | GenerateTextRequest<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT>,
+    ...requestOptions: TextGenerationOptionsArgs<
+      GenerateTextOptions<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT>,
+      TOOLS
+    >
+  ): Promise<GenerateTextResultWithContext<TOOLS, OUTPUT>> {
+    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions[0]);
     const input = normalizedArgs.input;
     const options = normalizedArgs.options;
     const startTime = Date.now();
@@ -1765,17 +1874,21 @@ export class Agent {
               aiSDKOptions,
               output,
               providerOptions,
-              onFinish: userOnFinish,
+              onEnd: userOnEnd,
               onStepEnd: userOnStepEnd,
-            } = extractAISDKCallOptions(options);
+            } = extractAISDKCallOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>(options);
 
             // Apply agent-level prepareStep as default (per-call overrides)
             if (this.prepareStep && !aiSDKOptions.prepareStep) {
-              aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions["prepareStep"];
+              aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions<
+                TOOLS,
+                RUNTIME_CONTEXT,
+                OUTPUT
+              >["prepareStep"];
             }
 
             const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
-              | ToolChoice<Record<string, unknown>>
+              | ToolChoice<TOOLS>
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
             const {
@@ -1824,7 +1937,7 @@ export class Agent {
 
                 try {
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
-                    generateTextWithVoltAgentTools({
+                    generateTextWithVoltAgentTools<ToolSet, AISDKContext, OutputSpec>({
                       model: resolvedModel,
                       ...promptOptions,
                       tools,
@@ -1841,8 +1954,19 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
-                    }),
+                      onEnd: userOnEnd,
+                      onStepEnd: this.createStepHandler<ToolSet, AISDKContext>(
+                        oc,
+                        options,
+                        userOnStepEnd as
+                          | GenerationStepEndCallback<ToolSet, AISDKContext>
+                          | undefined,
+                      ),
+                    } as unknown as VoltAgentGenerateTextCallOptions<
+                      ToolSet,
+                      AISDKContext,
+                      OutputSpec
+                    >),
                   );
 
                   await this.ensureStructuredOutputGenerated({
@@ -2052,11 +2176,7 @@ export class Agent {
               feedback: feedbackValue,
             });
 
-            if (userOnFinish) {
-              await userOnFinish(finalResult);
-            }
-
-            return finalResult;
+            return finalResult as unknown as GenerateTextResultWithContext<TOOLS, OUTPUT>;
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
@@ -2193,18 +2313,43 @@ export class Agent {
   /**
    * Stream text response
    */
-  async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
+  async streamText<
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+    OUTPUT extends OutputSpec = OutputSpec,
+  >(
     input: string | UIMessage[] | BaseMessage[],
-    options?: StreamTextOptions<TProviderOptions>,
-  ): Promise<StreamTextResultWithContext>;
-  async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
-    request: StreamTextRequest<TProviderOptions>,
-  ): Promise<StreamTextResultWithContext>;
-  async streamText<TProviderOptions extends ProviderOptions = ProviderOptions>(
-    inputOrRequest: string | UIMessage[] | BaseMessage[] | StreamTextRequest<TProviderOptions>,
-    requestOptions?: StreamTextOptions<TProviderOptions>,
-  ): Promise<StreamTextResultWithContext> {
-    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions);
+    ...options: TextGenerationOptionsArgs<
+      StreamTextOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+      TOOLS
+    >
+  ): Promise<StreamTextResultWithContext<TOOLS, OUTPUT>>;
+  async streamText<
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+    OUTPUT extends OutputSpec = OutputSpec,
+  >(
+    request: StreamTextRequest<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+  ): Promise<StreamTextResultWithContext<TOOLS, OUTPUT>>;
+  async streamText<
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+    OUTPUT extends OutputSpec = OutputSpec,
+  >(
+    inputOrRequest:
+      | string
+      | UIMessage[]
+      | BaseMessage[]
+      | StreamTextRequest<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+    ...requestOptions: TextGenerationOptionsArgs<
+      StreamTextOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>,
+      TOOLS
+    >
+  ): Promise<StreamTextResultWithContext<TOOLS, OUTPUT>> {
+    const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions[0]);
     const input = normalizedArgs.input;
     const options = normalizedArgs.options;
     const startTime = Date.now();
@@ -2444,18 +2589,22 @@ export class Agent {
           aiSDKOptions,
           output,
           providerOptions,
-          onFinish: userOnFinish,
+          onEnd: userOnEnd,
           onStepEnd: userOnStepEnd,
           onError: userOnError,
-        } = extractAISDKCallOptions(options);
+        } = extractAISDKCallOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>(options);
 
         // Apply agent-level prepareStep as default (per-call overrides)
         if (this.prepareStep && !aiSDKOptions.prepareStep) {
-          aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions["prepareStep"];
+          aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions<
+            TOOLS,
+            RUNTIME_CONTEXT,
+            OUTPUT
+          >["prepareStep"];
         }
 
         const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
-          | ToolChoice<Record<string, unknown>>
+          | ToolChoice<TOOLS>
           | undefined;
         applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
         const {
@@ -2510,7 +2659,7 @@ export class Agent {
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-            const streamResult = streamTextWithVoltAgentTools({
+            const streamResult = streamTextWithVoltAgentTools<ToolSet, AISDKContext, OutputSpec>({
               model: resolvedModel,
               ...promptOptions,
               tools,
@@ -2527,7 +2676,11 @@ export class Agent {
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
+              onStepEnd: this.createStepHandler<ToolSet, AISDKContext>(
+                oc,
+                options,
+                userOnStepEnd as GenerationStepEndCallback<ToolSet, AISDKContext> | undefined,
+              ),
               onError: async (errorData: any) => {
                 // Handle nested error structure from OpenAI and other providers
                 // The error might be directly the error or wrapped in { error: ... }
@@ -2562,6 +2715,15 @@ export class Agent {
 
                 if (!shouldAttemptRecovery) {
                   resolveFeedbackDeferred(null);
+                }
+
+                let userOnErrorError: unknown;
+                if (!shouldAttemptRecovery && userOnError) {
+                  try {
+                    await userOnError(errorData as { error: unknown });
+                  } catch (error) {
+                    userOnErrorError = error;
+                  }
                 }
 
                 // Log the error
@@ -2617,12 +2779,15 @@ export class Agent {
                 // Close OpenTelemetry span with error status
                 oc.traceContext.end("error", actualError as Error);
 
-                // Don't re-throw - let the error be part of the stream
-                // The onError callback should return void for AI SDK compatibility
-                // Ensure spans are flushed on error
+                // Let provider errors remain stream errors. If the user's
+                // AI SDK onError callback throws, propagate that after
+                // VoltAgent cleanup, matching the native stream callback path.
+                // Ensure spans are flushed on error.
                 // Uses waitUntil if available to avoid blocking
                 try {
-                  await userOnError?.(errorData as { error: unknown });
+                  if (userOnErrorError) {
+                    throw userOnErrorError;
+                  }
                 } finally {
                   await flushObservability(
                     this.getObservability(),
@@ -2633,6 +2798,13 @@ export class Agent {
                 }
               },
               onEnd: async (finalResult: any) => {
+                await invokeAISDKCallbackSafely(
+                  userOnEnd,
+                  finalResult,
+                  oc.logger ?? this.logger,
+                  "onEnd",
+                );
+
                 latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
@@ -2730,11 +2902,6 @@ export class Agent {
                   finalText = finalResult.text;
                 }
 
-                const guardrailedResult =
-                  guardrailSet.output.length > 0
-                    ? { ...finalResult, text: finalText }
-                    : finalResult;
-
                 oc.traceContext.setOutput(finalText);
 
                 void this.recordStepResults(finalResult.steps, oc);
@@ -2771,11 +2938,6 @@ export class Agent {
                   error: undefined,
                   context: oc,
                 });
-
-                // Call user's onFinish if it exists
-                if (userOnFinish) {
-                  await userOnFinish(guardrailedResult);
-                }
 
                 const tokenInfo = usageInfo ? `${usageInfo.totalTokens} tokens` : "no usage data";
                 methodLogger.debug(
@@ -2835,7 +2997,7 @@ export class Agent {
                   "streamText:onFinish",
                 );
               },
-            });
+            } as unknown as VoltAgentStreamTextCallOptions<ToolSet, AISDKContext, OutputSpec>);
 
             const originalFullStream = streamResult.stream;
             const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
@@ -3261,7 +3423,7 @@ export class Agent {
         };
 
         // Create a wrapper that includes context and delegates to the original result
-        const resultWithContext: StreamTextResultWithContext = {
+        const resultWithContext: StreamTextResultWithContext<ToolSet, OutputSpec> = {
           get text() {
             return getSanitizedTextPromise();
           },
@@ -3313,7 +3475,7 @@ export class Agent {
           },
         };
 
-        return resultWithContext;
+        return resultWithContext as StreamTextResultWithContext<TOOLS, OUTPUT>;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         // Ensure spans are exported on pre-stream errors
@@ -3434,7 +3596,7 @@ export class Agent {
             const {
               aiSDKOptions,
               providerOptions,
-              onFinish: userOnFinish,
+              onEnd: userOnEnd,
               onStepEnd: userOnStepEnd,
             } = extractAISDKCallOptions(options);
             const {
@@ -3467,6 +3629,7 @@ export class Agent {
                   providerOptions,
                   // VoltAgent controlled
                   abortSignal: oc.abortController.signal,
+                  onEnd: userOnEnd,
                   onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
                 });
 
@@ -3630,10 +3793,6 @@ export class Agent {
               toJsonResponse: (init?: ResponseInit) => Response.json(finalObject, init),
               context: oc.context,
             };
-
-            if (userOnFinish) {
-              await userOnFinish(finalResult);
-            }
 
             return finalResult;
           } catch (error) {
@@ -3826,7 +3985,7 @@ export class Agent {
         const {
           aiSDKOptions,
           providerOptions,
-          onFinish: userOnFinish,
+          onEnd: userOnEnd,
           onStepEnd: userOnStepEnd,
           onError: userOnError,
         } = extractAISDKCallOptions(options);
@@ -3893,6 +4052,15 @@ export class Agent {
                       ? "[LLM] Stream object error after output; recovery skipped"
                       : "[LLM] Stream object error before output; recovery skipped";
 
+                let userOnErrorError: unknown;
+                if (!shouldAttemptRecovery && userOnError) {
+                  try {
+                    await userOnError(errorData as { error: unknown });
+                  } catch (error) {
+                    userOnErrorError = error;
+                  }
+                }
+
                 // Log the error
                 methodLogger.error("Stream object error occurred", {
                   error: actualError,
@@ -3946,12 +4114,15 @@ export class Agent {
                 oc.traceContext.end("error", actualError as Error);
                 rejectGuardrailObject?.(actualError);
 
-                // Don't re-throw - let the error be part of the stream
-                // The onError callback should return void for AI SDK compatibility
-                // Ensure spans are flushed on error
+                // Let provider errors remain stream errors. If the user's
+                // AI SDK onError callback throws, propagate that after
+                // VoltAgent cleanup, matching the native stream callback path.
+                // Ensure spans are flushed on error.
                 // Uses waitUntil if available to avoid blocking
                 try {
-                  await userOnError?.(errorData as { error: unknown });
+                  if (userOnErrorError) {
+                    throw userOnErrorError;
+                  }
                 } finally {
                   await flushObservability(
                     this.getObservability(),
@@ -3962,6 +4133,13 @@ export class Agent {
                 }
               },
               onEnd: async (finalResult: any) => {
+                await invokeAISDKCallbackSafely(
+                  userOnEnd,
+                  finalResult,
+                  oc.logger ?? this.logger,
+                  "onEnd",
+                );
+
                 try {
                   const providerUsage = finalResult.usage
                     ? await Promise.resolve(finalResult.usage)
@@ -4050,13 +4228,6 @@ export class Agent {
                     error: undefined,
                     context: oc,
                   });
-
-                  if (userOnFinish) {
-                    await userOnFinish({
-                      ...finalResult,
-                      object: finalObject,
-                    });
-                  }
 
                   const tokenInfo = usageForFinish
                     ? `${usageForFinish.totalTokens} tokens`
@@ -4229,7 +4400,7 @@ export class Agent {
     };
   }
 
-  private resolveMiddlewareRetries(options?: BaseGenerationOptions): number {
+  private resolveMiddlewareRetries(options?: AnyBaseGenerationOptions): number {
     const optionRetries = options?.maxMiddlewareRetries;
     if (typeof optionRetries === "number" && Number.isFinite(optionRetries)) {
       return Math.max(0, optionRetries);
@@ -4276,7 +4447,7 @@ export class Agent {
   private async prepareExecution(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): Promise<{
     messages: BaseMessage[];
     uiMessages: UIMessage[];
@@ -4468,7 +4639,7 @@ export class Agent {
   }
 
   private resolveConversationPersistenceOptions(
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): ResolvedConversationPersistenceOptions {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
     if (!resolvedMemory.conversationPersistence) {
@@ -4485,7 +4656,7 @@ export class Agent {
   }
 
   private resolveMemoryRuntimeOptions(
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
     operationContext?: OperationContext,
   ): CommonResolvedRuntimeMemoryOptions {
     const memory = options?.memory;
@@ -4636,7 +4807,7 @@ export class Agent {
    */
   private createOperationContext(
     input: string | UIMessage[] | BaseMessage[],
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
@@ -5221,7 +5392,7 @@ export class Agent {
   }
 
   private resolveFeedbackOptions(
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): AgentFeedbackOptions | undefined {
     const raw = options?.feedback ?? this.feedbackOptions;
     if (!raw) {
@@ -5255,7 +5426,7 @@ export class Agent {
 
   private async createFeedbackMetadata(
     oc: OperationContext,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): Promise<AgentFeedbackMetadata | null> {
     const feedbackOptions = this.resolveFeedbackOptions(options);
     if (!feedbackOptions) {
@@ -5488,7 +5659,7 @@ export class Agent {
   private async prepareMessages(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
-    options: BaseGenerationOptions | undefined,
+    options: AnyBaseGenerationOptions | undefined,
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
@@ -5818,7 +5989,7 @@ export class Agent {
   private async getSystemMessage(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<BaseMessage | BaseMessage[]> {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
@@ -6363,7 +6534,7 @@ export class Agent {
 
   private resolveCallMaxRetries(
     candidate: AgentModelConfig,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): number {
     const optionRetries = options?.maxRetries;
     if (typeof optionRetries === "number" && Number.isFinite(optionRetries)) {
@@ -6419,7 +6590,7 @@ export class Agent {
   }: {
     oc: OperationContext;
     operation: LLMOperation;
-    options?: BaseGenerationOptions;
+    options?: AnyBaseGenerationOptions;
     run: (args: {
       model: LanguageModel;
       modelName: string;
@@ -6819,7 +6990,7 @@ export class Agent {
     adHocTools: LegacyToolInputItem[],
     oc: OperationContext,
     maxSteps: number,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
     adHocToolSets: ToolSet[] = [],
   ): Promise<Record<string, any>> {
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
@@ -6828,6 +6999,15 @@ export class Agent {
     const createAiSdkToolExecuteFunction = this.createAiSdkToolExecutionFactory(oc, hooks);
     if (options?.toolApproval !== undefined) {
       oc.systemContext.set(TOOL_APPROVAL_CONTEXT_KEY, options.toolApproval);
+    }
+    if (options?.toolsContext !== undefined) {
+      oc.systemContext.set(AI_SDK_TOOLS_CONTEXT_KEY, options.toolsContext);
+    }
+    if ((options as { runtimeContext?: unknown } | undefined)?.runtimeContext !== undefined) {
+      oc.systemContext.set(
+        AI_SDK_RUNTIME_CONTEXT_KEY,
+        (options as { runtimeContext?: unknown }).runtimeContext,
+      );
     }
 
     const runtimeTools: LegacyToolInputItem[] = [...adHocTools];
@@ -6863,6 +7043,11 @@ export class Agent {
       createToolExecuteFunction,
       createAiSdkToolExecuteFunction,
     );
+    const allPreparedTools = { ...preparedStaticTools, ...preparedDynamicTools };
+    const finalizePreparedTools = (tools: Record<string, any>) => {
+      oc.systemContext.set(AI_SDK_TOOLS_KEY, allPreparedTools);
+      return tools;
+    };
 
     const toolRouting = this.resolveToolRouting(options);
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
@@ -6883,11 +7068,11 @@ export class Agent {
         );
       }
 
-      return { ...preparedStaticTools, ...preparedDynamicTools };
+      return finalizePreparedTools(allPreparedTools);
     }
 
     if (!toolRouting) {
-      return { ...preparedStaticTools, ...preparedDynamicTools };
+      return finalizePreparedTools(allPreparedTools);
     }
 
     const exposedNames = this.getToolRoutingExposedNames(toolRouting);
@@ -6895,7 +7080,7 @@ export class Agent {
       Object.entries(preparedStaticTools).filter(([name]) => exposedNames.has(name)),
     );
 
-    return { ...filteredStaticTools, ...preparedDynamicTools };
+    return finalizePreparedTools({ ...filteredStaticTools, ...preparedDynamicTools });
   }
 
   /**
@@ -7982,6 +8167,7 @@ export class Agent {
 
         if (isNamedAiSdkTool(target)) {
           await this.ensureToolApproval(target as any, parsedArgs, executionOptions, toolCallId);
+          const toolContext = await this.resolveAISDKToolContext(target, executionOptions);
 
           const execute = this.createAiSdkToolExecutionFactory(oc, hooks)(
             target.name,
@@ -7997,7 +8183,7 @@ export class Agent {
             toolCallId,
             messages: executionOptions.toolContext?.messages ?? [],
             abortSignal: executionOptions.toolContext?.abortSignal,
-            context: undefined,
+            context: toolContext as any,
           });
         }
 
@@ -8158,6 +8344,48 @@ export class Agent {
     return contextValue as ToolApprovalConfiguration<ToolSet, any> | undefined;
   }
 
+  private getAISDKToolsFromContext(options?: ToolExecuteOptions): ToolSet | undefined {
+    const contextValue =
+      options?.systemContext?.get(AI_SDK_TOOLS_KEY) ?? options?.context?.get(AI_SDK_TOOLS_KEY);
+    return contextValue as ToolSet | undefined;
+  }
+
+  private getAISDKToolsContextFromContext(options?: ToolExecuteOptions): Record<string, unknown> {
+    const contextValue =
+      options?.systemContext?.get(AI_SDK_TOOLS_CONTEXT_KEY) ??
+      options?.context?.get(AI_SDK_TOOLS_CONTEXT_KEY);
+    return (contextValue ?? {}) as Record<string, unknown>;
+  }
+
+  private getAISDKRuntimeContextFromContext(options?: ToolExecuteOptions): unknown {
+    return (
+      options?.systemContext?.get(AI_SDK_RUNTIME_CONTEXT_KEY) ??
+      options?.context?.get(AI_SDK_RUNTIME_CONTEXT_KEY)
+    );
+  }
+
+  private async resolveAISDKToolContext(
+    tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
+    options?: ToolExecuteOptions,
+  ): Promise<unknown> {
+    const toolsContext = this.getAISDKToolsContextFromContext(options);
+    const context = toolsContext[tool.name];
+    const contextSchema = (tool as { contextSchema?: unknown }).contextSchema;
+
+    if (contextSchema == null) {
+      return context;
+    }
+
+    return await validateTypes({
+      value: context,
+      schema: contextSchema as any,
+      context: {
+        field: "tool context",
+        entityName: tool.name,
+      },
+    });
+  }
+
   private normalizeToolApprovalStatus(status: ToolApprovalStatus): {
     type: "not-applicable" | "approved" | "denied" | "user-approval";
     reason?: string;
@@ -8185,6 +8413,9 @@ export class Agent {
   }): Promise<ToolApprovalStatus> {
     const { toolApproval, tool, args, options, toolCallId } = params;
     const messages = (options.toolContext?.messages ?? []) as ModelMessage[];
+    const tools = this.getAISDKToolsFromContext(options);
+    const toolsContext = this.getAISDKToolsContextFromContext(options);
+    const runtimeContext = this.getAISDKRuntimeContextFromContext(options);
 
     if (typeof toolApproval === "function") {
       return await (toolApproval as any)({
@@ -8195,9 +8426,9 @@ export class Agent {
           input: args,
           dynamic: true,
         },
-        tools: undefined,
-        toolsContext: {},
-        runtimeContext: undefined,
+        tools,
+        toolsContext,
+        runtimeContext,
         messages,
       });
     }
@@ -8207,8 +8438,8 @@ export class Agent {
       return await (approvalForTool as any)(args, {
         toolCallId,
         messages,
-        toolContext: undefined,
-        runtimeContext: undefined,
+        toolContext: await this.resolveAISDKToolContext(tool, options),
+        runtimeContext,
       });
     }
 
@@ -8269,7 +8500,7 @@ export class Agent {
         ? await needsApproval(args as any, {
             toolCallId,
             messages: (options.toolContext?.messages ?? []) as ModelMessage[],
-            context: undefined,
+            context: await this.resolveAISDKToolContext(tool, options),
           })
         : needsApproval;
 
@@ -8361,23 +8592,32 @@ export class Agent {
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler(
+  private createStepHandler<
+    TOOLS extends ToolSet = ToolSet,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  >(
     oc: OperationContext,
-    options?: BaseGenerationOptions,
-    userOnStepEnd?: GenerationStepEndCallback,
+    options?: AnyBaseGenerationOptions,
+    userOnStepEnd?: GenerationStepEndCallback<TOOLS, RUNTIME_CONTEXT>,
   ) {
     const buffer = this.getConversationBuffer(oc);
     const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
     const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
     const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
 
-    return async (event: StepResult<ToolSet>) => {
+    return async (event: StepResult<TOOLS, RUNTIME_CONTEXT>) => {
+      await invokeAISDKCallbackSafely(userOnStepEnd, event, oc.logger ?? this.logger, "onStepEnd");
+
+      const broadEvent = event as unknown as StepResult<ToolSet>;
       const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
-      const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(oc, event);
+      const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(
+        oc,
+        broadEvent,
+      );
 
       const responseMessages = this.normalizeStepResponseMessages(
         oc,
-        filterResponseMessages(event.response?.messages),
+        filterResponseMessages(broadEvent.response?.messages),
       );
       const hasResponseMessages = Boolean(responseMessages && responseMessages.length > 0);
       if (hasResponseMessages && responseMessages) {
@@ -8428,7 +8668,6 @@ export class Agent {
       // Call hooks
       const hooks = this.getMergedHooks(options);
       await hooks.onStepEnd?.({ agent: this, step: event, context: oc });
-      await userOnStepEnd?.(event);
     };
   }
 
@@ -8891,7 +9130,7 @@ export class Agent {
   private async handleError(
     error: Error,
     oc: OperationContext,
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
     startTime?: number,
   ): Promise<never> {
     // Check if this is a BailError (subagent early termination)
@@ -9206,12 +9445,12 @@ export class Agent {
   /**
    * Add tools or toolkits to the agent
    */
-  public addTools(tools: (Tool<any, any> | Toolkit | VercelTool)[]): {
-    added: (Tool<any, any> | Toolkit | VercelTool)[];
+  public addTools(tools: AgentToolInput): {
+    added: AgentToolInput;
   } {
-    this.toolManager.addItems(tools);
+    addAgentToolInputToManager(this.toolManager, tools);
     if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-      this.toolPoolManager.addItems(tools);
+      addAgentToolInputToManager(this.toolPoolManager, tools);
     }
     return { added: tools };
   }
@@ -9567,7 +9806,7 @@ export class Agent {
   }
 
   private resolveToolRouting(
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
   ): ToolRoutingConfig | false | undefined {
     if (options?.toolRouting !== undefined) {
       return options.toolRouting;
@@ -9687,11 +9926,14 @@ export class Agent {
             : undefined;
 
         // Generate response using this agent
-        const result = await this.generateText(prompt, {
-          // Pass through the operation context if available
-          parentOperationContext: oc,
-          ...(memory ? { memory } : {}),
-        });
+        const result = await this.generateText<OutputSpec, ProviderOptions, ToolSet, AISDKContext>(
+          prompt,
+          {
+            // Pass through the operation context if available
+            parentOperationContext: oc,
+            ...(memory ? { memory } : {}),
+          },
+        );
 
         // Return the text result
         return {
@@ -9742,7 +9984,7 @@ export class Agent {
    * Create working memory tools if configured
    */
   private createWorkingMemoryTools(
-    options?: BaseGenerationOptions,
+    options?: AnyBaseGenerationOptions,
     operationContext?: OperationContext,
   ): Tool<any, any>[] {
     if (!this.hasWorkingMemorySupport()) {

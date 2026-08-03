@@ -20,13 +20,13 @@ const airtableAgent = new Agent({
   instructions:
     "You are an operations assistant who manages Airtable records using the provided actions. List, inspect, create, update, or delete rows exactly as requested.",
   model: "openai/gpt-4o-mini",
-  tools: [
-    listAirtableRecordsTool,
-    createAirtableRecordTool,
-    updateAirtableRecordTool,
-    deleteAirtableRecordTool,
-    getAirtableRecordTool,
-  ],
+  tools: {
+    listAirtableRecords: listAirtableRecordsTool,
+    createAirtableRecord: createAirtableRecordTool,
+    updateAirtableRecord: updateAirtableRecordTool,
+    deleteAirtableRecord: deleteAirtableRecordTool,
+    getAirtableRecord: getAirtableRecordTool,
+  },
 });
 
 async function bootstrap() {

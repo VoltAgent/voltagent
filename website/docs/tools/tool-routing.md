@@ -22,16 +22,13 @@ Only `searchTools`, `callTool`, and any tools listed in `toolRouting.expose` are
 
 This configuration enables embedding-based tool search and exposes only `searchTools` and `callTool` to the model.
 
-`toolRouting.pool` and `toolRouting.expose` currently use named compatibility tools and toolkits. For normal agent tools, prefer the AI SDK-style `tool()` helper; for routing pools, keep using named tools until ToolSet support is added to the routing config.
-
 ```ts
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const getWeather = createTool({
-  name: "get_weather",
+const getWeather = tool({
   description: "Get the current weather for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string(),
   }),
   execute: async ({ location }) => ({
@@ -41,10 +38,9 @@ const getWeather = createTool({
   }),
 });
 
-const getTimeZone = createTool({
-  name: "get_time_zone",
+const getTimeZone = tool({
   description: "Get the time zone offset for a city",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string(),
   }),
   execute: async ({ location }) => ({
@@ -58,7 +54,10 @@ const agent = new Agent({
   instructions:
     "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
   model: "openai/gpt-4o-mini",
-  tools: [getWeather, getTimeZone],
+  tools: {
+    get_weather: getWeather,
+    get_time_zone: getTimeZone,
+  },
   toolRouting: {
     embedding: "openai/text-embedding-3-small",
     topK: 2,
@@ -74,6 +73,8 @@ Notes:
 ## Tool Pool and Exposed Tools
 
 Use `pool` to define the hidden tool set and `expose` to keep a subset visible.
+
+`toolRouting.pool` and `toolRouting.expose` currently use named compatibility tools and toolkits. For normal agent tools, prefer the AI SDK-style `tool()` helper; for explicit routing pools, keep using named tools until ToolSet support is added to the routing config.
 
 ```ts
 import { Agent, createTool } from "@voltagent/core";

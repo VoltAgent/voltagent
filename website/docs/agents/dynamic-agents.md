@@ -174,14 +174,13 @@ const agent = new Agent({
 Tools can be a static array or a function returning an array. The agent stores dynamic tool functions separately in the `dynamicTools` property ([agent.ts:337](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L337)) and resolves them at [agent.ts:1673](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1673).
 
 ```ts
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 // Regular user tool
-const basicTool = createTool({
-  name: "get_help",
+const basicTool = tool({
   description: "Get basic help information",
-  parameters: z.object({
+  inputSchema: z.object({
     topic: z.string().describe("Help topic"),
   }),
   execute: async ({ topic }) => {
@@ -190,10 +189,9 @@ const basicTool = createTool({
 });
 
 // Admin-only tool
-const adminTool = createTool({
-  name: "admin_action",
+const adminTool = tool({
   description: "Perform administrative actions",
-  parameters: z.object({
+  inputSchema: z.object({
     action: z.string().describe("Admin action to perform"),
   }),
   execute: async ({ action }) => {
@@ -210,10 +208,15 @@ const agent = new Agent({
     const role = (context.get("role") as string) || "user";
 
     if (role === "admin") {
-      return [basicTool, adminTool]; // Admins get both tools
-    } else {
-      return [basicTool]; // Regular users get basic tools only
+      return {
+        get_help: basicTool,
+        admin_action: adminTool,
+      };
     }
+
+    return {
+      get_help: basicTool,
+    };
   },
 
   model: "openai/gpt-4o",

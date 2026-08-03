@@ -12,8 +12,7 @@ Use the AI SDK `output` option with `generateText` and `streamText` when you nee
 ## Generate an Object
 
 ```ts
-import { Agent } from "@voltagent/core";
-import { Output } from "ai";
+import { Agent, Output } from "@voltagent/core";
 import { z } from "zod";
 
 const recipeSchema = z.object({

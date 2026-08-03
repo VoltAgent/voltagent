@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -10,11 +10,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const weatherTool = createTool({
-  name: "get_current_weather",
+const weatherTool = tool({
   description: "Get the current weather in a location",
   // Use Zod schema instead of JSON Schema
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The location to get weather for"),
   }),
   execute: async (input) => {
@@ -29,7 +28,9 @@ const agent = new Agent({
   instructions:
     "A helpful assistant that can search the web and get weather information. This agent is specifically designed to test the VoltAgent tool_result bug with MCP tools.",
   model: "anthropic/claude-opus-4-1",
-  tools: [weatherTool],
+  tools: {
+    get_current_weather: weatherTool,
+  },
 });
 
 new VoltAgent({

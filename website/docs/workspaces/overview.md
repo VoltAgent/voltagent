@@ -86,9 +86,12 @@ const workspace = new Workspace({
 
 ## Workspace in custom tool calls
 
-When an agent has a workspace, custom tool `execute` handlers receive it through tool options (`options.workspace`).
+When an agent has a workspace, VoltAgent compatibility tools receive it through tool options (`options.workspace`). Use this path for tools that need direct access to the full VoltAgent `OperationContext`; new AI SDK-style tools should prefer `toolsContext` for per-tool runtime values.
 
 ```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
 const readWorkspaceFile = createTool({
   name: "read_workspace_file",
   description: "Read data from workspace inside a tool call",

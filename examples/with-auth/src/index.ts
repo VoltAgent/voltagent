@@ -24,7 +24,9 @@ const agent = new Agent({
   instructions: "You are a helpful assistant that can provide weather information",
   model: "openai/gpt-4o-mini",
   memory: memory,
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
 });
 
 new VoltAgent({

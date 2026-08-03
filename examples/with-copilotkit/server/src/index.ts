@@ -1,5 +1,5 @@
 import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, tool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -8,10 +8,9 @@ import { z } from "zod";
  * - Hono server on PORT (default 3141)
  * - VoltAgent default routes + /copilotkit for CopilotKit clients
  */
-const weatherTool = createTool({
-  name: "getWeather",
+const weatherTool = tool({
   description: "Get the current weather for a specific location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),
   }),
   outputSchema: z.object({
@@ -46,7 +45,9 @@ const weatherAgent = new Agent({
   name: "WeatherAgent",
   instructions: "You are a friendly weather agent.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
 });
 
 const storyAgent = new Agent({

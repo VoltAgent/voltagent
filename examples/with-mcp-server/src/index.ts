@@ -9,6 +9,8 @@ const logger = createPinoLogger({
   level: "debug",
 });
 
+// This MCP example uses createTool for named compatibility tools. The approval
+// tool also needs direct access to operationContext.elicitation.
 const currentTimeTool = createTool({
   name: "current_time",
   description: "Returns the current time as ISO and localized strings.",

@@ -231,14 +231,13 @@ Fetches menu from Supabase with pagination support.
 **📄 src/tools/list-menu-items.ts**
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const listMenuItemsTool = createTool({
-  name: "listMenuItems",
+export const listMenuItemsTool = tool({
   description: "Lists all menu items from the Supabase database",
-  parameters: z.object({
+  inputSchema: z.object({
     limit: z.number().optional().default(100).describe("Number of items to fetch"),
     offset: z.number().optional().default(0).describe("Number of items to skip"),
   }),
@@ -282,14 +281,17 @@ Takes cart items and saves everything to database.
 **📄 src/tools/create-order.ts**
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const createOrderTool = createTool({
-  name: "createOrder",
+const customerContextSchema = z.object({
+  customerPhone: z.string(),
+});
+
+export const createOrderTool = tool({
   description: "Creates a new order with the items and delivery address from working memory",
-  parameters: z.object({
+  inputSchema: z.object({
     items: z
       .array(
         z.object({
@@ -303,10 +305,10 @@ export const createOrderTool = createTool({
     deliveryAddress: z.string().describe("Delivery address for the order"),
     customerNotes: z.string().optional().describe("Optional customer notes for the order"),
   }),
-  execute: async ({ items, deliveryAddress, customerNotes }, context) => {
+  contextSchema: customerContextSchema,
+  execute: async ({ items, deliveryAddress }, { context }) => {
     try {
-      // Get customer phone from context userId
-      const customerPhone = context?.userId || "unknown";
+      const customerPhone = context.customerPhone;
 
       // Calculate total amount
       const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -374,19 +376,23 @@ Retrieves order history for the current customer.
 **📄 src/tools/check-order-status.ts**
 
 ```typescript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const checkOrderStatusTool = createTool({
-  name: "checkOrderStatus",
+const customerContextSchema = z.object({
+  customerPhone: z.string(),
+});
+
+export const checkOrderStatusTool = tool({
   description: "Checks the status of a customer's order(s) from the database",
-  parameters: z.object({
+  inputSchema: z.object({
     orderId: z.number().optional().describe("Specific order ID to check"),
   }),
-  execute: async ({ orderId }, context) => {
+  contextSchema: customerContextSchema,
+  execute: async ({ orderId }, { context }) => {
     try {
-      const customerPhone = context?.userId;
+      const customerPhone = context.customerPhone;
 
       if (!customerPhone) {
         return {
@@ -534,11 +540,15 @@ Order Flow:
    - Update deliveryAddress field when received
    - Change orderStatus to "completed"
    - Execute createOrder tool (with orders and deliveryAddress)
-   - Confirm order and clear working memory
+  - Confirm order and clear working memory
 
 Always be friendly and helpful. Start with "Welcome!" greeting.`,
   model: "openai/gpt-4o-mini",
-  tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
+  tools: {
+    listMenuItems: listMenuItemsTool,
+    createOrder: createOrderTool,
+    checkOrderStatus: checkOrderStatusTool,
+  },
   memory,
 });
 
@@ -622,7 +632,11 @@ const agent = new Agent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent...`,
   model: "openai/gpt-4o-mini", // Fast and cheap
-  tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
+  tools: {
+    listMenuItems: listMenuItemsTool,
+    createOrder: createOrderTool,
+    checkOrderStatus: checkOrderStatusTool,
+  },
   memory,
 });
 ```
@@ -745,6 +759,14 @@ export async function handleWhatsAppMessage(c: Context, agent: Agent) {
       const response = await agent.generateText(userMessage, {
         userId: userPhone,
         conversationId: `whatsapp_${userPhone}`,
+        toolsContext: {
+          createOrder: {
+            customerPhone: userPhone,
+          },
+          checkOrderStatus: {
+            customerPhone: userPhone,
+          },
+        },
       });
 
       // Send response back to WhatsApp

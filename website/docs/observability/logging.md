@@ -629,32 +629,33 @@ When your tools, workflows, and retrievers are executed from an agent or workflo
 
 ### Using Logger in Custom Tools
 
-Tools receive a logger instance through the operation context in their execution options:
+AI SDK-style tool `execute` functions keep the native AI SDK contract. Use VoltAgent tool hooks when you need the execution-scoped logger:
 
 ```javascript
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
-const weatherTool = createTool({
-  name: "get_weather",
+const weatherTool = tool({
   description: "Get weather for a location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string(),
   }),
-  execute: async ({ location }, options) => {
-    const logger = options?.operationContext?.logger;
-
-    // Log with full execution context
-    logger?.info("Fetching weather data", { location });
-
-    try {
-      const weather = await fetchWeatherAPI(location);
-      logger?.debug("Weather data retrieved", { location, temperature: weather.temp });
-      return weather;
-    } catch (error) {
-      logger?.error("Failed to fetch weather", { location, error });
-      throw error;
-    }
+  execute: async ({ location }) => {
+    return await fetchWeatherAPI(location);
+  },
+  voltagent: {
+    hooks: {
+      onStart: ({ args, options }) => {
+        options?.logger?.info("Fetching weather data", args);
+      },
+      onEnd: ({ args, output, error, options }) => {
+        if (error) {
+          options?.logger?.error("Failed to fetch weather", { args, error });
+          return;
+        }
+        options?.logger?.debug("Weather data retrieved", { args, output });
+      },
+    },
   },
 });
 ```

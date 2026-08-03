@@ -6,7 +6,9 @@ const agent = new Agent({
   name: "netlify-function-agent",
   instructions: "Help the user quickly and call tools when needed.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherTool],
+  tools: {
+    getWeather: weatherTool,
+  },
 });
 
 const voltAgent = new VoltAgent({

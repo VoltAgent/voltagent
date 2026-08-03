@@ -1,11 +1,10 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const listMenuItemsTool = createTool({
-  name: "listMenuItems",
+export const listMenuItemsTool = tool({
   description: "Lists all menu items from the Supabase database",
-  parameters: z.object({
+  inputSchema: z.object({
     limit: z.number().optional().default(100).describe("Number of items to fetch"),
     offset: z.number().optional().default(0).describe("Number of items to skip"),
   }),

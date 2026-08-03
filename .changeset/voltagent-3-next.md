@@ -149,9 +149,9 @@ const result = await agent.streamText({
 });
 ```
 
-VoltAgent composes the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, `maxRetries`, `onStepEnd`, `onEnd`/`onFinish`, and `onError`. User callbacks are still accepted at the top level and are invoked after VoltAgent memory, guardrails, hooks, tracing, and recovery handling.
+VoltAgent composes only the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, and `maxRetries`. AI SDK lifecycle callbacks remain top-level AI SDK callbacks: `onStepEnd`, `onEnd`/`onFinish`, and `onError` receive raw AI SDK events. Use VoltAgent `hooks.*` when you need VoltAgent's processed output, memory, guardrail, middleware, tracing, or error context.
 
-Top-level AI SDK `toolsContext` is passed through for native AI SDK tools that declare `contextSchema`. Top-level AI SDK `runtimeContext`, `telemetry`, and `experimental_telemetry` are intentionally not exposed. Use `voltagent.context` for per-call application context and VoltAgent observability/OpenTelemetry configuration for telemetry.
+Top-level AI SDK `runtimeContext`, `toolsContext`, `telemetry`, and `experimental_telemetry` pass through on VoltAgent calls. Use `toolsContext` for native AI SDK tools that declare `contextSchema`; VoltAgent also preserves that context through routed tool calls and native `toolApproval`. Use `voltagent.context` for VoltAgent runtime state that should be visible to memory, hooks, guardrails, middleware, and VoltAgent-managed tools.
 
 The same shape works for streaming:
 
@@ -178,11 +178,12 @@ for await (const part of result.stream) {
 
 ### Tool usage
 
-VoltAgent now accepts AI SDK-style tool sets directly. Raw AI SDK tools are first-class, so the recommended custom tool API is `tool()` from `ai`. Add VoltAgent-specific metadata with `withVoltAgentMetadata` when you need hooks, tags, API metadata, or display metadata.
+VoltAgent now accepts AI SDK-style tool sets directly. For new VoltAgent tools, import `tool()` from `@voltagent/core`; it is AI SDK-compatible and adds only an optional `voltagent` metadata namespace. Raw AI SDK tools from `ai` remain first-class. Use `enhanceTool()` when you receive an existing AI SDK tool from another package and want to add VoltAgent hooks, tags, API metadata, or display metadata without rebuilding the tool.
+
+`@voltagent/core` also re-exports common AI SDK primitives such as `generateText`, `streamText`, `generateObject`, `streamObject`, `embed`, `embedMany`, `Output`, `ToolSet`, and `LanguageModel`. Importing these from VoltAgent keeps one public surface for application code, while the direct function exports preserve native AI SDK behavior. Use `agent.generateText()` and `agent.streamText()` when you want VoltAgent orchestration, memory, guardrails, tracing, and tool routing.
 
 ```ts
-import { tool } from "ai";
-import { Agent } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -236,33 +237,30 @@ await agent.generateText({
 VoltAgent-specific tool metadata is optional and stored out-of-band so it is not sent to the model provider:
 
 ```ts
-import { tool } from "ai";
-import { withVoltAgentMetadata } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 
-const refundCustomer = withVoltAgentMetadata(
-  tool({
-    description: "Refund a customer order",
-    inputSchema: z.object({
-      orderId: z.string(),
-      reason: z.string(),
-    }),
-    contextSchema: z.object({
-      actorId: z.string(),
-      permissions: z.array(z.string()),
-    }),
-    execute: async ({ orderId, reason }, { context }) => {
-      if (!context.permissions.includes("refund:write")) {
-        throw new Error("Not allowed to refund orders");
-      }
-
-      return issueRefund({
-        orderId,
-        reason,
-        actorId: context.actorId,
-      });
-    },
+const refundCustomer = tool({
+  description: "Refund a customer order",
+  inputSchema: z.object({
+    orderId: z.string(),
+    reason: z.string(),
   }),
-  {
+  contextSchema: z.object({
+    actorId: z.string(),
+    permissions: z.array(z.string()),
+  }),
+  execute: async ({ orderId, reason }, { context }) => {
+    if (!context.permissions.includes("refund:write")) {
+      throw new Error("Not allowed to refund orders");
+    }
+
+    return issueRefund({
+      orderId,
+      reason,
+      actorId: context.actorId,
+    });
+  },
+  voltagent: {
     name: "Refund Customer",
     purpose: "Issue customer refunds",
     tags: ["billing", "dangerous", "customer-support"],
@@ -270,8 +268,24 @@ const refundCustomer = withVoltAgentMetadata(
       owner: "payments-team",
       riskLevel: "high",
     },
-  }
-);
+  },
+});
+```
+
+Decorate existing AI SDK tools without reconstructing them:
+
+```ts
+import { enhanceTool } from "@voltagent/core";
+
+const externalWeatherTool = getWeatherToolFromSomePackage();
+
+const weather = enhanceTool(externalWeatherTool, {
+  name: "Weather lookup",
+  tags: ["weather", "external"],
+  metadata: {
+    owner: "platform-team",
+  },
+});
 ```
 
 Register the tool under the canonical name the model should call:
@@ -288,7 +302,7 @@ const agent = new Agent({
 
 The ToolSet key remains the canonical `tool.name` used for tool calls, approval, routing, and telemetry correlation. VoltAgent metadata `name` is display metadata and is emitted as `tool.display_name` for Console and observability consumers.
 
-`tool()` from `@voltagent/core` remains available as a convenience wrapper when inline `voltagent` metadata is preferred. `createTool` is now a legacy compatibility helper for existing class-style tools.
+`createTool` is now a legacy compatibility helper for existing class-style tools.
 
 ### Tool approval
 
@@ -310,7 +324,7 @@ Use call-level `toolApproval` for new per-request approval flows. Use `voltagent
 Prefer AI SDK v7-style `output` over `experimental_output`.
 
 ```ts
-import { Output } from "ai";
+import { Output } from "@voltagent/core";
 import { z } from "zod";
 
 const result = await agent.generateText({

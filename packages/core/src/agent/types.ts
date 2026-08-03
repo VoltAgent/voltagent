@@ -268,12 +268,16 @@ export type AgentModelConfig = {
  */
 export type AgentModelValue = ModelDynamicValue<AgentModelReference> | AgentModelConfig[];
 
-export type AgentToolInput = (Tool<any, any> | Toolkit | VercelTool)[] | ToolSet;
+export type AgentToolInput<TOOLS extends ToolSet = ToolSet> =
+  | (Tool<any, any> | Toolkit | VercelTool)[]
+  | TOOLS;
 
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
  */
-export type ToolsDynamicValue = AgentToolInput | DynamicValue<AgentToolInput>;
+export type ToolsDynamicValue<TOOLS extends ToolSet = ToolSet> =
+  | AgentToolInput<TOOLS>
+  | DynamicValue<AgentToolInput<TOOLS>>;
 
 /**
  * Provider options type for LLM configurations
@@ -680,7 +684,7 @@ export type AgentMessageMetadataPersistenceConfig =
 /**
  * Agent configuration options
  */
-export type AgentOptions = {
+export type AgentOptions<TOOLS extends ToolSet = ToolSet> = {
   // Identity
   id?: string;
   name: string;
@@ -691,7 +695,7 @@ export type AgentOptions = {
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory
-  tools?: AgentToolInput | DynamicValue<AgentToolInput>;
+  tools?: AgentToolInput<TOOLS> | DynamicValue<AgentToolInput<TOOLS>>;
   toolkits?: Toolkit[];
   toolRouting?: ToolRoutingConfig | false;
   workspace?: Workspace | WorkspaceConfig | false;

@@ -1,4 +1,4 @@
-import VoltAgent, { Agent, VoltAgentObservability, buildScorer, createTool } from "@voltagent/core";
+import VoltAgent, { Agent, VoltAgentObservability, buildScorer, tool } from "@voltagent/core";
 import {
   createAnswerCorrectnessScorer,
   createAnswerRelevancyScorer,
@@ -81,13 +81,12 @@ const productCatalog = [
   { id: "office-monitor-27", name: "Office Monitor 27", price: 299, inStock: 0 },
 ];
 
-const searchProductsTool = createTool({
-  name: "searchProducts",
+const searchProductsTool = tool({
   description: "Searches a small product catalog by query and returns product candidates.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("Product search query"),
   }),
-  execute: async ({ query }: { query: string }) => {
+  execute: async ({ query }) => {
     const normalizedQuery = query.toLowerCase();
     const matches = productCatalog.filter((product) =>
       product.name.toLowerCase().includes(normalizedQuery),
@@ -101,13 +100,12 @@ const searchProductsTool = createTool({
   },
 });
 
-const checkInventoryTool = createTool({
-  name: "checkInventory",
+const checkInventoryTool = tool({
   description: "Checks stock status for a product id.",
-  parameters: z.object({
+  inputSchema: z.object({
     productId: z.string().describe("Product id from searchProducts result"),
   }),
-  execute: async ({ productId }: { productId: string }) => {
+  execute: async ({ productId }) => {
     const found = productCatalog.find((product) => product.id === productId);
     if (!found) {
       return {
@@ -411,7 +409,10 @@ const toolEvalAgent = new Agent({
 Always call searchProducts first, then call checkInventory for a selected product before finalizing your answer.
 If no products are found, explain that clearly.`,
   model: "openai/gpt-4o-mini",
-  tools: [searchProductsTool, checkInventoryTool],
+  tools: {
+    searchProducts: searchProductsTool,
+    checkInventory: checkInventoryTool,
+  },
   eval: {
     sampling: { type: "ratio", rate: 1 },
     scorers: {

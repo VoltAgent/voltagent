@@ -97,6 +97,14 @@ export async function handleWhatsAppMessage(c: Context, agent: Agent) {
       const response = await agent.generateText(userMessage, {
         userId: userPhone, // Use phone number as userId for context
         conversationId: `whatsapp_${userPhone}`,
+        toolsContext: {
+          createOrder: {
+            customerPhone: userPhone,
+          },
+          checkOrderStatus: {
+            customerPhone: userPhone,
+          },
+        },
       });
 
       // Send response back to WhatsApp

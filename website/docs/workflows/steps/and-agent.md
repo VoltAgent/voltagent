@@ -92,7 +92,7 @@ By default, the step result replaces the workflow data with the agent output. If
 )
 
 // Use Output.* for non-object outputs (arrays, choices, json, text)
-// (Requires: import { Output } from "ai";)
+// (Requires: import { Output } from "@voltagent/core";)
 .andAgent(
   async ({ data }) => `List tags for: ${data.topic}`,
   agent,
@@ -211,7 +211,7 @@ Retry behavior:
 
 ### Arrays and Choices
 
-Requires `import { Output } from "ai";`
+Requires `import { Output } from "@voltagent/core";`
 
 ```typescript
 .andAgent(
@@ -299,13 +299,12 @@ createWorkflowChain({ id: "smart-email" })
 `andAgent` supports tools, but it only returns the structured output when the step completes. Use `andThen` when you need streaming tokens or to inspect tool calls/results directly:
 
 ```typescript
-import { Agent, createTool } from "@voltagent/core";
+import { Agent, tool } from "@voltagent/core";
 import { z } from "zod";
 
-const getWeatherTool = createTool({
-  name: "get_weather",
+const getWeatherTool = tool({
   description: "Get weather for a location",
-  parameters: z.object({ city: z.string() }),
+  inputSchema: z.object({ city: z.string() }),
   execute: async ({ city }) => {
     return { temp: 72, condition: "sunny" };
   },
@@ -314,7 +313,9 @@ const getWeatherTool = createTool({
 const agent = new Agent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
-  tools: [getWeatherTool],
+  tools: {
+    get_weather: getWeatherTool,
+  },
 });
 
 // Use andThen to call the agent directly when you need streaming or tool call inspection

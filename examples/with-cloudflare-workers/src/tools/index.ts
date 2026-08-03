@@ -1,12 +1,10 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import z from "zod";
 
 // Define a simple tool for demonstration
-export const weatherTool = createTool({
-  id: "get-weather",
-  name: "getWeather",
+export const weatherTool = tool({
   description: "Get the current weather for a specific location",
-  parameters: z.object({
+  inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),
   }),
   execute: async ({ location }) => {

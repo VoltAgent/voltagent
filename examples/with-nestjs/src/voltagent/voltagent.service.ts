@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, tool } from "@voltagent/core";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { createVoltAgentApp } from "@voltagent/server-hono";
 import type { Hono } from "hono";
@@ -8,10 +8,9 @@ import { z } from "zod";
 /**
  * Example tool that converts text to uppercase
  */
-const upperCaseTool = createTool({
-  name: "uppercase",
+const upperCaseTool = tool({
   description: "Convert text to uppercase",
-  parameters: z.object({
+  inputSchema: z.object({
     text: z.string().describe("Text to convert to uppercase"),
   }),
   execute: async (args) => {
@@ -47,7 +46,9 @@ export class VoltAgentService {
       instructions:
         "You are a helpful text processing assistant. When users ask you to process text, use the uppercase tool to convert it to uppercase and explain what you did.",
       model: "openai/gpt-4o-mini",
-      tools: [upperCaseTool],
+      tools: {
+        uppercase: upperCaseTool,
+      },
     });
 
     // Initialize VoltAgent WITHOUT a server

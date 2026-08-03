@@ -37,6 +37,8 @@ export const createAdCreatorAgent = (memory: Memory) => {
     - Performance optimization suggestions
     - Engagement predictions`,
     model: "openai/gpt-4o-mini",
+    // The image generation tool reads screenshot/reference paths from VoltAgent
+    // operation context, so this example keeps the named compatibility tool API.
     tools: [generateInstagramAdGeminiTool],
     memory,
   });

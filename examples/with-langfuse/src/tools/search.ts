@@ -1,13 +1,12 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * A tool for performing web searches
  */
-export const searchTool = createTool({
-  name: "search",
+export const searchTool = tool({
   description: "Search the web for information",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query"),
   }),
   execute: async ({ query }) => {

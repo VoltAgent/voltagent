@@ -1,4 +1,4 @@
-import { createTool } from "@voltagent/core";
+import { tool } from "@voltagent/core";
 import { z } from "zod";
 
 const XQUIK_API_CONTRACT = "2026-04-29";
@@ -101,11 +101,10 @@ async function callXquik(path: string, params: XquikQueryParams = {}): Promise<X
 /**
  * Searches public X/Twitter posts with Xquik query operators.
  */
-export const searchXPostsTool = createTool({
-  name: "searchXPosts",
+export const searchXPostsTool = tool({
   description:
     "Search recent public X/Twitter posts with X query operators, chronological or engagement-ranked sorting, and pagination.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z
       .string()
       .min(1)
@@ -130,11 +129,10 @@ export const searchXPostsTool = createTool({
 /**
  * Looks up a public X/Twitter post by ID.
  */
-export const getXPostTool = createTool({
-  name: "getXPost",
+export const getXPostTool = tool({
   description:
     "Look up a public X/Twitter post by ID and return its text, author, metrics, and media.",
-  parameters: z.object({
+  inputSchema: z.object({
     postId: z.string().min(1).describe("Numeric X/Twitter post ID."),
   }),
   execute: async ({ postId }) => callXquik(`/x/tweets/${encodeURIComponent(postId.trim())}`),
@@ -143,10 +141,9 @@ export const getXPostTool = createTool({
 /**
  * Looks up a public X/Twitter user profile by username or ID.
  */
-export const getXUserTool = createTool({
-  name: "getXUser",
+export const getXUserTool = tool({
   description: "Look up a public X/Twitter user profile by username or user ID.",
-  parameters: z.object({
+  inputSchema: z.object({
     user: z.string().min(1).describe("X username without @, or a numeric X user ID."),
   }),
   execute: async ({ user }) => callXquik(`/x/users/${encodeXIdentifier(user)}`),
@@ -155,10 +152,9 @@ export const getXUserTool = createTool({
 /**
  * Fetches recent public posts for an X/Twitter user.
  */
-export const getXUserPostsTool = createTool({
-  name: "getXUserPosts",
+export const getXUserPostsTool = tool({
   description: "Fetch recent public posts from an X/Twitter user by username or user ID.",
-  parameters: z.object({
+  inputSchema: z.object({
     user: z.string().min(1).describe("X username without @, or a numeric X user ID."),
     cursor: z.string().optional().describe("Pagination cursor from a previous response."),
     includeReplies: z.boolean().optional().describe("Include replies in the returned posts."),
@@ -175,20 +171,19 @@ export const getXUserPostsTool = createTool({
 /**
  * Fetches public X/Twitter trends for a WOEID region.
  */
-export const getXTrendsTool = createTool({
-  name: "getXTrends",
+export const getXTrendsTool = tool({
   description: "Fetch public X/Twitter trending topics by WOEID region.",
-  parameters: z.object({
+  inputSchema: z.object({
     woeid: z.number().int().min(1).optional().describe("WOEID region. Use 1 for worldwide."),
     count: z.number().int().min(1).max(50).optional().describe("Number of trends to return."),
   }),
   execute: async ({ woeid = 1, count = 10 }) => callXquik("/x/trends", { woeid, count }),
 });
 
-export const xquikTools = [
-  searchXPostsTool,
-  getXPostTool,
-  getXUserTool,
-  getXUserPostsTool,
-  getXTrendsTool,
-];
+export const xquikTools = {
+  searchXPosts: searchXPostsTool,
+  getXPost: getXPostTool,
+  getXUser: getXUserTool,
+  getXUserPosts: getXUserPostsTool,
+  getXTrends: getXTrendsTool,
+};

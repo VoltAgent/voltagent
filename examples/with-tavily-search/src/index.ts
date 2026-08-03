@@ -35,7 +35,10 @@ Example queries you can handle:
 - "What's the current weather in New York?"
 - "Extract content from this URL: https://example.com/article"`,
   model: "openai/gpt-4o-mini",
-  tools: [tavilySearchTool, tavilyExtractTool],
+  tools: {
+    tavilySearch: tavilySearchTool,
+    tavilyExtract: tavilyExtractTool,
+  },
   memory,
 });
 

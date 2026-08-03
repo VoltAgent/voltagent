@@ -24,17 +24,19 @@ const agent = new Agent({
   name: "Assistant with Tools",
   instructions: "A helpful assistant that can use tools to provide better answers",
   model: "openai/gpt-4o-mini",
-  tools: [
-    addCalendarEventTool,
-    checkCalendarTool,
-    openai.tools.webSearch(),
+  tools: {
+    addCalendarEvent: addCalendarEventTool,
+    checkCalendar: checkCalendarTool,
+    webSearch: openai.tools.webSearch(),
     // searchTool,
-  ],
+  },
   memory,
 });
 
 // Test dynamic tool addition
-agent.addTools([weatherTool]);
+agent.addTools({
+  getWeather: weatherTool,
+});
 
 new VoltAgent({
   agents: {

@@ -8,7 +8,8 @@
  * - Page refreshing
  * - Browser closing
  *
- * Each tool is created using VoltAgent's createTool() function with:
+ * Each tool uses VoltAgent's named compatibility tool API because browser
+ * operations need direct access to OperationContext:
  * - Zod validation schemas for parameters
  * - Safe browser operation handling
  * - Consistent error reporting

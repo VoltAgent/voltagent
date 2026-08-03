@@ -38,6 +38,8 @@ export const createLandingPageAnalyzer = (memory: Memory) => {
 
     Output format should be structured JSON data that can be easily consumed by other agents.`,
     model: "openai/gpt-4o-mini",
+    // These Browserbase tools share screenshot state through VoltAgent operation context,
+    // so this example keeps the named compatibility tool API.
     tools: [pageNavigateTool, pageExtractTool, pageObserveTool, screenshotTool],
     memory,
   });

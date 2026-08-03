@@ -111,8 +111,7 @@ Create `src/retriever/index.ts`:
 import fs from "node:fs/promises";
 import path from "node:path";
 import { connect } from "@lancedb/lancedb";
-import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
-import { embed } from "ai";
+import { BaseRetriever, embed, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 
 // Initialize LanceDB configuration
 const dbUri = process.env.LANCEDB_URI || path.resolve(process.cwd(), ".voltagent/lancedb");

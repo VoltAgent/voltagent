@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
+import { Agent, VoltAgent, createTriggers, tool } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VoltOpsClient } from "@voltagent/sdk";
 import { honoServer } from "@voltagent/server-hono";
@@ -23,10 +23,9 @@ const voltOps = new VoltOpsClient({
   secretKey: process.env.VOLTAGENT_SECRET_KEY ?? "",
 });
 
-const sendSlackMessage = createTool({
-  name: "sendSlackMessage",
+const sendSlackMessage = tool({
   description: "Send a message to a Slack channel or thread via VoltOps.",
-  parameters: z.object({
+  inputSchema: z.object({
     channelId: z.string().describe("Slack channel ID (e.g., C08N97UCUKE)"),
     text: z.string().describe("Message text to send"),
     threadTs: z.string().optional().describe("Thread timestamp if replying in-thread"),
@@ -52,7 +51,10 @@ const sendSlackMessage = createTool({
 const slackAgent = new Agent({
   name: "slack-agent",
   instructions: "You are a Slack assistant.",
-  tools: [weatherTool, sendSlackMessage],
+  tools: {
+    getWeather: weatherTool,
+    sendSlackMessage,
+  },
   model: "openai/gpt-4o-mini",
 });
 

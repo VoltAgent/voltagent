@@ -233,25 +233,44 @@ const myCalculatorToolkit = createToolkit({
 
 **Important:** With the introduction of Toolkits, individual `Tool` instances no longer have their own `instructions` or `addInstructions` properties. Instructions are managed at the Toolkit level.
 
-### Adding Tools and Toolkits to an Agent
+### Adding Tools to an Agent
 
-The `tools` option in the `Agent` constructor accepts a ToolSet object for AI SDK-style tools, or an array containing class-style tools, provider-defined tools, and `Toolkit` objects. Use a ToolSet object for new standalone tools; use arrays when you need toolkits.
+The `tools` option in the `Agent` constructor accepts a ToolSet object for AI SDK-style tools. Use this for new standalone tools. The object key is the tool name the model sees and calls.
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent } from "@voltagent/core";
-// ... import other tools and toolkits ...
+import { Agent, tool } from "@voltagent/core";
+import { z } from "zod";
+
+const getWeatherTool = tool({
+  description: "Fetches the current weather for a given location.",
+  inputSchema: z.object({
+    location: z.string(),
+  }),
+  execute: async ({ location }) => {
+    return { location, temperature: "22°C", condition: "Sunny" };
+  },
+});
 
 const agent = new Agent({
   name: "MultiToolAgent",
-  instructions: "An agent with various tools and toolkits.",
+  instructions: "An agent with user-defined and provider-defined tools.",
   model: "openai/gpt-4o-mini",
-  tools: [
-    getWeatherTool, // Add an individual tool
-    myCalculatorToolkit, // Add a toolkit
-    openai.tools.webSearch(), // Add a provider-defined tool
-    // ... other tools or toolkits
-  ],
+  tools: {
+    get_weather: getWeatherTool,
+    web_search_preview: openai.tools.webSearch(),
+  },
+});
+```
+
+Use arrays when you need class-style compatibility tools, agent tools, or toolkits:
+
+```typescript
+const agent = new Agent({
+  name: "ToolkitAgent",
+  instructions: "An agent with toolkit instructions.",
+  model: "openai/gpt-4o-mini",
+  tools: [myCalculatorToolkit, writerAgent.toTool()],
 });
 ```
 
@@ -263,8 +282,9 @@ When an agent is initialized, its `getSystemMessage` method checks all the `Tool
 
 Some providers expose their own tools (via the Vercel AI SDK).
 
-- They can be standalone tools or live inside Toolkits and are subject to name-conflict checks when adding toolkits.
-- They are not executable on your server via the usual `Tool.execute` handler — the provider manages them.
+- Register them in the same ToolSet object as user-defined AI SDK tools.
+- They are not executable on your server via a VoltAgent `execute` handler. The provider manages their execution.
+- Use user-defined tools plus `voltagent` metadata or `enhanceTool()` when you need VoltAgent hooks, tags, approval metadata, or application-side execution.
 
 ## Next Steps
 

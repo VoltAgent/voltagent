@@ -308,9 +308,30 @@ export { convertUsage } from "./utils/usage-converter";
 // for backwards compatibility
 export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/internal/utils";
 
-// Convenience re-exports from ai-sdk so apps need only @voltagent/core
-export { isStepCount, hasToolCall } from "ai";
-export type { LanguageModel } from "ai";
+// Convenience re-exports from AI SDK so apps can use core AI primitives from
+// @voltagent/core. `tool` is exported from ./tool as an AI SDK-compatible
+// helper with an optional VoltAgent metadata namespace.
+export {
+  Output,
+  embed,
+  embedMany,
+  generateObject,
+  generateText,
+  hasToolCall,
+  isStepCount,
+  streamObject,
+  streamText,
+} from "ai";
+export type {
+  GenerateObjectResult,
+  GenerateTextResult,
+  LanguageModel,
+  ModelMessage,
+  StreamObjectResult,
+  StreamTextResult,
+  ToolSet,
+  UIMessage,
+} from "ai";
 export type { PrepareStep, StopWhen } from "./ai-types";
 
 export type {
