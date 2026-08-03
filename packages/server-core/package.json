@@ -3,7 +3,7 @@
   "description": "Framework-agnostic server core for VoltAgent",
   "version": "2.1.19",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@voltagent/core": "^2.8.1",
     "@voltagent/internal": "^1.0.2",
     "ai": "^6.0.0",

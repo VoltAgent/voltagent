@@ -22,7 +22,7 @@
     "@ai-sdk/xai": "^3.0.26",
     "@aihubmix/ai-sdk-provider": "^1.0.1",
     "@gitlab/gitlab-ai-provider": "^3.1.1",
-    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@mymediset/sap-ai-provider": "^2.1.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.204.0",

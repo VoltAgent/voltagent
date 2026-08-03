@@ -63,6 +63,8 @@ function toMcpTool(agent: Agent, name: string): MCPTool {
     inputSchema: inputSchema as MCPTool["inputSchema"],
     annotations: {
       title: agent.name,
+    },
+    _meta: {
       agentId: agent.id,
       toolType: "agent",
     },
