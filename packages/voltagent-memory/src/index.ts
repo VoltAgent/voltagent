@@ -1,6 +1,9 @@
 import {
   AgentRegistry,
   type Conversation,
+  type ConversationMutationOptions,
+  ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
   type ConversationQueryOptions,
   type ConversationStepRecord,
   type CreateConversationInput,
@@ -163,6 +166,24 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     }
 
     return handler({ client: this.voltOpsClient, database: this.database });
+  }
+
+  private async assertExpectedConversationOwner(
+    id: string,
+    options?: ConversationMutationOptions,
+  ): Promise<void> {
+    if (options?.expectedUserId === undefined) {
+      return;
+    }
+
+    const conversation = await this.getConversation(id);
+    if (!conversation) {
+      throw new ConversationNotFoundError(id);
+    }
+
+    if (conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
+    }
   }
 
   private log(message: string, context?: string): void {
@@ -351,10 +372,13 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     });
   }
 
-  updateConversation(
+  async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
+    await this.assertExpectedConversationOwner(id, options);
+
     return this.withClientContext(({ client, database }) => {
       this.log("Updating managed memory conversation", safeStringify({ id, updates }));
       return client.managedMemory.conversations.update(database.id, {
@@ -364,7 +388,9 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     });
   }
 
-  deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
+    await this.assertExpectedConversationOwner(id, options);
+
     return this.withClientContext(async ({ client, database }) => {
       this.log("Deleting managed memory conversation", safeStringify({ id }));
       await client.managedMemory.conversations.delete(database.id, id);

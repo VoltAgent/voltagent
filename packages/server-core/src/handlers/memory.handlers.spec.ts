@@ -155,6 +155,17 @@ describe("memory handlers ownership checks", () => {
     expect(result.data.conversations[0]?.userId).toBe(otherUserId);
   });
 
+  it("rejects listing conversations when the authenticated identity is empty", async () => {
+    const result = await handleListMemoryConversations(deps, {
+      agentId,
+      userId: ownerUserId,
+      requestingUserId: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.httpStatus).toBe(403);
+  });
+
   it("rejects listing messages for a conversation owned by a different authenticated user", async () => {
     const result = await handleListMemoryConversationMessages(deps, conversationId, {
       agentId,

@@ -151,6 +151,10 @@ export async function handleListMemoryConversations(
       };
     }
 
+    if (query.requestingUserId !== undefined && !query.requestingUserId) {
+      return buildForbiddenResponse();
+    }
+
     const resourceId = query.resourceId ?? resolved.resourceId;
     const userId = query.requestingUserId ?? query.userId;
     const [conversations, total] = await Promise.all([

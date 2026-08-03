@@ -135,4 +135,43 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
       5,
     ]);
   });
+
+  it("adds expectedUserId to updateConversation mutations", async () => {
+    const existing = {
+      id: "conv-1",
+      resource_id: "agent-1",
+      user_id: "user-1",
+      title: "Original",
+      metadata: "{}",
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z",
+    };
+
+    mockExecute
+      .mockResolvedValueOnce({ rows: [existing] })
+      .mockResolvedValueOnce({ rows: [], rowsAffected: 1 })
+      .mockResolvedValueOnce({ rows: [{ ...existing, title: "Updated" }] });
+
+    await (adapter as any).updateConversation(
+      "conv-1",
+      { title: "Updated" },
+      { expectedUserId: "user-1" },
+    );
+
+    const updateCall = mockExecute.mock.calls.find(([input]) =>
+      String(input.sql).includes("UPDATE test_conversations"),
+    )?.[0];
+    expect(updateCall.sql).toContain("WHERE id = ? AND user_id = ?");
+    expect(updateCall.args).toEqual([expect.any(String), "Updated", "conv-1", "user-1"]);
+  });
+
+  it("adds expectedUserId to deleteConversation mutations", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [], rowsAffected: 1 });
+
+    await (adapter as any).deleteConversation("conv-1", { expectedUserId: "user-1" });
+
+    const deleteCall = mockExecute.mock.calls.at(-1)?.[0];
+    expect(deleteCall.sql).toContain("DELETE FROM test_conversations WHERE id = ? AND user_id = ?");
+    expect(deleteCall.args).toEqual(["conv-1", "user-1"]);
+  });
 });

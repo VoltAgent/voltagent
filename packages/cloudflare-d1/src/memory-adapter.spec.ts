@@ -81,3 +81,59 @@ describe("D1MemoryAdapter queryWorkflowRuns", () => {
     ]);
   });
 });
+
+describe("D1MemoryAdapter conversation ownership guards", () => {
+  const row = {
+    id: "conv-1",
+    resource_id: "agent-1",
+    user_id: "user-1",
+    title: "Original",
+    metadata: "{}",
+    created_at: "2024-01-01T00:00:00.000Z",
+    updated_at: "2024-01-01T00:00:00.000Z",
+  };
+
+  it("adds expectedUserId to updateConversation mutations", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    vi.spyOn(adapter as any, "all")
+      .mockResolvedValueOnce([row])
+      .mockResolvedValueOnce([{ ...row, title: "Updated" }]);
+    const runSpy = vi.spyOn(adapter as any, "run").mockResolvedValue({ meta: { changes: 1 } });
+
+    await (adapter as any).updateConversation(
+      "conv-1",
+      { title: "Updated" },
+      { expectedUserId: "user-1" },
+    );
+
+    const [sql, args] = runSpy.mock.calls[0];
+    expect(sql).toContain("WHERE id = ? AND user_id = ?");
+    expect(args).toEqual([expect.any(String), "Updated", "conv-1", "user-1"]);
+  });
+
+  it("adds expectedUserId to deleteConversation mutations", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    const runSpy = vi.spyOn(adapter as any, "run").mockResolvedValue({ meta: { changes: 1 } });
+
+    await (adapter as any).deleteConversation("conv-1", { expectedUserId: "user-1" });
+
+    const messageDelete = runSpy.mock.calls.find(([sql]) =>
+      String(sql).includes("DELETE FROM test_messages"),
+    );
+    const stepsDelete = runSpy.mock.calls.find(([sql]) =>
+      String(sql).includes("DELETE FROM test_steps"),
+    );
+    const conversationDelete = runSpy.mock.calls.find(([sql]) =>
+      String(sql).includes("DELETE FROM test_conversations"),
+    );
+
+    expect(messageDelete?.[0]).toContain("EXISTS");
+    expect(messageDelete?.[1]).toEqual(["conv-1", "conv-1", "user-1"]);
+    expect(stepsDelete?.[0]).toContain("EXISTS");
+    expect(stepsDelete?.[1]).toEqual(["conv-1", "conv-1", "user-1"]);
+    expect(conversationDelete?.[0]).toContain("WHERE id = ? AND user_id = ?");
+    expect(conversationDelete?.[1]).toEqual(["conv-1", "user-1"]);
+  });
+});

@@ -296,21 +296,19 @@ export class Memory {
   async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     let conversation: Conversation | null = null;
 
-    if (this.vector || options?.expectedUserId !== undefined) {
+    if (options?.expectedUserId !== undefined) {
       conversation = await this.storage.getConversation(id);
-    }
 
-    if (
-      options?.expectedUserId !== undefined &&
-      conversation &&
-      conversation.userId !== options.expectedUserId
-    ) {
-      throw new ConversationOwnershipMismatchError(id);
+      if (conversation && conversation.userId !== options.expectedUserId) {
+        throw new ConversationOwnershipMismatchError(id);
+      }
     }
 
     // If vector adapter is configured, delete associated vectors
     if (this.vector) {
       try {
+        conversation ??= await this.storage.getConversation(id);
+
         if (conversation) {
           // Get all messages to find vector IDs
           const messages = await this.storage.getMessages(conversation.userId, id);

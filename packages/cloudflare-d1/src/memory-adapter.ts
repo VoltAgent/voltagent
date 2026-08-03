@@ -8,9 +8,11 @@ import {
   AgentRegistry,
   ConversationAlreadyExistsError,
   ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
 } from "@voltagent/core";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -102,8 +104,8 @@ export class D1MemoryAdapter implements StorageAdapter {
     return args.length > 0 ? statement.bind(...args) : statement;
   }
 
-  private async run(sql: string, args: unknown[] = []): Promise<void> {
-    await this.buildStatement(sql, args).run();
+  private async run(sql: string, args: unknown[] = []): Promise<{ meta?: { changes?: number } }> {
+    return (await this.buildStatement(sql, args).run()) as { meta?: { changes?: number } };
   }
 
   private async all<T extends D1Row = D1Row>(sql: string, args: unknown[] = []): Promise<T[]> {
@@ -1037,6 +1039,7 @@ export class D1MemoryAdapter implements StorageAdapter {
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
     await this.ensureInitialized();
 
@@ -1044,6 +1047,10 @@ export class D1MemoryAdapter implements StorageAdapter {
     const conversation = await this.getConversation(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
+    }
+
+    if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
     }
 
     const now = new Date().toISOString();
@@ -1066,11 +1073,20 @@ export class D1MemoryAdapter implements StorageAdapter {
     }
 
     args.push(id);
+    let whereClause = "WHERE id = ?";
+    if (options?.expectedUserId !== undefined) {
+      whereClause += " AND user_id = ?";
+      args.push(options.expectedUserId);
+    }
 
-    await this.run(
-      `UPDATE ${conversationsTable} SET ${fieldsToUpdate.join(", ")} WHERE id = ?`,
+    const result = await this.run(
+      `UPDATE ${conversationsTable} SET ${fieldsToUpdate.join(", ")} ${whereClause}`,
       args,
     );
+
+    if (options?.expectedUserId !== undefined && result.meta?.changes === 0) {
+      throw new ConversationOwnershipMismatchError(id);
+    }
 
     const updated = await this.getConversation(id);
     if (!updated) {
@@ -1079,12 +1095,31 @@ export class D1MemoryAdapter implements StorageAdapter {
     return updated;
   }
 
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     await this.ensureInitialized();
 
     const conversationsTable = `${this.tablePrefix}_conversations`;
     const messagesTable = `${this.tablePrefix}_messages`;
     const stepsTable = `${this.tablePrefix}_steps`;
+
+    if (options?.expectedUserId !== undefined) {
+      await this.run(
+        `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND EXISTS (SELECT 1 FROM ${conversationsTable} WHERE id = ? AND user_id = ?)`,
+        [id, id, options.expectedUserId],
+      );
+      await this.run(
+        `DELETE FROM ${stepsTable} WHERE conversation_id = ? AND EXISTS (SELECT 1 FROM ${conversationsTable} WHERE id = ? AND user_id = ?)`,
+        [id, id, options.expectedUserId],
+      );
+      const result = await this.run(
+        `DELETE FROM ${conversationsTable} WHERE id = ? AND user_id = ?`,
+        [id, options.expectedUserId],
+      );
+      if (result.meta?.changes === 0) {
+        throw new ConversationOwnershipMismatchError(id);
+      }
+      return;
+    }
 
     await this.run(`DELETE FROM ${messagesTable} WHERE conversation_id = ?`, [id]);
     await this.run(`DELETE FROM ${stepsTable} WHERE conversation_id = ?`, [id]);
