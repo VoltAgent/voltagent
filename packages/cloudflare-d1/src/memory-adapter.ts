@@ -1103,14 +1103,6 @@ export class D1MemoryAdapter implements StorageAdapter {
     const stepsTable = `${this.tablePrefix}_steps`;
 
     if (options?.expectedUserId !== undefined) {
-      await this.run(
-        `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND EXISTS (SELECT 1 FROM ${conversationsTable} WHERE id = ? AND user_id = ?)`,
-        [id, id, options.expectedUserId],
-      );
-      await this.run(
-        `DELETE FROM ${stepsTable} WHERE conversation_id = ? AND EXISTS (SELECT 1 FROM ${conversationsTable} WHERE id = ? AND user_id = ?)`,
-        [id, id, options.expectedUserId],
-      );
       const result = await this.run(
         `DELETE FROM ${conversationsTable} WHERE id = ? AND user_id = ?`,
         [id, options.expectedUserId],

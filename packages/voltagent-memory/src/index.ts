@@ -176,6 +176,10 @@ export class ManagedMemoryAdapter implements StorageAdapter {
       return;
     }
 
+    if (options.expectedUserId === "") {
+      throw new ConversationOwnershipMismatchError(id);
+    }
+
     const conversation = await this.getConversation(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
@@ -384,6 +388,9 @@ export class ManagedMemoryAdapter implements StorageAdapter {
       return client.managedMemory.conversations.update(database.id, {
         conversationId: id,
         updates,
+        ...(options?.expectedUserId !== undefined
+          ? { expectedUserId: options.expectedUserId }
+          : {}),
       });
     });
   }
@@ -393,7 +400,13 @@ export class ManagedMemoryAdapter implements StorageAdapter {
 
     return this.withClientContext(async ({ client, database }) => {
       this.log("Deleting managed memory conversation", safeStringify({ id }));
-      await client.managedMemory.conversations.delete(database.id, id);
+      await client.managedMemory.conversations.delete(
+        database.id,
+        id,
+        options?.expectedUserId !== undefined
+          ? { expectedUserId: options.expectedUserId }
+          : undefined,
+      );
     }).then(() => undefined);
   }
 

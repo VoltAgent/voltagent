@@ -304,8 +304,12 @@ export class Memory {
       }
     }
 
-    // If vector adapter is configured, delete associated vectors
-    if (this.vector) {
+    // If vector adapter is configured, delete associated vectors.
+    // For guarded deletes, do not re-fetch when the ownership lookup found no
+    // conversation: a same-ID conversation may have been recreated for another
+    // owner before the guarded storage mutation runs.
+    const canCleanVectors = options?.expectedUserId === undefined || conversation !== null;
+    if (this.vector && canCleanVectors) {
       try {
         conversation ??= await this.storage.getConversation(id);
 

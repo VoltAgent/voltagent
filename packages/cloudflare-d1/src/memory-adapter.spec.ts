@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import { ConversationOwnershipMismatchError } from "@voltagent/core";
 import { describe, expect, it, vi } from "vitest";
 import { D1MemoryAdapter } from "./memory-adapter";
 
@@ -112,28 +113,48 @@ describe("D1MemoryAdapter conversation ownership guards", () => {
     expect(args).toEqual([expect.any(String), "Updated", "conv-1", "user-1"]);
   });
 
-  it("adds expectedUserId to deleteConversation mutations", async () => {
+  it("rejects guarded updates before mutating when the existing owner does not match", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    vi.spyOn(adapter as any, "all").mockResolvedValueOnce([{ ...row, user_id: "user-2" }]);
+    const runSpy = vi.spyOn(adapter as any, "run").mockResolvedValue({ meta: { changes: 1 } });
+
+    await expect(
+      (adapter as any).updateConversation(
+        "conv-1",
+        { title: "Updated" },
+        { expectedUserId: "user-1" },
+      ),
+    ).rejects.toBeInstanceOf(ConversationOwnershipMismatchError);
+
+    expect(runSpy).not.toHaveBeenCalled();
+  });
+
+  it("uses the guarded parent delete and relies on cascades for owned child rows", async () => {
     vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
     const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
     const runSpy = vi.spyOn(adapter as any, "run").mockResolvedValue({ meta: { changes: 1 } });
 
     await (adapter as any).deleteConversation("conv-1", { expectedUserId: "user-1" });
 
-    const messageDelete = runSpy.mock.calls.find(([sql]) =>
-      String(sql).includes("DELETE FROM test_messages"),
-    );
-    const stepsDelete = runSpy.mock.calls.find(([sql]) =>
-      String(sql).includes("DELETE FROM test_steps"),
-    );
-    const conversationDelete = runSpy.mock.calls.find(([sql]) =>
-      String(sql).includes("DELETE FROM test_conversations"),
-    );
+    expect(runSpy).toHaveBeenCalledTimes(1);
+    const [sql, args] = runSpy.mock.calls[0];
+    expect(sql).toContain("DELETE FROM test_conversations WHERE id = ? AND user_id = ?");
+    expect(args).toEqual(["conv-1", "user-1"]);
+  });
 
-    expect(messageDelete?.[0]).toContain("EXISTS");
-    expect(messageDelete?.[1]).toEqual(["conv-1", "conv-1", "user-1"]);
-    expect(stepsDelete?.[0]).toContain("EXISTS");
-    expect(stepsDelete?.[1]).toEqual(["conv-1", "conv-1", "user-1"]);
-    expect(conversationDelete?.[0]).toContain("WHERE id = ? AND user_id = ?");
-    expect(conversationDelete?.[1]).toEqual(["conv-1", "user-1"]);
+  it("rejects guarded deletes without deleting child rows when no owned row is affected", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    const runSpy = vi.spyOn(adapter as any, "run").mockResolvedValue({ meta: { changes: 0 } });
+
+    await expect(
+      (adapter as any).deleteConversation("conv-1", { expectedUserId: "user-1" }),
+    ).rejects.toBeInstanceOf(ConversationOwnershipMismatchError);
+
+    expect(runSpy).toHaveBeenCalledTimes(1);
+    const [sql, args] = runSpy.mock.calls[0];
+    expect(sql).toContain("DELETE FROM test_conversations WHERE id = ? AND user_id = ?");
+    expect(args).toEqual(["conv-1", "user-1"]);
   });
 });
