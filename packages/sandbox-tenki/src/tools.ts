@@ -52,6 +52,10 @@ export function createTenkiToolkit(sandbox: TenkiSandbox): Toolkit {
     parameters: z.object({
       publicKey: z
         .string()
+        .refine(
+          (value) => value.trim().length > 0 && !/[\r\n]/.test(value),
+          "publicKey must be a non-empty, single-line authorized_keys entry",
+        )
         .describe("SSH public key in authorized_keys format (e.g. 'ssh-ed25519 AAAA... user')"),
     }),
     outputSchema: z.object({

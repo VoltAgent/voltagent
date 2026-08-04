@@ -50,6 +50,12 @@ type HandleOptions = {
   killThrowsWith?: unknown;
   rejectWith?: unknown;
   errorStdout?: boolean;
+  /**
+   * Deliver this many stdout chunks over the stream, then kill it with a
+   * transport error. The resolved result still carries the full aggregate, so
+   * this models a mid-stream failure that loses bytes only on the stream.
+   */
+  errorStdoutAfter?: number;
 };
 
 const makeHandle = (options: HandleOptions = {}) => {
@@ -68,6 +74,7 @@ const makeHandle = (options: HandleOptions = {}) => {
     killThrowsWith,
     rejectWith,
     errorStdout = false,
+    errorStdoutAfter,
   } = options;
 
   let stdoutCtl!: ReadableStreamDefaultController<Uint8Array>;
@@ -89,9 +96,12 @@ const makeHandle = (options: HandleOptions = {}) => {
       stderrCtl = controller;
     },
   });
-  for (const chunk of stdout) {
+  stdout.forEach((chunk, index) => {
+    if (errorStdoutAfter !== undefined && index >= errorStdoutAfter) {
+      return;
+    }
     stdoutCtl.enqueue(typeof chunk === "string" ? enc.encode(chunk) : chunk);
-  }
+  });
   for (const chunk of stderr) {
     stderrCtl.enqueue(typeof chunk === "string" ? enc.encode(chunk) : chunk);
   }
@@ -121,13 +131,30 @@ const makeHandle = (options: HandleOptions = {}) => {
     }
   };
 
+  // Kill the stream only once the pump has drained what was enqueued —
+  // `controller.error()` discards a queued chunk, which would leave the buffer
+  // empty and mask the partial-read the test is after.
+  const failStdoutAfterDrain = () => {
+    setTimeout(() => {
+      try {
+        stdoutCtl.error(new Error("stream boom"));
+      } catch {
+        // controller may already be closed
+      }
+    }, 0);
+  };
+
   if (rejectWith !== undefined) {
     safeClose(stdoutCtl);
     safeClose(stderrCtl);
     rejectResult(rejectWith);
   } else if (!hangUntilKill) {
     if (!keepStreamsOpen) {
-      safeClose(stdoutCtl);
+      if (errorStdoutAfter === undefined) {
+        safeClose(stdoutCtl);
+      } else {
+        failStdoutAfterDrain();
+      }
       safeClose(stderrCtl);
     }
     resolveResult(result);
@@ -411,6 +438,23 @@ describe("TenkiSandbox.execute", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("side");
+  });
+
+  // A transport failure part-way through leaves the pump holding a prefix of
+  // the output. Preferring it would silently drop the rest with `truncated`
+  // unset, so the completed run's aggregate wins instead.
+  it("prefers the run's aggregate stdout when the stream dies mid-read", async () => {
+    const session = makeSession({
+      run: vi.fn(() =>
+        makeHandle({ stdout: ["first ", "second"], errorStdoutAfter: 1, exitCode: 0 }),
+      ),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+
+    const result = await sandbox.execute({ command: "flaky" });
+
+    expect(result.stdout).toBe("first second");
+    expect(result.stdoutTruncated).toBe(false);
   });
 
   it("returns an aborted result when the signal is already aborted", async () => {
@@ -714,6 +758,51 @@ describe("TenkiSandbox.execute", () => {
     expect(result.exitCode).toBeNull();
     expect(session.resume).toHaveBeenCalledOnce();
     expect(session.run).not.toHaveBeenCalled();
+  });
+
+  // Tenki's resume RPC carries no client-side deadline, so a caller that walked
+  // away on its own timeout must not leave its abandoned transition pinned at
+  // the head of the lifecycle queue — every later transition would wait on it.
+  it("releases the lifecycle queue when a canceled execute abandons its resume", async () => {
+    const session = makeSession({
+      resume: vi.fn(() => new Promise<void>(() => {})),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+    await sandbox.stop();
+
+    const result = await settlesWithin(sandbox.execute({ command: "sleep 100", timeoutMs: 10 }));
+    expect(result.timedOut).toBe(true);
+
+    // The abandoned resume is still in flight; these must not queue behind it.
+    await expect(settlesWithin(sandbox.stop())).resolves.toBeUndefined();
+    await expect(settlesWithin(sandbox.destroy())).resolves.toBeUndefined();
+  });
+
+  it("ignores an abandoned resume that lands after a later transition", async () => {
+    let releaseResume!: () => void;
+    const session = makeSession({
+      resume: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            releaseResume = resolve;
+          }),
+      ),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+    await sandbox.stop();
+    expect(sandbox.status).toBe("idle");
+
+    const result = await settlesWithin(sandbox.execute({ command: "sleep 100", timeoutMs: 10 }));
+    expect(result.timedOut).toBe(true);
+
+    // A later transition runs to completion while the resume is still pending.
+    await settlesWithin(sandbox.stop());
+
+    // The straggler must not flip the sandbox back to ready behind its back.
+    releaseResume();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(sandbox.status).toBe("idle");
   });
 });
 

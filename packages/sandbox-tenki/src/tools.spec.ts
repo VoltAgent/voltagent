@@ -6,21 +6,23 @@ type PreviewParameters = {
   safeParse: (input: unknown) => { success: boolean };
 };
 
-const getPreviewParameters = (): PreviewParameters => {
+const getToolParameters = (name: string): PreviewParameters => {
   const sandbox = {
     getSandbox: vi.fn(),
     authorizeSshKey: vi.fn(),
   } as unknown as TenkiSandbox;
-  const previewTool = createTenkiToolkit(sandbox).tools.find(
-    (tool) => (tool as { name?: string }).name === "expose_preview_url",
+  const tool = createTenkiToolkit(sandbox).tools.find(
+    (candidate) => (candidate as { name?: string }).name === name,
   );
 
-  if (!previewTool) {
-    throw new Error("expose_preview_url tool not found");
+  if (!tool) {
+    throw new Error(`${name} tool not found`);
   }
 
-  return (previewTool as { parameters: PreviewParameters }).parameters;
+  return (tool as { parameters: PreviewParameters }).parameters;
 };
+
+const getPreviewParameters = (): PreviewParameters => getToolParameters("expose_preview_url");
 
 describe("createTenkiToolkit preview input schema", () => {
   it.each([1, 65535])("accepts boundary port %s", (port) => {
@@ -40,5 +42,27 @@ describe("createTenkiToolkit preview input schema", () => {
 
   it.each([0, -1, 1.5])("rejects invalid TTL %s", (ttlMs) => {
     expect(getPreviewParameters().safeParse({ port: 3000, ttlMs }).success).toBe(false);
+  });
+});
+
+describe("createTenkiToolkit ssh input schema", () => {
+  const getSshParameters = () => getToolParameters("authorize_ssh_key");
+
+  it("accepts a single-line authorized_keys entry", () => {
+    expect(
+      getSshParameters().safeParse({ publicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1 user@host" }).success,
+    ).toBe(true);
+  });
+
+  // The value is forwarded verbatim into the authorized_keys set, where a blank
+  // entry is meaningless and an embedded newline would author a second key.
+  it.each([
+    ["empty", ""],
+    ["whitespace only", "   "],
+    ["newline only", "\n"],
+    ["two keys on separate lines", "ssh-ed25519 AAAA a\nssh-ed25519 BBBB b"],
+    ["a trailing CRLF line", "ssh-ed25519 AAAA a\r\nssh-ed25519 BBBB b"],
+  ])("rejects %s", (_label, publicKey) => {
+    expect(getSshParameters().safeParse({ publicKey }).success).toBe(false);
   });
 });

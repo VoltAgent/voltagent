@@ -37,6 +37,18 @@ import {
 export type TenkiSandboxInstance = Session;
 
 /**
+ * Resolve once `signal` aborts. Used to release the lifecycle queue when a
+ * caller stops waiting on its own transition; the listener is dropped as soon
+ * as it fires, and an already-aborted signal resolves immediately.
+ */
+const abortedPromise = (signal: AbortSignal): Promise<void> =>
+  signal.aborted
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        signal.addEventListener("abort", () => resolve(), { once: true });
+      });
+
+/**
  * Public constructor options for {@link TenkiSandbox}.
  *
  * The adapter only relies on Tenki's create/exec/close + preview + SSH surface;
@@ -159,8 +171,22 @@ export class TenkiSandbox implements WorkspaceSandbox {
    * Serializes pause/resume RPCs so concurrent lifecycle callers observe one
    * transition at a time. The chain itself always resolves; the promise
    * returned to a caller still carries that caller's transition failure.
+   *
+   * The one case where a transition does not hold the chain to completion is a
+   * caller that cancels: it releases its slot at that point, so an RPC with no
+   * deadline cannot wedge the queue. See {@link serializeLifecycleTransition}.
    */
   private lifecycleTransition: Promise<void> = Promise.resolve();
+
+  /**
+   * Monotonic id handed to each lifecycle transition as it starts running.
+   * A transition whose caller gave up (see {@link serializeLifecycleTransition})
+   * releases the queue while its RPC is still in flight, so it can still settle
+   * after a later transition has already moved the sandbox. Comparing the token
+   * it was issued against the current value tells such a straggler that it no
+   * longer owns the state and must not write it back.
+   */
+  private lifecycleToken = 0;
 
   /**
    * SSH keys successfully applied via {@link authorizeSshKey}. Tenki's
@@ -349,8 +375,8 @@ export class TenkiSandbox implements WorkspaceSandbox {
    * Resume the microVM when a previous {@link stop} paused it, returning the
    * sandbox to `ready` so commands can run again. No-op otherwise.
    */
-  private async resumeIfPaused(session: Session): Promise<void> {
-    return this.serializeLifecycleTransition(async () => {
+  private async resumeIfPaused(session: Session, signal?: AbortSignal): Promise<void> {
+    return this.serializeLifecycleTransition(async (token) => {
       if (this.status === "destroyed" || this.session !== session) {
         throw new Error("Sandbox has been destroyed");
       }
@@ -367,17 +393,46 @@ export class TenkiSandbox implements WorkspaceSandbox {
       if (generation !== this.generation || this.session !== session) {
         throw new Error("Sandbox has been destroyed");
       }
+      // An abandoned transition can land after a later one already ran; the
+      // newest transition owns the state. Leaving `paused` set is the safe
+      // direction — the next caller re-issues resume rather than trusting a
+      // sandbox this one no longer speaks for.
+      if (token !== this.lifecycleToken) {
+        return;
+      }
       this.paused = false;
       this.status = "ready";
-    });
+    }, signal);
   }
 
-  private serializeLifecycleTransition(operation: () => Promise<void>): Promise<void> {
-    const transition = this.lifecycleTransition.then(operation, operation);
-    this.lifecycleTransition = transition.then(
+  /**
+   * Queue `operation` behind any lifecycle transition already in flight.
+   *
+   * When the caller supplies a `signal`, the queue is released as soon as that
+   * signal aborts rather than only when the operation settles. Tenki's
+   * pause/resume RPCs carry no client-side deadline, so without this a caller
+   * that walked away on its own timeout — `execute()` racing cancellation —
+   * would leave its abandoned transition pinned at the head of the queue and
+   * every later lifecycle operation would wait on it indefinitely. The
+   * abandoned RPC still runs to completion in the background; its `token` guard
+   * keeps it from writing state that a subsequent transition now owns.
+   */
+  private serializeLifecycleTransition(
+    operation: (token: number) => Promise<void>,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    // The token is issued when the operation actually starts, not when it is
+    // queued, so it orders transitions by execution rather than arrival.
+    const run = () => {
+      this.lifecycleToken += 1;
+      return operation(this.lifecycleToken);
+    };
+    const transition = this.lifecycleTransition.then(run, run);
+    const settled = transition.then(
       () => undefined,
       () => undefined,
     );
+    this.lifecycleTransition = signal ? Promise.race([settled, abortedPromise(signal)]) : settled;
     return transition;
   }
 
@@ -409,7 +464,7 @@ export class TenkiSandbox implements WorkspaceSandbox {
       return;
     }
 
-    await this.serializeLifecycleTransition(async () => {
+    await this.serializeLifecycleTransition(async (token) => {
       // Destroy supersedes a queued/in-flight stop and owns session teardown.
       if (this.status === "destroyed" || this.session !== session || this.paused) {
         return;
@@ -417,7 +472,11 @@ export class TenkiSandbox implements WorkspaceSandbox {
 
       const generation = this.generation;
       await session.pause();
-      if (generation !== this.generation || this.session !== session) {
+      if (
+        generation !== this.generation ||
+        this.session !== session ||
+        token !== this.lifecycleToken
+      ) {
         return;
       }
       this.paused = true;
@@ -574,7 +633,13 @@ export class TenkiSandbox implements WorkspaceSandbox {
         }
       }
     } catch {
-      // ignore stream errors; result bytes are used as a fallback
+      // Ignore stream errors, but record that this buffer stopped short of
+      // end-of-stream so `resolveOutput` can prefer the run's aggregate bytes
+      // instead of returning a silently truncated prefix. A canceled read is a
+      // deliberate stop, not a transport failure, so it does not count.
+      if (!canceled) {
+        buffer.failed = true;
+      }
     } finally {
       // Flush any bytes the decoder is still holding for a partial code point.
       if (decoder) {
@@ -731,7 +796,9 @@ export class TenkiSandbox implements WorkspaceSandbox {
       // does not exist yet, so `requestKill()` would have nothing to kill. This
       // is the only await left between the guards and `session.run()`; the
       // `runOptions` build below is synchronous.
-      const resumed = await raceCancellation(this.resumeIfPaused(session));
+      const resumed = await raceCancellation(
+        this.resumeIfPaused(session, cancellationController.signal),
+      );
       if (resumed === cancellationMarker) {
         return cancellationResult();
       }
