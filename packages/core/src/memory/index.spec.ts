@@ -70,13 +70,14 @@ describe("Memory conversation mutation guards", () => {
     };
     const getMessagesSpy = vi.spyOn(storage, "getMessages").mockResolvedValueOnce([secretMessage]);
     const deleteBatchSpy = vi.spyOn(vector, "deleteBatch");
-    vi.spyOn(storage, "deleteConversation").mockRejectedValueOnce(deleteError);
+    const deleteSpy = vi.spyOn(storage, "deleteConversation").mockRejectedValueOnce(deleteError);
 
     await expect(memory.deleteConversation("conv-1", { expectedUserId: "user-1" })).rejects.toThrow(
       deleteError,
     );
 
     expect(getSpy).toHaveBeenCalledTimes(1);
+    expect(deleteSpy).toHaveBeenCalledWith("conv-1", { expectedUserId: "user-1" });
     expect(getMessagesSpy).not.toHaveBeenCalled();
     expect(deleteBatchSpy).not.toHaveBeenCalled();
   });
