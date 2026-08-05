@@ -4374,7 +4374,7 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^2.8.1
+        specifier: ^2.9.1
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
