@@ -4,6 +4,8 @@
 "@voltagent/libsql": patch
 "@voltagent/postgres": patch
 "@voltagent/server-core": patch
+"@voltagent/server-elysia": patch
+"@voltagent/server-hono": patch
 "@voltagent/supabase": patch
 "@voltagent/voltagent-memory": patch
 ---

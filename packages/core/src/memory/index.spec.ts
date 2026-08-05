@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryStorageAdapter } from "./adapters/storage/in-memory";
 import { InMemoryVectorAdapter } from "./adapters/vector/in-memory";
@@ -61,14 +62,13 @@ describe("Memory conversation mutation guards", () => {
       .spyOn(storage, "getConversation")
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(replacementConversation);
-    const getMessagesSpy = vi.spyOn(storage, "getMessages").mockResolvedValueOnce([
-      {
-        id: "msg-1",
-        role: "user",
-        parts: [{ type: "text", text: "secret" }],
-        metadata: { createdAt: new Date() },
-      } as any,
-    ]);
+    const secretMessage: UIMessage<{ createdAt: Date }> = {
+      id: "msg-1",
+      role: "user",
+      parts: [{ type: "text", text: "secret" }],
+      metadata: { createdAt: new Date() },
+    };
+    const getMessagesSpy = vi.spyOn(storage, "getMessages").mockResolvedValueOnce([secretMessage]);
     const deleteBatchSpy = vi.spyOn(vector, "deleteBatch");
     vi.spyOn(storage, "deleteConversation").mockRejectedValueOnce(deleteError);
 
