@@ -8,10 +8,8 @@ interface PromptBridgeArgs {
   staticPrompts?: MCPStaticPromptConfig[];
 }
 
-type PromptKey = `${string}::${string | ""}`;
-
 export class PromptBridge {
-  private readonly staticEntries = new Map<PromptKey, MCPStaticPromptConfig>();
+  private readonly staticEntries = new Map<string, MCPStaticPromptConfig>();
   private readonly staticPromptDescriptors: Prompt[] = [];
   private adapter?: MCPPromptsAdapter;
   private logger?: Logger;
@@ -22,9 +20,8 @@ export class PromptBridge {
 
   constructor(args: PromptBridgeArgs = {}) {
     for (const entry of args.staticPrompts ?? []) {
-      const key = this.toKey(entry.name, undefined);
-      if (!this.staticEntries.has(key)) {
-        this.staticEntries.set(key, entry);
+      if (!this.staticEntries.has(entry.name)) {
+        this.staticEntries.set(entry.name, entry);
         this.staticPromptDescriptors.push(this.toPromptDescriptor(entry));
       }
     }
@@ -45,18 +42,16 @@ export class PromptBridge {
   }
 
   async listPrompts(): Promise<Prompt[]> {
-    const merged = new Map<PromptKey, Prompt>();
+    const merged = new Map<string, Prompt>();
 
     for (const prompt of this.staticPromptDescriptors) {
-      const version = typeof prompt.version === "string" ? prompt.version : undefined;
-      merged.set(this.toKey(prompt.name, version), prompt);
+      merged.set(prompt.name, prompt);
     }
 
     if (this.adapter) {
       const dynamic = await this.ensureDynamicPromptCache();
       for (const prompt of dynamic) {
-        const version = typeof prompt.version === "string" ? prompt.version : undefined;
-        merged.set(this.toKey(prompt.name, version), prompt);
+        merged.set(prompt.name, prompt);
       }
     }
 
@@ -64,18 +59,10 @@ export class PromptBridge {
   }
 
   async getPrompt(params: GetPromptRequest["params"]): Promise<GetPromptResult> {
-    const key = this.toKey(
-      params.name,
-      typeof params.version === "string" ? params.version : undefined,
-    );
-
-    const staticConfig =
-      this.staticEntries.get(key) ?? this.staticEntries.get(this.toKey(params.name, undefined));
+    const staticConfig = this.staticEntries.get(params.name);
     if (!this.adapter || !this.adapter.getPrompt) {
       if (!staticConfig) {
-        throw new Error(
-          `Prompt '${params.name}'${params.version ? ` (version ${params.version})` : ""} not found`,
-        );
+        throw new Error(`Prompt '${params.name}' not found`);
       }
       return {
         description: staticConfig.description,
@@ -89,7 +76,6 @@ export class PromptBridge {
     } catch (error) {
       this.logger?.warn?.("Failed to resolve prompt via adapter; falling back to static prompts", {
         promptName: params.name,
-        promptVersion: params.version,
         error: error instanceof Error ? error.message : error,
       });
 
@@ -113,14 +99,8 @@ export class PromptBridge {
     return {
       name: config.name,
       description: config.description,
-      version: undefined,
       arguments: [],
-      messages: config.messages,
     };
-  }
-
-  private toKey(name: string, version?: string): PromptKey {
-    return `${name}::${version ?? ""}`;
   }
 
   private async ensureDynamicPromptCache(): Promise<Prompt[]> {

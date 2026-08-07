@@ -91,6 +91,31 @@ describe("Tool", () => {
       expect(tool.hooks?.onEnd).toBe(onEnd);
     });
 
+    it("should keep MCP properties when provided", () => {
+      const mcp = {
+        annotations: {
+          title: "Read weather",
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: true,
+        },
+        _meta: {
+          securitySchemes: [{ type: "oauth2", scopes: ["weather:read"] }],
+        },
+      };
+
+      const tool = createTool({
+        name: "weather",
+        description: "Read the weather",
+        parameters: z.object({ city: z.string() }),
+        mcp,
+        execute: vi.fn(),
+      });
+
+      expect(tool.mcp).toBe(mcp);
+    });
+
     it("should throw error if name is missing", () => {
       const options = {
         parameters: z.object({}),

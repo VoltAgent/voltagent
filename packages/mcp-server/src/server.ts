@@ -64,7 +64,9 @@ import type {
   MCPServerPackageInfo,
   MCPServerRemoteInfo,
   MCPServerSSERequestOptions,
+  MCPStartHTTPRequestOptions,
   MCPStreamableHTTPRequestOptions,
+  MCPStreamableHTTPTransportOptions,
   MCPToolMetadata,
   MCPToolOrigin,
   MCPWorkflowConfigEntry,
@@ -399,10 +401,20 @@ export class MCPServer {
     return transport;
   }
 
+  /**
+   * Handles a Streamable HTTP request with stateless deployment controls.
+   *
+   * Use `options.serverless: true` for stateless deployments. The existing
+   * `handleStreamableHttpRequest` method remains available for compatibility.
+   */
+  public async startHTTP(options: MCPStartHTTPRequestOptions): Promise<void> {
+    await this.handleStreamableHttpRequest(options);
+  }
+
   public async handleStreamableHttpRequest(
-    options: MCPStreamableHTTPRequestOptions,
+    request: MCPStreamableHTTPRequestOptions,
   ): Promise<void> {
-    const { url, httpPath, req, res, transportOptions, contextOverrides } = options;
+    const { url, httpPath, req, res, options, transportOptions, contextOverrides } = request;
 
     if (url.pathname !== httpPath) {
       this.writeJsonResponse(res, 404, { error: "Unknown MCP HTTP route" });
@@ -410,6 +422,28 @@ export class MCPServer {
     }
 
     try {
+      const mergedTransportOptions: MCPStreamableHTTPTransportOptions = {
+        ...(this.config.httpTransportOptions ?? {}),
+        ...(transportOptions ?? {}),
+        ...(options ?? {}),
+      };
+      const sessionsExplicitlyDisabled =
+        Object.prototype.hasOwnProperty.call(mergedTransportOptions, "sessionIdGenerator") &&
+        mergedTransportOptions.sessionIdGenerator === undefined;
+
+      if (mergedTransportOptions.serverless || sessionsExplicitlyDisabled) {
+        const enableJsonResponse =
+          mergedTransportOptions.enableJsonResponse ?? !mergedTransportOptions.serverlessStreaming;
+        await this.handleStatelessStreamableHttpRequest({
+          req,
+          res,
+          transportOptions: mergedTransportOptions,
+          contextOverrides,
+          enableJsonResponse,
+        });
+        return;
+      }
+
       const sessionId = this.extractSessionId(url, req);
 
       if (sessionId && this.httpTransports.has(sessionId)) {
@@ -444,7 +478,7 @@ export class MCPServer {
 
       const httpOptions: StreamableHTTPServerTransportOptions = {
         sessionIdGenerator: () => randomUUID(),
-        ...(transportOptions ?? {}),
+        ...mergedTransportOptions,
         onsessioninitialized: async (id) => {
           if (!serverInstance) {
             return;
@@ -482,6 +516,27 @@ export class MCPServer {
       }
       throw error;
     }
+  }
+
+  private async handleStatelessStreamableHttpRequest(options: {
+    req: http.IncomingMessage;
+    res: http.ServerResponse<http.IncomingMessage>;
+    transportOptions: MCPStreamableHTTPTransportOptions;
+    contextOverrides?: Partial<Omit<FilterContext, "transport">>;
+    enableJsonResponse: boolean;
+  }): Promise<void> {
+    const { req, res, transportOptions, contextOverrides, enableJsonResponse } = options;
+    const body = req.method === "POST" ? await this.parseJsonBody(req) : undefined;
+    const transport = new StreamableHTTPServerTransport({
+      ...transportOptions,
+      sessionIdGenerator: undefined,
+      enableJsonResponse,
+    });
+    const context = this.createFilterContext("http", contextOverrides ?? {});
+    const serverInstance = this.createServerForContext(context);
+
+    await serverInstance.connect(transport);
+    await transport.handleRequest(req, res, body);
   }
 
   public async handleSseRequest(options: MCPServerSSERequestOptions): Promise<void> {
@@ -1010,12 +1065,6 @@ export class MCPServer {
         subscribe: this.resourceBridge.supportsNotifications,
         listChanged: this.resourceBridge.supportsNotifications,
       };
-    }
-
-    if (this.capabilityConfig.elicitation) {
-      capabilities.elicitation = {};
-      // Elicitation requests are handled by the MCP SDK by calling server.elicitInput.
-      // We expose the adapter for future use when bridging to VoltAgent components.
     }
 
     serverInstance.registerCapabilities(capabilities);
