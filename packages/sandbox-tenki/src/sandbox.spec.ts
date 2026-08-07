@@ -56,6 +56,10 @@ type HandleOptions = {
    * this models a mid-stream failure that loses bytes only on the stream.
    */
   errorStdoutAfter?: number;
+  /** Error the stdout stream after its chunks were delivered (mid-read death). */
+  errorStdoutMidStream?: boolean;
+  /** Override the aggregate stdout bytes on the resolved result. */
+  resultStdout?: string;
 };
 
 const makeHandle = (options: HandleOptions = {}) => {
@@ -75,6 +79,8 @@ const makeHandle = (options: HandleOptions = {}) => {
     rejectWith,
     errorStdout = false,
     errorStdoutAfter,
+    errorStdoutMidStream = false,
+    resultStdout,
   } = options;
 
   let stdoutCtl!: ReadableStreamDefaultController<Uint8Array>;
@@ -112,7 +118,7 @@ const makeHandle = (options: HandleOptions = {}) => {
     durationMs,
     reason,
     errno,
-    stdout: concat(stdout),
+    stdout: resultStdout !== undefined ? enc.encode(resultStdout) : concat(stdout),
     stderr: concat(stderr),
   };
 
@@ -149,7 +155,12 @@ const makeHandle = (options: HandleOptions = {}) => {
     safeClose(stderrCtl);
     rejectResult(rejectWith);
   } else if (!hangUntilKill) {
-    if (!keepStreamsOpen) {
+    if (errorStdoutMidStream) {
+      // Erroring synchronously would discard the queued chunks; defer it a
+      // macrotask so the pump consumes them first, then hits the error.
+      setTimeout(() => stdoutCtl.error(new Error("stream died mid-read")), 0);
+      safeClose(stderrCtl);
+    } else if (!keepStreamsOpen) {
       if (errorStdoutAfter === undefined) {
         safeClose(stdoutCtl);
       } else {
@@ -179,17 +190,9 @@ const makeHandle = (options: HandleOptions = {}) => {
           }
         });
 
-  const writeSpy = vi.fn();
-  const stdin = new WritableStream<Uint8Array>({
-    write(chunk) {
-      writeSpy(chunk);
-    },
-  });
-
   return {
     stdout: stdoutStream,
     stderr: stderrStream,
-    stdin,
     pid: Promise.resolve(1),
     signal: vi.fn(async () => {}),
     kill,
@@ -200,7 +203,6 @@ const makeHandle = (options: HandleOptions = {}) => {
     ) {
       return resultPromise.then(onfulfilled, onrejected);
     },
-    _writeSpy: writeSpy,
     _rejectResult: rejectResult,
   };
 };
@@ -238,7 +240,10 @@ const makeSession = (overrides: Record<string, unknown> = {}) => {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  // Reset implementations too (not just call history): tests install
+  // per-test `mocks.createAndWait` behaviors (e.g. never-resolving promises)
+  // that must not leak into later tests.
+  vi.resetAllMocks();
 });
 
 afterEach(() => {
@@ -455,6 +460,45 @@ describe("TenkiSandbox.execute", () => {
 
     expect(result.stdout).toBe("first second");
     expect(result.stdoutTruncated).toBe(false);
+  });
+
+  it("falls back to the aggregate output when a stream dies mid-read", async () => {
+    // The pump captured only "par" before the transport failed; the resolved
+    // run's aggregate bytes are complete and must win over the partial buffer.
+    const session = makeSession({
+      run: vi.fn(() =>
+        makeHandle({
+          stdout: ["par"],
+          resultStdout: "partial output\n",
+          errorStdoutMidStream: true,
+        }),
+      ),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+
+    const result = await sandbox.execute({ command: "flaky" });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("partial output\n");
+    expect(result.stdoutTruncated).toBe(false);
+  });
+
+  it("applies the byte cap to the aggregate fallback after a mid-read failure", async () => {
+    const session = makeSession({
+      run: vi.fn(() =>
+        makeHandle({
+          stdout: ["par"],
+          resultStdout: "partial output\n",
+          errorStdoutMidStream: true,
+        }),
+      ),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+
+    const result = await sandbox.execute({ command: "flaky", maxOutputBytes: 7 });
+
+    expect(result.stdout).toBe("partial");
+    expect(result.stdoutTruncated).toBe(true);
   });
 
   it("returns an aborted result when the signal is already aborted", async () => {
@@ -803,6 +847,43 @@ describe("TenkiSandbox.execute", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(sandbox.status).toBe("idle");
+  });
+
+  it("bounds a hung resume RPC and skips queued resumes whose executes were canceled", async () => {
+    // A resume RPC with no transport deadline must not wedge the lifecycle
+    // queue: the first execute times out and releases its slot, the second
+    // (already canceled) transition bails out without issuing its own resume,
+    // and once the bounded wait expires the queue is usable again.
+    vi.useFakeTimers();
+    const session = makeSession({
+      state: "PAUSED",
+      resume: vi.fn(() => new Promise<void>(() => {})),
+    });
+    const sandbox = new TenkiSandbox({ session: session as never });
+
+    const first = sandbox.execute({ command: "a", timeoutMs: 10 });
+    const controller = new AbortController();
+    const second = sandbox.execute({ command: "b", signal: controller.signal });
+    // The second caller walks away before its queued transition can run.
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(10);
+    const [firstResult, secondResult] = await Promise.all([first, second]);
+
+    expect(firstResult.timedOut).toBe(true);
+    expect(secondResult.aborted).toBe(true);
+    expect(session.resume).toHaveBeenCalledOnce();
+
+    // Expire the bounded wait: the hung transition rejects, the abandoned one
+    // skips its RPC (still exactly one resume call), and a fresh execute can
+    // resume and run.
+    await vi.advanceTimersByTimeAsync(180_000);
+    expect(session.resume).toHaveBeenCalledOnce();
+
+    session.resume.mockImplementation(async () => {});
+    const result = await sandbox.execute({ command: "c" });
+    expect(result.stdout).toBe("ok\n");
+    expect(session.resume).toHaveBeenCalledTimes(2);
+    expect(session.run).toHaveBeenCalledOnce();
   });
 });
 

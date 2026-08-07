@@ -325,6 +325,30 @@ export const appendRunDiagnostic = (stderr: string, diagnostic?: string): string
 };
 
 /**
+ * Await `operation`, rejecting with `message` if it has not settled within
+ * `timeoutMs`. The operation itself is not (and cannot be) canceled — this
+ * bounds how long a caller waits on it, and the race keeps a late settlement
+ * observed. The deadline timer is unref'd where the runtime supports it so a
+ * never-settling operation does not keep the process alive.
+ */
+export const resolveWithin = async <T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    timeoutId.unref?.();
+  });
+  try {
+    return await Promise.race([operation, deadline]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+/**
  * Is this the SDK's per-command timeout error?
  */
 export const isCommandTimeoutError = (error: unknown): boolean =>

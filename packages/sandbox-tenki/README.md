@@ -104,7 +104,7 @@ Tenki sessions are billed resources — call `sandbox.destroy()` (or `workspace.
 
 Tenki reports a fork/exec/wait failure as a _completed_ run carrying an `errno` (`ENOENT`, `EACCES`, `EMFILE`, …) rather than as an error, and the process itself never writes anything — so an exit code alone cannot tell "command not found" from "ran and failed silently". `WorkspaceSandboxResult` has no field for that errno, so the adapter appends it to `stderr` as a single line:
 
-```
+```text
 tenki: exec failed: ENOENT (errno 2), reason=exec_failed
 ```
 

@@ -3,7 +3,7 @@
   "description": "VoltAgent Tenki sandbox provider",
   "version": "2.0.0",
   "dependencies": {
-    "@tenkicloud/sandbox": "^0.5.1"
+    "@tenkicloud/sandbox": "^0.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
