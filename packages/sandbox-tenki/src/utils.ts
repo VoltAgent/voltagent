@@ -37,8 +37,10 @@ export type OutputBuffer = {
   size: number;
   truncated: boolean;
   /**
-   * The pump reading into this buffer died mid-stream, so the buffered bytes
-   * may be silently short of what the process actually wrote.
+   * Set when the pump feeding this buffer died on a stream error rather than
+   * reaching end-of-stream. The bytes collected so far are then only a prefix
+   * of the real output, so {@link resolveOutput} prefers the completed run's
+   * aggregate instead of silently returning the short read.
    */
   failed: boolean;
 };
@@ -153,22 +155,28 @@ export const truncateOutput = (
 /**
  * Resolve the final output for a stream: prefer the streamed buffer when we
  * captured anything, otherwise fall back to the aggregated bytes on the result.
- * A buffer whose pump failed mid-stream may be silently short, so when the run
- * resolved (its aggregate output is complete) the aggregate wins instead.
+ *
+ * A pump that died mid-stream is the exception. Its buffer holds a prefix of
+ * the real output, so preferring it would hand back silently truncated content
+ * with `truncated` unset; the completed run's aggregate is the more complete
+ * source and wins. When there is no aggregate to fall back on, the partial
+ * bytes are kept but flagged as truncated so the loss is visible. Byte-limit
+ * truncation still applies to whichever source is used.
  */
 export const resolveOutput = (
   buffer: OutputBuffer,
   fallback: string | undefined,
   maxBytes: number,
 ): { content: string; truncated: boolean } => {
-  if (buffer.failed && fallback !== undefined) {
-    return truncateOutput(fallback, maxBytes);
+  if (buffer.failed && fallback) {
+    const resolved = truncateOutput(fallback, maxBytes);
+    return { content: resolved.content, truncated: resolved.truncated || buffer.truncated };
   }
   if (buffer.size > 0 || buffer.truncated) {
-    return { content: toOutputString(buffer), truncated: buffer.truncated };
+    return { content: toOutputString(buffer), truncated: buffer.truncated || buffer.failed };
   }
   if (!fallback) {
-    return { content: "", truncated: false };
+    return { content: "", truncated: buffer.failed };
   }
   return truncateOutput(fallback, maxBytes);
 };
@@ -274,10 +282,10 @@ export const formatRunDiagnostic = (result: unknown): string | undefined => {
   // `errno` is a non-optional proto scalar, so it arrives as 0 (not absent)
   // whenever the guest agent has nothing to report.
   const errno = typeof record.errno === "number" && record.errno !== 0 ? record.errno : undefined;
-  // `reason` is free-form guest-agent text folded into a single stderr line;
-  // collapse CR/LF so one diagnostic cannot inject extra lines.
+  // The diagnostic is documented as a single line and is folded into stderr,
+  // so a multi-line guest-agent `reason` must not smuggle in line breaks.
   const rawReason =
-    typeof record.reason === "string" ? record.reason.replace(/[\r\n]+/g, " ").trim() : "";
+    typeof record.reason === "string" ? record.reason.replace(/\s*[\r\n]+\s*/g, " ").trim() : "";
   const reason = BENIGN_RUN_REASONS.has(rawReason.toLowerCase())
     ? undefined
     : rawReason || undefined;

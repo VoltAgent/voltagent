@@ -115,6 +115,35 @@ describe("OutputBuffer", () => {
     expect(resolved.content).toBe("fallback");
   });
 
+  // A pump that died mid-stream holds only a prefix of the real output, so the
+  // completed run's aggregate is the more complete source.
+  it("prefers the aggregate when the pump failed mid-stream", () => {
+    const buffer = initOutputBuffer();
+    appendOutput(buffer, "partial", 100);
+    buffer.failed = true;
+    expect(resolveOutput(buffer, "partial output, complete", 100)).toEqual({
+      content: "partial output, complete",
+      truncated: false,
+    });
+  });
+
+  it("still applies the byte cap to the aggregate after a failed pump", () => {
+    const buffer = initOutputBuffer();
+    appendOutput(buffer, "par", 100);
+    buffer.failed = true;
+    expect(resolveOutput(buffer, "partial output", 3)).toEqual({ content: "par", truncated: true });
+  });
+
+  it("flags truncation when the pump failed and there is no aggregate", () => {
+    const buffer = initOutputBuffer();
+    appendOutput(buffer, "partial", 100);
+    buffer.failed = true;
+    expect(resolveOutput(buffer, undefined, 100)).toEqual({
+      content: "partial",
+      truncated: true,
+    });
+  });
+
   it("resolves to empty when every captured chunk was zero-length", () => {
     const buffer = initOutputBuffer();
     appendOutput(buffer, "", 100);
@@ -271,6 +300,20 @@ describe("formatRunDiagnostic", () => {
   it("surfaces an unrecognized reason when the run failed", () => {
     expect(formatRunDiagnostic({ exitCode: 137, errno: 0, reason: "oom_killed" })).toBe(
       "tenki: run ended: reason=oom_killed",
+    );
+  });
+
+  // The diagnostic is documented as one line and is folded into stderr, so a
+  // multi-line guest-agent reason must not break it across lines.
+  it("collapses a multiline reason into a single line", () => {
+    expect(
+      formatRunDiagnostic({ exitCode: 127, errno: 2, reason: "exec failed:\n  no such file\r\nx" }),
+    ).toBe("tenki: exec failed: ENOENT (errno 2), reason=exec failed: no such file x");
+  });
+
+  it("collapses a multiline reason with no errno", () => {
+    expect(formatRunDiagnostic({ exitCode: 137, errno: 0, reason: "oom\nkilled" })).toBe(
+      "tenki: run ended: reason=oom killed",
     );
   });
 

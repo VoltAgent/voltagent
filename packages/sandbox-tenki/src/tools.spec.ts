@@ -52,9 +52,12 @@ describe("createTenkiToolkit ssh key input schema", () => {
     ).toBe(true);
   });
 
+  // The value is forwarded verbatim into the authorized_keys set, where a blank
+  // entry is meaningless and an embedded newline would author a second key.
   it.each([
     ["empty", ""],
     ["whitespace-only", "   "],
+    ["newline-only", "\n"],
     ["multiline", "ssh-ed25519 AAAA\nssh-rsa BBBB"],
     ["carriage return", "ssh-ed25519 AAAA\r\n"],
   ])("rejects a %s public key", (_label, publicKey) => {
