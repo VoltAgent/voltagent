@@ -121,6 +121,11 @@ export interface MCPServerConfig {
   version: string;
   description?: string;
   protocols?: ProtocolConfig;
+  /**
+   * Default options for Streamable HTTP requests handled by this server.
+   * Request-level options passed to `handleStreamableHttpRequest` take precedence.
+   */
+  httpTransportOptions?: MCPStreamableHTTPTransportOptions;
   filterTools?: FilterFunction<VoltTool<any, any>>;
   filterAgents?: FilterFunction<Agent>;
   filterWorkflows?: FilterFunction<WorkflowSummary>;
@@ -164,14 +169,33 @@ export interface MCPListedTool {
   definition: MCPToolDefinition;
 }
 
+/**
+ * Streamable HTTP transport options with VoltAgent's stateless deployment controls.
+ *
+ * Set `serverless` to `true`, or explicitly set `sessionIdGenerator` to `undefined`,
+ * to handle every HTTP request with a fresh server and transport instance. Stateless
+ * mode defaults to JSON responses; set `serverlessStreaming` to `true` to use
+ * request-scoped SSE instead.
+ */
+export type MCPStreamableHTTPTransportOptions = Partial<StreamableHTTPServerTransportOptions> & {
+  serverless?: boolean;
+  serverlessStreaming?: boolean;
+};
+
 export interface MCPStreamableHTTPRequestOptions {
   url: URL;
   httpPath: string;
   req: http.IncomingMessage;
   res: http.ServerResponse<http.IncomingMessage>;
-  transportOptions?: StreamableHTTPServerTransportOptions;
+  /** Streamable HTTP transport and stateless deployment options. */
+  options?: MCPStreamableHTTPTransportOptions;
+  /** @deprecated Use `options` instead. */
+  transportOptions?: MCPStreamableHTTPTransportOptions;
   contextOverrides?: Partial<Omit<FilterContext, "transport">>;
 }
+
+/** Streamable HTTP request options for `startHTTP`. */
+export type MCPStartHTTPRequestOptions = Omit<MCPStreamableHTTPRequestOptions, "transportOptions">;
 
 export interface MCPServerSSERequestOptions {
   url: URL;
@@ -223,6 +247,7 @@ export interface MCPServerLike extends BaseMCPServerLike {
   close?(): Promise<void>;
   getMetadata?(): Partial<MCPServerMetadata> & { id?: string };
   hasProtocol?(name: keyof ProtocolConfig): boolean;
+  startHTTP?(options: MCPStartHTTPRequestOptions): Promise<void>;
   handleStreamableHttpRequest?(options: MCPStreamableHTTPRequestOptions): Promise<void>;
   handleSseRequest?(options: MCPServerSSERequestOptions): Promise<void>;
   listTools?(contextOverrides?: Partial<Omit<FilterContext, "transport">>): MCPListedTool[];

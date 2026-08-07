@@ -1,5 +1,11 @@
 # @voltagent/docs-mcp
 
+## 2.0.3
+
+### Patch Changes
+
+- [`d1dd2d9`](https://github.com/VoltAgent/voltagent/commit/d1dd2d9c4566beee0429d70e3fbb032c0351ceb6) Thanks [@omeraplak](https://github.com/omeraplak)! - Upgrade the official Model Context Protocol SDK to 1.30.0 and add stateless Streamable HTTP handling with `startHTTP`, `serverless`, and request-scoped streaming options.
+
 ## 2.0.2
 
 ### Patch Changes
