@@ -1,5 +1,5 @@
 import { CommandTimeoutError } from "@tenkicloud/sandbox";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_MAX_OUTPUT_BYTES,
   DEFAULT_TIMEOUT_MS,
@@ -13,6 +13,7 @@ import {
   isCommandTimeoutError,
   normalizeEnv,
   resolveOutput,
+  resolveWithin,
   stringToReadableStream,
   timedOutResult,
   truncateOutput,
@@ -135,6 +136,34 @@ describe("OutputBuffer", () => {
     // 0xF8 is not a valid UTF-8 lead byte in any length class.
     appendOutput(buffer, new Uint8Array([0x61, 0xf8]), 100);
     expect(resolveOutput(buffer, undefined, 100).content).toBe("a");
+  });
+
+  it("prefers the complete fallback over a buffer whose pump failed", () => {
+    const buffer = initOutputBuffer();
+    appendOutput(buffer, "par", 100);
+    buffer.failed = true;
+    // The partial streamed bytes are silently short; the resolved run's
+    // aggregate output is authoritative.
+    expect(resolveOutput(buffer, "partial output", 100)).toEqual({
+      content: "partial output",
+      truncated: false,
+    });
+  });
+
+  it("still truncates the fallback used for a failed pump", () => {
+    const buffer = initOutputBuffer();
+    buffer.failed = true;
+    expect(resolveOutput(buffer, "partial output", 7)).toEqual({
+      content: "partial",
+      truncated: true,
+    });
+  });
+
+  it("keeps the partial buffer when the pump failed but there is no fallback", () => {
+    const buffer = initOutputBuffer();
+    appendOutput(buffer, "par", 100);
+    buffer.failed = true;
+    expect(resolveOutput(buffer, undefined, 100).content).toBe("par");
   });
 });
 
@@ -264,6 +293,16 @@ describe("formatRunDiagnostic", () => {
     expect(formatRunDiagnostic("nope")).toBeUndefined();
     expect(formatRunDiagnostic({})).toBeUndefined();
   });
+
+  it("collapses newlines in a multiline reason to keep the diagnostic one line", () => {
+    expect(
+      formatRunDiagnostic({ exitCode: 1, errno: 0, reason: "disk\r\nfull\nretry later\n" }),
+    ).toBe("tenki: run ended: reason=disk full retry later");
+  });
+
+  it("treats a whitespace-and-newline-only reason as absent", () => {
+    expect(formatRunDiagnostic({ exitCode: 1, errno: 0, reason: " \r\n " })).toBeUndefined();
+  });
 });
 
 describe("appendRunDiagnostic", () => {
@@ -279,6 +318,42 @@ describe("appendRunDiagnostic", () => {
   it("appends after existing stderr without doubling newlines", () => {
     expect(appendRunDiagnostic("boom\n", "tenki: x")).toBe("boom\ntenki: x\n");
     expect(appendRunDiagnostic("boom", "tenki: x")).toBe("boom\ntenki: x\n");
+  });
+});
+
+describe("resolveWithin", () => {
+  it("resolves with the operation before the deadline", async () => {
+    await expect(resolveWithin(Promise.resolve("ok"), 1_000, "too slow")).resolves.toBe("ok");
+  });
+
+  it("propagates the operation's rejection", async () => {
+    await expect(
+      resolveWithin(Promise.reject(new Error("boom")), 1_000, "too slow"),
+    ).rejects.toThrow("boom");
+  });
+
+  it("rejects with the given message when the operation outlives the deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = resolveWithin(new Promise<never>(() => {}), 50, "too slow");
+      const assertion = expect(pending).rejects.toThrow("too slow");
+      await vi.advanceTimersByTimeAsync(50);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("tolerates timer handles without unref (browser-style timers)", async () => {
+    // Node's Timeout has unref(); a browser-style numeric handle does not.
+    const original = globalThis.setTimeout;
+    vi.stubGlobal("setTimeout", ((handler: () => void, ms?: number) =>
+      Number(original(handler, ms))) as never);
+    try {
+      await expect(resolveWithin(Promise.resolve("ok"), 1_000, "too slow")).resolves.toBe("ok");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

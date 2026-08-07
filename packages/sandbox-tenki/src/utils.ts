@@ -36,9 +36,19 @@ export type OutputBuffer = {
   chunks: Buffer[];
   size: number;
   truncated: boolean;
+  /**
+   * The pump reading into this buffer died mid-stream, so the buffered bytes
+   * may be silently short of what the process actually wrote.
+   */
+  failed: boolean;
 };
 
-export const initOutputBuffer = (): OutputBuffer => ({ chunks: [], size: 0, truncated: false });
+export const initOutputBuffer = (): OutputBuffer => ({
+  chunks: [],
+  size: 0,
+  truncated: false,
+  failed: false,
+});
 
 export const appendOutput = (buffer: OutputBuffer, chunk: unknown, maxBytes: number): void => {
   if (maxBytes <= 0) {
@@ -143,12 +153,17 @@ export const truncateOutput = (
 /**
  * Resolve the final output for a stream: prefer the streamed buffer when we
  * captured anything, otherwise fall back to the aggregated bytes on the result.
+ * A buffer whose pump failed mid-stream may be silently short, so when the run
+ * resolved (its aggregate output is complete) the aggregate wins instead.
  */
 export const resolveOutput = (
   buffer: OutputBuffer,
   fallback: string | undefined,
   maxBytes: number,
 ): { content: string; truncated: boolean } => {
+  if (buffer.failed && fallback !== undefined) {
+    return truncateOutput(fallback, maxBytes);
+  }
   if (buffer.size > 0 || buffer.truncated) {
     return { content: toOutputString(buffer), truncated: buffer.truncated };
   }
@@ -259,7 +274,10 @@ export const formatRunDiagnostic = (result: unknown): string | undefined => {
   // `errno` is a non-optional proto scalar, so it arrives as 0 (not absent)
   // whenever the guest agent has nothing to report.
   const errno = typeof record.errno === "number" && record.errno !== 0 ? record.errno : undefined;
-  const rawReason = typeof record.reason === "string" ? record.reason.trim() : "";
+  // `reason` is free-form guest-agent text folded into a single stderr line;
+  // collapse CR/LF so one diagnostic cannot inject extra lines.
+  const rawReason =
+    typeof record.reason === "string" ? record.reason.replace(/[\r\n]+/g, " ").trim() : "";
   const reason = BENIGN_RUN_REASONS.has(rawReason.toLowerCase())
     ? undefined
     : rawReason || undefined;
@@ -296,6 +314,30 @@ export const appendRunDiagnostic = (stderr: string, diagnostic?: string): string
     return `${diagnostic}\n`;
   }
   return stderr.endsWith("\n") ? `${stderr}${diagnostic}\n` : `${stderr}\n${diagnostic}\n`;
+};
+
+/**
+ * Await `operation`, rejecting with `message` if it has not settled within
+ * `timeoutMs`. The operation itself is not (and cannot be) canceled — this
+ * bounds how long a caller waits on it, and the race keeps a late settlement
+ * observed. The deadline timer is unref'd where the runtime supports it so a
+ * never-settling operation does not keep the process alive.
+ */
+export const resolveWithin = async <T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    timeoutId.unref?.();
+  });
+  try {
+    return await Promise.race([operation, deadline]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 /**

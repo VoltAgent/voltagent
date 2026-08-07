@@ -445,7 +445,7 @@ const workspace = new Workspace({
 });
 ```
 
-The API key defaults to the `TENKI_API_KEY` environment variable when omitted. Ordinary workspace API keys infer their workspace scope server-side, so omit `workspaceId` for normal usage. If you use trusted service credentials that can access multiple workspaces, pass `workspaceId` to select one explicitly:
+The API key defaults to the `TENKI_API_KEY` (or `TENKI_AUTH_TOKEN`) environment variable when omitted. Ordinary workspace API keys infer their workspace scope server-side, so omit `workspaceId` for normal usage. If you use trusted service credentials that can access multiple workspaces, pass `workspaceId` to select one explicitly:
 
 ```ts
 const sandbox = new TenkiSandbox({
