@@ -9,6 +9,7 @@ const DATASET_ID = "dataset-integration";
 const DATASET_VERSION_ID = "dataset-version-integration";
 const DATASET_ITEM_1_ID = "11111111-1111-4111-8111-111111111111";
 const DATASET_ITEM_2_ID = "22222222-2222-4222-8222-222222222222";
+const DATASET_ITEM_3_ID = "33333333-3333-4333-8333-333333333333";
 
 function createDatasetItems(): ExperimentDatasetItem[] {
   return [
@@ -141,5 +142,82 @@ describe("runExperiment integration", () => {
     );
     expect(result.summary.scorers.hede?.passRate).toBe(1);
     expect(result.summary.scorers).not.toHaveProperty("original-id");
+  });
+
+  it("keeps sampled-out items out of the pass rate", async () => {
+    const experiment = createExperiment({
+      id: "run-sampled-out",
+      dataset: {
+        items: [
+          { id: DATASET_ITEM_1_ID, input: "scored", expected: "scored" },
+          { id: DATASET_ITEM_2_ID, input: "sampled-out", expected: "sampled-out" },
+          { id: DATASET_ITEM_3_ID, input: "boom", expected: "boom" },
+        ],
+      },
+      runner: async ({ item }) => ({ output: item.input }),
+      scorers: [
+        {
+          id: "sampled",
+          threshold: 0.5,
+          scorer: {
+            id: "sampled",
+            name: "sampled",
+            // One item is skipped, exactly as scorer sampling skips it, one
+            // scores below the threshold and one errors.
+            scorer: ({ payload }) => {
+              if (payload.input === "sampled-out") {
+                return { status: "skipped" };
+              }
+              if (payload.input === "boom") {
+                return { status: "error", error: new Error("scorer failed") };
+              }
+              return { status: "success", score: 0 };
+            },
+          },
+        },
+      ],
+    });
+
+    const result = await runExperiment(experiment);
+
+    // Nothing passed: one item scored below its threshold and one errored, so
+    // the pass rate is 0 of the 2 evaluated items. Before this fix the
+    // sampled-out item counted as a success and reported passRate 0.33.
+    expect(result.summary.passRate).toBe(0);
+    expect(result.summary.skippedCount).toBe(1);
+    expect(result.summary.errorCount).toBe(1);
+  });
+
+  it("reports a null pass rate when every item is sampled out", async () => {
+    const experiment = createExperiment({
+      id: "run-fully-sampled-out",
+      dataset: {
+        items: [{ id: DATASET_ITEM_1_ID, input: "hello", expected: "hello" }],
+      },
+      runner: async ({ item }) => ({ output: item.input }),
+      scorers: [
+        {
+          id: "sampled",
+          threshold: 0.5,
+          scorer: {
+            id: "sampled",
+            name: "sampled",
+            sampling: { type: "never" },
+            scorer: () => ({ status: "success", score: 1 }),
+          },
+        },
+      ],
+      passCriteria: [
+        { type: "passRate", min: 1 },
+        { type: "passRate", min: 1, scorerId: "sampled" },
+      ],
+    });
+
+    const result = await runExperiment(experiment);
+
+    // Both spellings of the same criterion must agree: with no evaluated
+    // evidence there is no pass rate to meet, so neither can pass.
+    expect(result.summary.passRate).toBeNull();
+    expect(result.summary.criteria.map((entry) => entry.passed)).toEqual([false, false]);
   });
 });

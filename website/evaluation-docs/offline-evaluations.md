@@ -164,7 +164,7 @@ While individual scorers determine if each item passes or fails, **pass criteria
 There are two types of criteria:
 
 - **`meanScore`**: Average score across all items must meet a minimum
-- **`passRate`**: Percentage of passed items must meet a minimum
+- **`passRate`**: Percentage of passed items must meet a minimum. Items whose scorers were all sampled out are not counted, since they carry no evaluation evidence
 
 ```ts
 import { createExperiment } from "@voltagent/evals";
@@ -785,7 +785,7 @@ interface ExperimentSummary {
   errorCount: number; // items with status "error"
   skippedCount: number; // items with status "skipped"
   meanScore?: number | null;
-  passRate?: number | null;
+  passRate?: number | null; // passed / evaluated items; null if nothing was evaluated
   startedAt: number; // Unix timestamp
   completedAt?: number; // Unix timestamp
   durationMs?: number;

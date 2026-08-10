@@ -32,6 +32,8 @@ export interface ExperimentAggregatorState {
   failureCount: number;
   errorCount: number;
   skippedCount: number;
+  evaluatedCount: number;
+  evaluatedSuccessCount: number;
   globalScoreSum: number;
   globalScoreCount: number;
   scorers: Map<string, ScorerAggregateState>;
@@ -47,6 +49,8 @@ export function createAggregatorState(totalHint?: number): ExperimentAggregatorS
     failureCount: 0,
     errorCount: 0,
     skippedCount: 0,
+    evaluatedCount: 0,
+    evaluatedSuccessCount: 0,
     globalScoreSum: 0,
     globalScoreCount: 0,
     scorers: new Map(),
@@ -76,8 +80,16 @@ export function recordAggregatorResult(
 
   const scores = Object.values(item.scores);
   const allSkipped = scores.length > 0 && scores.every((score) => score.status === "skipped");
+  // An item whose every scorer was skipped carries no evaluation evidence, so
+  // it stays out of the pass rate, the same way skipped scorer results stay
+  // out of a scorer's own pass rate.
   if (allSkipped) {
     state.skippedCount += 1;
+  } else {
+    state.evaluatedCount += 1;
+    if (item.status === "passed") {
+      state.evaluatedSuccessCount += 1;
+    }
   }
 
   for (const score of scores) {
@@ -141,7 +153,7 @@ export function buildAggregatorSummary(
     errorCount: state.errorCount,
     skippedCount: state.skippedCount,
     meanScore: state.globalScoreCount > 0 ? state.globalScoreSum / state.globalScoreCount : null,
-    passRate: completedCount > 0 ? state.successCount / completedCount : null,
+    passRate: state.evaluatedCount > 0 ? state.evaluatedSuccessCount / state.evaluatedCount : null,
     startedAt: state.startedAt,
     scorers: buildScorerAggregates(state),
     criteria: [],
