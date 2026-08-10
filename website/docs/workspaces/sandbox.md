@@ -9,7 +9,7 @@ slug: /workspaces/sandbox
 The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
 :::
 
-A sandbox is an isolated environment where an agent can run shell commands without touching the host. Usually a container, a remote VM, or an OS-level jail. VoltAgent reaches them through the `WorkspaceSandbox` interface. First-party providers exist for [Blaxel](#blaxel), [Daytona](#daytona), and [E2B](#e2b), plus `LocalSandbox` for running things locally.
+A sandbox is an isolated environment where an agent can run shell commands without touching the host. Usually a container, a remote VM, or an OS-level jail. VoltAgent reaches them through the `WorkspaceSandbox` interface. First-party providers exist for [Blaxel](#blaxel), [Daytona](#daytona), [E2B](#e2b), and [Tenki](#tenki), plus `LocalSandbox` for running things locally.
 
 Agents interact with the sandbox through a tool called `execute_command`. They pass a command (plus optional env vars, working directory, and timeout), and the workspace runs it in the sandbox and returns the result. Large stdout or stderr gets truncated so the model doesn't drown in logs.
 
@@ -114,11 +114,12 @@ Every provider implements `WorkspaceSandbox`, so the workspace toolkit drives th
 
 ### Available providers
 
-| Provider | Package                      | Upstream docs                                  |
-| -------- | ---------------------------- | ---------------------------------------------- |
-| Blaxel   | `@voltagent/sandbox-blaxel`  | [docs.blaxel.ai](https://docs.blaxel.ai)       |
-| Daytona  | `@voltagent/sandbox-daytona` | [daytona.io/docs](https://www.daytona.io/docs) |
-| E2B      | `@voltagent/sandbox-e2b`     | [e2b.dev/docs](https://e2b.dev/docs)           |
+| Provider | Package                      | Upstream docs                                            |
+| -------- | ---------------------------- | -------------------------------------------------------- |
+| Blaxel   | `@voltagent/sandbox-blaxel`  | [docs.blaxel.ai](https://docs.blaxel.ai)                 |
+| Daytona  | `@voltagent/sandbox-daytona` | [daytona.io/docs](https://www.daytona.io/docs)           |
+| E2B      | `@voltagent/sandbox-e2b`     | [e2b.dev/docs](https://e2b.dev/docs)                     |
+| Tenki    | `@voltagent/sandbox-tenki`   | [tenki.cloud/docs](https://tenki.cloud/docs/sandbox/sdk) |
 
 ### Blaxel
 
@@ -416,6 +417,131 @@ class TenantE2BSandboxRouter implements WorkspaceSandbox {
 
 const workspace = new Workspace({
   sandbox: new TenantE2BSandboxRouter(),
+});
+```
+
+### Tenki
+
+Disposable Linux microVMs driven from SDKs. Each `TenkiSandbox` instance provisions one microVM and reuses it across every `execute_command`, with native `cwd`/`env`/`stdin`, per-command timeout/abort, and separate stdout/stderr streams. Built on [`@tenkicloud/sandbox`](https://www.npmjs.com/package/@tenkicloud/sandbox).
+
+Install:
+
+```bash
+pnpm add @voltagent/sandbox-tenki
+```
+
+_Pulls in `@tenkicloud/sandbox` automatically. No separate install._
+
+Configure it on a workspace:
+
+```ts
+import { Workspace } from "@voltagent/core";
+import { TenkiSandbox } from "@voltagent/sandbox-tenki";
+
+const workspace = new Workspace({
+  sandbox: new TenkiSandbox({
+    apiKey: process.env.TENKI_API_KEY,
+  }),
+});
+```
+
+The API key defaults to the `TENKI_API_KEY` (or `TENKI_AUTH_TOKEN`) environment variable when omitted. Ordinary workspace API keys infer their workspace scope server-side, so omit `workspaceId` for normal usage. If you use trusted service credentials that can access multiple workspaces, pass `workspaceId` to select one explicitly:
+
+```ts
+const sandbox = new TenkiSandbox({
+  apiKey: process.env.TENKI_SERVICE_API_KEY,
+  workspaceId: process.env.TENKI_WORKSPACE_ID,
+});
+```
+
+Tenki sessions are billed resources, so call `workspace.destroy()` (which calls `sandbox.destroy()`) to close the microVM when you are done.
+
+#### Preview URLs and SSH
+
+`createTenkiToolkit` adds two Tenki-specific tools beyond the `execute_command` seam: `expose_preview_url` (expose a port and get a public URL — needs `allowInbound`, the default) and `authorize_ssh_key`. Add the toolkit to the same agent that uses the workspace:
+
+```ts
+import { Agent, Workspace } from "@voltagent/core";
+import { TenkiSandbox, createTenkiToolkit } from "@voltagent/sandbox-tenki";
+import { openai } from "@ai-sdk/openai";
+
+const sandbox = new TenkiSandbox({ apiKey: process.env.TENKI_API_KEY });
+
+const agent = new Agent({
+  name: "my-agent",
+  instructions: "A helpful assistant with sandboxed shell access",
+  model: openai("gpt-4o-mini"),
+  workspace: new Workspace({ sandbox }),
+  tools: [createTenkiToolkit(sandbox)],
+});
+```
+
+For Tenki-specific APIs (filesystem, port exposure, raw interactive SSH), grab the underlying session:
+
+```ts
+import { TenkiSandbox } from "@voltagent/sandbox-tenki";
+
+const sandbox = new TenkiSandbox({ apiKey: process.env.TENKI_API_KEY });
+
+const workspace = new Workspace({ sandbox });
+
+const session = await sandbox.getSandbox();
+const { previewUrl } = await session.exposePort(3000);
+```
+
+Multi-tenant routing: one Tenki microVM per tenant, keyed on `operationContext`.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { TenkiSandbox } from "@voltagent/sandbox-tenki";
+
+class TenantTenkiSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-tenki-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, TenkiSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-tenki-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): TenkiSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new TenkiSandbox({
+        apiKey: process.env.TENKI_API_KEY,
+        // Example strategy: name the microVM after the tenant
+        name: `tenant-${tenantId}`,
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantTenkiSandboxRouter(),
 });
 ```
 
