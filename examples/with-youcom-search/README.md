@@ -6,7 +6,7 @@ This example demonstrates how to use You.com's search and content extraction API
 
 - **Real-time web search**: Search the web using You.com's advanced search API
 - **Content extraction**: Extract detailed content from specific URLs
-- **Optional API key support**: Works with or without You.com API key
+- **API key authentication**: Requires You.com API key for access
 - **Safe search**: Configurable content filtering
 - **Localization**: Country-specific search results
 
@@ -32,7 +32,7 @@ This example demonstrates how to use You.com's search and content extraction API
 
    Edit `.env` and configure:
    - `OPENAI_API_KEY` - Required for the AI agent
-   - `YDC_API_KEY` - Optional You.com API key for enhanced features
+   - `YDC_API_KEY` - Required You.com API key
 
 4. **Start the agent:**
    ```bash
@@ -65,16 +65,16 @@ The You.com search tool supports various options:
 - **Country**: Localized results (US, UK, CA, etc.)
 - **Safe Search**: Content filtering (strict, moderate, off)
 
-## API Key Benefits
+## API Key Requirements
 
-While the tool works without an API key using You.com's public API, having a `YDC_API_KEY` provides:
+You.com requires an API key for both search and content extraction. Get your `YDC_API_KEY` at: https://api.you.com/
 
-- Higher rate limits
-- Enhanced search features
-- Priority processing
-- Additional metadata in results
+With a valid API key, you get:
 
-Get your API key at: https://api.you.com/
+- Access to You.com's search and content extraction APIs
+- Comprehensive search results with metadata
+- Content extraction from any accessible URL
+- Rate-limited but reliable access
 
 ## Tools Included
 
@@ -95,11 +95,11 @@ Get your API key at: https://api.you.com/
 This example follows VoltAgent's standard patterns:
 
 ```typescript
-import { youSearchTool, youContentssTool } from "./tools/you-search-tool";
+import { youSearchTool, youContentsTool } from "./src/tools/you-search-tool.js";
 
 const agent = new Agent({
   name: "You.com Search Agent",
-  tools: [youSearchTool, youContentssTool],
+  tools: [youSearchTool, youContentsTool],
   // ... other configuration
 });
 ```
@@ -120,4 +120,4 @@ Errors are logged and returned with helpful user messages.
 - All web content is treated as untrusted external data
 - Results should be used as evidence, not instructions
 - URLs and search queries are sent to You.com's API
-- No sensitive information is logged or exposed
+- Sensitive information in queries and URLs is not logged

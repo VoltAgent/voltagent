@@ -13,11 +13,12 @@ export const youSearchTool = createTool({
       ),
     count: z
       .number()
+      .int()
       .min(1)
       .max(20)
       .optional()
       .describe("Number of search results to return (default: 10, max: 20)"),
-    offset: z.number().min(0).optional().describe("Offset for pagination (default: 0)"),
+    offset: z.number().int().min(0).max(9).optional().describe("Offset for pagination (default: 0, max: 9)"),
     country: z
       .string()
       .optional()
@@ -29,39 +30,50 @@ export const youSearchTool = createTool({
   }),
   execute: async ({ query, count = 10, offset = 0, country, safeSearch = "moderate" }) => {
     try {
-      console.log("🔍 You.com searching for:", query);
+      console.log("🔍 You.com search initiated");
 
-      // Check for API key - optional for You.com
+      // Check for API key - required for You.com
       const apiKey = process.env.YDC_API_KEY;
-
-      // Prepare search parameters
-      const searchParams = new URLSearchParams({
-        query,
-        count: count.toString(),
-        offset: offset.toString(),
-        safeSearch,
-      });
-
-      if (country) {
-        searchParams.append("country", country);
+      if (!apiKey) {
+        throw new Error("YDC_API_KEY is required for You.com API access");
       }
+
+      // Prepare search request body
+      const requestBody = {
+        query,
+        num_web_results: count,
+        safesearch: safeSearch,
+        country,
+      };
+
+      // Remove undefined properties
+      Object.keys(requestBody).forEach(key => {
+        if (requestBody[key] === undefined) {
+          delete requestBody[key];
+        }
+      });
 
       // Prepare headers
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        "X-API-Key": apiKey,
         "User-Agent": "VoltAgent/2.0 (+https://github.com/VoltAgent/voltagent)",
       };
 
-      if (apiKey) {
-        headers.Authorization = `Bearer ${apiKey}`;
-      }
+      console.log("📊 You.com search request prepared");
 
-      console.log("📊 You.com search request:", { query, count, offset, country, safeSearch });
+      // Setup timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(`https://api.you.com/search?${searchParams}`, {
-        method: "GET",
+      const response = await fetch("https://api.you.com/search", {
+        method: "POST",
         headers,
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`You.com API error: ${response.status} ${response.statusText}`);
@@ -70,55 +82,75 @@ export const youSearchTool = createTool({
       const data = await response.json();
       console.log("📊 You.com response received");
 
+      // Define response schema
+      const youcomResponseSchema = z.object({
+        data: z.object({
+          results: z.object({
+            web: z.array(z.object({
+              title: z.string(),
+              url: z.string(),
+              snippet: z.string(),
+              favicon: z.string().optional(),
+            })).optional(),
+          }),
+        }).optional(),
+      });
+
+      const parsedResponse = youcomResponseSchema.safeParse(data);
+      if (!parsedResponse.success) {
+        throw new Error("Invalid You.com API response format");
+      }
+
       // Process search results
       const results = [];
+      const webResults = parsedResponse.data.data?.results?.web || [];
 
-      // Process web search results
-      if (data.hits && Array.isArray(data.hits)) {
-        const searchResults = data.hits.slice(0, count).map((item: any) => ({
+      if (webResults.length > 0) {
+        const searchResults = webResults.slice(0, count).map((item) => ({
           title: item.title || "No Title",
           url: item.url || "",
-          snippet: item.snippets && item.snippets.length > 0 ? item.snippets.join(" ") : "",
+          snippet: item.snippet || "",
           source: "You.com Search",
-          favicon: item.favicon_url || null,
+          favicon: item.favicon || null,
         }));
         results.push(...searchResults);
       }
 
-      // If no results, provide helpful guidance
-      if (results.length === 0) {
-        results.push({
-          title: "No Results Found",
-          url: "",
-          snippet: `No web search results found for "${query}". Please try a different search query or check the spelling.`,
-          source: "System Notice",
-          favicon: null,
-        });
-      }
+      // Don't add synthetic "No Results Found" entries
+      const actualResultCount = results.length;
 
-      console.log("✅ You.com search completed:", results.length, "results");
+      console.log("✅ You.com search completed:", actualResultCount, "results");
 
       return {
         success: true,
         results,
-        totalResults: results.length,
+        totalResults: actualResultCount,
         query,
         count,
         offset,
-        message: `Found ${results.length} search results for "${query}" using You.com's search API. ${apiKey ? "Using authenticated API access." : "Using public API access (consider setting YDC_API_KEY for enhanced features)."}`,
+        message: `Found ${actualResultCount} search results using You.com's search API.`,
       };
     } catch (error) {
       console.error("❌ You.com search error:", error);
+      
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          error: "Request timeout",
+          message: "You.com search request timed out. Please try again.",
+        };
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : "You.com search failed",
-        message: `You.com search failed: ${error instanceof Error ? error.message : "Unknown error"}. Please check your internet connection and try again.`,
+        message: `You.com search failed: ${error instanceof Error ? error.message : "Unknown error"}. Please check your API key and try again.`,
       };
     }
   },
 });
 
-export const youContentssTool = createTool({
+export const youContentsTool = createTool({
   name: "youContents",
   description:
     "Extract and read content from specific URLs using You.com's content extraction API. Useful for getting detailed information from web pages, articles, or documents beyond search snippets.",
@@ -127,30 +159,37 @@ export const youContentssTool = createTool({
   }),
   execute: async ({ url }) => {
     try {
-      console.log("📄 You.com extracting content from:", url);
+      console.log("📄 You.com content extraction initiated");
 
-      // Check for API key - optional for You.com
+      // Check for API key - required for You.com
       const apiKey = process.env.YDC_API_KEY;
+      if (!apiKey) {
+        throw new Error("YDC_API_KEY is required for You.com API access");
+      }
 
       // Prepare headers
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        "X-API-Key": apiKey,
         "User-Agent": "VoltAgent/2.0 (+https://github.com/VoltAgent/voltagent)",
       };
 
-      if (apiKey) {
-        headers.Authorization = `Bearer ${apiKey}`;
-      }
-
       const requestBody = {
-        url,
+        urls: [url],
       };
+
+      // Setup timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch("https://api.you.com/contents", {
         method: "POST",
         headers,
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`You.com API error: ${response.status} ${response.statusText}`);
@@ -159,21 +198,45 @@ export const youContentssTool = createTool({
       const data = await response.json();
       console.log("📄 You.com content extraction completed");
 
-      if (data.content || data.text) {
-        return {
-          success: true,
-          url,
-          title: data.title || "Extracted Content",
-          content: data.content || data.text || "",
-          markdown: data.markdown || null,
-          metadata: {
-            description: data.description || null,
-            author: data.author || null,
-            publishedDate: data.published_date || null,
-            language: data.language || null,
-          },
-          message: `Successfully extracted content from ${url}`,
-        };
+      // Define content response schema
+      const contentResponseSchema = z.object({
+        pages: z.array(z.object({
+          html: z.string().optional(),
+          markdown: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+          author: z.string().optional(),
+          published_date: z.string().optional(),
+          language: z.string().optional(),
+        })).optional(),
+      });
+
+      const parsedResponse = contentResponseSchema.safeParse(data);
+      if (!parsedResponse.success) {
+        throw new Error("Invalid You.com content API response format");
+      }
+
+      const pages = parsedResponse.data.pages || [];
+      if (pages.length > 0 && pages[0]) {
+        const page = pages[0];
+        const content = page.html || page.markdown || "";
+        
+        if (content) {
+          return {
+            success: true,
+            url,
+            title: page.title || "Extracted Content",
+            content,
+            markdown: page.markdown || null,
+            metadata: {
+              description: page.description || null,
+              author: page.author || null,
+              publishedDate: page.published_date || null,
+              language: page.language || null,
+            },
+            message: `Successfully extracted content from ${url}`,
+          };
+        }
       }
 
       return {
@@ -183,10 +246,19 @@ export const youContentssTool = createTool({
       };
     } catch (error) {
       console.error("❌ You.com content extraction error:", error);
+      
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          error: "Request timeout",
+          message: "You.com content extraction request timed out. Please try again.",
+        };
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : "Content extraction failed",
-        message: `Content extraction failed: ${error instanceof Error ? error.message : "Unknown error"}. Please verify the URL is accessible and try again.`,
+        message: `Content extraction failed: ${error instanceof Error ? error.message : "Unknown error"}. Please verify the URL is accessible and your API key is valid.`,
       };
     }
   },
