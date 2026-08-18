@@ -1,0 +1,45 @@
+{
+  "name": "voltagent-example-with-openui",
+  "version": "0.1.0",
+  "description": "VoltAgent streaming generative UI rendered with OpenUI",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-openui"
+  },
+  "scripts": {
+    "build": "pnpm generate:prompt && next build",
+    "dev": "pnpm generate:prompt && next dev --turbopack",
+    "generate:prompt": "openui generate openui/library.ts --out openui/generated/system-prompt.txt",
+    "lint": "biome check .",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
+    "@openuidev/react-headless": "^0.9.8",
+    "@openuidev/react-lang": "^0.2.11",
+    "@openuidev/react-ui": "^0.13.6",
+    "@voltagent/core": "^2.9.2",
+    "@voltagent/internal": "^1.0.3",
+    "@voltagent/rag": "^1.0.2",
+    "ai": "^6.0.0",
+    "next": "^16.0.7",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@openuidev/cli": "^0.2.7",
+    "@tailwindcss/postcss": "^4.1.4",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4.1.4",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  }
+}

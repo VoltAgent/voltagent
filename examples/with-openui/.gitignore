@@ -1,0 +1,9 @@
+/node_modules
+/.next
+/out
+/coverage
+/openui/generated
+/.env*
+!/.env.example
+*.tsbuildinfo
+next-env.d.ts

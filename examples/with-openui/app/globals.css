@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@openuidev/react-ui/styles/index.css";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: oklch(0.15 0.015 162);
+}
