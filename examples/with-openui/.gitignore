@@ -2,6 +2,7 @@
 /.next
 /out
 /coverage
+/openui/generated
 /.env
 /.env.local
 *.tsbuildinfo
