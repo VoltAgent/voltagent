@@ -55,11 +55,13 @@ describe("parseChatRequest", () => {
 
   it("stops reading a chunked body when it exceeds the byte limit", async () => {
     const chunk = new Uint8Array(256 * 1024);
-    let chunksRead = 0;
+    let streamWasCanceled = false;
     const body = new ReadableStream({
       pull(controller) {
-        chunksRead += 1;
         controller.enqueue(chunk);
+      },
+      cancel() {
+        streamWasCanceled = true;
       },
     });
     const request = new Request("http://localhost/api/chat", {
@@ -69,6 +71,6 @@ describe("parseChatRequest", () => {
     } as RequestInit & { duplex: "half" });
 
     await expect(parseChatRequestBody(request)).rejects.toBeInstanceOf(InvalidChatRequestError);
-    expect(chunksRead).toBe(5);
+    expect(streamWasCanceled).toBe(true);
   });
 });
