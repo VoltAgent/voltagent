@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseChatRequest } from "@/lib/chat-request";
+import { deriveConversationId, resolveAnonymousSession } from "@/lib/chat-session";
 import { createOpenUIAgent } from "@/voltagent/agent";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -32,9 +33,10 @@ function stopChunk(id: string) {
 export async function POST(request: Request) {
   try {
     const { messages, threadId = "openui-demo" } = parseChatRequest(await request.json());
+    const anonymousSession = resolveAnonymousSession(request.headers.get("cookie"));
     const result = await agent.streamText(messages, {
-      userId: "openui-demo-user",
-      conversationId: threadId,
+      userId: anonymousSession.userId,
+      conversationId: deriveConversationId(anonymousSession.userId, threadId),
       abortSignal: request.signal,
     });
 
@@ -52,20 +54,26 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
-          if (!request.signal.aborted) {
-            console.error("[voltagent-openui] stream failed", error);
-            controller.error(error);
+          if (request.signal.aborted) {
+            controller.close();
+            return;
           }
+
+          console.error("[voltagent-openui] stream failed", error);
+          controller.error(error);
         }
       },
     });
 
+    const headers = new Headers({
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "Content-Type": "text/event-stream",
+    });
+    if (anonymousSession.setCookie) headers.append("Set-Cookie", anonymousSession.setCookie);
+
     return new Response(stream, {
-      headers: {
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-        "Content-Type": "text/event-stream",
-      },
+      headers,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

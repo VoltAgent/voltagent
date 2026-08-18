@@ -50,6 +50,7 @@ data/nyc-2025-housing-supply-report.pdf
 
 AgentInterface user/action
   -> POST /api/chat with the full thread and threadId
+  -> HttpOnly anonymous visitor cookie + server-derived conversation ID
   -> VoltAgent Agent.streamText()
   -> NycHousingPdfRetriever vector search
   -> retrieved page context injected by VoltAgent
@@ -91,9 +92,12 @@ To use a different source of truth:
 
 For a larger or frequently changing document collection, move chunk embeddings
 to a persistent vector store and invalidate the index when documents change.
-In production, also add authentication and rate limiting to `/api/chat`, use a
-real user identifier, configure durable conversation memory, and treat uploaded
-PDF text as untrusted input.
+The demo isolates in-memory conversations with a server-generated anonymous ID
+stored in an HttpOnly cookie and hashes that identity with the client thread ID
+before calling VoltAgent. In production, replace the anonymous identity with an
+authenticated server identity, validate conversation ownership, add rate
+limiting to `/api/chat`, configure durable conversation memory, and treat
+uploaded PDF text as untrusted input.
 
 ## Acceptance prompts
 
