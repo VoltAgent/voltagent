@@ -78,6 +78,7 @@ import type {
   ToolSearchSelection,
   ToolSearchStrategy,
 } from "../tool/routing/types";
+import { normalizeToolSchemasForModel } from "../tool/standard-schema";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -6363,6 +6364,10 @@ export class Agent {
     const preparedDynamicTools = tempManager.prepareToolsForExecution(createToolExecuteFunction);
     const preparedStaticTools =
       this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
+
+    // Convert non-Zod schemas (e.g. Valibot) so the model still gets JSON Schema params.
+    await normalizeToolSchemasForModel(preparedDynamicTools);
+    await normalizeToolSchemasForModel(preparedStaticTools);
 
     const toolRouting = this.resolveToolRouting(options);
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);

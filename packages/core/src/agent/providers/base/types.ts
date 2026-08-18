@@ -5,6 +5,7 @@ import type {
   ToolContent,
   UserContent,
 } from "@ai-sdk/provider-utils";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { AsyncIterableStream } from "@voltagent/internal/utils";
 import type { TextStreamPart } from "ai";
 import type { z } from "zod";
@@ -242,7 +243,26 @@ export type MessageRole = "user" | "assistant" | "system" | "tool";
 export type BaseMessage = ModelMessage;
 
 // Schema types
-export type ToolSchema = z.ZodType;
+/**
+ * Schema accepted for tool parameters and output.
+ *
+ * Any Standard Schema library works here (Valibot, ArkType, Effect Schema, ...),
+ * and Zod stays fully supported since Zod implements the Standard Schema interface.
+ * The AI SDK converts whatever it's given to JSON Schema for the model.
+ */
+export type ToolSchema = z.ZodType | StandardSchemaV1;
+
+/**
+ * Infer the parsed output type of a tool schema.
+ *
+ * Zod schemas keep going through `z.infer` for exact backward compatibility;
+ * other Standard Schema libraries resolve via their inferred output type.
+ */
+export type InferSchema<T> = T extends z.ZodType
+  ? z.infer<T>
+  : T extends StandardSchemaV1
+    ? StandardSchemaV1.InferOutput<T>
+    : unknown;
 
 /**
  * Tool execution context containing all tool-specific metadata.
