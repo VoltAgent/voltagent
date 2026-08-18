@@ -36,6 +36,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@standard-schema/spec": "^1.0.0",
     "@voltagent/internal": "^1.0.3",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
@@ -52,9 +53,11 @@
     "@ai-sdk/provider-utils": "^4.0.0",
     "@types/micromatch": "^4.0.10",
     "@types/uuid": "^10.0.0",
+    "@valibot/to-json-schema": "^1.0.0",
     "@vitest/coverage-v8": "^3.2.4",
     "ai": "^6.0.0",
     "msw": "^2.11.5",
+    "valibot": "^1.0.0",
     "zod": "^3.25.76"
   },
   "exports": {
@@ -78,11 +81,15 @@
   "module": "dist/index.mjs",
   "peerDependencies": {
     "@ai-sdk/provider-utils": "4.x",
+    "@valibot/to-json-schema": "^1.0.0",
     "@voltagent/logger": "2.0.2",
     "ai": "^6.0.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@valibot/to-json-schema": {
+      "optional": true
+    },
     "@voltagent/logger": {
       "optional": true
     }

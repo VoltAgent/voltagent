@@ -1,7 +1,11 @@
 import type { ProviderOptions, ToolNeedsApprovalFunction } from "@ai-sdk/provider-utils";
 import type { Tool as VercelTool } from "ai";
-import type { z } from "zod";
-import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
+import type {
+  BaseTool,
+  InferSchema,
+  ToolExecuteOptions,
+  ToolSchema,
+} from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
 
 /**
@@ -161,7 +165,7 @@ export type ToolOptions<
    * Whether the tool requires approval before execution.
    * When set to a function, it can decide dynamically per call.
    */
-  needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>>;
+  needsApproval?: boolean | ToolNeedsApprovalFunction<InferSchema<T>>;
 
   /**
    * Provider-specific options for the tool.
@@ -204,7 +208,7 @@ export type ToolOptions<
    * ```
    */
   toModelOutput?: (args: {
-    output: O extends ToolSchema ? z.infer<O> : unknown;
+    output: O extends ToolSchema ? InferSchema<O> : unknown;
   }) => ToolResultOutput;
 
   /**
@@ -214,9 +218,9 @@ export type ToolOptions<
    * @returns A result or an AsyncIterable of results (last value is final).
    */
   execute?: (
-    args: z.infer<T>,
+    args: InferSchema<T>,
     options?: ToolExecuteOptions,
-  ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
+  ) => ToolExecutionResult<O extends ToolSchema ? InferSchema<O> : unknown>;
 
   /**
    * Optional tool-specific hooks for lifecycle events.
@@ -228,7 +232,7 @@ export type ToolOptions<
  * Tool class for defining tools that agents can use
  */
 export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | undefined = undefined> {
-  /* implements BaseTool<z.infer<T>> */
+  /* implements BaseTool<InferSchema<T>> */
   /**
    * Unique identifier for the tool
    */
@@ -262,7 +266,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   /**
    * Whether the tool requires approval before execution.
    */
-  readonly needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>>;
+  readonly needsApproval?: boolean | ToolNeedsApprovalFunction<InferSchema<T>>;
 
   /**
    * Provider-specific options for the tool.
@@ -278,7 +282,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    * Enables returning images, media, or structured content to the LLM.
    */
   readonly toModelOutput?: (args: {
-    output: O extends ToolSchema ? z.infer<O> : unknown;
+    output: O extends ToolSchema ? InferSchema<O> : unknown;
   }) => ToolResultOutput;
 
   /**
@@ -299,9 +303,9 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    * @returns A result or an AsyncIterable of results (last value is final).
    */
   readonly execute?: (
-    args: z.infer<T>,
+    args: InferSchema<T>,
     options?: ToolExecuteOptions,
-  ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
+  ) => ToolExecutionResult<O extends ToolSchema ? InferSchema<O> : unknown>;
 
   /**
    * Whether this tool should be executed on the client side.
