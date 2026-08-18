@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { BaseMessage } from "@voltagent/core";
 import { describe, expect, it } from "vitest";
 import {
   extractPdfPages,
@@ -37,6 +38,15 @@ describe("NYC housing PDF retrieval", () => {
     expect(ranked[0]?.score).toBeGreaterThan(0.99);
   });
 
+  it("drops chunks below the calibrated similarity threshold", () => {
+    const ranked = rankPdfChunks(
+      [1, 0],
+      [{ content: "Unrelated page", embedding: [0, 1], id: "page-1", pageNumber: 1 }],
+    );
+
+    expect(ranked).toEqual([]);
+  });
+
   it("prioritizes submitted form values in an action query", () => {
     const query = extractRetrievalQuery(
       '<content>Analyze the submitted housing focus</content><context>["User clicked: Analyze the submitted housing focus",{"housingAnalysis":{"focusArea":"Vacancy rates","audience":"City planners","notes":"Compare borough differences"}}]</context>',
@@ -53,6 +63,23 @@ describe("NYC housing PDF retrieval", () => {
 
     expect(query).toBe("Vacancy rates Compare borough differences");
     expect(query).not.toContain("City planners");
+    expect(query).not.toContain("]]>openui:");
+  });
+
+  it("normalizes OpenUI action envelopes in array message content", () => {
+    const query = extractRetrievalQuery([
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: ']]>openui:content\nAnalyze the submitted housing focus\n]]>openui:context\n["User clicked: Analyze",{"housingAnalysis":{"focusArea":{"value":"Vacancy rates"},"notes":{"value":"Compare borough differences"}}}]',
+          },
+        ],
+      },
+    ] as BaseMessage[]);
+
+    expect(query).toBe("Vacancy rates Compare borough differences");
     expect(query).not.toContain("]]>openui:");
   });
 });

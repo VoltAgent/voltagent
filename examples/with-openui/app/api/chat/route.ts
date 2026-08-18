@@ -1,10 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseChatRequest } from "@/lib/chat-request";
+import { InvalidChatRequestError, parseChatRequestBody } from "@/lib/chat-request";
 import { deriveConversationId, resolveAnonymousSession } from "@/lib/chat-session";
 import { createOpenUIAgent } from "@/voltagent/agent";
 import { safeStringify } from "@voltagent/internal/utils";
-import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -32,7 +31,7 @@ function stopChunk(id: string) {
 
 export async function POST(request: Request) {
   try {
-    const { messages, threadId = "openui-demo" } = parseChatRequest(await request.json());
+    const { messages, threadId = "openui-demo" } = await parseChatRequestBody(request);
     const anonymousSession = resolveAnonymousSession(request.headers.get("cookie"));
     const result = await agent.streamText(messages, {
       userId: anonymousSession.userId,
@@ -55,7 +54,6 @@ export async function POST(request: Request) {
           controller.close();
         } catch (error) {
           if (request.signal.aborted) {
-            controller.close();
             return;
           }
 
@@ -76,7 +74,7 @@ export async function POST(request: Request) {
       headers,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof InvalidChatRequestError) {
       return Response.json({ error: "Invalid chat request" }, { status: 400 });
     }
 

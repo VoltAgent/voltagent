@@ -1,6 +1,12 @@
-import { createParser } from "@openuidev/react-lang";
+import { type ElementNode, type ParseResult, createParser } from "@openuidev/react-lang";
 import { describe, expect, it } from "vitest";
 import { library } from "./library";
+
+function rootChildren(result: ParseResult): ElementNode[] {
+  expect(result.root?.typeName).toBe("Card");
+  expect(result.root?.props.children).toBeInstanceOf(Array);
+  return result.root?.props.children as ElementNode[];
+}
 
 describe("OpenUI chat library", () => {
   it("parses a chart response with follow-up actions", () => {
@@ -17,6 +23,15 @@ vacancy = FollowUpItem("Show borough vacancy rates")`;
 
     expect(result.meta.errors).toEqual([]);
     expect(result.meta.unresolved).toEqual([]);
+    const children = rootChildren(result);
+    expect(children.map((child) => child.typeName)).toEqual([
+      "TextContent",
+      "BarChart",
+      "FollowUpBlock",
+    ]);
+    const chartSeries = children[1]?.props.series as ElementNode[];
+    expect(chartSeries[0]?.typeName).toBe("Series");
+    expect(chartSeries[0]?.props.values).toEqual([3125, 6588, 2347, 3240, 326]);
   });
 
   it("parses a compact housing dashboard without a narrative paragraph", () => {
@@ -39,6 +54,7 @@ vacancy = FollowUpItem("Show borough vacancy rates")`;
 
     expect(result.meta.errors).toEqual([]);
     expect(result.meta.unresolved).toEqual([]);
+    expect(rootChildren(result).at(-1)?.typeName).toBe("FollowUpBlock");
   });
 
   it("parses a grounded permit-impact follow-up", () => {
@@ -58,5 +74,55 @@ vacancy = FollowUpItem("Show the latest vacancy signals")`;
 
     expect(result.meta.errors).toEqual([]);
     expect(result.meta.unresolved).toEqual([]);
+    expect(rootChildren(result).at(-1)?.typeName).toBe("FollowUpBlock");
+  });
+
+  it("parses a validated form with a ToAssistant action", () => {
+    const response = `root = Card([title, form, followUps])
+title = TextContent("Housing analysis", "large-heavy")
+form = Form("housingAnalysis", buttons, [focusArea, audience, notes])
+focusArea = FormControl("Focus area", Input("focusArea", "Vacancy rates", "text", {required: true}))
+audience = FormControl("Audience", Input("audience", "City planners", "text", {required: true}))
+notes = FormControl("Notes", TextArea("notes", "Compare borough differences", 3))
+buttons = Buttons([analyze])
+analyze = Button("Analyze", Action([@ToAssistant("Analyze the submitted housing focus for the specified audience using exact PDF facts and page citations")]), "primary")
+followUps = FollowUpBlock([vacancy, permits])
+vacancy = FollowUpItem("Show borough vacancy rates")
+permits = FollowUpItem("Compare permits by borough")`;
+
+    const result = createParser(library.toJSONSchema()).parse(response);
+
+    expect(result.meta.errors).toEqual([]);
+    expect(result.meta.unresolved).toEqual([]);
+    const children = rootChildren(result);
+    expect(children.map((child) => child.typeName)).toEqual([
+      "TextContent",
+      "Form",
+      "FollowUpBlock",
+    ]);
+    const form = children[1];
+    const buttons = form?.props.buttons as ElementNode;
+    const button = (buttons.props.buttons as ElementNode[])[0];
+    expect(button?.props.action).toEqual({
+      args: [
+        {
+          els: [
+            {
+              args: [
+                {
+                  k: "Str",
+                  v: "Analyze the submitted housing focus for the specified audience using exact PDF facts and page citations",
+                },
+              ],
+              k: "Comp",
+              name: "ToAssistant",
+            },
+          ],
+          k: "Arr",
+        },
+      ],
+      k: "Comp",
+      name: "Action",
+    });
   });
 });

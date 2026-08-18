@@ -12,6 +12,30 @@ const chatRequestSchema = z.object({
 
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
+export class InvalidChatRequestError extends Error {
+  override name = "InvalidChatRequestError";
+}
+
 export function parseChatRequest(input: unknown) {
   return chatRequestSchema.parse(input);
+}
+
+export async function parseChatRequestBody(request: Request) {
+  let input: unknown;
+
+  try {
+    input = await request.json();
+  } catch {
+    throw new InvalidChatRequestError("Request body must be valid JSON");
+  }
+
+  try {
+    return parseChatRequest(input);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new InvalidChatRequestError("Request body does not match the chat schema");
+    }
+
+    throw error;
+  }
 }

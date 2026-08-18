@@ -65,7 +65,9 @@ ranks chunks semantically, then expands the best matches back to their complete
 PDF pages so multi-column tables and map labels remain intact. VoltAgent injects
 those pages, the report title, and exact page numbers into the agent's prompt as
 relevant context. No vector database is required for this small,
-single-document demo.
+single-document demo. Matches below the `0.30` cosine-similarity cutoff are
+discarded; retrieval failures produce an explicit source-unavailable context so
+the agent refuses to answer from memory.
 
 `openui/library.ts` exports the same `openuiChatLibrary` used by the renderer.
 The OpenUI CLI generates `openui/generated/system-prompt.txt` from that file,

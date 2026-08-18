@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChatRequest } from "./chat-request";
+import { InvalidChatRequestError, parseChatRequest, parseChatRequestBody } from "./chat-request";
 
 describe("parseChatRequest", () => {
   it("preserves a follow-up action as the next VoltAgent user turn", () => {
@@ -25,5 +25,15 @@ describe("parseChatRequest", () => {
 
     expect(result.messages[0]?.content).toContain("Vacancy rates");
     expect(result.messages[0]?.content).toContain("Compare borough differences");
+  });
+
+  it("rejects malformed JSON as an invalid chat request", async () => {
+    const request = new Request("http://localhost/api/chat", {
+      method: "POST",
+      body: "{",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    await expect(parseChatRequestBody(request)).rejects.toBeInstanceOf(InvalidChatRequestError);
   });
 });

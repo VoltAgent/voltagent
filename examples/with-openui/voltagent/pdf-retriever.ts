@@ -16,6 +16,7 @@ const defaultReportPath = join(process.cwd(), "data", reportFilename);
 const defaultEmbeddingModel = "text-embedding-3-small";
 const defaultResultCount = 4;
 const defaultPageCount = 3;
+const defaultMinimumSimilarity = 0.3;
 
 export type PdfPage = {
   pageNumber: number;
@@ -57,12 +58,14 @@ export function rankPdfChunks(
   queryEmbedding: number[],
   chunks: EmbeddedPdfChunk[],
   resultCount = defaultResultCount,
+  minimumSimilarity = defaultMinimumSimilarity,
 ): RankedPdfChunk[] {
   return chunks
     .map((chunk) => ({
       ...chunk,
       score: cosineSimilarity(queryEmbedding, chunk.embedding),
     }))
+    .filter((chunk) => chunk.score >= minimumSimilarity)
     .sort((left, right) => right.score - left.score)
     .slice(0, resultCount);
 }
@@ -178,19 +181,29 @@ export function extractRetrievalQuery(input: string | BaseMessage[]): string {
     return normalizeActionQuery(lastUserMessage.content);
   }
 
-  return lastUserMessage.content
-    .filter(
-      (part): part is Extract<(typeof lastUserMessage.content)[number], { type: "text" }> =>
-        part.type === "text",
-    )
-    .map((part) => part.text)
-    .join(" ")
-    .trim();
+  return normalizeActionQuery(
+    lastUserMessage.content
+      .filter(
+        (part): part is Extract<(typeof lastUserMessage.content)[number], { type: "text" }> =>
+          part.type === "text",
+      )
+      .map((part) => part.text)
+      .join(" ")
+      .trim(),
+  );
+}
+
+function formatRetrievalFailure(): string {
+  return [
+    "Retrieval status: unavailable.",
+    `The ${reportPublisher} ${reportTitle} could not be searched.`,
+    "Do not provide housing facts from memory or another source. Ask the user to retry.",
+  ].join(" ");
 }
 
 function formatRetrievedContext(pages: PdfPage[]): string {
   if (pages.length === 0) {
-    return `No relevant content was found in the ${reportPublisher} ${reportTitle}.`;
+    return `No relevant content was found in the ${reportPublisher} ${reportTitle}. Do not answer with housing facts from memory or another source.`;
   }
 
   return pages
@@ -262,43 +275,52 @@ export class NycHousingPdfRetriever extends BaseRetriever {
       return `No query was provided for the ${reportTitle}.`;
     }
 
-    const [{ embedding: queryEmbedding }, index] = await Promise.all([
-      embed({
-        model: openai.embedding(process.env.VOLTAGENT_EMBEDDING_MODEL || defaultEmbeddingModel),
-        value: query,
-      }),
-      this.getIndex(),
-    ]);
-    const rankedChunks = rankPdfChunks(queryEmbedding, index.chunks);
-    const pageNumbers = [...new Set(rankedChunks.map((chunk) => chunk.pageNumber))].slice(
-      0,
-      defaultPageCount,
-    );
-    const retrievedPages = pageNumbers.flatMap((pageNumber) =>
-      index.pages.filter((page) => page.pageNumber === pageNumber),
-    );
+    try {
+      const [{ embedding: queryEmbedding }, index] = await Promise.all([
+        embed({
+          model: openai.embedding(process.env.VOLTAGENT_EMBEDDING_MODEL || defaultEmbeddingModel),
+          value: query,
+        }),
+        this.getIndex(),
+      ]);
+      const rankedChunks = rankPdfChunks(queryEmbedding, index.chunks);
+      const pageNumbers = [...new Set(rankedChunks.map((chunk) => chunk.pageNumber))].slice(
+        0,
+        defaultPageCount,
+      );
+      const retrievedPages = pageNumbers.flatMap((pageNumber) =>
+        index.pages.filter((page) => page.pageNumber === pageNumber),
+      );
 
-    options.context?.set(
-      "rag.references",
-      pageNumbers.map((pageNumber) => ({
-        id: `${reportFilename}#page=${pageNumber}`,
-        pageNumber,
-        source: reportSourceUrl,
-        title: reportTitle,
-      })),
-    );
-    options.logger?.info("Retrieved context from the NYC housing report PDF", {
-      pageNumbers,
-      queryLength: query.length,
-      resultCount: rankedChunks.length,
-    });
+      options.context?.set(
+        "rag.references",
+        pageNumbers.map((pageNumber) => ({
+          id: `${reportFilename}#page=${pageNumber}`,
+          pageNumber,
+          source: reportSourceUrl,
+          title: reportTitle,
+        })),
+      );
+      options.logger?.info("Retrieved context from the NYC housing report PDF", {
+        pageNumbers,
+        queryLength: query.length,
+        resultCount: rankedChunks.length,
+      });
 
-    return formatRetrievedContext(retrievedPages);
+      return formatRetrievedContext(retrievedPages);
+    } catch (error) {
+      options.context?.set("rag.references", []);
+      options.logger?.error("Unable to retrieve context from the NYC housing report PDF", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return formatRetrievalFailure();
+    }
   }
 
   getObservabilityAttributes(): Record<string, unknown> {
     return {
       "rag.embedding_model": process.env.VOLTAGENT_EMBEDDING_MODEL || defaultEmbeddingModel,
+      "rag.minimum_similarity": defaultMinimumSimilarity,
       "rag.publisher": reportPublisher,
       "rag.source": reportFilename,
       "rag.source_url": reportSourceUrl,
