@@ -100,6 +100,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [OpenRouter](./with-openrouter) — Use OpenRouter through VoltAgent's built-in `openrouter/<model>` routing.
 - [Chroma](./with-chroma) — RAG with Chroma vectors showing automatic vs tool‑driven retrieval patterns.
 - [Client‑side Tools](./with-client-side-tools) — Next.js UI triggers typed client‑side tools safely, VoltAgent on the server.
+- [OpenUI](./with-openui) — Retrieve grounded facts from one PDF with VoltAgent and stream them as themed charts, forms, and follow-up actions with OpenUI.
 - [Cloudflare Workers](./with-cloudflare-workers) — Deploy your agent on Workers using the Hono server adapter.
 - [Composio (MCP)](./with-composio-mcp) — Call Composio actions through MCP tools inside your workflows.
 - [Custom Endpoints](./with-custom-endpoints) — Add bespoke REST endpoints alongside agent/workflow routes.
