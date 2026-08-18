@@ -30,7 +30,7 @@ Key capabilities:
 - Real-time web search with comprehensive results  
 - Content extraction from any accessible URL
 - Safe search filtering and localization options
-- Requires You.com API key for authenticated access
+- Requires YDC_API_KEY for access
 
 Always be helpful and provide accurate information based on the search results. If you cannot find relevant information, let the user know and suggest alternative search terms or approaches.
 

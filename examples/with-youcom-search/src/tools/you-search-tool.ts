@@ -132,9 +132,12 @@ export const youSearchTool = createTool({
         message: `Found ${actualResultCount} search results using You.com's search API.`,
       };
     } catch (error) {
-      console.error("❌ You.com search error:", error);
-      
-      if (error.name === 'AbortError') {
+      console.error(
+        "❌ You.com search error:",
+        error instanceof Error ? error.message : String(error),
+      );
+
+      if (error instanceof Error && error.name === "AbortError") {
         return {
           success: false,
           error: "Request timeout",
@@ -225,7 +228,6 @@ export const youContentsTool = createTool({
         if (content) {
           return {
             success: true,
-            url,
             title: page.title || "Extracted Content",
             content,
             markdown: page.markdown || null,
@@ -235,7 +237,7 @@ export const youContentsTool = createTool({
               publishedDate: page.published_date || null,
               language: page.language || null,
             },
-            message: `Successfully extracted content from ${url}`,
+            message: "Successfully extracted content.",
           };
         }
       }
@@ -243,12 +245,16 @@ export const youContentsTool = createTool({
       return {
         success: false,
         error: "No content extracted",
-        message: `No content could be extracted from ${url}. The page may be inaccessible or contain no readable content.`,
+        message:
+          "No content could be extracted from the provided URL. The page may be inaccessible or contain no readable content.",
       };
     } catch (error) {
-      console.error("❌ You.com content extraction error:", error);
-      
-      if (error.name === 'AbortError') {
+      console.error(
+        "❌ You.com content extraction error:",
+        error instanceof Error ? error.message : String(error),
+      );
+
+      if (error instanceof Error && error.name === "AbortError") {
         return {
           success: false,
           error: "Request timeout",

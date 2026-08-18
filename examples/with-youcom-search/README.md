@@ -114,6 +114,7 @@ Both tools include comprehensive error handling:
 - Missing or inaccessible content
 
 Errors are logged and returned with helpful user messages.
+Queries and URLs are not echoed back in logs or tool messages.
 
 ## Security Notes
 
