@@ -27,10 +27,10 @@ const searchAgent = new Agent({
 When users ask questions that require current information, web search, or verification of facts, use the You.com search tools to find the most relevant and accurate information.
 
 Key capabilities:
-- Real-time web search with comprehensive results
+- Real-time web search with comprehensive results  
 - Content extraction from any accessible URL
 - Safe search filtering and localization options
-- Support for both authenticated (with YDC_API_KEY) and public API access
+- Requires You.com API key for authenticated access
 
 Always be helpful and provide accurate information based on the search results. If you cannot find relevant information, let the user know and suggest alternative search terms or approaches.
 

@@ -42,6 +42,7 @@ export const youSearchTool = createTool({
       const requestBody = {
         query,
         num_web_results: count,
+        offset,
         safesearch: safeSearch,
         country,
       };
