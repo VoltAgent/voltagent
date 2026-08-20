@@ -101,5 +101,13 @@ describe("Template Engine", () => {
 
       expect(result).toBe("Pattern: $1.50 (special)");
     });
+
+    it("should preserve replacement tokens in variable values", () => {
+      const content = "Amount: {{value}}";
+      const variables = { value: "$&" };
+      const result = engine.process(content, variables);
+
+      expect(result).toBe("Amount: $&");
+    });
   });
 });
