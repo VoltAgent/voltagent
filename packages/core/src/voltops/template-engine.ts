@@ -22,7 +22,8 @@ export const createSimpleTemplateEngine = (): TemplateEngine => ({
     let processed = content;
     for (const [key, value] of Object.entries(variables)) {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
-      processed = processed.replace(regex, () => String(value));
+      const replacement = String(value);
+      processed = processed.replace(regex, () => replacement);
     }
     return processed;
   },
