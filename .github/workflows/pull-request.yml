@@ -86,6 +86,7 @@ jobs:
           - logger
           - postgres
           - supabase
+          - taskmarket
           - voice
           - server-core
           - libsql
