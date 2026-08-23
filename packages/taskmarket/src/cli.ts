@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { TASKMARKET_API_ORIGIN } from "./types";
 import type { CliRunResult, TaskmarketCliRunner, TaskmarketCliRunnerOptions } from "./types";
 
@@ -35,6 +35,28 @@ function cliEnvironment(): NodeJS.ProcessEnv {
   return environment;
 }
 
+function terminateProcessTree(child: ChildProcess): void {
+  if (child.pid === undefined) return;
+
+  if (process.platform === "win32") {
+    const killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
+      env: cliEnvironment(),
+      shell: false,
+      windowsHide: true,
+      stdio: "ignore",
+    });
+    killer.once("error", () => child.kill("SIGKILL"));
+    killer.unref();
+    return;
+  }
+
+  try {
+    process.kill(-child.pid, "SIGKILL");
+  } catch {
+    child.kill("SIGKILL");
+  }
+}
+
 export function createTaskmarketCliRunner(
   options: TaskmarketCliRunnerOptions = {},
 ): TaskmarketCliRunner {
@@ -53,6 +75,7 @@ export function createTaskmarketCliRunner(
     run(args) {
       return new Promise<CliRunResult>((resolve, reject) => {
         const child = spawn(binary, [...args], {
+          detached: process.platform !== "win32",
           env: cliEnvironment(),
           shell: false,
           windowsHide: true,
@@ -63,13 +86,20 @@ export function createTaskmarketCliRunner(
         let outputBytes = 0;
         let timedOut = false;
         let outputLimitExceeded = false;
+        let terminationStarted = false;
+
+        const terminate = () => {
+          if (terminationStarted) return;
+          terminationStarted = true;
+          terminateProcessTree(child);
+        };
 
         const collect = (target: Buffer[]) => (chunk: Buffer) => {
           if (outputLimitExceeded) return;
           outputBytes += chunk.byteLength;
           if (outputBytes > maxOutputBytes) {
             outputLimitExceeded = true;
-            child.kill("SIGKILL");
+            terminate();
             return;
           }
           target.push(chunk);
@@ -80,7 +110,7 @@ export function createTaskmarketCliRunner(
 
         const timer = setTimeout(() => {
           timedOut = true;
-          child.kill("SIGKILL");
+          terminate();
         }, timeoutMs);
         timer.unref();
 

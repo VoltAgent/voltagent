@@ -11,11 +11,21 @@ description: Delegate bounded work from a VoltAgent agent through an approval-ga
 
 ```bash
 pnpm add @voltagent/taskmarket @voltagent/core zod
+```
+
+Install the separate first-party Taskmarket CLI binary globally, without running package scripts:
+
+```bash
 npm install --global --ignore-scripts @lucid-agents/taskmarket@1.11.0
+```
+
+Initialize that CLI's wallet and legal configuration interactively:
+
+```bash
 taskmarket init
 ```
 
-The first-party Taskmarket CLI owns the wallet and signs the request. The integration does not accept wallet secrets as configuration or tool arguments.
+`@lucid-agents/taskmarket` supplies the `taskmarket` command used by `taskmarket init` and every runtime preflight; it is distinct from the project dependency `@voltagent/taskmarket`. The first-party CLI owns the wallet and signs the request. The integration does not accept wallet secrets as configuration or tool arguments.
 CLI subprocesses are pinned to Taskmarket's production API and receive only a small runtime/filesystem environment allowlist. Host API keys and `TASKMARKET_IDEMPOTENCY_KEY` are not inherited, preventing an approved preview from being redirected, exposing unrelated credentials, or being coupled to an unrelated write attempt.
 
 ## Add the toolkit
@@ -48,6 +58,8 @@ The host ceiling uses a decimal string so spend checks never depend on floating-
 5. Continue with `taskmarket_get_task`, `taskmarket_list_submissions`, and `taskmarket_review_submission_artifact`.
 
 The toolkit deliberately exposes no accept or reject tool. Text artifacts are capped, checked against Taskmarket's SHA-256 metadata, and marked as untrusted for human review.
+
+Direct MCP exposure enforces `needsApproval` through the MCP elicitation bridge and requires the operator to check an explicit approval field. If the client has no elicitation bridge, creation fails before the CLI is invoked.
 
 Creation is limited to `public` and `unlisted` tasks. Private-task passwords and viewer policies belong in a dedicated secret-management interface, not in agent-visible tool arguments.
 

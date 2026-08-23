@@ -208,8 +208,12 @@ export class TaskmarketRequester {
     this.previewTtlMs = options.previewTtlMs ?? DEFAULT_PREVIEW_TTL_MS;
     this.maxPendingPreviews = options.maxPendingPreviews ?? DEFAULT_MAX_PENDING_PREVIEWS;
     this.maxSubmissionReviewBytes = options.maxSubmissionReviewBytes ?? DEFAULT_REVIEW_BYTES;
-    if (!Number.isSafeInteger(this.previewTtlMs) || this.previewTtlMs < 30_000) {
-      throw new Error("previewTtlMs must be an integer of at least 30000 ms");
+    if (
+      !Number.isSafeInteger(this.previewTtlMs) ||
+      this.previewTtlMs < 30_000 ||
+      this.previewTtlMs > DEFAULT_PREVIEW_TTL_MS
+    ) {
+      throw new Error("previewTtlMs must be an integer between 30000 and 300000 ms");
     }
     if (
       !Number.isSafeInteger(this.maxPendingPreviews) ||
@@ -397,6 +401,7 @@ export class TaskmarketRequester {
         live.description !== record.preview.exactDescription ||
         live.rewardBaseUnits !== parseUsdcBaseUnits(record.preview.rewardUsdc).toString() ||
         live.mode !== "bounty" ||
+        live.status !== "open" ||
         live.taskVisibility !== record.preview.taskVisibility ||
         live.submissionVisibility !== record.preview.submissionVisibility ||
         live.tags.length !== record.preview.tags.length ||
@@ -415,10 +420,10 @@ export class TaskmarketRequester {
         retryAllowed: false,
         taskId,
         taskUrl: taskUrl(taskId),
-        referenceCode: optionalString(data.referenceCode) ?? live.referenceCode,
+        referenceCode: live.referenceCode,
         transactionHash: live.escrowTransactionHash,
         idempotencyKey: optionalUuid(envelope.idempotencyKey),
-        liveStatus: live.status,
+        liveStatus: "open",
         expiryTime: live.expiryTime,
         planDigest: record.preview.planDigest,
       };
@@ -623,7 +628,10 @@ export class TaskmarketRequester {
           ? null
           : isoTimestamp(item.rejectedAt, "rejection timestamp"),
       deliverableHash: hexHash(item.deliverableHash, "deliverable hash"),
-      submitTransactionHash: hexHash(item.submitTxHash, "submission transaction hash"),
+      submitTransactionHash:
+        item.submitTxHash === null || item.submitTxHash === undefined
+          ? null
+          : hexHash(item.submitTxHash, "submission transaction hash"),
       artifactCount: artifacts.length,
       artifactsTruncated: artifacts.length > 20,
       artifacts: artifacts.slice(0, 20).map((artifact) => this.parseArtifact(artifact)),

@@ -50,6 +50,7 @@ describe("createTaskmarketRequesterToolkit", () => {
     );
     expect(create).toHaveProperty("needsApproval", true);
     expect(create).toHaveProperty("mcp.annotations.readOnlyHint", false);
+    expect(create).toHaveProperty("mcp.annotations.destructiveHint", true);
     expect(create).toHaveProperty("mcp.annotations.idempotentHint", false);
   });
 

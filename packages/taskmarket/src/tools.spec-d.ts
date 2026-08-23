@@ -1,7 +1,13 @@
-import { Agent } from "@voltagent/core";
+import { Agent, type Toolkit } from "@voltagent/core";
 import { expectTypeOf } from "vitest";
+import type { TaskmarketRequester } from "./requester";
 import { createTaskmarketRequesterToolkit } from "./tools";
-import type { TaskmarketCliRunner } from "./types";
+import type {
+  TaskmarketCliRunner,
+  TaskmarketCreateResult,
+  TaskmarketTaskPreview,
+  TaskmarketTaskPreviewInput,
+} from "./types";
 
 declare const runner: TaskmarketCliRunner;
 
@@ -18,4 +24,13 @@ const agent = new Agent({
   tools: [toolkit],
 });
 
-expectTypeOf(agent).toBeObject();
+type PreviewInput = Parameters<TaskmarketRequester["previewTask"]>[0];
+type PreviewOutput = ReturnType<TaskmarketRequester["previewTask"]>;
+type CreateOutput = Awaited<ReturnType<TaskmarketRequester["createTask"]>>;
+
+expectTypeOf<PreviewInput>().toEqualTypeOf<TaskmarketTaskPreviewInput>();
+expectTypeOf<PreviewOutput>().toEqualTypeOf<TaskmarketTaskPreview>();
+expectTypeOf<CreateOutput>().toEqualTypeOf<TaskmarketCreateResult>();
+expectTypeOf(toolkit).toMatchTypeOf<Toolkit>();
+expectTypeOf(toolkit.tools).toMatchTypeOf<Toolkit["tools"]>();
+expectTypeOf(agent).toMatchTypeOf<Agent>();

@@ -39,7 +39,7 @@ export function createTaskmarketRequesterToolkit(options: TaskmarketRequesterOpt
       annotations: {
         title: "Create approved Taskmarket bounty",
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: false,
         openWorldHint: true,
       },

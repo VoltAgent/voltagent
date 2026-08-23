@@ -16,6 +16,15 @@ const visibleText = (label: string, maximum: number) =>
       message: `${label} contains unsupported control characters`,
     });
 
+const exactVisibleText = (label: string, maximum: number) =>
+  z
+    .string()
+    .min(1, `${label} is required`)
+    .max(maximum, `${label} is too long`)
+    .refine((value) => !hasUnsupportedControlCharacter(value), {
+      message: `${label} contains unsupported control characters`,
+    });
+
 export const usdcAmountSchema = z
   .string()
   .max(30)
@@ -51,7 +60,7 @@ export const taskPreviewInputSchema = z.object({
 export const createTaskInputSchema = z.object({
   previewId: previewIdSchema,
   planDigest: planDigestSchema,
-  authorizationStatement: visibleText("Authorization statement", 30000),
+  authorizationStatement: exactVisibleText("Authorization statement", 30000),
 });
 
 export const taskStatusInputSchema = z.object({ taskId: taskIdSchema });

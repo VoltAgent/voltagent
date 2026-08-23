@@ -46,6 +46,29 @@ describe("createTaskmarketCliRunner", () => {
     expect(Buffer.byteLength(output.stdout)).toBeLessThanOrEqual(4096);
   });
 
+  it("terminates descendants that inherit CLI pipes on timeout", async () => {
+    const runner = createTaskmarketCliRunner({
+      binary: process.execPath,
+      timeoutMs: 1000,
+    });
+    const startedAt = Date.now();
+    const output = await runner.run([
+      "-e",
+      [
+        'const { spawn } = require("node:child_process");',
+        'const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"],',
+        '  { stdio: ["ignore", "inherit", "inherit"] });',
+        'process.stdout.write(String(child.pid ?? ""));',
+        "setInterval(() => {}, 1000);",
+      ].join("\n"),
+    ]);
+
+    expect(output.timedOut).toBe(true);
+    expect(output.outputLimitExceeded).toBe(false);
+    expect(output.stdout).toMatch(/^\d+$/u);
+    expect(Date.now() - startedAt).toBeLessThan(5000);
+  });
+
   it("validates runner resource limits", () => {
     expect(() => createTaskmarketCliRunner({ timeoutMs: 999 })).toThrow("timeout");
     expect(() => createTaskmarketCliRunner({ maxOutputBytes: 4095 })).toThrow("output limit");

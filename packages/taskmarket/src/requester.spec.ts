@@ -208,6 +208,12 @@ describe("TaskmarketRequester previews", () => {
     now = new Date("2026-08-23T00:01:00.000Z");
     expect(client.previewTask(input())).toHaveProperty("previewId");
   });
+
+  it("does not allow previews beyond the five-minute authorization window", () => {
+    expect(() => requester(new FakeRunner([]), { previewTtlMs: 300_001 })).toThrow(
+      "between 30000 and 300000",
+    );
+  });
 });
 
 describe("TaskmarketRequester creation", () => {
@@ -327,6 +333,23 @@ describe("TaskmarketRequester creation", () => {
       }),
     ).rejects.toThrow("single-use");
     expect(runner.calls).toEqual([]);
+  });
+
+  it("rejects whitespace added to the exact authorization statement", async () => {
+    for (const mutate of [(value: string) => ` ${value}`, (value: string) => `${value}\n`]) {
+      const runner = successfulCreateRunner();
+      const client = requester(runner);
+      const preview = client.previewTask(input());
+
+      await expect(
+        client.createTask({
+          previewId: preview.previewId,
+          planDigest: preview.planDigest,
+          authorizationStatement: mutate(preview.authorizationStatement),
+        }),
+      ).rejects.toThrow("does not exactly match");
+      expect(runner.calls).toEqual([]);
+    }
   });
 
   it("returns an unknown non-retryable result after an ambiguous write", async () => {
@@ -461,6 +484,40 @@ describe("TaskmarketRequester creation", () => {
       }),
     ).resolves.toMatchObject({ status: "unknown", retryAllowed: false });
   });
+
+  it("does not claim success for a task that is not live and open", async () => {
+    const runner = successfulCreateRunner();
+    runner.responses[6] = success(taskData({ status: "cancelled" }));
+    const client = requester(runner);
+    const preview = client.previewTask(input());
+
+    await expect(
+      client.createTask({
+        previewId: preview.previewId,
+        planDigest: preview.planDigest,
+        authorizationStatement: preview.authorizationStatement,
+      }),
+    ).resolves.toMatchObject({ status: "unknown", retryAllowed: false });
+  });
+
+  it("returns only the bounded reference code verified from live task state", async () => {
+    const runner = successfulCreateRunner();
+    runner.responses[5] = success(
+      { taskId: TASK_ID, referenceCode: "untrusted-envelope-reference" },
+      "33333333-3333-4333-8333-333333333333",
+    );
+    runner.responses[6] = success(taskData({ referenceCode: "TSK-LIVE" }));
+    const client = requester(runner);
+    const preview = client.previewTask(input());
+
+    await expect(
+      client.createTask({
+        previewId: preview.previewId,
+        planDigest: preview.planDigest,
+        authorizationStatement: preview.authorizationStatement,
+      }),
+    ).resolves.toMatchObject({ status: "created", referenceCode: "TSK-LIVE" });
+  });
 });
 
 describe("TaskmarketRequester review tools", () => {
@@ -510,6 +567,26 @@ describe("TaskmarketRequester review tools", () => {
     expect(listing.submissions).toHaveLength(1);
     expect(listing.submissions[0]).not.toHaveProperty("secretField");
     expect(listing.submissions[0].artifacts[0]).not.toHaveProperty("storageUri");
+  });
+
+  it("keeps an in-flight submission with no transaction hash reviewable", async () => {
+    const runner = new FakeRunner([
+      success(taskData({ submissionCount: 1 })),
+      success([
+        {
+          id: SUBMISSION_ID,
+          workerAddress: `0x${"3".repeat(40)}`,
+          submittedAt: "2026-08-23T00:00:00.000Z",
+          rejectedAt: null,
+          deliverableHash: `0x${"4".repeat(64)}`,
+          submitTxHash: null,
+          artifacts: [],
+        },
+      ]),
+    ]);
+
+    const listing = await requester(runner).listSubmissions(TASK_ID);
+    expect(listing.submissions[0]).toMatchObject({ submitTransactionHash: null });
   });
 
   it("retrieves and hash-verifies one bounded text artifact", async () => {

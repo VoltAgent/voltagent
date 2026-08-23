@@ -9,7 +9,17 @@ The runner pins `https://api.taskmarket.dev` and passes only a small runtime/fil
 
 ```bash
 pnpm add @voltagent/taskmarket @voltagent/core zod
+```
+
+Install Taskmarket's separate first-party CLI binary globally, without running package scripts:
+
+```bash
 npm install --global --ignore-scripts @lucid-agents/taskmarket@1.11.0
+```
+
+Then initialize its wallet and legal configuration interactively:
+
+```bash
 taskmarket init
 ```
 
@@ -48,6 +58,8 @@ If `taskmarket legal status` reports a draft bundle that the operator accepted o
 
 No accept or reject tool is exposed. Submission artifacts are size-bounded, hash-verified, and explicitly marked as untrusted content.
 
+When tools are exposed directly through `@voltagent/mcp-server`, the same creation policy requires an MCP elicitation response with an explicitly checked approval field. Clients without an elicitation bridge fail closed before the CLI is called.
+
 The creation tool supports `public` and `unlisted` tasks. Private tasks are intentionally excluded because their access password or viewer policy needs a dedicated secret-management UI rather than an LLM tool argument.
 
 ### Example preview
@@ -60,6 +72,9 @@ Requester: 0xYourTaskmarketCliWallet
 Reward/funding amount: 5 USDC
 Maximum spend: 5 USDC
 Deadline: 24 hours after Taskmarket accepts creation
+Visibility: public; submissions: winner_only
+Exact description size: <N> UTF-8 bytes
+Exact description SHA-256: <64 lowercase hexadecimal characters>
 Exact description:
 Summarize the supplied dataset.
 

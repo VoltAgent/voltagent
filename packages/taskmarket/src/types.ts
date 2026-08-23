@@ -34,6 +34,7 @@ export type TaskmarketRequesterOptions = {
   cliPath?: string;
   cliRunner?: TaskmarketCliRunner;
   minimumCliVersion?: string;
+  /** Preview lifetime from 30 seconds up to the fixed five-minute authorization ceiling. */
   previewTtlMs?: number;
   maxPendingPreviews?: number;
   maxSubmissionReviewBytes?: number;
@@ -87,7 +88,7 @@ export type TaskmarketCreateResult =
       referenceCode: string | null;
       transactionHash: string | null;
       idempotencyKey: string | null;
-      liveStatus: string;
+      liveStatus: "open";
       expiryTime: string;
       planDigest: string;
     }
@@ -126,7 +127,7 @@ export type TaskmarketSubmissionSummary = {
   submittedAt: string;
   rejectedAt: string | null;
   deliverableHash: string;
-  submitTransactionHash: string;
+  submitTransactionHash: string | null;
   artifactCount: number;
   artifactsTruncated: boolean;
   artifacts: Array<{
