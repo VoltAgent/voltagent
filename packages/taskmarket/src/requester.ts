@@ -391,6 +391,8 @@ export class TaskmarketRequester {
       const deadlineDelta = Date.parse(live.expiryTime) - writeStartedAt;
       const latestDeadlineDelta = Date.parse(live.expiryTime) - writeFinishedAt;
       const expectedDurationMs = record.preview.durationHours * 60 * 60 * 1000;
+      const liveTags = [...live.tags].sort();
+      const previewTags = [...record.preview.tags].sort();
       if (
         live.description !== record.preview.exactDescription ||
         live.rewardBaseUnits !== parseUsdcBaseUnits(record.preview.rewardUsdc).toString() ||
@@ -398,7 +400,7 @@ export class TaskmarketRequester {
         live.taskVisibility !== record.preview.taskVisibility ||
         live.submissionVisibility !== record.preview.submissionVisibility ||
         live.tags.length !== record.preview.tags.length ||
-        live.tags.some((tag, index) => tag !== record.preview.tags[index]) ||
+        liveTags.some((tag, index) => tag !== previewTags[index]) ||
         deadlineDelta < expectedDurationMs - DEADLINE_TOLERANCE_MS ||
         latestDeadlineDelta > expectedDurationMs + DEADLINE_TOLERANCE_MS
       ) {

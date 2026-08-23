@@ -65,13 +65,16 @@ describe("createTaskmarketRequesterToolkit", () => {
     );
     if (!preview || !("execute" in preview) || !preview.execute)
       throw new Error("Missing preview tool");
-    const output = (await preview.execute({
-      description: "Build a report.",
-      rewardUsdc: "3",
-      maximumSpendUsdc: "3",
-      durationHours: 12,
-      deliverables: ["report.md"],
-    })) as { authorizationStatement: string };
+    const output = (await preview.execute(
+      {
+        description: "Build a report.",
+        rewardUsdc: "3",
+        maximumSpendUsdc: "3",
+        durationHours: 12,
+        deliverables: ["report.md"],
+      },
+      { toolCallId: "test-call", messages: [] },
+    )) as { authorizationStatement: string };
     expect(output.authorizationStatement).toContain("Reward/funding amount: 3 USDC");
     expect(output.authorizationStatement).toContain("Deadline: 12 hours");
     expect(output.authorizationStatement).toContain("1. report.md");

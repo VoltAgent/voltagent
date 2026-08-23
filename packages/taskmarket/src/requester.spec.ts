@@ -240,6 +240,36 @@ describe("TaskmarketRequester creation", () => {
     ]);
   });
 
+  it("accepts live task tags returned in a different order", async () => {
+    const runner = successfulCreateRunner();
+    runner.responses[6] = success(taskData({ tags: ["data", "research"] }));
+    const client = requester(runner);
+    const preview = client.previewTask(input());
+
+    await expect(
+      client.createTask({
+        previewId: preview.previewId,
+        planDigest: preview.planDigest,
+        authorizationStatement: preview.authorizationStatement,
+      }),
+    ).resolves.toMatchObject({ status: "created", taskId: TASK_ID });
+  });
+
+  it("rejects live task tags with duplicate substitutions", async () => {
+    const runner = successfulCreateRunner();
+    runner.responses[6] = success(taskData({ tags: ["research", "research"] }));
+    const client = requester(runner);
+    const preview = client.previewTask(input());
+
+    await expect(
+      client.createTask({
+        previewId: preview.previewId,
+        planDigest: preview.planDigest,
+        authorizationStatement: preview.authorizationStatement,
+      }),
+    ).resolves.toMatchObject({ status: "unknown", retryAllowed: false });
+  });
+
   it("supports an exact externally accepted draft digest", async () => {
     const runner = successfulCreateRunner({ accepted: false, bundleDigest: LEGAL_DIGEST });
     const client = requester(runner, { acceptedLegalBundleDigest: LEGAL_DIGEST });
