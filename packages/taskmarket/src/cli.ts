@@ -1,4 +1,5 @@
 import { type ChildProcess, spawn } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
 import { TASKMARKET_API_ORIGIN } from "./types";
 import type { CliRunResult, TaskmarketCliRunner, TaskmarketCliRunnerOptions } from "./types";
 
@@ -24,6 +25,19 @@ const INHERITED_ENVIRONMENT_KEYS = [
   "TEMP",
   "TMPDIR",
 ] as const;
+
+interface OutputCapture {
+  bytes: number;
+  chunks: string[];
+  decoder: StringDecoder;
+}
+
+function boundedDecodedOutput(capture: OutputCapture): string {
+  const value = capture.chunks.join("");
+  const encoded = Buffer.from(value, "utf8");
+  if (encoded.byteLength <= capture.bytes) return value;
+  return new StringDecoder("utf8").write(encoded.subarray(0, capture.bytes));
+}
 
 function cliEnvironment(): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = {
@@ -73,8 +87,16 @@ export function createTaskmarketCliRunner(
           windowsHide: true,
           stdio: ["ignore", "pipe", "pipe"],
         });
-        const stdout: Buffer[] = [];
-        const stderr: Buffer[] = [];
+        const stdout: OutputCapture = {
+          bytes: 0,
+          chunks: [],
+          decoder: new StringDecoder("utf8"),
+        };
+        const stderr: OutputCapture = {
+          bytes: 0,
+          chunks: [],
+          decoder: new StringDecoder("utf8"),
+        };
         let outputBytes = 0;
         let timedOut = false;
         let outputLimitExceeded = false;
@@ -86,18 +108,20 @@ export function createTaskmarketCliRunner(
           terminateProcessTree(child);
         };
 
-        const collect = (target: Buffer[]) => (chunk: Buffer) => {
+        const collect = (target: OutputCapture) => (chunk: Buffer) => {
           if (outputLimitExceeded) return;
           const remaining = maxOutputBytes - outputBytes;
-          if (chunk.byteLength > remaining) {
-            if (remaining > 0) target.push(chunk.subarray(0, remaining));
-            outputBytes = maxOutputBytes;
+          const accepted = chunk.byteLength > remaining ? chunk.subarray(0, remaining) : chunk;
+          if (accepted.byteLength > 0) {
+            outputBytes += accepted.byteLength;
+            target.bytes += accepted.byteLength;
+            const decoded = target.decoder.write(accepted);
+            if (decoded) target.chunks.push(decoded);
+          }
+          if (accepted.byteLength < chunk.byteLength) {
             outputLimitExceeded = true;
             terminate();
-            return;
           }
-          outputBytes += chunk.byteLength;
-          target.push(chunk);
         };
 
         child.stdout.on("data", collect(stdout));
@@ -115,9 +139,18 @@ export function createTaskmarketCliRunner(
         });
         child.once("close", (exitCode) => {
           clearTimeout(timer);
+          // When the limit terminated the process, StringDecoder may hold the
+          // leading bytes of a split UTF-8 sequence. Deliberately omit those
+          // bytes instead of flushing a replacement character beyond the cap.
+          if (!outputLimitExceeded) {
+            const stdoutTail = stdout.decoder.end();
+            const stderrTail = stderr.decoder.end();
+            if (stdoutTail) stdout.chunks.push(stdoutTail);
+            if (stderrTail) stderr.chunks.push(stderrTail);
+          }
           resolve({
-            stdout: Buffer.concat(stdout).toString("utf8"),
-            stderr: Buffer.concat(stderr).toString("utf8"),
+            stdout: boundedDecodedOutput(stdout),
+            stderr: boundedDecodedOutput(stderr),
             exitCode,
             timedOut,
             outputLimitExceeded,

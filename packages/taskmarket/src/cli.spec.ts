@@ -49,6 +49,19 @@ describe("createTaskmarketCliRunner", () => {
     expect(Buffer.byteLength(output.stdout)).toBe(4096);
   });
 
+  itPosix("omits an incomplete UTF-8 sequence at the output bound", async () => {
+    const runner = createTaskmarketCliRunner({
+      binary: process.execPath,
+      maxOutputBytes: 4096,
+    });
+    const output = await runner.run(["-e", 'process.stdout.write(`x${"é".repeat(2048)}`)']);
+
+    expect(output.outputLimitExceeded).toBe(true);
+    expect(output.stdout).toBe(`x${"é".repeat(2047)}`);
+    expect(output.stdout).not.toContain("�");
+    expect(Buffer.byteLength(output.stdout)).toBe(4095);
+  });
+
   itPosix("terminates descendants that inherit CLI pipes on timeout", async () => {
     const runner = createTaskmarketCliRunner({
       binary: process.execPath,
