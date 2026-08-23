@@ -134,25 +134,58 @@ describe("ToolAdapter", () => {
     }
   });
 
-  it("bounds oversized approval arguments while preserving their exact digest", async () => {
+  it("fails closed when approval arguments cannot be shown in full", async () => {
+    const execute = vi.fn(async () => "written");
     const tool = createTool({
       name: "large_write",
       description: "Write a large payload",
       parameters: z.object({ payload: z.string() }),
       needsApproval: true,
-      execute: async () => "written",
+      execute,
     });
     const requestElicitation = vi.fn(async () => ({
       action: "accept" as const,
       content: { approved: true },
     }));
 
-    await ToolAdapter.executeTool(tool, { payload: "x".repeat(32 * 1024) }, { requestElicitation });
+    await expect(
+      ToolAdapter.executeTool(tool, { payload: "x".repeat(32 * 1024) }, { requestElicitation }),
+    ).rejects.toThrow("arguments exceed the 24576-byte review limit");
+
+    expect(requestElicitation).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("executes the immutable arguments displayed before deferred approval", async () => {
+    const execute = vi.fn(async () => "written");
+    const tool = createTool({
+      name: "mutable_write",
+      description: "Write a caller-owned payload",
+      parameters: z.object({ payload: z.object({ value: z.string() }) }),
+      needsApproval: true,
+      execute,
+    });
+    let resolveApproval:
+      | ((response: { action: "accept"; content: { approved: true } }) => void)
+      | undefined;
+    const requestElicitation = vi.fn(
+      () =>
+        new Promise<{ action: "accept"; content: { approved: true } }>((resolve) => {
+          resolveApproval = resolve;
+        }),
+    );
+    const callerArgs = { payload: { value: "reviewed" } };
+
+    const pending = ToolAdapter.executeTool(tool, callerArgs, { requestElicitation });
+    await vi.waitFor(() => expect(requestElicitation).toHaveBeenCalledTimes(1));
+    callerArgs.payload.value = "mutated-after-review";
+    resolveApproval?.({ action: "accept", content: { approved: true } });
+    await pending;
 
     const message = requestElicitation.mock.calls[0]?.[0].message ?? "";
-    expect(message).toContain("[Arguments truncated; verify the exact SHA-256 above.]");
-    expect(message).toMatch(/Exact arguments SHA-256: [a-f0-9]{64}/u);
-    expect(Buffer.byteLength(message, "utf8")).toBeLessThan(26 * 1024);
+    expect(message).toContain("reviewed");
+    expect(message).not.toContain("mutated-after-review");
+    expect(execute).toHaveBeenCalledWith({ payload: { value: "reviewed" } }, expect.anything());
   });
 
   it("honors a dynamic approval policy that permits a read-only invocation", async () => {

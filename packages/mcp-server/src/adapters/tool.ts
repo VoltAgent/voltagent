@@ -18,14 +18,35 @@ function approvalArgumentBinding(args: Record<string, unknown>): {
 } {
   const serialized = safeStringify(args, { indentation: 2 });
   const bytes = Buffer.from(serialized, "utf8");
-  const truncated = bytes.byteLength > MAX_APPROVAL_ARGUMENT_BYTES;
+  if (bytes.byteLength > MAX_APPROVAL_ARGUMENT_BYTES) {
+    throw new Error(
+      `Approval-gated tool arguments exceed the ${MAX_APPROVAL_ARGUMENT_BYTES}-byte review limit`,
+    );
+  }
   return {
     byteLength: bytes.byteLength,
     sha256: createHash("sha256").update(bytes).digest("hex"),
-    display: truncated
-      ? `${bytes.subarray(0, MAX_APPROVAL_ARGUMENT_BYTES).toString("utf8")}\n[Arguments truncated; verify the exact SHA-256 above.]`
-      : serialized,
+    display: serialized,
   };
+}
+
+function immutableArgumentSnapshot(args: Record<string, unknown>): Record<string, unknown> {
+  let snapshot: Record<string, unknown>;
+  try {
+    snapshot = structuredClone(args);
+  } catch {
+    throw new Error("Tool arguments could not be captured for immutable execution");
+  }
+
+  const seen = new WeakSet<object>();
+  const freeze = (value: unknown): void => {
+    if (value === null || typeof value !== "object" || seen.has(value)) return;
+    seen.add(value);
+    for (const child of Object.values(value)) freeze(child);
+    Object.freeze(value);
+  };
+  freeze(snapshot);
+  return snapshot;
 }
 
 async function requiresApproval(tool: Tool, args: Record<string, unknown>): Promise<boolean> {
@@ -108,9 +129,9 @@ async function executeTool(
   if (!tool.execute) {
     throw new Error(`Tool ${tool.name} does not have "execute" method`);
   }
-  const parsedArgs = args as Record<string, unknown>;
-  if (await requiresApproval(tool, parsedArgs)) {
-    await requestApproval(tool, parsedArgs, options?.requestElicitation);
+  const executionArgs = immutableArgumentSnapshot(args as Record<string, unknown>);
+  if (await requiresApproval(tool, executionArgs)) {
+    await requestApproval(tool, executionArgs, options?.requestElicitation);
   }
 
   let operationContext: OperationContext | undefined;
@@ -119,7 +140,7 @@ async function executeTool(
     operationContext = createStubOperationContext(options.requestElicitation);
   }
 
-  const result = await tool.execute(parsedArgs, operationContext);
+  const result = await tool.execute(executionArgs, operationContext);
   const text = typeof result === "string" ? result : safeStringify(result, { indentation: 2 });
 
   return {
