@@ -16,6 +16,7 @@ export interface TaskmarketCliRunner {
 }
 
 export type TaskmarketCliRunnerOptions = {
+  /** The bundled runner is POSIX-only; use an injected Job Object-backed runner on Windows. */
   binary?: string;
   timeoutMs?: number;
   maxOutputBytes?: number;

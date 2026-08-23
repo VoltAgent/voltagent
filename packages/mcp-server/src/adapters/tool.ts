@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { CallToolResult, Tool as MCPTool } from "@modelcontextprotocol/sdk/types.js";
 import type { OperationContext, Tool } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
@@ -7,6 +7,25 @@ import { toJsonSchema } from "../utils/json-schema";
 
 interface ExecuteToolOptions {
   requestElicitation?: ElicitationRequestHandler;
+}
+
+const MAX_APPROVAL_ARGUMENT_BYTES = 24 * 1024;
+
+function approvalArgumentBinding(args: Record<string, unknown>): {
+  byteLength: number;
+  sha256: string;
+  display: string;
+} {
+  const serialized = safeStringify(args, { indentation: 2 });
+  const bytes = Buffer.from(serialized, "utf8");
+  const truncated = bytes.byteLength > MAX_APPROVAL_ARGUMENT_BYTES;
+  return {
+    byteLength: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    display: truncated
+      ? `${bytes.subarray(0, MAX_APPROVAL_ARGUMENT_BYTES).toString("utf8")}\n[Arguments truncated; verify the exact SHA-256 above.]`
+      : serialized,
+  };
 }
 
 async function requiresApproval(tool: Tool, args: Record<string, unknown>): Promise<boolean> {
@@ -22,14 +41,23 @@ async function requiresApproval(tool: Tool, args: Record<string, unknown>): Prom
 
 async function requestApproval(
   tool: Tool,
+  args: Record<string, unknown>,
   requestElicitation: ElicitationRequestHandler | undefined,
 ): Promise<void> {
   if (!requestElicitation) {
     throw new Error(`Tool ${tool.name} requires approval, but MCP elicitation is unavailable`);
   }
+  const binding = approvalArgumentBinding(args);
   const response = await requestElicitation({
     mode: "form",
-    message: `Approve execution of the approval-gated tool ${tool.name}? Review its arguments in your MCP client before confirming.`,
+    message: [
+      `Approve execution of the approval-gated tool ${tool.name}?`,
+      `Exact arguments: ${binding.byteLength} UTF-8 bytes`,
+      `Exact arguments SHA-256: ${binding.sha256}`,
+      "Arguments:",
+      binding.display,
+      "Confirm only if these are the exact arguments you reviewed.",
+    ].join("\n"),
     requestedSchema: {
       type: "object",
       properties: {
@@ -82,7 +110,7 @@ async function executeTool(
   }
   const parsedArgs = args as Record<string, unknown>;
   if (await requiresApproval(tool, parsedArgs)) {
-    await requestApproval(tool, options?.requestElicitation);
+    await requestApproval(tool, parsedArgs, options?.requestElicitation);
   }
 
   let operationContext: OperationContext | undefined;

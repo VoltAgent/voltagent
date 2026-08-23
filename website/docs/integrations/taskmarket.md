@@ -28,6 +28,8 @@ taskmarket init
 `@lucid-agents/taskmarket` supplies the `taskmarket` command used by `taskmarket init` and every runtime preflight; it is distinct from the project dependency `@voltagent/taskmarket`. The first-party CLI owns the wallet and signs the request. The integration does not accept wallet secrets as configuration or tool arguments.
 CLI subprocesses are pinned to Taskmarket's production API and receive only a small runtime/filesystem environment allowlist. Host API keys and `TASKMARKET_IDEMPOTENCY_KEY` are not inherited, preventing an approved preview from being redirected, exposing unrelated credentials, or being coupled to an unrelated write attempt.
 
+The bundled runner uses POSIX process groups to terminate the complete descendant tree on timeout or excess output. On Windows it fails closed; inject a `cliRunner` backed by a kill-on-close Windows Job Object before enabling the creation tool.
+
 ## Add the toolkit
 
 ```ts
@@ -59,7 +61,7 @@ The host ceiling uses a decimal string so spend checks never depend on floating-
 
 The toolkit deliberately exposes no accept or reject tool. Text artifacts are capped, checked against Taskmarket's SHA-256 metadata, and marked as untrusted for human review.
 
-Direct MCP exposure enforces `needsApproval` through the MCP elicitation bridge and requires the operator to check an explicit approval field. If the client has no elicitation bridge, creation fails before the CLI is invoked.
+Direct MCP exposure enforces `needsApproval` through the MCP elicitation bridge, shows a bounded exact-argument summary and SHA-256, and requires the operator to check an explicit approval field. If the client has no elicitation bridge, creation fails before the CLI is invoked.
 
 Creation is limited to `public` and `unlisted` tasks. Private-task passwords and viewer policies belong in a dedicated secret-management interface, not in agent-visible tool arguments.
 

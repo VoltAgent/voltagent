@@ -5,6 +5,8 @@ Approval-gated Taskmarket requester tools for VoltAgent. The toolkit lets an age
 The package delegates signing and payment to Taskmarket's first-party CLI. It never accepts a private key, seed phrase, token, cookie, or keystore password.
 The runner pins `https://api.taskmarket.dev` and passes only a small runtime/filesystem environment allowlist. It never inherits host API keys or an idempotency key, so an approved preview cannot be redirected to another backend, expose unrelated credentials, or accidentally reuse an unrelated write attempt.
 
+The bundled runner uses POSIX process groups so a timeout or output limit terminates the complete CLI descendant tree. It fails closed on Windows; a Windows host must inject a `cliRunner` that assigns the CLI to a kill-on-close Job Object.
+
 ## Install
 
 ```bash
@@ -58,7 +60,7 @@ If `taskmarket legal status` reports a draft bundle that the operator accepted o
 
 No accept or reject tool is exposed. Submission artifacts are size-bounded, hash-verified, and explicitly marked as untrusted content.
 
-When tools are exposed directly through `@voltagent/mcp-server`, the same creation policy requires an MCP elicitation response with an explicitly checked approval field. Clients without an elicitation bridge fail closed before the CLI is called.
+When tools are exposed directly through `@voltagent/mcp-server`, the same creation policy shows a bounded exact-argument summary and SHA-256 in MCP elicitation, then requires an explicitly checked approval field. Clients without an elicitation bridge fail closed before the CLI is called.
 
 The creation tool supports `public` and `unlisted` tasks. Private tasks are intentionally excluded because their access password or viewer policy needs a dedicated secret-management UI rather than an LLM tool argument.
 

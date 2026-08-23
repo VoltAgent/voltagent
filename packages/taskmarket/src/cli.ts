@@ -37,19 +37,6 @@ function cliEnvironment(): NodeJS.ProcessEnv {
 
 function terminateProcessTree(child: ChildProcess): void {
   if (child.pid === undefined) return;
-
-  if (process.platform === "win32") {
-    const killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
-      env: cliEnvironment(),
-      shell: false,
-      windowsHide: true,
-      stdio: "ignore",
-    });
-    killer.once("error", () => child.kill("SIGKILL"));
-    killer.unref();
-    return;
-  }
-
   try {
     process.kill(-child.pid, "SIGKILL");
   } catch {
@@ -70,12 +57,17 @@ export function createTaskmarketCliRunner(
   if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 4096) {
     throw new Error("Taskmarket CLI output limit must be an integer of at least 4096 bytes");
   }
+  if (process.platform === "win32") {
+    throw new Error(
+      "The default Taskmarket CLI runner is disabled on Windows; inject a runner that contains the CLI in a kill-on-close Job Object",
+    );
+  }
 
   return {
     run(args) {
       return new Promise<CliRunResult>((resolve, reject) => {
         const child = spawn(binary, [...args], {
-          detached: process.platform !== "win32",
+          detached: true,
           env: cliEnvironment(),
           shell: false,
           windowsHide: true,

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createTaskmarketCliRunner } from "./cli";
 
+const itPosix = process.platform === "win32" ? it.skip : it;
+
 describe("createTaskmarketCliRunner", () => {
-  it("passes arguments without a shell", async () => {
+  itPosix("passes arguments without a shell", async () => {
     const runner = createTaskmarketCliRunner({ binary: process.execPath });
     const value = "literal;$(printf unsafe)";
     const output = await runner.run(["-e", "process.stdout.write(process.argv[1])", value]);
@@ -10,7 +12,7 @@ describe("createTaskmarketCliRunner", () => {
     expect(output.stdout).toBe(value);
   });
 
-  it("pins the API and inherits no unrelated secret or idempotency variables", async () => {
+  itPosix("pins the API and inherits no unrelated secret or idempotency variables", async () => {
     const previousApiUrl = process.env.TASKMARKET_API_URL;
     const previousIdempotencyKey = process.env.TASKMARKET_IDEMPOTENCY_KEY;
     const previousApiKey = process.env.UNRELATED_API_KEY;
@@ -36,7 +38,7 @@ describe("createTaskmarketCliRunner", () => {
     }
   });
 
-  it("fails closed when output exceeds the configured bound", async () => {
+  itPosix("fails closed when output exceeds the configured bound", async () => {
     const runner = createTaskmarketCliRunner({
       binary: process.execPath,
       maxOutputBytes: 4096,
@@ -46,7 +48,7 @@ describe("createTaskmarketCliRunner", () => {
     expect(Buffer.byteLength(output.stdout)).toBeLessThanOrEqual(4096);
   });
 
-  it("terminates descendants that inherit CLI pipes on timeout", async () => {
+  itPosix("terminates descendants that inherit CLI pipes on timeout", async () => {
     const runner = createTaskmarketCliRunner({
       binary: process.execPath,
       timeoutMs: 1000,
@@ -72,5 +74,15 @@ describe("createTaskmarketCliRunner", () => {
   it("validates runner resource limits", () => {
     expect(() => createTaskmarketCliRunner({ timeoutMs: 999 })).toThrow("timeout");
     expect(() => createTaskmarketCliRunner({ maxOutputBytes: 4095 })).toThrow("output limit");
+  });
+
+  it("fails closed on Windows unless the host injects a Job Object-backed runner", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+    try {
+      expect(() => createTaskmarketCliRunner()).toThrow("kill-on-close Job Object");
+    } finally {
+      if (descriptor) Object.defineProperty(process, "platform", descriptor);
+    }
   });
 });

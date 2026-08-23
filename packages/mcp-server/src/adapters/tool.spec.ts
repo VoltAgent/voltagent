@@ -93,18 +93,22 @@ describe("ToolAdapter", () => {
       content: { approved: true },
     }));
 
-    const result = await ToolAdapter.executeTool(
-      tool,
-      { planDigest: "sha256:test" },
-      { requestElicitation },
-    );
+    const approvalArgs = {
+      previewId: "tm_preview",
+      planDigest: "sha256:exact-plan",
+      authorizationStatement: "Authorize exactly one bounded bounty.",
+    };
+    const result = await ToolAdapter.executeTool(tool, approvalArgs, { requestElicitation });
 
-    expect(requestElicitation).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mode: "form",
-        requestedSchema: expect.objectContaining({ required: ["approved"] }),
-      }),
-    );
+    const request = requestElicitation.mock.calls[0]?.[0];
+    expect(request).toMatchObject({
+      mode: "form",
+      requestedSchema: expect.objectContaining({ required: ["approved"] }),
+    });
+    expect(request?.message).toContain(approvalArgs.previewId);
+    expect(request?.message).toContain(approvalArgs.planDigest);
+    expect(request?.message).toContain(approvalArgs.authorizationStatement);
+    expect(request?.message).toMatch(/Exact arguments SHA-256: [a-f0-9]{64}/u);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(result.content[0]).toMatchObject({ type: "text" });
   });
@@ -128,6 +132,27 @@ describe("ToolAdapter", () => {
       ).rejects.toThrow("was not approved");
       expect(execute).not.toHaveBeenCalled();
     }
+  });
+
+  it("bounds oversized approval arguments while preserving their exact digest", async () => {
+    const tool = createTool({
+      name: "large_write",
+      description: "Write a large payload",
+      parameters: z.object({ payload: z.string() }),
+      needsApproval: true,
+      execute: async () => "written",
+    });
+    const requestElicitation = vi.fn(async () => ({
+      action: "accept" as const,
+      content: { approved: true },
+    }));
+
+    await ToolAdapter.executeTool(tool, { payload: "x".repeat(32 * 1024) }, { requestElicitation });
+
+    const message = requestElicitation.mock.calls[0]?.[0].message ?? "";
+    expect(message).toContain("[Arguments truncated; verify the exact SHA-256 above.]");
+    expect(message).toMatch(/Exact arguments SHA-256: [a-f0-9]{64}/u);
+    expect(Buffer.byteLength(message, "utf8")).toBeLessThan(26 * 1024);
   });
 
   it("honors a dynamic approval policy that permits a read-only invocation", async () => {
