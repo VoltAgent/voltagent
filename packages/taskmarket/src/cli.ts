@@ -88,12 +88,15 @@ export function createTaskmarketCliRunner(
 
         const collect = (target: Buffer[]) => (chunk: Buffer) => {
           if (outputLimitExceeded) return;
-          outputBytes += chunk.byteLength;
-          if (outputBytes > maxOutputBytes) {
+          const remaining = maxOutputBytes - outputBytes;
+          if (chunk.byteLength > remaining) {
+            if (remaining > 0) target.push(chunk.subarray(0, remaining));
+            outputBytes = maxOutputBytes;
             outputLimitExceeded = true;
             terminate();
             return;
           }
+          outputBytes += chunk.byteLength;
           target.push(chunk);
         };
 

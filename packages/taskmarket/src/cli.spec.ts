@@ -45,7 +45,8 @@ describe("createTaskmarketCliRunner", () => {
     });
     const output = await runner.run(["-e", "process.stdout.write('x'.repeat(5000))"]);
     expect(output.outputLimitExceeded).toBe(true);
-    expect(Buffer.byteLength(output.stdout)).toBeLessThanOrEqual(4096);
+    expect(output.stdout).toBe("x".repeat(4096));
+    expect(Buffer.byteLength(output.stdout)).toBe(4096);
   });
 
   itPosix("terminates descendants that inherit CLI pipes on timeout", async () => {

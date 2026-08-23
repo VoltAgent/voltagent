@@ -30,14 +30,16 @@ function approvalArgumentBinding(args: Record<string, unknown>): {
   };
 }
 
-function immutableArgumentSnapshot(args: Record<string, unknown>): Record<string, unknown> {
-  let snapshot: Record<string, unknown>;
+function cloneArguments(args: Record<string, unknown>): Record<string, unknown> {
   try {
-    snapshot = structuredClone(args);
+    return structuredClone(args);
   } catch {
     throw new Error("Tool arguments could not be captured for immutable execution");
   }
+}
 
+function immutableArgumentSnapshot(args: Record<string, unknown>): Record<string, unknown> {
+  const snapshot = cloneArguments(args);
   const seen = new WeakSet<object>();
   const freeze = (value: unknown): void => {
     if (value === null || typeof value !== "object" || seen.has(value)) return;
@@ -129,9 +131,9 @@ async function executeTool(
   if (!tool.execute) {
     throw new Error(`Tool ${tool.name} does not have "execute" method`);
   }
-  const executionArgs = immutableArgumentSnapshot(args as Record<string, unknown>);
-  if (await requiresApproval(tool, executionArgs)) {
-    await requestApproval(tool, executionArgs, options?.requestElicitation);
+  const approvalArgs = immutableArgumentSnapshot(args as Record<string, unknown>);
+  if (await requiresApproval(tool, approvalArgs)) {
+    await requestApproval(tool, approvalArgs, options?.requestElicitation);
   }
 
   let operationContext: OperationContext | undefined;
@@ -140,7 +142,7 @@ async function executeTool(
     operationContext = createStubOperationContext(options.requestElicitation);
   }
 
-  const result = await tool.execute(executionArgs, operationContext);
+  const result = await tool.execute(cloneArguments(approvalArgs), operationContext);
   const text = typeof result === "string" ? result : safeStringify(result, { indentation: 2 });
 
   return {

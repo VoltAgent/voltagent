@@ -188,6 +188,33 @@ describe("ToolAdapter", () => {
     expect(execute).toHaveBeenCalledWith({ payload: { value: "reviewed" } }, expect.anything());
   });
 
+  it("gives the tool an isolated mutable copy of the approved arguments", async () => {
+    const callerArgs = { payload: { value: "original" } };
+    const execute = vi.fn(async (input: { payload: { value: string } }) => {
+      expect(Object.isFrozen(input)).toBe(false);
+      expect(Object.isFrozen(input.payload)).toBe(false);
+      input.payload.value = "normalized";
+      return input.payload.value;
+    });
+    const tool = createTool({
+      name: "normalizing_write",
+      description: "Normalize a caller-owned payload",
+      parameters: z.object({ payload: z.object({ value: z.string() }) }),
+      needsApproval: true,
+      execute,
+    });
+
+    const result = await ToolAdapter.executeTool(tool, callerArgs, {
+      requestElicitation: async () => ({
+        action: "accept" as const,
+        content: { approved: true },
+      }),
+    });
+
+    expect(callerArgs.payload.value).toBe("original");
+    expect(result.content[0]).toMatchObject({ type: "text", text: "normalized" });
+  });
+
   it("honors a dynamic approval policy that permits a read-only invocation", async () => {
     const execute = vi.fn(async () => "safe");
     const needsApproval = vi.fn(async () => false);
