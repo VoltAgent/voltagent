@@ -213,7 +213,9 @@ export class TaskmarketRequester {
       this.previewTtlMs < 30_000 ||
       this.previewTtlMs > DEFAULT_PREVIEW_TTL_MS
     ) {
-      throw new Error("previewTtlMs must be an integer between 30000 and 300000 ms");
+      throw new Error(
+        `previewTtlMs must be an integer between 30000 and ${DEFAULT_PREVIEW_TTL_MS} ms`,
+      );
     }
     if (
       !Number.isSafeInteger(this.maxPendingPreviews) ||
