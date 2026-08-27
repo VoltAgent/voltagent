@@ -3,6 +3,7 @@
  * Stores conversations and messages in Redis using strings, hashes and sorted sets
  */
 
+import { randomUUID } from "node:crypto";
 import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
 import type {
   Conversation,
@@ -112,9 +113,7 @@ export class RedisMemoryAdapter implements StorageAdapter {
    * Generate a random ID
    */
   private generateId(): string {
-    return (
-      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    );
+    return randomUUID();
   }
 
   /**
@@ -342,25 +341,51 @@ export class RedisMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Clear messages for a user, optionally scoped to a single conversation
+   * Clear messages for a user, optionally scoped to a single conversation.
+   * Matching the SQL adapters: when a conversation is given, only messages and
+   * steps owned by the user are removed; other users' entries in the same
+   * conversation are kept
    */
   async clearMessages(userId: string, conversationId?: string): Promise<void> {
-    const pipeline = this.client.pipeline();
-
     if (conversationId) {
-      pipeline.del(this.key("msgs", conversationId));
-      pipeline.del(this.key("msgdata", conversationId));
-      pipeline.del(this.key("steps", conversationId));
-      pipeline.del(this.key("stepdata", conversationId));
-    } else {
-      // Clear messages for every conversation owned by the user
-      const ids = await this.client.zrange(this.key("convs", "user", userId), 0, -1);
-      for (const id of ids) {
-        pipeline.del(this.key("msgs", id));
-        pipeline.del(this.key("msgdata", id));
-        pipeline.del(this.key("steps", id));
-        pipeline.del(this.key("stepdata", id));
+      const [messageEntries, stepEntries] = await Promise.all([
+        this.client.hgetall(this.key("msgdata", conversationId)),
+        this.client.hgetall(this.key("stepdata", conversationId)),
+      ]);
+
+      const messageIds = Object.entries(messageEntries)
+        .filter(([, raw]) => this.safeParse<StoredMessage>(raw, "message")?.userId === userId)
+        .map(([id]) => id);
+      const stepIds = Object.entries(stepEntries)
+        .filter(
+          ([, raw]) =>
+            this.safeParse<ConversationStepRecord>(raw, "conversation step")?.userId === userId,
+        )
+        .map(([id]) => id);
+
+      const pipeline = this.client.pipeline();
+      if (messageIds.length > 0) {
+        pipeline.zrem(this.key("msgs", conversationId), ...messageIds);
+        pipeline.hdel(this.key("msgdata", conversationId), ...messageIds);
       }
+      if (stepIds.length > 0) {
+        pipeline.zrem(this.key("steps", conversationId), ...stepIds);
+        pipeline.hdel(this.key("stepdata", conversationId), ...stepIds);
+      }
+      await this.execChecked(pipeline);
+
+      this.log(`Cleared messages for user ${userId} in conversation ${conversationId}`);
+      return;
+    }
+
+    // Clear messages for every conversation owned by the user
+    const ids = await this.client.zrange(this.key("convs", "user", userId), 0, -1);
+    const pipeline = this.client.pipeline();
+    for (const id of ids) {
+      pipeline.del(this.key("msgs", id));
+      pipeline.del(this.key("msgdata", id));
+      pipeline.del(this.key("steps", id));
+      pipeline.del(this.key("stepdata", id));
     }
 
     await this.execChecked(pipeline);
@@ -851,11 +876,31 @@ export class RedisMemoryAdapter implements StorageAdapter {
   // ============================================================================
 
   /**
-   * Disconnect the Redis client
+   * Disconnect the Redis client; safe to call more than once
    */
   async disconnect(): Promise<void> {
-    await this.client.quit();
+    if (this.isEnded()) {
+      return;
+    }
+
+    try {
+      await this.client.quit();
+    } catch (error) {
+      // A concurrent disconnect() may have closed the connection first
+      if (this.isEnded()) {
+        return;
+      }
+      throw error;
+    }
+
     this.log("Redis connection closed");
+  }
+
+  /**
+   * Whether the client connection has been closed
+   */
+  private isEnded(): boolean {
+    return this.client.status === "end";
   }
 
   /**
