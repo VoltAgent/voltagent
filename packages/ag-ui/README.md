@@ -128,4 +128,4 @@ registerCopilotKitRoutes({
 
 ## License
 
-Licensed under the MIT License, Copyright Â© 2026-present VoltAgent.
+Licensed under the MIT License, Copyright © 2026-present VoltAgent.
