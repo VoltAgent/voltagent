@@ -1,4 +1,4 @@
-﻿<div align="center">
++<div align="center">
 <a href="https://voltagent.dev/">
 <img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/d9ad69bd-b905-42a3-81af-99a0581348c0" />
 </a>
