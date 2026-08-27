@@ -85,13 +85,15 @@ const agent = new Agent({
 - All `StorageAdapter` methods supported
 - Conversation indexes by resource, user, and globally for efficient lookups
 - Supports filtering, pagination, and sorting
-- No automatic message pruning - all messages are preserved until deleted
+- No automatic message pruning - all messages are preserved until deleted. Note that the adapter never removes keys on its own, but a Redis eviction policy (e.g. `maxmemory-policy`) may still evict keys before they are explicitly deleted
 
 ### Working Memory
 
 Supports both conversation and user-scoped working memory:
 
 ```ts
+import { z } from "zod";
+
 const memory = new Memory({
   storage: new RedisMemoryAdapter({
     connection: process.env.REDIS_URL!,

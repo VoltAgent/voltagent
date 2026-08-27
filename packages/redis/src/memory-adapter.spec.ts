@@ -50,6 +50,12 @@ const { FakeRedis } = vi.hoisted(() => {
     }
 
     async exec(): Promise<Array<[Error | null, unknown]>> {
+      if (this.redis.failNextExec) {
+        this.redis.failNextExec = false;
+        // Fail before executing anything so no partial state is applied
+        return this.commands.map(() => [new Error("simulated pipeline failure"), null]);
+      }
+
       const results: Array<[Error | null, unknown]> = [];
       for (const command of this.commands) {
         try {
@@ -58,10 +64,6 @@ const { FakeRedis } = vi.hoisted(() => {
         } catch (error) {
           results.push([error as Error, null]);
         }
-      }
-      if (this.redis.failNextExec) {
-        this.redis.failNextExec = false;
-        results[0] = [new Error("simulated pipeline failure"), null];
       }
       return results;
     }
@@ -77,6 +79,7 @@ const { FakeRedis } = vi.hoisted(() => {
 
     failNextExec = false;
     quitCalled = false;
+    status: "ready" | "end" = "ready";
 
     constructor(public connection?: unknown) {
       FakeRedis.instances.push(this);
@@ -209,6 +212,10 @@ const { FakeRedis } = vi.hoisted(() => {
     }
 
     async quit() {
+      if (this.status === "end") {
+        throw new Error("Connection is closed.");
+      }
+      this.status = "end";
       this.quitCalled = true;
       return "OK";
     }
@@ -378,6 +385,9 @@ describe.sequential("RedisMemoryAdapter", () => {
       await expect(adapter.createConversation(createConversationInput())).rejects.toThrow(
         "simulated pipeline failure",
       );
+
+      // The failed pipeline must not leave partial index state behind
+      await expect(adapter.countConversations({})).resolves.toBe(0);
     });
   });
 
@@ -466,6 +476,24 @@ describe.sequential("RedisMemoryAdapter", () => {
       await adapter.clearMessages("user-1", "conv-1");
 
       await expect(adapter.getMessages("user-1", "conv-1")).resolves.toEqual([]);
+    });
+
+    it("keeps other users' messages and steps when clearing a conversation", async () => {
+      await adapter.addMessage(createMessage("m1"), "user-1", "conv-1");
+      await adapter.addMessage(createMessage("m2"), "user-2", "conv-1");
+      await adapter.saveConversationSteps([
+        createStep({ id: "step-1", userId: "user-1" }),
+        createStep({ id: "step-2", userId: "user-2" }),
+      ]);
+
+      await adapter.clearMessages("user-1", "conv-1");
+
+      await expect(adapter.getMessages("user-1", "conv-1")).resolves.toEqual([]);
+      const remaining = await adapter.getMessages("user-2", "conv-1");
+      expect(remaining.map((m) => m.id)).toEqual(["m2"]);
+      await expect(adapter.getConversationSteps("user-1", "conv-1")).resolves.toEqual([]);
+      const remainingSteps = await adapter.getConversationSteps("user-2", "conv-1");
+      expect(remainingSteps.map((s) => s.id)).toEqual(["step-2"]);
     });
 
     it("clears messages across all conversations of a user", async () => {
@@ -688,6 +716,27 @@ describe.sequential("RedisMemoryAdapter", () => {
     it("disconnects the underlying client", async () => {
       await adapter.disconnect();
       expect(lastInstance().quitCalled).toBe(true);
+    });
+
+    it("is idempotent when called repeatedly", async () => {
+      await adapter.disconnect();
+
+      await expect(adapter.disconnect()).resolves.toBeUndefined();
+      await expect(adapter.close()).resolves.toBeUndefined();
+      expect(lastInstance().quitCalled).toBe(true);
+    });
+
+    it("tolerates concurrent disconnect calls", async () => {
+      await expect(Promise.all([adapter.disconnect(), adapter.disconnect()])).resolves.toEqual([
+        undefined,
+        undefined,
+      ]);
+    });
+
+    it("rethrows unexpected quit errors", async () => {
+      vi.spyOn(lastInstance(), "quit").mockRejectedValueOnce(new Error("boom"));
+
+      await expect(adapter.disconnect()).rejects.toThrow("boom");
     });
   });
 });
