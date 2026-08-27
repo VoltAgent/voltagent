@@ -39,6 +39,16 @@
         "default": "./dist/utils/index.js"
       }
     },
+    "./config": {
+      "import": {
+        "types": "./dist/config/index.d.mts",
+        "default": "./dist/config/index.mjs"
+      },
+      "require": {
+        "types": "./dist/config/index.d.ts",
+        "default": "./dist/config/index.js"
+      }
+    },
     "./a2a": {
       "import": {
         "types": "./dist/main/index.d.mts",
@@ -97,6 +107,9 @@
       ],
       "utils": [
         "dist/utils/index.d.ts"
+      ],
+      "config": [
+        "dist/config/index.d.ts"
       ],
       "a2a": [
         "dist/main/index.d.ts"

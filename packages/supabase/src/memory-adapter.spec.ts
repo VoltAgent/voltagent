@@ -104,6 +104,56 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
   });
 
   // ============================================================================
+  // Configurable Defaults Tests
+  // ============================================================================
+
+  describe("Configurable Defaults", () => {
+    const createAdapter = (options: Partial<{ tableName: string; debug: boolean }> = {}) =>
+      new SupabaseMemoryAdapter({
+        supabaseUrl: "https://test.supabase.co",
+        supabaseKey: "test-key",
+        ...options,
+      });
+
+    afterEach(() => {
+      // biome-ignore lint/performance/noDelete: Required for proper test isolation
+      delete process.env.VOLTAGENT_SUPABASE_TABLE_NAME;
+      // biome-ignore lint/performance/noDelete: Required for proper test isolation
+      delete process.env.VOLTAGENT_SUPABASE_DEBUG;
+    });
+
+    it("should use the default table name and debug flag", () => {
+      const localAdapter = createAdapter();
+      expect((localAdapter as any).baseTableName).toBe("voltagent_memory");
+      expect((localAdapter as any).debug).toBe(false);
+    });
+
+    it("should use the explicit options when provided", () => {
+      const localAdapter = createAdapter({ tableName: "custom_memory", debug: true });
+      expect((localAdapter as any).baseTableName).toBe("custom_memory");
+      expect((localAdapter as any).debug).toBe(true);
+    });
+
+    it("should override defaults with environment variables", () => {
+      process.env.VOLTAGENT_SUPABASE_TABLE_NAME = "env_memory";
+      process.env.VOLTAGENT_SUPABASE_DEBUG = "true";
+
+      const localAdapter = createAdapter();
+      expect((localAdapter as any).baseTableName).toBe("env_memory");
+      expect((localAdapter as any).debug).toBe(true);
+    });
+
+    it("should prefer explicit options over environment variables", () => {
+      process.env.VOLTAGENT_SUPABASE_TABLE_NAME = "env_memory";
+      process.env.VOLTAGENT_SUPABASE_DEBUG = "true";
+
+      const localAdapter = createAdapter({ tableName: "custom_memory", debug: false });
+      expect((localAdapter as any).baseTableName).toBe("custom_memory");
+      expect((localAdapter as any).debug).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Conversation Tests
   // ============================================================================
 

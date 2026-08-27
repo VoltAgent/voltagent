@@ -18,9 +18,11 @@ import type {
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
+import { parseEnvBoolean, resolveConfig } from "@voltagent/internal/config";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
 import type { UIMessage } from "ai";
 import { P, match } from "ts-pattern";
+import { supabaseDefaults, supabaseEnvVars } from "./defaults";
 
 /**
  * Supabase configuration options for Memory
@@ -33,6 +35,8 @@ interface BaseSupabaseMemoryOptions {
   /**
    * The base table name for the memory, use to customize the prefix appended to all the tables
    *
+   * Can also be set via the `VOLTAGENT_SUPABASE_TABLE_NAME` environment variable.
+   *
    * @example
    *  'my_app_memory' => 'my_app_memory_conversations', 'my_app_memory_messages', 'my_app_memory_steps', 'my_app_memory_events'
    *
@@ -42,6 +46,9 @@ interface BaseSupabaseMemoryOptions {
 
   /**
    * Whether to enable debug logging
+   *
+   * Can also be set via the `VOLTAGENT_SUPABASE_DEBUG` environment variable.
+   *
    * @default false
    */
   debug?: boolean;
@@ -115,12 +122,21 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         throw new Error("Invalid configuration");
       });
 
-    this.baseTableName = options.tableName ?? "voltagent_memory";
-    this.debug = options.debug ?? false;
+    this.baseTableName = resolveConfig({
+      value: options.tableName,
+      env: supabaseEnvVars.tableName,
+      defaultValue: supabaseDefaults.tableName,
+    });
+    this.debug = resolveConfig({
+      value: options.debug,
+      env: supabaseEnvVars.debug,
+      defaultValue: supabaseDefaults.debug,
+      parse: parseEnvBoolean,
+    });
 
     // Initialize the logger
     this.logger = match(options.logger)
-      .with(P.nullish, () => createPinoLogger({ name: "supabase-memory-v2" }))
+      .with(P.nullish, () => createPinoLogger({ name: supabaseDefaults.loggerName }))
       .otherwise((logger) => logger);
 
     this.log("Supabase Memory V2 adapter initialized");

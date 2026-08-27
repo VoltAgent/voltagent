@@ -8,3 +8,4 @@
 // Export Memory Adapter
 export { SupabaseMemoryAdapter } from "./memory-adapter";
 export type { SupabaseMemoryOptions } from "./memory-adapter";
+export { supabaseDefaults, supabaseEnvVars } from "./defaults";
