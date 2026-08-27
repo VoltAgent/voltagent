@@ -12,6 +12,16 @@ import { safeStringify } from "@voltagent/internal";
 import { type UIMessage, generateId } from "ai";
 import type { ApiResponse } from "../types";
 
+export type MemoryAuthenticatedUser = {
+  id?: string | number;
+  sub?: string | number;
+  userId?: string | number;
+};
+
+type MemoryAuthContext = {
+  authenticatedUser?: MemoryAuthenticatedUser | null;
+};
+
 type MemoryResolution =
   | {
       ok: true;
@@ -106,6 +116,54 @@ function buildErrorResponse(error: unknown): ApiResponse {
   };
 }
 
+function getAuthenticatedUserId(
+  authenticatedUser?: MemoryAuthenticatedUser | null,
+): string | undefined {
+  if (!authenticatedUser || typeof authenticatedUser !== "object") {
+    return undefined;
+  }
+
+  const id = authenticatedUser.id ?? authenticatedUser.sub ?? authenticatedUser.userId;
+  if (id === undefined || id === null) {
+    return undefined;
+  }
+
+  const normalized = String(id).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function buildForbiddenResponse(): ApiResponse<never> {
+  return {
+    success: false,
+    error: "Forbidden",
+    httpStatus: 403,
+  };
+}
+
+function validateRequestedUserId(
+  requestedUserId: string | undefined,
+  authenticatedUser?: MemoryAuthenticatedUser | null,
+): ApiResponse<never> | undefined {
+  const authenticatedUserId = getAuthenticatedUserId(authenticatedUser);
+  if (!authenticatedUserId || !requestedUserId) {
+    return undefined;
+  }
+
+  return requestedUserId === authenticatedUserId ? undefined : buildForbiddenResponse();
+}
+
+function authorizeConversation(
+  conversation: Conversation,
+  authenticatedUser?: MemoryAuthenticatedUser | null,
+): ApiResponse<never> | undefined {
+  const authenticatedUserId = getAuthenticatedUserId(authenticatedUser);
+  if (!authenticatedUserId) {
+    return undefined;
+  }
+
+  return conversation.userId === authenticatedUserId ? undefined : buildForbiddenResponse();
+}
+
 export async function handleListMemoryConversations(
   deps: ServerProviderDeps,
   query: {
@@ -116,7 +174,7 @@ export async function handleListMemoryConversations(
     offset?: number;
     orderBy?: "created_at" | "updated_at" | "title";
     orderDirection?: "ASC" | "DESC";
-  },
+  } & MemoryAuthContext,
 ): Promise<
   ApiResponse<{ conversations: Conversation[]; total: number; limit: number; offset: number }>
 > {
@@ -131,9 +189,15 @@ export async function handleListMemoryConversations(
     }
 
     const resourceId = query.resourceId ?? resolved.resourceId;
+    const unauthorizedUser = validateRequestedUserId(query.userId, query.authenticatedUser);
+    if (unauthorizedUser) {
+      return unauthorizedUser;
+    }
+
+    const userId = getAuthenticatedUserId(query.authenticatedUser) ?? query.userId;
     const [conversations, total] = await Promise.all([
       resolved.memory.queryConversations({
-        userId: query.userId,
+        userId,
         resourceId,
         limit: query.limit,
         offset: query.offset,
@@ -141,7 +205,7 @@ export async function handleListMemoryConversations(
         orderDirection: query.orderDirection,
       }),
       resolved.memory.countConversations({
-        userId: query.userId,
+        userId,
         resourceId,
       }),
     ]);
@@ -163,7 +227,7 @@ export async function handleListMemoryConversations(
 export async function handleGetMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string } & MemoryAuthContext,
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -182,6 +246,11 @@ export async function handleGetMemoryConversation(
         error: "Conversation not found",
         httpStatus: 404,
       };
+    }
+
+    const unauthorized = authorizeConversation(conversation, query.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
     }
 
     return {
@@ -203,7 +272,7 @@ export async function handleListMemoryConversationMessages(
     after?: Date;
     roles?: string[];
     userId?: string;
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ conversation: Conversation; messages: UIMessage[] }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -224,7 +293,15 @@ export async function handleListMemoryConversationMessages(
       };
     }
 
-    const userId = query.userId ?? conversation.userId;
+    const unauthorized =
+      authorizeConversation(conversation, query.authenticatedUser) ??
+      validateRequestedUserId(query.userId, query.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const userId =
+      getAuthenticatedUserId(query.authenticatedUser) ?? query.userId ?? conversation.userId;
     const messages = await resolved.memory.getMessages(userId, conversationId, {
       limit: query.limit,
       before: query.before,
@@ -244,7 +321,7 @@ export async function handleListMemoryConversationMessages(
 export async function handleGetMemoryWorkingMemory(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string; scope?: "conversation" | "user"; userId?: string },
+  query: { agentId?: string; scope?: "conversation" | "user"; userId?: string } & MemoryAuthContext,
 ): Promise<
   ApiResponse<{
     content: string | null;
@@ -265,7 +342,7 @@ export async function handleGetMemoryWorkingMemory(
 
     const scope = query.scope === "user" ? "user" : "conversation";
     let content: string | null = null;
-    let userId = query.userId;
+    let userId = query.userId ?? getAuthenticatedUserId(query.authenticatedUser);
 
     if (scope === "conversation") {
       const conversation = await resolved.memory.getConversation(conversationId);
@@ -277,12 +354,24 @@ export async function handleGetMemoryWorkingMemory(
         };
       }
 
+      const unauthorized =
+        authorizeConversation(conversation, query.authenticatedUser) ??
+        validateRequestedUserId(query.userId, query.authenticatedUser);
+      if (unauthorized) {
+        return unauthorized;
+      }
+
       userId = userId ?? conversation.userId;
       content = await resolved.memory.getWorkingMemory({
         conversationId,
         userId,
       });
     } else {
+      const unauthorized = validateRequestedUserId(query.userId, query.authenticatedUser);
+      if (unauthorized) {
+        return unauthorized;
+      }
+
       if (!userId) {
         return {
           success: false,
@@ -329,7 +418,7 @@ export async function handleSaveMemoryMessages(
     userId?: string;
     conversationId?: string;
     messages?: SaveMessageEntry[];
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ saved: number }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -349,12 +438,14 @@ export async function handleSaveMemoryMessages(
       };
     }
 
+    const authenticatedUserId = getAuthenticatedUserId(body.authenticatedUser);
+    const bodyUserId = body.userId ?? authenticatedUserId;
     const normalized = body.messages.map((entry) => {
       const isWrapped = typeof entry === "object" && entry !== null && "message" in entry;
       const message = isWrapped ? entry.message : (entry as UIMessage);
       const conversationId =
         (isWrapped ? entry.conversationId : entry.conversationId) ?? body.conversationId;
-      const userId = (isWrapped ? entry.userId : entry.userId) ?? body.userId;
+      const userId = (isWrapped ? entry.userId : entry.userId) ?? bodyUserId;
 
       return {
         message: {
@@ -375,6 +466,10 @@ export async function handleSaveMemoryMessages(
       };
     }
 
+    if (authenticatedUserId && normalized.some((item) => item.userId !== authenticatedUserId)) {
+      return buildForbiddenResponse();
+    }
+
     const conversationCache = new Map<string, Conversation>();
     for (const item of normalized) {
       const conversationId = item.conversationId as string;
@@ -388,6 +483,14 @@ export async function handleSaveMemoryMessages(
           };
         }
         conversationCache.set(conversationId, conversation);
+      }
+
+      const conversation = conversationCache.get(conversationId);
+      if (conversation) {
+        const unauthorized = authorizeConversation(conversation, body.authenticatedUser);
+        if (unauthorized) {
+          return unauthorized;
+        }
       }
     }
 
@@ -437,7 +540,7 @@ export async function handleCreateMemoryConversation(
     userId?: string;
     title?: string;
     metadata?: Record<string, unknown>;
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -449,7 +552,13 @@ export async function handleCreateMemoryConversation(
       };
     }
 
-    if (!body.userId) {
+    const userId = body.userId ?? getAuthenticatedUserId(body.authenticatedUser);
+    const unauthorized = validateRequestedUserId(body.userId, body.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    if (!userId) {
       return {
         success: false,
         error: "userId is required",
@@ -470,7 +579,7 @@ export async function handleCreateMemoryConversation(
     const conversation = await resolved.memory.createConversation({
       id: conversationId,
       resourceId,
-      userId: body.userId,
+      userId,
       title: body.title ?? "",
       metadata: body.metadata ?? {},
     });
@@ -500,7 +609,7 @@ export async function handleUpdateMemoryConversation(
     userId?: string;
     title?: string;
     metadata?: Record<string, unknown>;
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -510,6 +619,22 @@ export async function handleUpdateMemoryConversation(
         error: resolved.error,
         httpStatus: resolved.httpStatus,
       };
+    }
+
+    const existing = await resolved.memory.getConversation(conversationId);
+    if (!existing) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+
+    const unauthorized =
+      authorizeConversation(existing, body.authenticatedUser) ??
+      validateRequestedUserId(body.userId, body.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
     }
 
     const updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">> = {};
@@ -554,7 +679,7 @@ export async function handleUpdateMemoryConversation(
 export async function handleDeleteMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string } & MemoryAuthContext,
 ): Promise<ApiResponse<{ deleted: boolean }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -564,6 +689,20 @@ export async function handleDeleteMemoryConversation(
         error: resolved.error,
         httpStatus: resolved.httpStatus,
       };
+    }
+
+    const conversation = await resolved.memory.getConversation(conversationId);
+    if (!conversation) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+
+    const unauthorized = authorizeConversation(conversation, query.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
     }
 
     await resolved.memory.deleteConversation(conversationId);
@@ -594,7 +733,7 @@ export async function handleCloneMemoryConversation(
     title?: string;
     metadata?: Record<string, unknown>;
     includeMessages?: boolean;
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ conversation: Conversation; messageCount: number }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -613,6 +752,13 @@ export async function handleCloneMemoryConversation(
         error: "Conversation not found",
         httpStatus: 404,
       };
+    }
+
+    const sourceUnauthorized =
+      authorizeConversation(source, body.authenticatedUser) ??
+      validateRequestedUserId(body.userId, body.authenticatedUser);
+    if (sourceUnauthorized) {
+      return sourceUnauthorized;
     }
 
     const clonedId = body.newConversationId ?? generateId();
@@ -658,7 +804,7 @@ export async function handleUpdateMemoryWorkingMemory(
     userId?: string;
     content?: string | Record<string, unknown>;
     mode?: "replace" | "append";
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ updated: boolean }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -687,7 +833,15 @@ export async function handleUpdateMemoryWorkingMemory(
       };
     }
 
-    const userId = body.userId ?? conversation.userId;
+    const unauthorized =
+      authorizeConversation(conversation, body.authenticatedUser) ??
+      validateRequestedUserId(body.userId, body.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const userId =
+      getAuthenticatedUserId(body.authenticatedUser) ?? body.userId ?? conversation.userId;
     if (body.userId && body.userId !== conversation.userId) {
       return {
         success: false,
@@ -718,7 +872,7 @@ export async function handleDeleteMemoryMessages(
     conversationId?: string;
     userId?: string;
     messageIds?: string[];
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ deleted: number }>> {
   try {
     const resolved = resolveMemory(deps, body.agentId);
@@ -738,7 +892,13 @@ export async function handleDeleteMemoryMessages(
       };
     }
 
-    if (!body.conversationId || !body.userId) {
+    const userId = body.userId ?? getAuthenticatedUserId(body.authenticatedUser);
+    const unauthorizedUser = validateRequestedUserId(body.userId, body.authenticatedUser);
+    if (unauthorizedUser) {
+      return unauthorizedUser;
+    }
+
+    if (!body.conversationId || !userId) {
       return {
         success: false,
         error: "conversationId and userId are required",
@@ -754,7 +914,13 @@ export async function handleDeleteMemoryMessages(
         httpStatus: 404,
       };
     }
-    if (conversation.userId !== body.userId) {
+
+    const unauthorized = authorizeConversation(conversation, body.authenticatedUser);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    if (conversation.userId !== userId) {
       return {
         success: false,
         error: `userId does not match conversation ${conversation.id}`,
@@ -762,10 +928,10 @@ export async function handleDeleteMemoryMessages(
       };
     }
 
-    const messages = await resolved.memory.getMessages(body.userId, body.conversationId);
+    const messages = await resolved.memory.getMessages(userId, body.conversationId);
     const idsToDelete = new Set(body.messageIds);
     const deleted = messages.filter((message) => idsToDelete.has(message.id)).length;
-    await resolved.memory.deleteMessages(body.messageIds, body.userId, body.conversationId);
+    await resolved.memory.deleteMessages(body.messageIds, userId, body.conversationId);
     return {
       success: true,
       data: { deleted },
@@ -784,7 +950,7 @@ export async function handleSearchMemory(
     threshold?: number;
     conversationId?: string;
     userId?: string;
-  },
+  } & MemoryAuthContext,
 ): Promise<ApiResponse<{ results: unknown[]; count: number; query: string }>> {
   try {
     if (!query.searchQuery) {
@@ -804,12 +970,35 @@ export async function handleSearchMemory(
       };
     }
 
+    const authenticatedUserId = getAuthenticatedUserId(query.authenticatedUser);
+    const unauthorizedUser = validateRequestedUserId(query.userId, query.authenticatedUser);
+    if (unauthorizedUser) {
+      return unauthorizedUser;
+    }
+
+    if (authenticatedUserId && query.conversationId) {
+      const conversation = await resolved.memory.getConversation(query.conversationId);
+      if (!conversation) {
+        return {
+          success: false,
+          error: "Conversation not found",
+          httpStatus: 404,
+        };
+      }
+
+      const unauthorized = authorizeConversation(conversation, query.authenticatedUser);
+      if (unauthorized) {
+        return unauthorized;
+      }
+    }
+
     const filter: Record<string, unknown> = {};
     if (query.conversationId) {
       filter.conversationId = query.conversationId;
     }
-    if (query.userId) {
-      filter.userId = query.userId;
+    const userId = authenticatedUserId ?? query.userId;
+    if (userId) {
+      filter.userId = userId;
     }
 
     const results = await resolved.memory.searchSimilar(query.searchQuery, {
