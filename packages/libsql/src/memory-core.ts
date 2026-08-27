@@ -5,9 +5,14 @@
  */
 
 import type { Client } from "@libsql/client";
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
+} from "@voltagent/core";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -960,6 +965,7 @@ export class LibSQLMemoryCore implements StorageAdapter {
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
     await this.initialize();
 
@@ -967,6 +973,10 @@ export class LibSQLMemoryCore implements StorageAdapter {
     const conversation = await this.getConversation(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
+    }
+
+    if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
     }
 
     const now = new Date().toISOString();
@@ -989,11 +999,20 @@ export class LibSQLMemoryCore implements StorageAdapter {
     }
 
     args.push(id);
+    let whereClause = "WHERE id = ?";
+    if (options?.expectedUserId !== undefined) {
+      whereClause += " AND user_id = ?";
+      args.push(options.expectedUserId);
+    }
 
-    await this.client.execute({
-      sql: `UPDATE ${conversationsTable} SET ${fieldsToUpdate.join(", ")} WHERE id = ?`,
+    const result = await this.client.execute({
+      sql: `UPDATE ${conversationsTable} SET ${fieldsToUpdate.join(", ")} ${whereClause}`,
       args,
     });
+
+    if (options?.expectedUserId !== undefined && result.rowsAffected === 0) {
+      throw new ConversationOwnershipMismatchError(id);
+    }
 
     const updated = await this.getConversation(id);
     if (!updated) {
@@ -1002,15 +1021,26 @@ export class LibSQLMemoryCore implements StorageAdapter {
     return updated;
   }
 
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     await this.initialize();
 
     const conversationsTable = `${this.tablePrefix}_conversations`;
 
-    await this.client.execute({
-      sql: `DELETE FROM ${conversationsTable} WHERE id = ?`,
-      args: [id],
+    const args: any[] = [id];
+    let whereClause = "WHERE id = ?";
+    if (options?.expectedUserId !== undefined) {
+      whereClause += " AND user_id = ?";
+      args.push(options.expectedUserId);
+    }
+
+    const result = await this.client.execute({
+      sql: `DELETE FROM ${conversationsTable} ${whereClause}`,
+      args,
     });
+
+    if (options?.expectedUserId !== undefined && result.rowsAffected === 0) {
+      throw new ConversationOwnershipMismatchError(id);
+    }
   }
 
   // ============================================================================

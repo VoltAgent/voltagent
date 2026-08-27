@@ -12,6 +12,7 @@ import type { BaseMessage } from "../agent/providers/base/types";
 import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -1239,6 +1240,7 @@ export interface ManagedMemoryDeleteVectorsInput {
 export interface ManagedMemoryUpdateConversationInput {
   conversationId: string;
   updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>;
+  expectedUserId?: string;
 }
 
 export interface ManagedMemoryWorkingMemoryInput {
@@ -1280,7 +1282,11 @@ export interface ManagedMemoryConversationsClient {
   get(databaseId: string, conversationId: string): Promise<Conversation | null>;
   query(databaseId: string, options: ConversationQueryOptions): Promise<Conversation[]>;
   update(databaseId: string, input: ManagedMemoryUpdateConversationInput): Promise<Conversation>;
-  delete(databaseId: string, conversationId: string): Promise<void>;
+  delete(
+    databaseId: string,
+    conversationId: string,
+    options?: ConversationMutationOptions,
+  ): Promise<void>;
 }
 
 export interface ManagedMemoryWorkingMemoryClient {
