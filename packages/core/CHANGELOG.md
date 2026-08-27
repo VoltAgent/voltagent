@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 2.10.0
+
+### Minor Changes
+
+- [`9aedd49`](https://github.com/VoltAgent/voltagent/commit/9aedd4917795023a1ee17a29691f7a87865bdf2a) Thanks [@omeraplak](https://github.com/omeraplak)! - Add type-safe MCP annotations and metadata to tools and forward them through the MCP server adapter.
+
+### Patch Changes
+
+- [#1402](https://github.com/VoltAgent/voltagent/pull/1402) [`844939c`](https://github.com/VoltAgent/voltagent/commit/844939cd225ec21c9ba098ebdba748da24de97ec) Thanks [@Iams4kura](https://github.com/Iams4kura)! - Preserve JavaScript replacement tokens in simple template variable values.
+
 ## 2.9.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voltagent/mcp-server
 
+## 2.2.0
+
+### Minor Changes
+
+- [`9aedd49`](https://github.com/VoltAgent/voltagent/commit/9aedd4917795023a1ee17a29691f7a87865bdf2a) Thanks [@omeraplak](https://github.com/omeraplak)! - Add type-safe MCP annotations and metadata to tools and forward them through the MCP server adapter.
+
 ## 2.1.0
 
 ### Minor Changes
