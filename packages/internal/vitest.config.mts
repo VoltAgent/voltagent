@@ -18,5 +18,13 @@ export default defineConfig({
         },
       },
     },
+    typecheck: {
+      include: ["**/**/*.spec-d.ts"],
+      exclude: ["**/**/*.spec.ts"],
+      // Only type-check the spec-d type tests (and their imports), so the
+      // pre-existing type error in src/utils/objects.spec.ts does not fail
+      // this package's typecheck run.
+      tsconfig: "./tsconfig.typecheck.json",
+    },
   },
 });
