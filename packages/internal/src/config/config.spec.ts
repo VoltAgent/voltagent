@@ -83,10 +83,17 @@ describe("parseEnvNumber", () => {
   it("should parse a numeric string", () => {
     expect(parseEnvNumber("42", 0)).toBe(42);
     expect(parseEnvNumber("3.14", 0)).toBe(3.14);
+    expect(parseEnvNumber(" 42 ", 0)).toBe(42);
   });
 
   it("should return the fallback for non-numeric strings", () => {
     expect(parseEnvNumber("abc", 10)).toBe(10);
     expect(parseEnvNumber("12x", 10)).toBe(10);
+  });
+
+  it("should return the fallback for empty and whitespace-only strings", () => {
+    expect(parseEnvNumber("", 10)).toBe(10);
+    expect(parseEnvNumber(" ", 10)).toBe(10);
+    expect(parseEnvNumber("   ", 10)).toBe(10);
   });
 });

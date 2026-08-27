@@ -1,5 +1,9 @@
 /**
  * Options for resolving a configuration value.
+ *
+ * `parse` is optional for `string` values (the raw environment variable
+ * string is used as-is) and required for every other type, so non-string
+ * values can never be resolved without an explicit parser.
  */
 export type ResolveConfigOptions<T> = {
   /**
@@ -16,12 +20,21 @@ export type ResolveConfigOptions<T> = {
    * The fallback value used when neither `value` nor the environment variable is set.
    */
   defaultValue: T;
-  /**
-   * Parses the raw environment variable string into the target type.
-   * When omitted, the raw string is returned as-is.
-   */
-  parse?: (raw: string) => T;
-};
+} & ([T] extends [string]
+  ? {
+      /**
+       * Parses the raw environment variable string into the target type.
+       * When omitted, the raw string is returned as-is.
+       */
+      parse?: (raw: string) => T;
+    }
+  : {
+      /**
+       * Parses the raw environment variable string into the target type.
+       * Required for non-string values.
+       */
+      parse: (raw: string) => T;
+    });
 
 /**
  * Resolves a configuration value with the following priority:
@@ -68,13 +81,19 @@ export function parseEnvBoolean(raw: string): boolean {
 
 /**
  * Parses an environment variable string into a number.
- * Falls back to the provided default when the value is not a finite number.
+ * Falls back to the provided default when the value is empty, whitespace-only
+ * or not a finite number.
  *
  * @param raw - The raw environment variable string.
  * @param fallback - The value returned when `raw` is not a valid number.
  * @returns The parsed number or the fallback.
  */
 export function parseEnvNumber(raw: string, fallback: number): number {
-  const parsed = Number(raw);
+  const trimmed = raw.trim();
+  if (trimmed === "") {
+    return fallback;
+  }
+
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : fallback;
 }

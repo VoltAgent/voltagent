@@ -108,6 +108,20 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
   // ============================================================================
 
   describe("Configurable Defaults", () => {
+    /**
+     * Test-only view of the resolved adapter configuration, used to assert
+     * which defaults were applied without resorting to `any`.
+     */
+    type ResolvedAdapterConfig = {
+      baseTableName: string;
+      debug: boolean;
+    };
+
+    const resolvedConfigOf = (adapter: SupabaseMemoryAdapter): ResolvedAdapterConfig => {
+      const { baseTableName, debug } = adapter as unknown as ResolvedAdapterConfig;
+      return { baseTableName, debug };
+    };
+
     const createAdapter = (options: Partial<{ tableName: string; debug: boolean }> = {}) =>
       new SupabaseMemoryAdapter({
         supabaseUrl: "https://test.supabase.co",
@@ -115,23 +129,43 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         ...options,
       });
 
+    const envBackup: Record<string, string | undefined> = {};
+
+    const restoreEnv = (name: string) => {
+      if (envBackup[name] === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = envBackup[name];
+      }
+    };
+
+    beforeEach(() => {
+      for (const name of ["VOLTAGENT_SUPABASE_TABLE_NAME", "VOLTAGENT_SUPABASE_DEBUG"]) {
+        envBackup[name] = process.env[name];
+        delete process.env[name];
+      }
+    });
+
     afterEach(() => {
-      // biome-ignore lint/performance/noDelete: Required for proper test isolation
-      delete process.env.VOLTAGENT_SUPABASE_TABLE_NAME;
-      // biome-ignore lint/performance/noDelete: Required for proper test isolation
-      delete process.env.VOLTAGENT_SUPABASE_DEBUG;
+      for (const name of ["VOLTAGENT_SUPABASE_TABLE_NAME", "VOLTAGENT_SUPABASE_DEBUG"]) {
+        restoreEnv(name);
+      }
     });
 
     it("should use the default table name and debug flag", () => {
       const localAdapter = createAdapter();
-      expect((localAdapter as any).baseTableName).toBe("voltagent_memory");
-      expect((localAdapter as any).debug).toBe(false);
+      expect(resolvedConfigOf(localAdapter)).toEqual({
+        baseTableName: "voltagent_memory",
+        debug: false,
+      });
     });
 
     it("should use the explicit options when provided", () => {
       const localAdapter = createAdapter({ tableName: "custom_memory", debug: true });
-      expect((localAdapter as any).baseTableName).toBe("custom_memory");
-      expect((localAdapter as any).debug).toBe(true);
+      expect(resolvedConfigOf(localAdapter)).toEqual({
+        baseTableName: "custom_memory",
+        debug: true,
+      });
     });
 
     it("should override defaults with environment variables", () => {
@@ -139,8 +173,10 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       process.env.VOLTAGENT_SUPABASE_DEBUG = "true";
 
       const localAdapter = createAdapter();
-      expect((localAdapter as any).baseTableName).toBe("env_memory");
-      expect((localAdapter as any).debug).toBe(true);
+      expect(resolvedConfigOf(localAdapter)).toEqual({
+        baseTableName: "env_memory",
+        debug: true,
+      });
     });
 
     it("should prefer explicit options over environment variables", () => {
@@ -148,8 +184,10 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       process.env.VOLTAGENT_SUPABASE_DEBUG = "true";
 
       const localAdapter = createAdapter({ tableName: "custom_memory", debug: false });
-      expect((localAdapter as any).baseTableName).toBe("custom_memory");
-      expect((localAdapter as any).debug).toBe(false);
+      expect(resolvedConfigOf(localAdapter)).toEqual({
+        baseTableName: "custom_memory",
+        debug: false,
+      });
     });
   });
 
