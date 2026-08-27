@@ -106,7 +106,7 @@ registerCopilotKitRoutes({
 
 | Option           | Type                                                                            | Default                    | Description                                 |
 | ---------------- | ------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------- |
-| `agents`         | `Record<string, AbstractAgent>`                                                 | â€”                        | Static map of AG-UI agents                  |
+| `agents`         | `Record<string, AbstractAgent>`                                                 | —                        | Static map of AG-UI agents                  |
 | `loadAgents`     | `() => Promise<Record<string, AbstractAgent>> \| Record<string, AbstractAgent>` | â€”                        | Lazy loader; overrides `agents` if provided |
 | `serviceAdapter` | `CopilotServiceAdapter`                                                         | `ExperimentalEmptyAdapter` | CopilotKit service adapter                  |
 | `endpoint`       | `string`                                                                        | `"/copilotkit"`            | Endpoint path used by CopilotKit clients    |
