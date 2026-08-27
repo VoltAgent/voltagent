@@ -106,7 +106,12 @@ import {
   type EnqueueEvalScoringArgs,
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
-import type { AgentHooks, OnToolEndHookResult, OnToolErrorHookResult } from "./hooks";
+import type {
+  AgentHooks,
+  AgentToolGuard,
+  OnToolEndHookResult,
+  OnToolErrorHookResult,
+} from "./hooks";
 import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import {
@@ -1044,6 +1049,7 @@ export class Agent {
   private readonly workspaceToolkitOptions: AgentOptions["workspaceToolkits"];
   private readonly workspaceSkillsPromptOption: AgentOptions["workspaceSkillsPrompt"];
   private readonly configuredHooks?: AgentHooks;
+  private readonly toolGuard?: AgentToolGuard;
   private readonly maxStepsConfigured: boolean;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
@@ -1078,6 +1084,7 @@ export class Agent {
     this.workspaceToolkitOptions = options.workspaceToolkits;
     this.workspaceSkillsPromptOption = options.workspaceSkillsPrompt;
     this.configuredHooks = options.hooks;
+    this.toolGuard = options.toolGuard;
     this.maxStepsConfigured = options.maxSteps !== undefined;
     const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
     const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
@@ -6421,6 +6428,46 @@ export class Agent {
     return parseResult.data;
   }
 
+  private async assertToolGuardAllows(
+    tool: BaseTool | ProviderTool,
+    args: any,
+    oc: OperationContext,
+    options?: ToolExecuteOptions,
+  ): Promise<void> {
+    if (!this.toolGuard) {
+      return;
+    }
+
+    const result = await this.toolGuard({
+      agent: this,
+      tool,
+      context: oc,
+      args,
+      options,
+    });
+
+    const denied =
+      result === false ||
+      (typeof result === "object" &&
+        result !== null &&
+        (result.denied === true || result.allowed === false));
+    if (!denied) {
+      return;
+    }
+
+    const reason =
+      typeof result === "object" && result !== null && typeof result.reason === "string"
+        ? result.reason
+        : "Tool execution denied by toolGuard.";
+
+    throw new ToolDeniedError({
+      toolName: tool.name,
+      message: reason,
+      code: "TOOL_FORBIDDEN",
+      httpStatus: 403,
+    });
+  }
+
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
@@ -6575,14 +6622,6 @@ export class Agent {
           options: executionOptions,
         });
 
-        await tool.hooks?.onEnd?.({
-          tool,
-          args,
-          output: undefined,
-          error: voltAgentError,
-          options: executionOptions,
-        });
-
         const onToolErrorResult = await hooks.onToolError?.({
           agent: this,
           tool,
@@ -6623,6 +6662,7 @@ export class Agent {
           try {
             await this.waitForSpeculativeInputGuardrail(oc);
             await oc.traceContext.withSpan(toolSpan, async () => {
+              await this.assertToolGuardAllows(tool, args, oc, executionOptions);
               await runToolStartHooks();
             });
 
@@ -6683,7 +6723,8 @@ export class Agent {
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
           await this.waitForSpeculativeInputGuardrail(oc);
-          // Call tool start hook - can throw ToolDeniedError
+          // Call tool guard and start hook - both can throw ToolDeniedError
+          await this.assertToolGuardAllows(tool, args, oc, executionOptions);
           await runToolStartHooks();
 
           // Execute tool with merged options
@@ -7203,6 +7244,62 @@ export class Agent {
       executionOptions.toolContext?.callId ?? randomUUID(),
     );
 
+    const hasOutputOverride = (
+      value: unknown,
+    ): value is {
+      output?: unknown;
+    } => {
+      if (!value || typeof value !== "object") {
+        return false;
+      }
+      return Object.prototype.hasOwnProperty.call(value, "output");
+    };
+
+    try {
+      await this.assertToolGuardAllows(tool, args, oc, executionOptions);
+    } catch (errorValue) {
+      const error = errorValue instanceof Error ? errorValue : new Error(String(errorValue));
+      const toolCallId = executionOptions.toolContext?.callId ?? randomUUID();
+      const voltAgentError = createVoltAgentError(error, {
+        stage: "tool_execution",
+        toolError: {
+          toolCallId,
+          toolName: tool.name,
+          toolExecutionError: error,
+          toolArguments: args,
+        },
+      });
+
+      const onToolErrorResult = await hooks.onToolError?.({
+        agent: this,
+        tool,
+        args,
+        error: voltAgentError,
+        originalError: error,
+        context: oc,
+        options: executionOptions,
+      });
+
+      await hooks.onToolEnd?.({
+        agent: this,
+        tool,
+        output: undefined,
+        error: voltAgentError,
+        context: oc,
+        options: executionOptions,
+      });
+
+      if (isToolDeniedError(errorValue)) {
+        oc.abortController.abort(errorValue);
+      }
+
+      if (hasOutputOverride(onToolErrorResult)) {
+        return onToolErrorResult.output;
+      }
+
+      return buildToolErrorResult(error, toolCallId, tool.name);
+    }
+
     const tools: Record<string, any> = {
       [tool.name]: tool,
     };
@@ -7244,7 +7341,7 @@ export class Agent {
       }
       await hooks.onToolStart?.({
         agent: this,
-        tool: tool as any,
+        tool,
         args: callInput,
         context: oc,
         options: executionOptions,
@@ -7254,17 +7351,6 @@ export class Agent {
     if (!toolResult) {
       throw new Error("Provider tool did not return a result.");
     }
-
-    const hasOutputOverride = (
-      value: unknown,
-    ): value is {
-      output?: unknown;
-    } => {
-      if (!value || typeof value !== "object") {
-        return false;
-      }
-      return Object.prototype.hasOwnProperty.call(value, "output");
-    };
 
     const toolError =
       toolResult.output && typeof toolResult.output === "object" && "error" in toolResult.output
@@ -7279,7 +7365,7 @@ export class Agent {
     if (toolError && hookError) {
       const onToolErrorResult = await hooks.onToolError?.({
         agent: this,
-        tool: tool as any,
+        tool,
         args,
         error: hookError,
         originalError: new Error(toolError),
@@ -7294,7 +7380,7 @@ export class Agent {
 
     await hooks.onToolEnd?.({
       agent: this,
-      tool: tool as any,
+      tool,
       output: toolError ? undefined : toolResult.output,
       error: hookError,
       context: oc,

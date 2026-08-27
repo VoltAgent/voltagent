@@ -628,6 +628,32 @@ describe("Agent Type System", () => {
       expectTypeOf(hooks).toMatchTypeOf<AgentHooks>();
     });
 
+    it("should validate agent toolGuard option", () => {
+      const agentOptions: AgentOptions = {
+        name: "GuardedAgent",
+        instructions: "Test",
+        model: "openai/gpt-4o-mini",
+        toolGuard: async ({ agent, tool, args, context }) => {
+          expectTypeOf(agent).toMatchTypeOf<Agent>();
+          expectTypeOf(tool.name).toEqualTypeOf<string>();
+          expectTypeOf(args).toBeAny();
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          return { denied: true, reason: "read-only" };
+        },
+      };
+
+      expectTypeOf(agentOptions).toMatchTypeOf<AgentOptions>();
+
+      const booleanGuardOptions: AgentOptions = {
+        name: "BooleanGuardAgent",
+        instructions: "Test",
+        model: "openai/gpt-4o-mini",
+        toolGuard: () => true,
+      };
+
+      expectTypeOf(booleanGuardOptions).toMatchTypeOf<AgentOptions>();
+    });
+
     it("should allow sync and async hooks", () => {
       const syncHooks: AgentHooks = {
         onStart: () => {
