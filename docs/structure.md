@@ -30,6 +30,7 @@ Core packages, AI provider integrations, and utilities:
 - **libsql** - LibSQL database integration
 - **logger** - Universal logger implementation
 - **postgres** - PostgreSQL database integration
+- **redis** - Redis memory storage integration
 - **sdk** - JavaScript/TypeScript SDK for VoltAgent API
 - **server-core** - Core server handlers, schemas, and business logic
 - **server-hono** - Hono-based server implementation with API routes
