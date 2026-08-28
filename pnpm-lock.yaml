@@ -4252,6 +4252,25 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
 
+  packages/redis:
+    dependencies:
+      '@voltagent/internal':
+        specifier: ^1.0.2
+        version: link:../internal
+      ioredis:
+        specifier: ^5.6.1
+        version: 5.7.0
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      '@voltagent/core':
+        specifier: ^2.4.4
+        version: link:../core
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.3.5)
+
   packages/resumable-streams:
     dependencies:
       '@voltagent/core':
