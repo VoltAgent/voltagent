@@ -1,11 +1,9 @@
 {
   "name": "@voltagent/langfuse-exporter",
-  "description": "OpenTelemetry SpanExporter for sending VoltAgent traces to Langfuse.",
-  "version": "2.0.3",
+  "description": "Langfuse integration for VoltAgent using @langfuse/otel (Langfuse JS SDK v5).",
+  "version": "3.0.0",
   "dependencies": {
-    "@opentelemetry/core": "^2.0.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "langfuse": "^3.38.6"
+    "@langfuse/otel": "^5.0.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
@@ -30,7 +28,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@voltagent/core": "^2.0.0"
@@ -38,7 +36,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/src"
+    "directory": "packages/langfuse-exporter"
   },
   "scripts": {
     "attw": "attw --pack",
