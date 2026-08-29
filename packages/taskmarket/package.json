@@ -1,0 +1,59 @@
+{
+  "name": "@voltagent/taskmarket",
+  "description": "Approval-gated Taskmarket requester tools for VoltAgent.",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@voltagent/core": "^2.9.2",
+    "@voltagent/internal": "^1.0.3",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4",
+    "zod": "^3.25.76"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^2.0.0",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/taskmarket"
+  },
+  "scripts": {
+    "build": "tsup",
+    "demo:verify": "vitest run src/requester.spec.ts -t \"runs exact preflight checks\" --reporter verbose",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "commonjs",
+  "types": "dist/index.d.ts"
+}
