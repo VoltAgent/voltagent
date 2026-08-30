@@ -3,7 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as appFactory from "./app-factory";
 import { ElysiaServerProvider } from "./elysia-server-provider";
 
-// Mock dependencies
+const mockHttpServer = {
+  listen: vi.fn((_port: number, _host: string, cb: () => void) => {
+    cb();
+  }),
+  close: vi.fn((cb: (err?: Error) => void) => {
+    cb();
+  }),
+  once: vi.fn(),
+  listening: true,
+};
+
+vi.mock("node:http", () => ({
+  createServer: vi.fn(() => mockHttpServer),
+}));
+
 vi.mock("@voltagent/server-core", async () => {
   const actual = await vi.importActual("@voltagent/server-core");
   return {
@@ -22,10 +36,10 @@ vi.mock("@voltagent/server-core", async () => {
 describe("ElysiaServerProvider", () => {
   let provider: ElysiaServerProvider;
   const mockApp = {
-    listen: vi.fn().mockReturnValue({}),
     stop: vi.fn(),
-    routes: [], // For extractCustomEndpoints
-    get: vi.fn(), // For configureApp test
+    fetch: vi.fn(),
+    routes: [],
+    get: vi.fn(),
   };
 
   const mockDeps = {
@@ -53,18 +67,18 @@ describe("ElysiaServerProvider", () => {
   });
 
   it("should start the server", async () => {
+    const { createServer } = await import("node:http");
     await provider.start();
     expect(appFactory.createApp).toHaveBeenCalled();
-    expect(mockApp.listen).toHaveBeenCalledWith({
-      port: 3000,
-      hostname: "0.0.0.0",
-    });
+    expect(createServer).toHaveBeenCalled();
+    expect(mockHttpServer.listen).toHaveBeenCalledWith(3000, "0.0.0.0", expect.any(Function));
   });
 
   it("should stop the server", async () => {
     await provider.start();
     await provider.stop();
     expect(mockApp.stop).toHaveBeenCalled();
+    expect(mockHttpServer.close).toHaveBeenCalled();
   });
 
   it("should throw if already running", async () => {
@@ -82,10 +96,9 @@ describe("ElysiaServerProvider", () => {
   it("should extract and display custom endpoints from configureApp", async () => {
     const { printServerStartup } = await import("@voltagent/server-core");
 
-    // Create a fresh mock app for this test to avoid pollution
     const localMockApp = {
-      listen: vi.fn().mockReturnValue({}),
       stop: vi.fn(),
+      fetch: vi.fn(),
       routes: [{ method: "GET", path: "/custom-test" }],
       get: vi.fn(),
     };
@@ -112,8 +125,7 @@ describe("ElysiaServerProvider", () => {
   });
 
   it("should handle startup errors and release port", async () => {
-    // Mock app.listen to throw
-    mockApp.listen.mockImplementationOnce(() => {
+    mockHttpServer.listen.mockImplementationOnce(() => {
       throw new Error("Startup failed");
     });
 
