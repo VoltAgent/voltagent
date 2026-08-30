@@ -276,7 +276,11 @@ function extractToolNamesFromParts(parts: unknown[]): string[] {
     }
 
     const partType = normalizeMessageType(part.type);
-    if (partType !== "tool_call") {
+    // AI SDK v5 encodes a tool call in message parts as `type: "tool-<name>"`,
+    // not `"tool_call"`. Accept those too (extractToolName reads the name from
+    // the type); tool results and streaming events are still excluded because
+    // shouldExtractToolNameFromType returns false for them.
+    if (partType !== "tool_call" && !shouldExtractToolNameFromType(partType)) {
       continue;
     }
 

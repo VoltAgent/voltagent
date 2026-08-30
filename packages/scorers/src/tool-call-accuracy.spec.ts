@@ -129,6 +129,36 @@ describe("createToolCallAccuracyScorerCode", () => {
     expect(result.score).toBe(1);
   });
 
+  it("extracts tool names from AI SDK v5 message parts (type: tool-<name>)", async () => {
+    const scorer = createToolCallAccuracyScorerCode({
+      expectedTool: "searchProducts",
+    });
+
+    const result = await scorer.scorer({
+      payload: {
+        messages: [
+          {
+            id: "msg-1",
+            role: "assistant",
+            parts: [
+              {
+                type: "tool-searchProducts",
+                toolCallId: "call-1",
+                state: "output-available",
+                input: {},
+                output: {},
+              },
+            ],
+          },
+        ],
+      } satisfies ToolCallAccuracyPayload,
+      params: {} as ToolCallAccuracyParams,
+    });
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBe(1);
+  });
+
   it("supports custom buildPayload mappings", async () => {
     const scorer = createToolCallAccuracyScorerCode<{ events: Array<{ name: string }> }>({
       expectedTool: "searchProducts",
