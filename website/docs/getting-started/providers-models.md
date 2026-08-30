@@ -235,6 +235,7 @@ For providers that follow the OpenAI API specification:
 | ----------------------------- | ------------------------------------------------------------------------- | ------------------------------ |
 | **LM Studio**                 | [Docs](https://ai-sdk.dev/providers/openai-compatible-providers/lmstudio) | Local model execution with GUI |
 | **Baseten**                   | [Docs](https://ai-sdk.dev/providers/openai-compatible-providers/baseten)  | Model deployment platform      |
+| **NEAR AI Cloud**             | [Docs](https://docs.near.ai/)                                             | TEE-backed inference           |
 | **Any OpenAI-compatible API** | [Docs](https://ai-sdk.dev/providers/openai-compatible-providers)          | Custom endpoints               |
 
 ## Model Capabilities
@@ -339,6 +340,9 @@ GOOGLE_GENERATIVE_AI_API_KEY=your-key
 
 # Groq
 GROQ_API_KEY=your-key
+
+# NEAR AI Cloud
+NEARAI_API_KEY=your-key
 
 # And so on...
 ```
