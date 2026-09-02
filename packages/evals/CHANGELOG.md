@@ -1,5 +1,11 @@
 # @voltagent/evals
 
+## 2.0.5
+
+### Patch Changes
+
+- [#1353](https://github.com/VoltAgent/voltagent/pull/1353) [`eca69b5`](https://github.com/VoltAgent/voltagent/commit/eca69b58aa5648e3cad1597f4a902e5d2075951f) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 2.0.4
 
 ### Patch Changes
