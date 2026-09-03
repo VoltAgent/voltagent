@@ -27,4 +27,23 @@ describe("SimpleEventEmitter", () => {
     expect(listener).toHaveBeenCalledTimes(1);
     expect(emitter.listenerCount("evt")).toBe(0);
   });
+
+  it("off() removes only the newest registration when on() and once() share a listener", () => {
+    const emitter = new SimpleEventEmitter();
+    const listener = vi.fn();
+
+    emitter.on("evt", listener);
+    emitter.once("evt", listener);
+    expect(emitter.listenerCount("evt")).toBe(2);
+
+    // Like Node's EventEmitter, off() drops the newest matching entry (the once()
+    // wrapper here), leaving the persistent on() registration intact.
+    emitter.off("evt", listener);
+    expect(emitter.listenerCount("evt")).toBe(1);
+
+    emitter.emit("evt");
+    emitter.emit("evt");
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(emitter.listenerCount("evt")).toBe(1);
+  });
 });

@@ -15,15 +15,22 @@ export class SimpleEventEmitter {
     const set = this.listeners.get(event);
     if (set) {
       // A listener added via once() is stored as an internal wrapper, so a direct
-      // delete of the original function misses. Fall back to removing the wrapper
-      // whose `.listener` is the original (mirrors Node's EventEmitter).
-      if (!set.delete(listener)) {
-        for (const registered of set) {
-          if ((registered as { listener?: (...args: any[]) => void }).listener === listener) {
-            set.delete(registered);
-            break;
-          }
+      // delete of the original function misses. Scan every registration and match
+      // either the function itself or a wrapper whose `.listener` is the original.
+      // The same function can be registered with both on() and once(); like Node's
+      // EventEmitter we remove only the newest matching entry, so the Set's
+      // insertion order lets the last match win.
+      let match: ((...args: any[]) => void) | undefined;
+      for (const registered of set) {
+        if (
+          registered === listener ||
+          (registered as { listener?: (...args: any[]) => void }).listener === listener
+        ) {
+          match = registered;
         }
+      }
+      if (match) {
+        set.delete(match);
       }
       if (set.size === 0) {
         this.listeners.delete(event);
