@@ -14,7 +14,17 @@ export class SimpleEventEmitter {
   off(event: string, listener: (...args: any[]) => void): this {
     const set = this.listeners.get(event);
     if (set) {
-      set.delete(listener);
+      // A listener added via once() is stored as an internal wrapper, so a direct
+      // delete of the original function misses. Fall back to removing the wrapper
+      // whose `.listener` is the original (mirrors Node's EventEmitter).
+      if (!set.delete(listener)) {
+        for (const registered of set) {
+          if ((registered as { listener?: (...args: any[]) => void }).listener === listener) {
+            set.delete(registered);
+            break;
+          }
+        }
+      }
       if (set.size === 0) {
         this.listeners.delete(event);
       }
@@ -27,6 +37,8 @@ export class SimpleEventEmitter {
       this.off(event, wrapper);
       listener(...args);
     };
+    // Tag the wrapper so off(event, listener) can find and remove it.
+    (wrapper as { listener?: (...args: any[]) => void }).listener = listener;
     return this.on(event, wrapper);
   }
 
