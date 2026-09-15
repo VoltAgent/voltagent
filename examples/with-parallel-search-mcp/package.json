@@ -2,6 +2,9 @@
   "name": "voltagent-example-with-parallel-search-mcp",
   "description": "VoltAgent web research with the free Parallel Search MCP.",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.6.0"
+  },
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
     "@voltagent/core": "^2.10.0",

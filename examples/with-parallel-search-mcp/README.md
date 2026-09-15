@@ -4,7 +4,7 @@ Build a VoltAgent research assistant with public web search and page extraction 
 
 ## Run locally
 
-Use Node.js 20 or later. From this directory:
+Use Node.js 20.6.0 or later for the scripts' `--env-file` support. From this directory:
 
 ```bash
 npm install

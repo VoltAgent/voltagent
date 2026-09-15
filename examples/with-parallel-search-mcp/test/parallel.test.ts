@@ -150,7 +150,7 @@ type Behavior =
   | "slow"
   | "missing-tools";
 
-async function fixture() {
+async function fixture(toolDelay = 0) {
   let behavior: Behavior = "success";
   const requests: {
     method: string;
@@ -169,6 +169,9 @@ async function fixture() {
     if (rpc.id === undefined) {
       response.writeHead(202).end();
       return;
+    }
+    if (rpc.method === "tools/call" && toolDelay) {
+      await new Promise((resolve) => setTimeout(resolve, toolDelay));
     }
     if (rpc.method === "tools/call" && behavior === "slow") return;
     if (rpc.method === "tools/call" && behavior === "http-error") {
@@ -261,9 +264,9 @@ test(
   "native client discovers and invokes tools with project attribution and no auth",
   { timeout: 10_000 },
   async (t) => {
-    const local = await fixture();
+    const local = await fixture(300);
     const config = new MCPConfiguration({
-      servers: { parallel: { ...parallelServer, url: local.url, timeout: 150 } },
+      servers: { parallel: { ...parallelServer, url: local.url, timeout: 5000 } },
     });
     t.after(async () => {
       await config.disconnect();
@@ -302,7 +305,6 @@ test(
       "rpc-error": /Quota exhausted/,
       "http-error": /Streamable HTTP error:.*Service unavailable/,
       malformed: /invalid payload/,
-      slow: /timed out/i,
     };
     for (const [behavior, expected] of Object.entries(failures)) {
       await t.test(behavior, async () => {
@@ -314,6 +316,27 @@ test(
     assert.deepEqual(await search.execute(args), { ...searchPayload, results: [] });
   },
 );
+
+test("native tool deadline rejects a stalled response", { timeout: 5000 }, async () => {
+  const local = await fixture();
+  const config = new MCPConfiguration({
+    servers: { parallel: { ...parallelServer, url: local.url, timeout: 150 } },
+  });
+  try {
+    const [search] = await getParallelTools(config);
+    local.setBehavior("slow");
+    await assert.rejects(
+      () =>
+        Promise.resolve(
+          search.execute?.({ objective: "Research", search_queries: ["native MCP"] }),
+        ),
+      /timed out/i,
+    );
+  } finally {
+    await config.disconnect();
+    await local.close();
+  }
+});
 
 test("missing discovery tools fail setup explicitly", { timeout: 5000 }, async () => {
   const local = await fixture();
