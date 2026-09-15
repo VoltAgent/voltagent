@@ -124,6 +124,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Next.js + Resumable Streams](./with-nextjs-resumable-stream) — AI Elements chat UI with VoltAgent and resumable streams.
 - [Nuxt](./with-nuxt) — Vue/Nuxt front‑end talking to VoltAgent APIs.
 - [Offline Evals](./with-offline-evals) — Batch datasets and score outputs for regression testing.
+- [Parallel Search (MCP)](./with-parallel-search-mcp): Research the public web and extract pages with free, keyless MCP tools.
 - [Peaka (MCP)](./with-peaka-mcp) — Integrate Peaka services via MCP tools.
 - [Pinecone](./with-pinecone) — RAG retrieval backed by Pinecone vectors and embeddings.
 - [Playwright](./with-playwright) — Web automation tools powered by Playwright for browsing and actions.
