@@ -371,6 +371,52 @@ describe("Output guardrail streaming integration", () => {
     expect(chunks.some((chunk) => chunk.type === "finish")).toBe(true);
   });
 
+  it("closes a supervisor stream after output guardrails process finish", async () => {
+    const finishReason = { unified: "stop", raw: "stop" };
+    const usage = {
+      inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+      outputTokens: { total: 1, text: 1, reasoning: 0 },
+    };
+    const model = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "text-start", id: "text-1" },
+            { type: "text-delta", id: "text-1", delta: "hello" },
+            { type: "text-end", id: "text-1" },
+            { type: "finish", finishReason, usage },
+          ],
+        }),
+      }),
+    });
+    const subAgent = new Agent({
+      name: "sub-agent",
+      instructions: "Help with delegated tasks",
+      model,
+    });
+    const agent = new Agent({
+      name: "supervisor",
+      instructions: "Delegate when appropriate",
+      model,
+      subAgents: [subAgent],
+      outputGuardrails: [
+        {
+          id: "passthrough",
+          name: "Passthrough",
+          handler: async () => ({ pass: true }),
+        },
+      ],
+    });
+
+    const result = await agent.streamText("hello");
+    const chunks: VoltAgentTextStreamPart[] = [];
+    for await (const chunk of result.fullStream) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks.some((chunk) => chunk.type === "finish")).toBe(true);
+  });
+
   it("baseline agent without guardrails resolves text stream", async () => {
     const agent = new Agent({
       name: "baseline",
