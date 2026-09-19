@@ -10,6 +10,7 @@ import {
   type VectorItem,
   type VectorSearchOptions,
   cosineSimilarity,
+  decodeCursor,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import { Pool, type PoolClient } from "pg";
@@ -202,7 +203,14 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
    */
   async search(queryVector: number[], options?: VectorSearchOptions): Promise<SearchResult[]> {
     await this.ensureInitialized();
-    const { limit = 10, threshold = 0, filter } = options ?? {};
+    const {
+      limit = 10,
+      threshold = 0,
+      filter,
+      logicalFilter,
+      comparisonFilter,
+      cursor,
+    } = options ?? {};
 
     if (this.dimensions !== null && queryVector.length !== this.dimensions) {
       throw new Error(
@@ -212,11 +220,36 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
 
     const rows = await this.executeWithRetry(async () => {
       return await this.withClient(async (client) => {
-        const result = await client.query(
-          `SELECT id, vector, dimensions, metadata, content FROM ${this.vectorTable()}
-           ${this.dimensions !== null ? "WHERE dimensions = $1" : ""}`,
-          this.dimensions !== null ? [this.dimensions] : [],
-        );
+        // Build SQL query with JSONB filter pushdown and cursor pagination
+        let sql = `SELECT id, vector, dimensions, metadata, content FROM ${this.vectorTable()}`;
+        const args: any[] = [];
+        const where: string[] = [];
+
+        // Dimension filter
+        if (this.dimensions !== null) {
+          where.push(`dimensions = $${args.length + 1}`);
+          args.push(this.dimensions);
+        }
+
+        // JSONB containment filter pushdown - most efficient for Postgres
+        if (filter) {
+          where.push(`metadata @> $${args.length + 1}::jsonb`);
+          args.push(safeStringify(filter));
+        }
+
+        // Cursor-based pagination: keyset bound on the primary key
+        const cursorId = cursor ? decodeCursor(cursor) : undefined;
+        if (cursorId !== undefined) {
+          where.push(`id < $${args.length + 1}`);
+          args.push(cursorId);
+        }
+
+        // Add WHERE clause if there are any conditions
+        if (where.length > 0) {
+          sql += ` WHERE ${where.join(" AND ")}`;
+        }
+
+        const result = await client.query(sql, args);
         return result.rows;
       });
     }, "search vectors");
@@ -231,6 +264,24 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
       const vector = this.deserializeVector(buffer);
 
       const metadata = this.parseMetadata(row.metadata);
+
+      // Apply logical filter in-memory after fetch ($and/$or)
+      if (logicalFilter) {
+        const passesLogical = this.passesLogicalFilter(metadata, logicalFilter);
+        if (!passesLogical) {
+          continue;
+        }
+      }
+
+      // Apply comparison filter in-memory after fetch
+      if (comparisonFilter) {
+        const passesComparison = this.passesComparisonFilter(metadata, comparisonFilter);
+        if (!passesComparison) {
+          continue;
+        }
+      }
+
+      // Apply original filter (in-memory fallback if JSONB pushdown didn't cover all cases)
       if (filter && !this.matchesFilter(metadata, filter)) {
         continue;
       }
@@ -506,6 +557,80 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
       return raw as Record<string, unknown>;
     }
     return undefined;
+  }
+
+  /**
+   * Check if metadata passes logical filter ($and/$or)
+   */
+  private passesLogicalFilter(
+    metadata: Record<string, unknown> | undefined,
+    logicalFilter: NonNullable<VectorSearchOptions["logicalFilter"]>,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    if ("$and" in logicalFilter && Array.isArray(logicalFilter.$and)) {
+      // ALL conditions in the $and group must pass
+      return logicalFilter.$and.every((subFilter) => this.matchesFilter(metadata, subFilter));
+    }
+
+    if ("$or" in logicalFilter && Array.isArray(logicalFilter.$or)) {
+      // AT LEAST ONE condition in the $or group must pass
+      return logicalFilter.$or.some((subFilter) => this.matchesFilter(metadata, subFilter));
+    }
+
+    // Single filter (treated as AND with the outer conditions)
+    return this.matchesFilter(metadata, logicalFilter);
+  }
+
+  /**
+   * Check if metadata passes comparison filter (e.g., { price: { $gt: 100 } })
+   */
+  private passesComparisonFilter(
+    metadata: Record<string, unknown> | undefined,
+    comparisonFilter: Record<string, unknown>,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    for (const [key, value] of Object.entries(comparisonFilter)) {
+      const metadataValue = metadata[key];
+
+      if (value === undefined) {
+        continue;
+      }
+
+      if (this.isComparisonOperator(value)) {
+        if (value.$gt !== undefined && metadataValue !== undefined) {
+          if (!((metadataValue as number) > value.$gt)) {
+            return false;
+          }
+        }
+        if (value.$lt !== undefined && metadataValue !== undefined) {
+          if (!((metadataValue as number) < value.$lt)) {
+            return false;
+          }
+        }
+        continue;
+      }
+
+      // Exact match
+      if (metadataValue !== value) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private isComparisonOperator(value: unknown): value is { $gt?: number; $lt?: number } {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const candidate = value as Record<string, unknown>;
+    return "$gt" in candidate || "$lt" in candidate;
   }
 
   private matchesFilter(

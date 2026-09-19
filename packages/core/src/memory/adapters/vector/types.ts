@@ -86,6 +86,66 @@ export interface VectorSearchOptions {
    * Filter results by metadata
    */
   filter?: Record<string, unknown>;
+
+  /**
+   * Logical operators for complex metadata filtering ($and/$or)
+   * @example { $and: [{ category: 'tech' }, { status: 'active' }] }
+   */
+  logicalFilter?:
+    | Record<string, unknown>
+    | { $and: Record<string, unknown>[] }
+    | { $or: Record<string, unknown>[] };
+
+  /**
+   * Comparison operators for numeric/date metadata fields
+   * @example { price: { $gt: 100 } }
+   */
+  comparisonFilter?: Record<string, unknown>;
+
+  /**
+   * Cursor for pagination (opaque string produced by {@link encodeCursor})
+   *
+   * When provided, the search is restricted to candidates whose primary key
+   * (`id`) is strictly before the cursor's bound, allowing callers to page
+   * through large result sets one bounded query at a time.
+   */
+  cursor?: string;
+}
+
+/**
+ * Encode a vector ID into an opaque cursor value for cursor-based pagination.
+ *
+ * Cursors are keyset bounds on the row's primary key (`id`). Pass the encoded
+ * value back into {@link VectorSearchOptions.cursor} on a subsequent search to
+ * restrict the candidate set to rows strictly before the bound.
+ */
+export function encodeCursor(id: string): string {
+  let hex = "";
+  for (const char of id) {
+    const code = char.codePointAt(0) ?? 0;
+    const encoded = code.toString(16);
+    hex += encoded.length < 4 ? `${"0".repeat(4 - encoded.length)}${encoded}` : encoded;
+  }
+  return hex;
+}
+
+/**
+ * Decode an opaque cursor value produced by {@link encodeCursor} back into a
+ * vector ID. Returns `undefined` when the value is not a valid cursor.
+ */
+export function decodeCursor(cursor: string): string | undefined {
+  if (!cursor || cursor.length === 0 || cursor.length % 4 !== 0) {
+    return undefined;
+  }
+  try {
+    let id = "";
+    for (let i = 0; i < cursor.length; i += 4) {
+      id += String.fromCodePoint(Number.parseInt(cursor.slice(i, i + 4), 16));
+    }
+    return id;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
