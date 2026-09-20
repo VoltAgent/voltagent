@@ -1,479 +1,273 @@
-import { type ExportResult, ExportResultCode } from "@opentelemetry/core";
-import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import { Langfuse, type LangfuseOptions } from "langfuse";
+import {
+  LangfuseSpanProcessor as LangfuseOtelSpanProcessor,
+  type LangfuseSpanProcessorParams,
+  isDefaultExportSpan,
+} from "@langfuse/otel";
+import type { Context } from "@opentelemetry/api";
+import type { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 
-function safeJsonParse(jsonString: string | undefined | null): any {
-  if (typeof jsonString !== "string") return jsonString; // Return as is if not a string
-  try {
-    return JSON.parse(jsonString);
-  } catch (_e) {
-    // console.warn("Failed to parse JSON string:", jsonString, e);
-    return jsonString; // Return original string if parsing fails
-  }
+// Re-export for convenience
+export type { LangfuseSpanProcessorParams } from "@langfuse/otel";
+
+/**
+ * Options for the VoltAgentLangfuseProcessor.
+ *
+ * Extends the standard LangfuseSpanProcessor params from @langfuse/otel.
+ *
+ * `shouldExportSpan`, when provided, fully overrides the built-in filter —
+ * exactly as it does on `LangfuseSpanProcessor` itself. When it is omitted,
+ * a default filter is applied that exports VoltAgent-scoped spans in addition
+ * to everything `isDefaultExportSpan` already allows (Langfuse spans, spans
+ * carrying `gen_ai.*` attributes, and spans from known LLM instrumentors).
+ */
+export interface VoltAgentLangfuseProcessorOptions extends LangfuseSpanProcessorParams {}
+
+// --- Instrumentation scopes ---
+
+/**
+ * Scope used by VoltAgent's own tracer when no custom
+ * `instrumentationScopeName` is configured on `VoltAgentObservability`.
+ *
+ * @see packages/core/src/observability/node/volt-agent-observability.ts
+ */
+const VOLTAGENT_CORE_SCOPE = "@voltagent/core";
+
+/**
+ * Returns true if the span belongs to a VoltAgent instrumentation scope.
+ *
+ * Covers `@voltagent/core` (the default tracer scope used by
+ * `VoltAgentObservability`) as well as the historical `voltagent.*` /
+ * `voltagent-core` names.
+ *
+ * This is intentionally a superset of what `isDefaultExportSpan` matches:
+ * `isDefaultExportSpan` only knows the scopes in
+ * `KNOWN_LLM_INSTRUMENTATION_SCOPE_PREFIXES`, which does **not** include
+ * `@voltagent/core`. Without this check, ordinary VoltAgent agent/workflow
+ * spans would be silently dropped by the processor.
+ */
+function isVoltAgentScope(span: ReadableSpan): boolean {
+  const scope = span.instrumentationScope.name;
+
+  return (
+    scope === VOLTAGENT_CORE_SCOPE ||
+    scope === "voltagent-core" ||
+    scope.startsWith("@voltagent/") ||
+    scope.startsWith("voltagent.")
+  );
 }
 
-function extractMetadata(attributes: any): Record<string, any> {
-  const metadata: Record<string, any> = {};
-  const langfuseReservedKeys = new Set([
-    // Keys used for specific Langfuse fields
-    "ai.prompt.messages",
-    "ai.response.text",
-    "tool.arguments",
-    "tool.result",
-    "gen_ai.usage.prompt_tokens",
-    "gen_ai.usage.completion_tokens",
-    "ai.usage.tokens",
-    "ai.model.name",
-    "ai.response.finishReason",
-    "gen_ai.finishReason",
-    "ai.response.msToFirstChunk",
-    "ai.stream.msToFirstChunk",
-    "tool.call.id",
-    "tool.name",
-    "tool.error.message",
-    // Generic I/O commonly set by @voltagent/core trace-context
-    "input",
-    "output",
-    // Keys potentially controlling trace structure (might be filtered later)
-    "langfuseTraceId",
-    "langfuseUpdateParent",
-    // Legacy/custom user/session keys
-    "userId",
-    "sessionId",
-    // Core conventions
-    "user.id",
-    "conversation.id",
-    "prompt.tags",
-    "entity.id",
-    "entity.type",
-    "entity.name",
-    "agent.state",
-    "operation.id",
-    // Usage fallbacks from @voltagent/core
-    "usage.prompt_tokens",
-    "usage.completion_tokens",
-    "usage.total_tokens",
-    "tags",
-    "enduser.id",
-    "session.id",
-    "voltagent.agent.name",
-  ]);
-  const metadataPrefixOtel = "ai.telemetry.metadata.";
-  const metadataPrefixCore = "metadata."; // Prefix used by voltagent core
+// --- Attribute normalisation ---
 
-  for (const key in attributes) {
-    if (key.startsWith(metadataPrefixOtel)) {
-      const cleanKey = key.substring(metadataPrefixOtel.length);
-      if (attributes[key] != null) {
-        metadata[cleanKey] = attributes[key];
-      }
-    } else if (key.startsWith(metadataPrefixCore)) {
-      // Handle core prefix
-      const cleanKey = key.substring(metadataPrefixCore.length);
-      // Avoid adding internal core metadata prefixed with 'internal.'
-      if (!cleanKey.startsWith("internal.") && attributes[key] != null) {
-        metadata[cleanKey] = attributes[key];
-      }
-    } else if (!langfuseReservedKeys.has(key) && attributes[key] != null) {
-      // Add other non-reserved attributes directly
-      metadata[key] = attributes[key];
-    }
-  }
-  return metadata;
-}
-
-type LangfuseExporterParams = {
-  publicKey?: string;
-  secretKey?: string;
-  baseUrl?: string;
-  debug?: boolean;
-} & LangfuseOptions;
-
-type TraceInfo = {
-  rootSpan?: ReadableSpan;
-  traceName?: string;
-  userId?: string;
-  sessionId?: string;
-  tags?: string[];
-  langfuseTraceId?: string;
-  updateParent: boolean;
+type AttributeTarget = {
+  attributes: Record<string, unknown>;
+  /** Write a value, using `Span#setAttribute` when the span is still live. */
+  set: (key: string, value: unknown) => void;
 };
 
-export class LangfuseExporter implements SpanExporter {
-  private readonly langfuse: Langfuse;
-  private readonly debug: boolean;
+/**
+ * Read the attribute map and a write function for the span.
+ *
+ * Writes go through `Span#setAttribute` while the span is live. Once the span
+ * has ended it is only a `ReadableSpan`: it exposes the same mutable
+ * `attributes` object (OTel keeps a single map for the span's lifetime) but no
+ * `setAttribute` method, so the map is written to directly.
+ */
+function attributeTarget(span: Span | ReadableSpan): AttributeTarget {
+  const attributes = span.attributes as Record<string, unknown>;
+  const setter = (span as Partial<Span>).setAttribute;
 
-  constructor(params: LangfuseExporterParams) {
-    if (!params.secretKey) {
-      throw new Error("Langfuse secretKey is required for LangfuseExporter.");
-    }
-    this.debug = params.debug ?? false;
-    this.langfuse = new Langfuse({
-      ...params,
-      persistence: "memory",
-      sdkIntegration: "voltagent",
-    });
+  return {
+    attributes,
+    set:
+      typeof setter === "function"
+        ? (key, value) => {
+            setter.call(span, key, value as string | number);
+          }
+        : (key, value) => {
+            attributes[key] = value;
+          },
+  };
+}
 
-    if (this.debug) {
-      this.langfuse.debug();
-      this.logDebug("LangfuseExporter initialized.");
-    }
+/**
+ * VoltAgent stores trace tags in a couple of shapes depending on the code path:
+ * `prompt.tags` as a JSON-encoded string, or `tags` as an array.
+ *
+ * Langfuse v5 reads tags from the `langfuse.trace.tags` span attribute.
+ */
+function readTags(attrs: Record<string, unknown>): string[] | undefined {
+  const rawArray = attrs.tags;
+  if (Array.isArray(rawArray)) {
+    return rawArray.map(String);
   }
 
-  async export(
-    allSpans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void,
-  ): Promise<void> {
-    this.logDebug(`Exporting ${allSpans.length} spans...`);
-
+  const rawString = attrs["prompt.tags"];
+  if (typeof rawString === "string") {
     try {
-      const traceSpanMap = new Map<string, ReadableSpan[]>();
-
-      for (const span of allSpans) {
-        const traceId = span.spanContext().traceId;
-        traceSpanMap.set(traceId, (traceSpanMap.get(traceId) ?? []).concat(span));
+      const parsed: unknown = JSON.parse(rawString);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String);
       }
-
-      let tracesProcessed = 0;
-      for (const [traceId, spans] of traceSpanMap) {
-        this.processTraceSpans(traceId, spans);
-        tracesProcessed++;
-      }
-      this.logDebug(`Processed ${tracesProcessed} traces.`);
-
-      await this.langfuse.flushAsync();
-      this.logDebug("Flush scheduled.");
-
-      resultCallback({ code: ExportResultCode.SUCCESS });
-    } catch (err) {
-      this.logDebug("Error exporting spans:", err);
-      resultCallback({
-        code: ExportResultCode.FAILED,
-        error: err instanceof Error ? err : new Error(String(err)),
-      });
+    } catch {
+      // Not JSON — treat the raw string as a single tag.
+      return [rawString];
     }
   }
 
-  private extractTraceInfo(spans: ReadableSpan[]): TraceInfo {
-    let rootSpan: ReadableSpan | undefined = undefined;
-    let traceName: string | undefined = undefined;
-    let userId: string | undefined = undefined;
-    let sessionId: string | undefined = undefined;
-    let tags: string[] | undefined = undefined;
-    let langfuseTraceId: string | undefined = undefined;
-    let updateParent = true; // Default
+  return undefined;
+}
 
-    // Find the root-most span in the batch (least nested) and extract trace info
-    let minDepth = Number.POSITIVE_INFINITY;
-    for (const span of spans) {
-      const parentId = this.getParentSpanId(span);
-      const depth = parentId ? 1 : 0; // Simple depth, could be improved if needed
-      if (depth < minDepth) {
-        minDepth = depth;
-        rootSpan = span;
-      }
-      // Extract trace-level attributes from any span (first wins for most, last for updateParent)
-      const attrs = span.attributes;
-      // Use semantic conventions for user and session IDs
-      if (userId === undefined && attrs["enduser.id"] != null) userId = String(attrs["enduser.id"]);
-      if (userId === undefined && attrs["user.id"] != null) userId = String(attrs["user.id"]);
-      if (sessionId === undefined && attrs["session.id"] != null)
-        sessionId = String(attrs["session.id"]);
-      if (sessionId === undefined && attrs["conversation.id"] != null)
-        sessionId = String(attrs["conversation.id"]);
-      // Keep existing logic for other trace attributes
-      if (tags === undefined && Array.isArray(attrs.tags)) tags = attrs.tags.map(String);
-      if (tags === undefined && typeof attrs["prompt.tags"] === "string") {
-        try {
-          const parsed = JSON.parse(String(attrs["prompt.tags"]));
-          if (Array.isArray(parsed)) tags = parsed.map(String);
-        } catch {}
-      }
-      if (traceName === undefined && attrs["voltagent.agent.name"] != null)
-        traceName = String(attrs["voltagent.agent.name"]);
-      if (traceName === undefined && attrs["entity.name"] != null)
-        traceName = String(attrs["entity.name"]);
-      if (langfuseTraceId === undefined && attrs.langfuseTraceId != null)
-        langfuseTraceId = String(attrs.langfuseTraceId);
-      if (attrs.langfuseUpdateParent != null) updateParent = Boolean(attrs.langfuseUpdateParent);
-    }
+/**
+ * Normalise VoltAgent / Vercel-AI-SDK style attributes to standard
+ * OpenTelemetry `gen_ai.*` semantic conventions and Langfuse v5
+ * observation attributes.
+ */
+function normalizeVoltAgentAttributes(span: Span | ReadableSpan): void {
+  const { attributes: attrs, set } = attributeTarget(span);
 
-    return {
-      rootSpan,
-      traceName,
-      userId,
-      sessionId,
-      tags,
-      langfuseTraceId,
-      updateParent,
-    };
-  }
+  // -- ai.* -> gen_ai.* (LLM / generation attributes) --
+  //
+  // `ai.model.name` and `ai.model.id` both target `gen_ai.request.model`.
+  // A derived value is only written when the target is still unset, so an
+  // upstream instrumentor's standard value is never clobbered and the result
+  // does not depend on `Object.entries` iteration order.
+  const aiToGenAi: Record<string, string> = {
+    "ai.model.name": "gen_ai.request.model",
+    "ai.model.id": "gen_ai.request.model",
+    "ai.response.text": "gen_ai.output.text",
+    "ai.response.finishReason": "gen_ai.response.finish_reasons",
+    "ai.response.msToFirstChunk": "gen_ai.response.time_to_first_token_ms",
+    "ai.stream.msToFirstChunk": "gen_ai.response.time_to_first_token_ms",
+    "ai.prompt.messages": "gen_ai.input.messages",
+    "ai.prompt": "gen_ai.prompt",
+  };
 
-  private buildTraceParams(
-    finalTraceId: string,
-    traceName: string,
-    traceInfo: TraceInfo,
-  ): {
-    id: string;
-    name?: string;
-    userId?: string;
-    sessionId?: string;
-    tags?: string[];
-    metadata?: Record<string, any>;
-    input?: any;
-    output?: any;
-    model?: string;
-  } {
-    const traceParams: {
-      id: string;
-      name?: string;
-      userId?: string;
-      sessionId?: string;
-      tags?: string[];
-      metadata?: Record<string, any>;
-      input?: any;
-      output?: any;
-      model?: string;
-    } = { id: finalTraceId };
-
-    if (traceInfo.updateParent) {
-      traceParams.name = traceName;
-      traceParams.userId = traceInfo.userId;
-      traceParams.sessionId = traceInfo.sessionId;
-      traceParams.tags = traceInfo.tags;
-      traceParams.input = safeJsonParse(
-        String(
-          traceInfo.rootSpan?.attributes["ai.prompt.messages"] ??
-            traceInfo.rootSpan?.attributes?.input ??
-            null,
-        ),
-      );
-      traceParams.output = safeJsonParse(
-        String(
-          traceInfo.rootSpan?.attributes["ai.response.text"] ??
-            traceInfo.rootSpan?.attributes?.output ??
-            null,
-        ),
-      );
-      // Add combined metadata from root span? Let's extract from root if available.
-      traceParams.metadata = traceInfo.rootSpan
-        ? extractMetadata(traceInfo.rootSpan.attributes)
-        : undefined;
-      const modelName = traceInfo.rootSpan?.attributes["ai.model.name"];
-      traceParams.model = modelName != null ? String(modelName) : undefined;
-    }
-
-    return traceParams;
-  }
-
-  private processTraceSpans(traceId: string, spans: ReadableSpan[]): void {
-    const traceInfo = this.extractTraceInfo(spans);
-
-    const finalTraceId = traceInfo.langfuseTraceId ?? traceId;
-    const traceName =
-      traceInfo.traceName ?? traceInfo.rootSpan?.name ?? `Trace ${finalTraceId.substring(0, 8)}`;
-
-    // Create Langfuse Trace - only include trace-level fields if updateParent is true
-    const traceParams = this.buildTraceParams(finalTraceId, traceName, traceInfo);
-
-    this.logDebug(`Creating/Updating Langfuse trace ${finalTraceId}`, traceParams);
-    this.langfuse.trace(traceParams);
-
-    // Process individual spans
-    for (const span of spans) {
-      if (this.isGenerationSpan(span)) {
-        this.processSpanAsLangfuseGeneration(finalTraceId, span);
-      } else {
-        this.processSpanAsLangfuseSpan(finalTraceId, span);
-      }
+  for (const [from, to] of Object.entries(aiToGenAi)) {
+    const val = attrs[from];
+    if (val != null && attrs[to] == null) {
+      set(to, val);
     }
   }
 
-  // Simplified: Check for LLM-related usage attributes or specific span names
-  private isGenerationSpan(span: ReadableSpan): boolean {
-    const attrs = span.attributes;
-    const name = span.name.toLowerCase();
-    return (
-      attrs["gen_ai.usage.prompt_tokens"] != null ||
-      attrs["gen_ai.usage.completion_tokens"] != null ||
-      attrs["ai.usage.tokens"] != null ||
-      // Fallbacks used by @voltagent/core
-      attrs["usage.prompt_tokens"] != null ||
-      attrs["usage.completion_tokens"] != null ||
-      attrs["usage.total_tokens"] != null ||
-      attrs["ai.model.name"] != null ||
-      name.includes("llm") ||
-      name.includes("generate") ||
-      name.includes("stream")
-    );
+  // -- usage.* / ai.usage.* -> gen_ai.usage.* --
+  const usageMap: Record<string, string> = {
+    "ai.usage.tokens": "gen_ai.usage.total_tokens",
+    "ai.usage.promptTokens": "gen_ai.usage.input_tokens",
+    "ai.usage.completionTokens": "gen_ai.usage.output_tokens",
+    "usage.prompt_tokens": "gen_ai.usage.input_tokens",
+    "usage.completion_tokens": "gen_ai.usage.output_tokens",
+    "usage.total_tokens": "gen_ai.usage.total_tokens",
+  };
+
+  for (const [from, to] of Object.entries(usageMap)) {
+    const val = attrs[from];
+    if (val != null && attrs[to] == null) {
+      set(to, Number(val));
+    }
   }
 
-  private processSpanAsLangfuseSpan(traceId: string, span: ReadableSpan): void {
-    const spanContext = span.spanContext();
-    const attributes = span.attributes;
-    const parentObservationId = this.getParentSpanId(span);
-
-    const spanData = {
-      traceId,
-      parentObservationId,
-      id: spanContext.spanId,
-      name: attributes["tool.name"] ? `tool: ${attributes["tool.name"]}` : span.name, // Use tool name if available
-      startTime: this.hrTimeToDate(span.startTime),
-      endTime: this.hrTimeToDate(span.endTime),
-      // Prefer tool.* fields, fallback to generic input/output set by @voltagent/core
-      input: safeJsonParse(
-        String(
-          attributes["tool.arguments"] ??
-            attributes?.input ??
-            (attributes["ai.prompt.messages"] as any) ??
-            null,
-        ),
-      ),
-      output: safeJsonParse(
-        String(
-          attributes["tool.result"] ?? attributes?.output ?? attributes["ai.response.text"] ?? null,
-        ),
-      ),
-      // Level can indicate success/error based on status code
-      level: (attributes["error.message"] ? "ERROR" : "DEFAULT") as any,
-      statusMessage: span.status.message,
-      metadata: extractMetadata(attributes), // Extract remaining attributes
-    };
-
-    this.logDebug(`Creating Langfuse span ${spanData.id} for trace ${traceId}`, spanData);
-    this.langfuse.span(spanData);
+  // -- gen_ai.usage.prompt/completion_tokens -> input/output (v5 convention) --
+  const promptTokens = attrs["gen_ai.usage.prompt_tokens"];
+  if (promptTokens != null && attrs["gen_ai.usage.input_tokens"] == null) {
+    set("gen_ai.usage.input_tokens", Number(promptTokens));
+  }
+  const completionTokens = attrs["gen_ai.usage.completion_tokens"];
+  if (completionTokens != null && attrs["gen_ai.usage.output_tokens"] == null) {
+    set("gen_ai.usage.output_tokens", Number(completionTokens));
   }
 
-  private processSpanAsLangfuseGeneration(traceId: string, span: ReadableSpan): void {
-    const spanContext = span.spanContext();
-    const attributes = span.attributes;
-    const parentObservationId = this.getParentSpanId(span);
-
-    const usage: {
-      input?: number;
-      output?: number;
-      total?: number;
-      unit?: "TOKENS";
-    } = {};
-    // Prefer gen_ai/ai.*; fallback to core usage.*
-    const inputTokens =
-      attributes["gen_ai.usage.prompt_tokens"] ?? attributes["usage.prompt_tokens"];
-    const outputTokens =
-      attributes["gen_ai.usage.completion_tokens"] ?? attributes["usage.completion_tokens"];
-    const totalTokens = attributes["ai.usage.tokens"] ?? attributes["usage.total_tokens"];
-    if (inputTokens != null) usage.input = Number(inputTokens);
-    if (outputTokens != null) usage.output = Number(outputTokens);
-    if (totalTokens != null) usage.total = Number(totalTokens);
-    if (usage.input != null || usage.output != null || usage.total != null) usage.unit = "TOKENS"; // Set unit if any token count exists
-
-    // Model
-    const model = String(attributes["ai.model.name"] ?? "unknown");
-    const modelParameters: Record<string, any> = {};
-    // Extract known parameters directly (gen_ai.* first, then core ai.model.*)
-    if (attributes["gen_ai.request.temperature"] != null) {
-      modelParameters.temperature = Number(attributes["gen_ai.request.temperature"]);
-    } else if (attributes["ai.model.temperature"] != null) {
-      modelParameters.temperature = Number(attributes["ai.model.temperature"]);
+  // -- Trace tags -> langfuse.trace.tags (v5 convention) --
+  if (attrs["langfuse.trace.tags"] == null) {
+    const tags = readTags(attrs);
+    if (tags) {
+      set("langfuse.trace.tags", tags);
     }
-    if (attributes["gen_ai.request.max_tokens"] != null) {
-      modelParameters.max_tokens = Number(attributes["gen_ai.request.max_tokens"]);
-    } else if (attributes["ai.model.max_tokens"] != null) {
-      modelParameters.max_tokens = Number(attributes["ai.model.max_tokens"]);
-    }
-    if (attributes["gen_ai.request.top_p"] != null) {
-      modelParameters.top_p = Number(attributes["gen_ai.request.top_p"]);
-    } else if (attributes["ai.model.top_p"] != null) {
-      modelParameters.top_p = Number(attributes["ai.model.top_p"]);
-    }
-    const finishReason = String(
-      attributes["ai.response.finishReason"] ?? attributes["gen_ai.finishReason"] ?? "",
-    );
-    if (finishReason) modelParameters.finish_reason = finishReason;
-
-    let completionStartTime: Date | undefined;
-    const msToFirstChunk =
-      attributes["ai.response.msToFirstChunk"] ?? attributes["ai.stream.msToFirstChunk"];
-    if (msToFirstChunk != null) {
-      const ms = Number(msToFirstChunk);
-      if (!Number.isNaN(ms)) {
-        completionStartTime = new Date(this.hrTimeToDate(span.startTime).getTime() + ms);
-      }
-    }
-
-    const metadata = extractMetadata(attributes);
-
-    const generationData = {
-      traceId,
-      parentObservationId,
-      id: spanContext.spanId,
-      name: span.name, // Use original span name
-      startTime: this.hrTimeToDate(span.startTime),
-      endTime: this.hrTimeToDate(span.endTime),
-      completionStartTime: completionStartTime,
-      model: model,
-      modelParameters: Object.keys(modelParameters).length > 0 ? modelParameters : undefined,
-      usage: usage.unit ? usage : undefined, // Only add usage if unit is set
-      // Prefer ai.* fields; fallback to generic input/output set by @voltagent/core
-      input: safeJsonParse(String(attributes["ai.prompt.messages"] ?? attributes?.input ?? null)),
-      output: safeJsonParse(String(attributes["ai.response.text"] ?? attributes?.output ?? null)),
-      level: (metadata.originalError || attributes["error.message"] ? "ERROR" : "DEFAULT") as
-        | "DEFAULT"
-        | "ERROR"
-        | "DEBUG"
-        | "WARNING",
-      statusMessage: span.status.message,
-      metadata: metadata, // Extract remaining attributes
-    };
-
-    this.logDebug(
-      `Creating Langfuse generation ${generationData.id} for trace ${traceId}`,
-      generationData,
-    );
-    this.langfuse.generation(generationData);
   }
 
-  private logDebug(message: string, ...args: any[]): void {
-    if (!this.debug) {
-      return;
+  // -- System attributes -> standard OTel conventions --
+  const sysMap: Record<string, string> = {
+    "enduser.id": "user.id",
+    "conversation.id": "session.id",
+  };
+
+  for (const [from, to] of Object.entries(sysMap)) {
+    const val = attrs[from];
+    if (val != null && attrs[to] == null) {
+      set(to, String(val));
     }
-    const timestamp = new Date().toISOString();
-    // Avoid stringifying large objects in logs if possible
-    console.log(`[${timestamp}] [LangfuseExporter] ${message}`, args.length > 0 ? args : "");
+  }
+}
+
+// --- Processor ---
+
+/**
+ * A thin wrapper around {@link LangfuseOtelSpanProcessor} from `@langfuse/otel`
+ * that normalises VoltAgent's custom `ai.*` / `usage.*` attributes to standard
+ * `gen_ai.*` semantic conventions before they reach the Langfuse OTel pipeline,
+ * and widens the default export filter to include VoltAgent-scoped spans.
+ *
+ * `shouldExportSpan` keeps the same semantics as `LangfuseSpanProcessor`:
+ * supplying it replaces the built-in filter entirely.
+ *
+ * @example
+ * ```ts
+ * import { VoltAgentLangfuseProcessor } from "@voltagent/langfuse-exporter";
+ *
+ * const processor = new VoltAgentLangfuseProcessor({
+ *   publicKey: "pk-...",
+ *   secretKey: "sk-...",
+ *   baseUrl: "https://cloud.langfuse.com",
+ * });
+ * ```
+ */
+export class VoltAgentLangfuseProcessor implements SpanProcessor {
+  private readonly inner: LangfuseOtelSpanProcessor;
+
+  constructor(options: VoltAgentLangfuseProcessorOptions = {}) {
+    // VoltAgent's own tracer scope (`@voltagent/core`) is not covered by
+    // `isDefaultExportSpan`, so the built-in filter has to be widened — but
+    // only when the caller did not supply a filter of their own.
+    //
+    // A caller-supplied `shouldExportSpan` is treated as the override, matching
+    // `LangfuseSpanProcessor` semantics. Forcing VoltAgent spans through it via
+    // `||` would make the predicate unable to exclude anything.
+    const userFilter = options.shouldExportSpan;
+
+    const filter =
+      userFilter ??
+      (({ otelSpan }: { otelSpan: ReadableSpan }) =>
+        isVoltAgentScope(otelSpan) || isDefaultExportSpan(otelSpan));
+
+    this.inner = new LangfuseOtelSpanProcessor({
+      ...options,
+      shouldExportSpan: filter,
+    });
   }
 
-  // Helper to get parentSpanId consistently across OTEL versions
-  private getParentSpanId(span: ReadableSpan): string | undefined {
-    if ("parentSpanId" in span && span.parentSpanId) {
-      return span.parentSpanId as string;
-    }
-    // Check legacy parentSpanContext
-    return span.parentSpanContext?.spanId;
+  /**
+   * Normalise VoltAgent attributes and delegate to the inner processor.
+   */
+  onStart(span: Span, parentContext: Context): void {
+    normalizeVoltAgentAttributes(span);
+    this.inner.onStart(span, parentContext);
   }
 
-  // Convert OTEL High-Resolution Time to Date object
-  private hrTimeToDate(hrtime: [number, number]): Date {
-    if (
-      !Array.isArray(hrtime) ||
-      hrtime.length !== 2 ||
-      typeof hrtime[0] !== "number" ||
-      typeof hrtime[1] !== "number"
-    ) {
-      this.logDebug("Invalid hrtime input received:", hrtime);
-      return new Date(); // Fallback
-    }
-    const epochMillis = hrtime[0] * 1000 + hrtime[1] / 1e6;
-    return new Date(epochMillis);
+  /**
+   * Normalise again for attributes set after `onStart`, then delegate.
+   *
+   * The span is only a `ReadableSpan` at this point, so derived values are
+   * written straight into the (still mutable) attribute map.
+   */
+  onEnd(span: ReadableSpan): void {
+    normalizeVoltAgentAttributes(span);
+    this.inner.onEnd(span);
   }
 
   async forceFlush(): Promise<void> {
-    this.logDebug("Forcing flush...");
-    await this.langfuse.flushAsync();
-    this.logDebug("Flush completed.");
+    return this.inner.forceFlush();
   }
 
   async shutdown(): Promise<void> {
-    this.logDebug("Shutting down exporter...");
-    await this.langfuse.shutdownAsync();
-    this.logDebug("Exporter shut down.");
+    return this.inner.shutdown();
   }
 }
