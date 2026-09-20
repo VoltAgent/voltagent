@@ -1,6 +1,6 @@
 import { Agent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { openResearchSession, redact } from "./session.js";
+import { ResearchDiscoveryError, openResearchSession, redact } from "./session.js";
 
 const question = process.argv.slice(2).join(" ").trim();
 if (!question) {
@@ -12,6 +12,7 @@ if (!question) {
   await main();
 }
 
+/** Run one bounded research question and distinguish local stop/setup failures. */
 async function main() {
   const apiKey = process.env.BAIZHI_API_KEY?.trim() ?? "";
   const modelKey = process.env.OPENAI_API_KEY?.trim() ?? "";
@@ -26,7 +27,10 @@ async function main() {
   const cancel = () => controller.abort();
   process.once("SIGINT", cancel);
   process.once("SIGTERM", cancel);
-  const deadline = setTimeout(cancel, 120_000);
+  const deadline = setTimeout(
+    () => controller.abort(new DOMException("Research deadline exceeded", "TimeoutError")),
+    120_000,
+  );
   let session: Awaited<ReturnType<typeof openResearchSession>> | undefined;
   try {
     session = await openResearchSession(apiKey, controller.signal);
@@ -51,10 +55,20 @@ If evidence is insufficient, explain the gap instead of inventing a result.`,
       maxSteps: 7,
     });
     console.log(redact(result.text, [apiKey, modelKey]));
-  } catch {
-    console.error(
-      "Research did not complete. Check credentials, credits and connectivity, or narrow the question.",
-    );
+  } catch (error) {
+    if (controller.signal.aborted) {
+      console.error(
+        controller.signal.reason?.name === "TimeoutError"
+          ? "Research timed out after 120 seconds. A tool call may already have consumed credits."
+          : "Research cancelled. A tool call may already have consumed credits.",
+      );
+    } else if (error instanceof ResearchDiscoveryError) {
+      console.error(error.message);
+    } else {
+      console.error(
+        "Research did not complete. Check credentials, credits and connectivity, or narrow the question.",
+      );
+    }
     process.exitCode = 1;
   } finally {
     clearTimeout(deadline);

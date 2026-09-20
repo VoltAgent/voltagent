@@ -11,6 +11,19 @@ export const TOOL_NAMES = ["websearch_search", "web_scrape", "web_extract"] as c
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_TOOL_CALLS = 6;
 
+/** Safe local discovery failures that can be shown without remote error content. */
+export class ResearchDiscoveryError extends Error {
+  /** Select a fixed diagnostic for a locally detected catalog failure. */
+  constructor(reason: "page-limit" | "missing-tools") {
+    super(
+      reason === "page-limit"
+        ? "Research tool discovery reached the ten-page limit before finding all required tools."
+        : "The server's tool catalog does not include all required research tools.",
+    );
+    this.name = "ResearchDiscoveryError";
+  }
+}
+
 // These are the server's wire names, not marketing aliases. Discovery must confirm them.
 const domain = z
   .string()
@@ -54,6 +67,7 @@ const extractParameters = z
     message: "Provide fields or an extraction instruction.",
   });
 
+/** Remove raw and JSON-escaped key echoes before printing or returning text. */
 export function redact(text: string, secrets: string[]): string {
   return secrets.reduce((result, secret) => {
     if (!secret) return result;
@@ -104,13 +118,14 @@ export async function openResearchSession(
       });
       for (const tool of result.tools) discovered.add(tool.name);
       cursor = result.nextCursor;
-      if (!cursor) break;
+      if (TOOL_NAMES.every((name) => discovered.has(name)) || !cursor) break;
     }
-    if (cursor || TOOL_NAMES.some((name) => !discovered.has(name))) {
-      throw new Error("Required research tools are unavailable.");
+    if (TOOL_NAMES.some((name) => !discovered.has(name))) {
+      throw new ResearchDiscoveryError(cursor ? "page-limit" : "missing-tools");
     }
-  } catch {
+  } catch (error) {
     await close().catch(() => undefined);
+    if (error instanceof ResearchDiscoveryError) throw error;
     // Remote errors can echo request headers; never forward their messages or causes.
     throw new Error(
       "Could not discover the research tools. Check credentials, access and connectivity.",

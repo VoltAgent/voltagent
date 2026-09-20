@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "engines": { "node": ">=20.6.0" },
   "repository": {
     "type": "git",
     "url": "https://github.com/VoltAgent/voltagent.git",

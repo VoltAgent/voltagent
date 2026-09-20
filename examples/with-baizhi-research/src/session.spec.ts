@@ -25,6 +25,7 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
+/** Create a real in-memory MCP server and client for protocol-level tests. */
 async function fixture(names: readonly string[] = [...TOOL_NAMES, "unrelated_paid_tool"]) {
   const server = new Server({ name: "synthetic", version: "1" }, { capabilities: { tools: {} } });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -44,6 +45,7 @@ async function fixture(names: readonly string[] = [...TOOL_NAMES, "unrelated_pai
   return { server, close, calls, controller, connect };
 }
 
+/** Connect the default synthetic server and register session cleanup. */
 async function connected() {
   const f = await fixture();
   const session = await f.connect();
@@ -184,7 +186,9 @@ describe("Baizhi research session (offline MCP protocol)", () => {
 
   it("fails closed and closes discovery when a required tool is absent", async () => {
     const f = await fixture(["websearch_search", "web_scrape"]);
-    await expect(f.connect()).rejects.toThrow("Could not discover");
+    await expect(f.connect()).rejects.toThrow(
+      "catalog does not include all required research tools",
+    );
     expect(f.close).toHaveBeenCalled();
     expect(f.calls).toHaveLength(0);
   });
@@ -212,8 +216,39 @@ describe("Baizhi research session (offline MCP protocol)", () => {
     const f = await fixture();
     const list = vi.fn(async () => ({ tools: [], nextCursor: "again" }));
     f.server.setRequestHandler(ListToolsRequestSchema, list);
-    await expect(f.connect()).rejects.toThrow("Could not discover");
+    await expect(f.connect()).rejects.toThrow("ten-page limit");
     expect(list).toHaveBeenCalledTimes(10);
+    expect(f.close).toHaveBeenCalled();
+  });
+
+  it.each([1, 2, 10])(
+    "stops on page %i once all tools are found, even with another cursor",
+    async (targetPage) => {
+      const f = await fixture();
+      let page = 0;
+      const list = vi.fn(async () => ({
+        tools:
+          ++page === targetPage
+            ? TOOL_NAMES.map((name) => ({ name, inputSchema: { type: "object" as const } }))
+            : [],
+        nextCursor: "more-unrelated-tools",
+      }));
+      f.server.setRequestHandler(ListToolsRequestSchema, list);
+      const session = await f.connect();
+      cleanup.push(session.close);
+      expect(list).toHaveBeenCalledTimes(targetPage);
+      expect(session.tools.map((tool) => tool.name)).toEqual(TOOL_NAMES);
+    },
+  );
+
+  it("keeps remote discovery errors generic while preserving local failure categories", async () => {
+    const f = await fixture();
+    f.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      throw new Error(`Authorization: Bearer ${KEY}`);
+    });
+    await expect(f.connect()).rejects.toThrow(
+      "Could not discover the research tools. Check credentials, access and connectivity.",
+    );
     expect(f.close).toHaveBeenCalled();
   });
 

@@ -6,7 +6,7 @@ Answer one research question by finding sources, reading the relevant pages, and
 
 ## Setup
 
-Use Node.js 22 or later and pnpm. From the repository root, follow the [contribution setup](../../CONTRIBUTING.md) to install dependencies and build the workspace packages. Then:
+Use Node.js 20.6 or later and pnpm. This follows the repository's Node 20 baseline; the example's `--env-file` scripts require Node 20.6. From the repository root, follow the [contribution setup](../../CONTRIBUTING.md) to install dependencies and build the workspace packages. Then:
 
 ```sh
 cd examples/with-baizhi-research
@@ -40,11 +40,11 @@ The connection uses Streamable HTTP at `https://agent-toolkit.app.baizhi.cloud/m
 | `web_scrape`       | Read a source to verify claims  | One HTTP(S) URL; Markdown and no download                                                 |
 | `web_extract`      | Extract fields for a comparison | One URL and a fields object and/or instruction; no download                               |
 
-The names and input shapes were checked against the service's `tools/list` response on 2026-09-20. Discovery is dynamic; the example does not assume a fixed total number of server tools. The local schemas intentionally expose a smaller input surface. If the remote contract changes, update these schemas and tests before use.
+The names and input shapes were checked against the service's `tools/list` response on 2026-09-20. Discovery stops once all three tools are found, scanning at most ten pages. Reaching that limit is reported separately from a complete catalog missing a tool. The local schemas intentionally expose a smaller input surface. If the remote contract changes, update these schemas and tests before use.
 
 Search domain restrictions are arrays of bare domains or IP addresses, such as `{ domains: ["example.com"] }`. Extraction fields are an object such as `{ version: "string", supported: "boolean" }`, not a JSON string. These inputs follow the wire contract rather than display-name aliases.
 
-Each question shares a hard limit of six tool-call attempts, including failed attempts. Every MCP request has a 30-second timeout, and the whole run has a two-minute deadline. Ctrl+C cancels in-flight work; the connection closes in `finally`. Cancellation cannot undo work already accepted by a remote service or guarantee that no credits were consumed. The limit is a request-count cap, not a monetary budget. The LLM and remote tools may each charge separately.
+Each question shares a hard limit of six tool-call attempts, including failed attempts. Every MCP request has a 30-second timeout, and the whole run has a two-minute deadline. Ctrl+C cancels in-flight work; the connection closes in `finally`. The CLI reports user cancellation and the two-minute deadline separately from connection or credential failures. Cancellation cannot undo work already accepted by a remote service or guarantee that no credits were consumed. The limit is a request-count cap, not a monetary budget. The LLM and remote tools may each charge separately.
 
 `src/session.ts` uses the official MCP SDK transport and VoltAgent's `createTool` so the example can apply a shared budget, propagate operation cancellation, and keep raw remote errors out of model output and logs. It rejects redirects on both POST requests and the optional GET stream. This does not require a framework change.
 
