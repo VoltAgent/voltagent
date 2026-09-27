@@ -13,6 +13,15 @@ A sandbox is an isolated environment where an agent can run shell commands witho
 
 Agents interact with the sandbox through a tool called `execute_command`. They pass a command (plus optional env vars, working directory, and timeout), and the workspace runs it in the sandbox and returns the result. Large stdout or stderr gets truncated so the model doesn't drown in logs.
 
+By default, the toolkit splits a full command line into an executable and arguments before calling `sandbox.execute()`. If a custom `WorkspaceSandbox` needs the original values from the tool call, disable that step:
+
+```ts
+const workspace = new Workspace({ sandbox: mySandbox });
+const toolkit = workspace.createSandboxToolkit({ normalizeCommandAndArgs: false });
+```
+
+With this option, `command: "git status"` and `args: ["--short"]` reach the custom sandbox unchanged. The default is `true` and retains the existing command splitting behavior. This option controls the toolkit only; `LocalSandbox` still normalizes commands in its own `execute()` method.
+
 ## LocalSandbox basics
 
 By default, `LocalSandbox` uses a `.sandbox/` directory under the current working directory.

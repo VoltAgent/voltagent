@@ -18,18 +18,26 @@ import type { WorkspaceIdentity, WorkspacePathContext } from "../types";
 import { normalizeCommandAndArgs } from "./command-normalization";
 import type { WorkspaceSandbox, WorkspaceSandboxResult } from "./types";
 
-const WORKSPACE_SANDBOX_SYSTEM_PROMPT_BASE = `You can execute shell commands in the workspace sandbox.
+const buildSandboxSystemPromptBase = (normalizeCommandAndArgs: boolean): string =>
+  `You can execute shell commands in the workspace sandbox.
 
 - execute_command: run a shell command with optional args, cwd, env, and timeout
-- Prefer executable in command and parameters in args
-- Full command lines in command are accepted as fallback and tokenized automatically
+${
+  normalizeCommandAndArgs
+    ? "- Prefer executable in command and parameters in args\n- Full command lines in command are accepted as fallback and tokenized automatically"
+    : "- Command and args are forwarded to the sandbox without tokenization or changes"
+}
 - Use workspace paths and sandbox working directory information below when deciding cwd and file targets`;
 
-const EXECUTE_COMMAND_TOOL_DESCRIPTION_BASE = `Execute a shell command in the workspace sandbox.
+const buildExecuteCommandDescriptionBase = (normalizeCommandAndArgs: boolean): string =>
+  `Execute a shell command in the workspace sandbox.
 
 Usage:
-- Prefer command + args (for example: command="npm", args=["test"]).
-- Full command lines are allowed in command and will be tokenized as fallback.
+${
+  normalizeCommandAndArgs
+    ? '- Prefer command + args (for example: command="npm", args=["test"]).\n- Full command lines are allowed in command and will be tokenized as fallback.'
+    : "- Command and args are passed to the sandbox exactly as provided."
+}
 - Set cwd explicitly for project-specific commands.
 - Use timeout_ms for long-running commands.
 - Always verify paths and quote arguments that include spaces.`;
@@ -73,6 +81,8 @@ export type WorkspaceSandboxToolkitOptions = {
   systemPrompt?: string | null;
   operationTimeoutMs?: number;
   customToolDescription?: string | null;
+  /** Normalize command lines before calling the sandbox. Defaults to true. */
+  normalizeCommandAndArgs?: boolean;
   outputEvictionBytes?: number;
   outputEvictionPath?: string;
   toolPolicies?: WorkspaceToolPolicies<WorkspaceSandboxToolName> | null;
@@ -197,26 +207,30 @@ const buildPathContextLines = (pathContext: WorkspacePathContext | null): string
   return lines;
 };
 
-const buildSystemPrompt = (pathContext: WorkspacePathContext | null): string => {
+const buildSystemPrompt = (
+  pathContext: WorkspacePathContext | null,
+  normalizeCommandAndArgs: boolean,
+): string => {
+  const base = buildSandboxSystemPromptBase(normalizeCommandAndArgs);
   const pathLines = buildPathContextLines(pathContext);
   if (pathLines.length === 0) {
-    return WORKSPACE_SANDBOX_SYSTEM_PROMPT_BASE;
+    return base;
   }
 
-  return `${WORKSPACE_SANDBOX_SYSTEM_PROMPT_BASE}\n\nPath context:\n${pathLines
-    .map((line) => `- ${line}`)
-    .join("\n")}`;
+  return `${base}\n\nPath context:\n${pathLines.map((line) => `- ${line}`).join("\n")}`;
 };
 
-const buildExecuteCommandDescription = (pathContext: WorkspacePathContext | null): string => {
+const buildExecuteCommandDescription = (
+  pathContext: WorkspacePathContext | null,
+  normalizeCommandAndArgs: boolean,
+): string => {
+  const base = buildExecuteCommandDescriptionBase(normalizeCommandAndArgs);
   const pathLines = buildPathContextLines(pathContext);
   if (pathLines.length === 0) {
-    return EXECUTE_COMMAND_TOOL_DESCRIPTION_BASE;
+    return base;
   }
 
-  return `${EXECUTE_COMMAND_TOOL_DESCRIPTION_BASE}\n\nPath context:\n${pathLines
-    .map((line) => `- ${line}`)
-    .join("\n")}`;
+  return `${base}\n\nPath context:\n${pathLines.map((line) => `- ${line}`).join("\n")}`;
 };
 
 const normalizeEvictionPath = (value?: string): string => {
@@ -261,8 +275,11 @@ export const createWorkspaceSandboxToolkit = (
   options: WorkspaceSandboxToolkitOptions = {},
 ): Toolkit => {
   const pathContext = resolvePathContext(context);
+  const shouldNormalizeCommandAndArgs = options.normalizeCommandAndArgs ?? true;
   const systemPrompt =
-    options.systemPrompt === undefined ? buildSystemPrompt(pathContext) : options.systemPrompt;
+    options.systemPrompt === undefined
+      ? buildSystemPrompt(pathContext, shouldNormalizeCommandAndArgs)
+      : options.systemPrompt;
   const evictionBytes =
     options.outputEvictionBytes === undefined
       ? DEFAULT_EVICTION_BYTES
@@ -294,7 +311,9 @@ export const createWorkspaceSandboxToolkit = (
 
   const executeTool = createTool({
     name: "execute_command",
-    description: options.customToolDescription || buildExecuteCommandDescription(pathContext),
+    description:
+      options.customToolDescription ||
+      buildExecuteCommandDescription(pathContext, shouldNormalizeCommandAndArgs),
     tags: [...WORKSPACE_SANDBOX_TAGS],
     needsApproval: resolveToolPolicy("execute_command")?.needsApproval,
     parameters: z.object({
@@ -314,13 +333,15 @@ export const createWorkspaceSandboxToolkit = (
       withOperationTimeout(
         async () => {
           const startedAt = Date.now();
-          const normalized = normalizeCommandAndArgs(input.command, input.args);
+          const commandAndArgs = shouldNormalizeCommandAndArgs
+            ? normalizeCommandAndArgs(input.command, input.args)
+            : { command: input.command, args: input.args };
           const operationContext = executeOptions as OperationContext;
           setWorkspaceSpanAttributes(operationContext, {
             ...buildWorkspaceAttributes(context.workspace),
             "workspace.operation": "sandbox.execute",
-            "workspace.sandbox.command": normalized.command,
-            "workspace.sandbox.args": normalized.args,
+            "workspace.sandbox.command": commandAndArgs.command,
+            "workspace.sandbox.args": commandAndArgs.args,
             "workspace.sandbox.cwd": input.cwd,
             "workspace.sandbox.timeout_ms": input.timeout_ms,
           });
@@ -343,8 +364,8 @@ export const createWorkspaceSandboxToolkit = (
 
           try {
             const result = await context.sandbox.execute({
-              command: normalized.command,
-              args: normalized.args,
+              command: commandAndArgs.command,
+              args: commandAndArgs.args,
               cwd: input.cwd,
               env: input.env,
               timeoutMs: input.timeout_ms,
