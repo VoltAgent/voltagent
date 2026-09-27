@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.11.0
+
+### Minor Changes
+
+- [#1423](https://github.com/VoltAgent/voltagent/pull/1423) [`316538a`](https://github.com/VoltAgent/voltagent/commit/316538a96860ee675931bbbf4f9dd1f6dec3937e) Thanks [@jiangjiang248](https://github.com/jiangjiang248)! - Allow custom workspace sandboxes to receive the original execute_command command and args by disabling toolkit command normalization. Fixes #1422.
+
 ## 2.10.0
 
 ### Minor Changes
