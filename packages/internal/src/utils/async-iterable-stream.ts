@@ -39,6 +39,13 @@ export function createAsyncIterableStream<T>(source: ReadableStream<T>): AsyncIt
         const { done, value } = await reader.read();
         return done ? { done: true, value: undefined } : { done: false, value };
       },
+      // Called when the consumer stops early (break/throw/return). Mirror the
+      // built-in ReadableStream async iterator and cancel the source so the
+      // upstream is torn down instead of leaking the reader lock.
+      async return(): Promise<IteratorResult<T>> {
+        await reader.cancel();
+        return { done: true, value: undefined };
+      },
     };
   };
 
