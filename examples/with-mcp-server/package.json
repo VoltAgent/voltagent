@@ -1,7 +1,7 @@
 {
   "name": "voltagent-example-with-mcp-server",
   "dependencies": {
-    "@voltagent/core": "^2.10.0",
+    "@voltagent/core": "^2.11.0",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/mcp-server": "^2.2.0",
     "@voltagent/server-hono": "^2.0.14",
