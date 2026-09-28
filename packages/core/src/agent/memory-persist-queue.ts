@@ -90,7 +90,7 @@ export class MemoryPersistQueue {
       return;
     }
 
-    const pending = buffer.drainPendingMessages();
+    const pending = buffer.getPendingMessages();
     if (pending.length === 0) {
       const payload = {
         conversationId: oc.conversationId,
@@ -104,7 +104,7 @@ export class MemoryPersistQueue {
       conversationId: oc.conversationId,
       userId: oc.userId,
       count: pending.length,
-      ids: pending.map((msg) => msg.id),
+      ids: pending.map(({ message }) => message.id),
     };
     this.logger?.debug?.("[MemoryPersistQueue] persisting", payload);
 
@@ -116,13 +116,22 @@ export class MemoryPersistQueue {
       | Map<string, AgentMetadataContextValue>
       | undefined;
 
-    for (const message of pending) {
+    for (const { message, version } of pending) {
       try {
         const messageWithMetadata = this.applySubAgentMetadata(message, {
           defaultMetadata: shouldApplySubAgentMetadata ? agentMetadata : undefined,
           toolCallMetadata,
         });
-        await this.memoryManager.saveMessage(oc, messageWithMetadata, oc.userId, oc.conversationId);
+        await this.memoryManager.saveMessage(
+          oc,
+          messageWithMetadata,
+          oc.userId,
+          oc.conversationId,
+          {
+            throwOnError: true,
+          },
+        );
+        buffer.markMessagePersisted(message.id, version);
       } catch (error) {
         this.logger?.error?.("Failed to save message", {
           conversationId: oc.conversationId,

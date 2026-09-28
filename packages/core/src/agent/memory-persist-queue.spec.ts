@@ -94,6 +94,100 @@ describe("MemoryPersistQueue", () => {
     expect(memoryManager.saveMessage).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps failed and unattempted messages pending for the next flush", async () => {
+    const messages = [createMessage("first"), createMessage("second"), createMessage("third")];
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockResolvedValue(undefined)
+        .mockRejectedValueOnce(new Error("storage unavailable")),
+    } as any;
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages(messages, false);
+    const oc = createOperationContext();
+    const queue = new MemoryPersistQueue(memoryManager, { logger: oc.logger });
+
+    await expect(queue.flush(buffer, oc as any)).rejects.toThrow("storage unavailable");
+    expect(memoryManager.saveMessage).toHaveBeenCalledWith(
+      oc,
+      expect.objectContaining({ id: messages[0].id }),
+      oc.userId,
+      oc.conversationId,
+      { throwOnError: true },
+    );
+    expect(buffer.getPendingMessages().map(({ message }) => message.id)).toEqual(
+      messages.map((message) => message.id),
+    );
+
+    await queue.flush(buffer, oc as any);
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      messages[0].id,
+      ...messages.map((message) => message.id),
+    ]);
+    expect(buffer.getPendingMessages()).toHaveLength(0);
+  });
+
+  it("retries only messages that were not saved before a later failure", async () => {
+    const messages = [createMessage("first"), createMessage("second"), createMessage("third")];
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error("storage unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages(messages, false);
+    const oc = createOperationContext();
+    const queue = new MemoryPersistQueue(memoryManager, { logger: oc.logger });
+
+    await expect(queue.flush(buffer, oc as any)).rejects.toThrow("storage unavailable");
+    expect(buffer.getPendingMessages().map(({ message }) => message.id)).toEqual([
+      messages[1].id,
+      messages[2].id,
+    ]);
+
+    await queue.flush(buffer, oc as any);
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      messages[0].id,
+      messages[1].id,
+      messages[1].id,
+      messages[2].id,
+    ]);
+  });
+
+  it("keeps a message pending when it changes during an in-flight save", async () => {
+    let finishSave!: () => void;
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              finishSave = resolve;
+            }),
+        )
+        .mockResolvedValue(undefined),
+    } as any;
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages([createMessage("first")], false);
+    const oc = createOperationContext();
+    const queue = new MemoryPersistQueue(memoryManager, { logger: oc.logger });
+
+    const firstFlush = queue.flush(buffer, oc as any);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(1);
+    buffer.addMetadataToLastAssistantMessage({ updated: true });
+    finishSave();
+    await firstFlush;
+
+    expect(buffer.getPendingMessages()).toHaveLength(1);
+    await queue.flush(buffer, oc as any);
+    expect(memoryManager.saveMessage.mock.calls[1][1].metadata).toMatchObject({ updated: true });
+    expect(buffer.getPendingMessages()).toHaveLength(0);
+  });
+
   it("adds subagent metadata before persisting when parentAgentId is present", async () => {
     const memoryManager = {
       saveMessage: vi.fn().mockResolvedValue(undefined),
