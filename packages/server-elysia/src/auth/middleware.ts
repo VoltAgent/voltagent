@@ -8,6 +8,16 @@ import {
 } from "@voltagent/server-core";
 import type { Context } from "elysia";
 
+const requestAuthenticatedUsers = new WeakMap<Request, unknown>();
+
+export function setRequestAuthenticatedUser(request: Request, user: unknown): void {
+  requestAuthenticatedUsers.set(request, user);
+}
+
+export function getRequestAuthenticatedUser(request: Request): unknown {
+  return requestAuthenticatedUsers.get(request);
+}
+
 /**
  * Create authentication middleware for Elysia
  * This middleware handles both authentication and user context injection
@@ -81,6 +91,7 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
 
       // Store user in store for route handlers to access
       store.authenticatedUser = user;
+      setRequestAuthenticatedUser(request, user);
 
       // Also inject user context into request body for agent/workflow execution
       injectUserContext(request, user);
@@ -165,6 +176,7 @@ export function createAuthNextMiddleware(
 
       // Store user in store for route handlers to access
       store.authenticatedUser = user;
+      setRequestAuthenticatedUser(request, user);
 
       // Also inject user context into request body for agent/workflow execution
       injectUserContext(request, user);

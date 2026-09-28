@@ -268,6 +268,38 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       const deleted = await adapter.getConversation("conv-delete");
       expect(deleted).toBeNull();
     });
+
+    it("adds expectedUserId to updateConversation mutations", async () => {
+      const originalData = createConversationData({ id: "conv-guard", title: "Original" });
+      const tx = mockTransaction();
+      mockGetConversation(originalData);
+      mockResultWith({ ...originalData, title: "Updated" });
+      tx.commit();
+
+      await (adapter as any).updateConversation(
+        "conv-guard",
+        { title: "Updated" },
+        { expectedUserId: "user-1" },
+      );
+
+      const updateCall = mockQuery.mock.calls.find(([sql]) =>
+        String(sql).includes("UPDATE test_conversations"),
+      );
+      expect(updateCall?.[0]).toContain("WHERE id = $3 AND user_id = $4");
+      expect(updateCall?.[1]).toEqual([expect.any(String), "Updated", "conv-guard", "user-1"]);
+    });
+
+    it("adds expectedUserId to deleteConversation mutations", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: "conv-delete" }], rowCount: 1 });
+
+      await (adapter as any).deleteConversation("conv-delete", { expectedUserId: "user-1" });
+
+      const deleteCall = mockQuery.mock.calls.find(([sql]) =>
+        String(sql).includes("DELETE FROM test_conversations"),
+      );
+      expect(deleteCall?.[0]).toContain("WHERE id = $1 AND user_id = $2");
+      expect(deleteCall?.[1]).toEqual(["conv-delete", "user-1"]);
+    });
   });
 
   // ============================================================================

@@ -6,9 +6,14 @@
 import { deepClone } from "@voltagent/internal/utils";
 import type { UIMessage } from "ai";
 import type { OperationContext } from "../../../agent/types";
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "../../errors";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
+} from "../../errors";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -424,10 +429,15 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
     const conversation = this.conversations.get(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
+    }
+
+    if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
     }
 
     const updatedConversation: Conversation = {
@@ -443,10 +453,14 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   /**
    * Delete a conversation
    */
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     const conversation = this.conversations.get(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
+    }
+
+    if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
     }
 
     // Delete conversation

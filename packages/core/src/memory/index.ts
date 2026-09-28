@@ -7,9 +7,14 @@ import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { OperationContext } from "../agent/types";
 import { AiSdkEmbeddingAdapter } from "./adapters/embedding/ai-sdk";
-import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } from "./errors";
+import {
+  ConversationOwnershipMismatchError,
+  EmbeddingAdapterNotConfiguredError,
+  VectorAdapterNotConfiguredError,
+} from "./errors";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -280,19 +285,34 @@ export class Memory {
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
-    return this.storage.updateConversation(id, updates);
+    return this.storage.updateConversation(id, updates, options);
   }
 
   /**
    * Delete a conversation
    */
-  async deleteConversation(id: string): Promise<void> {
-    // If vector adapter is configured, delete associated vectors
-    if (this.vector) {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
+    let conversation: Conversation | null = null;
+
+    if (options?.expectedUserId !== undefined) {
+      conversation = await this.storage.getConversation(id);
+
+      if (conversation && conversation.userId !== options.expectedUserId) {
+        throw new ConversationOwnershipMismatchError(id);
+      }
+    }
+
+    // If vector adapter is configured, delete associated vectors.
+    // For guarded deletes, do not re-fetch when the ownership lookup found no
+    // conversation: a same-ID conversation may have been recreated for another
+    // owner before the guarded storage mutation runs.
+    const canCleanVectors = options?.expectedUserId === undefined || conversation !== null;
+    if (this.vector && canCleanVectors) {
       try {
-        // Try to get the conversation first to get userId
-        const conversation = await this.storage.getConversation(id);
+        conversation ??= await this.storage.getConversation(id);
+
         if (conversation) {
           // Get all messages to find vector IDs
           const messages = await this.storage.getMessages(conversation.userId, id);
@@ -307,7 +327,7 @@ export class Memory {
       }
     }
 
-    return this.storage.deleteConversation(id);
+    return this.storage.deleteConversation(id, options);
   }
 
   // ============================================================================
