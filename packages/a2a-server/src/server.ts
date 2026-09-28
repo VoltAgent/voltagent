@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { type Agent, convertUsage } from "@voltagent/core";
+import { type Agent, convertUsage, getGlobalLogger } from "@voltagent/core";
 import { buildAgentCard } from "./adapters/agent";
 import { fromVoltAgentMessage, toVoltAgentMessage } from "./adapters/message";
 import { createSuccessResponse, normalizeError } from "./protocol";
+import { A2AMessageSchema } from "./schemas";
 import { InMemoryTaskStore } from "./store";
 import {
   appendMessage,
@@ -55,6 +56,13 @@ function resolveAgentCardUrl(serverId: string, requestUrl?: string): string {
   }
 }
 
+/**
+ * A2A (Agent-to-Agent) protocol server.
+ *
+ * Manages agent registration, JSON-RPC request routing, task lifecycle, and
+ * streaming responses. Call {@link initialize} with runtime dependencies
+ * before handling any requests.
+ */
 export class A2AServer {
   private deps?: Required<A2AServerDeps>;
   private readonly config: A2AServerConfig;
@@ -62,6 +70,7 @@ export class A2AServer {
   private readonly configuredAgents = new Map<string, Agent>();
   private readonly agentFilter: A2AFilterFunction<Agent> | undefined;
 
+  /** Creates a new A2AServer from the given configuration, registering any pre-configured agents. */
   constructor(config: A2AServerConfig) {
     this.config = config;
     this.agentFilter = config.filterAgents;
@@ -76,13 +85,30 @@ export class A2AServer {
     }
   }
 
+  /**
+   * Initializes the server with runtime dependencies.
+   *
+   * Task store precedence: `config.taskStore` (constructor) > `deps.taskStore` > `InMemoryTaskStore`.
+   * If a `taskStore` was provided in the `A2AServerConfig` constructor, it takes priority over
+   * the one supplied here in `deps`.
+   */
   initialize(deps: A2AServerDeps): void {
+    if (this.config.taskStore && deps.taskStore) {
+      getGlobalLogger()
+        .child({ component: "a2a-server" })
+        .debug(
+          "config.taskStore is overriding deps.taskStore. " +
+            "The task store provided in A2AServerConfig takes precedence.",
+        );
+    }
+
     this.deps = {
       ...deps,
-      taskStore: deps.taskStore ?? new InMemoryTaskStore(),
+      taskStore: this.config.taskStore ?? deps.taskStore ?? new InMemoryTaskStore(),
     } as Required<A2AServerDeps>;
   }
 
+  /** Returns the server's public metadata (id, name, version, description, provider). */
   getMetadata() {
     return {
       id: this.config.id,
@@ -93,6 +119,7 @@ export class A2AServer {
     };
   }
 
+  /** Builds and returns the {@link AgentCard} for the specified agent, including its endpoint URL. */
   getAgentCard(agentId: string, context: A2ARequestContext = {}): AgentCard {
     const agent = this.resolveAgent(agentId, context);
     const url = resolveAgentCardUrl(agentId, context.requestUrl);
@@ -108,6 +135,11 @@ export class A2AServer {
     });
   }
 
+  /**
+   * Routes an incoming JSON-RPC request to the appropriate handler.
+   *
+   * Supported methods: `message/send`, `message/stream`, `tasks/get`, `tasks/cancel`.
+   */
   async handleRequest(
     agentId: string,
     request: JsonRpcRequest,
@@ -304,6 +336,33 @@ export class A2AServer {
       if (abortController.signal.aborted) {
         return await this.ensureCanceledRecord(agentId, record);
       }
+
+      const failureText =
+        error instanceof Error ? error.message : "Task failed with an unknown error";
+      const failureMessage: A2AMessage = {
+        kind: "message",
+        role: "agent",
+        messageId: randomUUID(),
+        taskId: record.id,
+        contextId: record.contextId,
+        parts: [{ kind: "text", text: failureText }],
+      };
+
+      record = appendMessage(record, failureMessage);
+      record = transitionStatus(record, { state: "failed", message: failureMessage });
+
+      try {
+        await taskStore.save({ agentId, data: record });
+      } catch (saveErr) {
+        getGlobalLogger()
+          .child({ component: "a2a-server" })
+          .warn("Failed to persist task failure status", {
+            agentId,
+            taskId: record.id,
+            saveError: saveErr,
+          });
+      }
+
       throw error;
     } finally {
       this.clearActiveOperation(agentId, record.id);
@@ -664,24 +723,16 @@ export class A2AServer {
     if (!payload || typeof payload !== "object") {
       throw VoltA2AError.invalidParams("Params must be an object");
     }
-    const candidate = payload as Partial<MessageSendParams>;
+    const candidate = payload as Record<string, unknown>;
 
-    if (!candidate.message || typeof candidate.message !== "object") {
-      throw VoltA2AError.invalidParams("'message' must be provided");
+    try {
+      A2AMessageSchema.parse(candidate.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid message payload";
+      throw VoltA2AError.invalidParams(message);
     }
 
-    if (!Array.isArray(candidate.message.parts) || candidate.message.parts.length === 0) {
-      throw VoltA2AError.invalidParams("Message must include at least one part");
-    }
-
-    const hasInvalidPart = candidate.message.parts.some(
-      (part) => part.kind !== "text" || typeof part.text !== "string",
-    );
-    if (hasInvalidPart) {
-      throw VoltA2AError.invalidParams("Only plain text message parts are supported");
-    }
-
-    return candidate as MessageSendParams;
+    return candidate as unknown as MessageSendParams;
   }
 
   private validateTaskQueryParams(payload: unknown): TaskQueryParams {
