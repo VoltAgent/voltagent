@@ -293,6 +293,39 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
       expect(indexContent).toContain(`server: ${SERVER_CONFIG[scenario.server].factory}()`);
       expect(indexContent).toContain(`model: "${AI_PROVIDER_CONFIG[scenario.aiProvider].model}"`);
 
+      const dockerfile = await fsExtra.readFile(path.join(projectDir, "Dockerfile"), "utf8");
+      const lockfileCopies = dockerfile
+        .split(/\r?\n/)
+        .filter((line) => /^COPY (?:yarn\.lock|pnpm-lock\.yaml|bun\.lock)/.test(line));
+      const expectedLockfile = {
+        npm: [],
+        yarn: ["COPY yarn.lock ./", "COPY yarn.lock ./"],
+        pnpm: ["COPY pnpm-lock.yaml ./", "COPY pnpm-lock.yaml ./"],
+        bun: ["COPY bun.lock* ./", "COPY bun.lock* ./"],
+      }[scenario.packageManager];
+      expect(lockfileCopies).toEqual(expectedLockfile);
+      const installCommands = dockerfile
+        .split(/\r?\n/)
+        .filter((line) => /^RUN .*\b(?:npm ci|yarn install|pnpm install|bun install)\b/.test(line));
+      expect(installCommands).toEqual(
+        {
+          npm: ["RUN npm ci", "RUN npm ci --omit=dev"],
+          yarn: [
+            "RUN yarn install --frozen-lockfile",
+            "RUN yarn install --frozen-lockfile --production",
+          ],
+          pnpm: [
+            "RUN npm install -g pnpm && pnpm install --frozen-lockfile",
+            "RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod",
+          ],
+          bun: [
+            "RUN npm install -g bun && bun install --frozen-lockfile",
+            "RUN npm install -g bun && bun install --frozen-lockfile --production",
+          ],
+        }[scenario.packageManager],
+      );
+      expect(dockerfile).not.toContain("{{");
+
       const envContent = await fsExtra.readFile(path.join(projectDir, ".env"), "utf8");
       if (scenario.aiProvider === "ollama") {
         expect(envContent).toContain("OLLAMA_HOST=http://localhost:11434");

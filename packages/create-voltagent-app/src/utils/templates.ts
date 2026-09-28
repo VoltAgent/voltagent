@@ -134,6 +134,39 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/Dockerfile.template"),
       targetPath: "Dockerfile",
+      transform: (content: string, options: ProjectOptions) => {
+        const packageManagers = {
+          npm: {
+            lockfileCopy: "",
+            installCommand: "npm ci",
+            productionInstallCommand: "npm ci --omit=dev",
+          },
+          yarn: {
+            lockfileCopy: "COPY yarn.lock ./",
+            installCommand: "yarn install --frozen-lockfile",
+            productionInstallCommand: "yarn install --frozen-lockfile --production",
+          },
+          pnpm: {
+            lockfileCopy: "COPY pnpm-lock.yaml ./",
+            installCommand: "npm install -g pnpm && pnpm install --frozen-lockfile",
+            productionInstallCommand: "npm install -g pnpm && pnpm install --frozen-lockfile --prod",
+          },
+          bun: {
+            lockfileCopy: "COPY bun.lock* ./",
+            installCommand: "npm install -g bun && bun install --frozen-lockfile",
+            productionInstallCommand: "npm install -g bun && bun install --frozen-lockfile --production",
+          },
+        } satisfies Record<
+          ProjectOptions["packageManager"],
+          { lockfileCopy: string; installCommand: string; productionInstallCommand: string }
+        >;
+        const selected = packageManagers[options.packageManager];
+
+        return content
+          .replace(/{{lockfileCopy}}/g, selected.lockfileCopy)
+          .replace(/{{installCommand}}/g, selected.installCommand)
+          .replace(/{{productionInstallCommand}}/g, selected.productionInstallCommand);
+      },
     },
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.dockerignore.template"),
