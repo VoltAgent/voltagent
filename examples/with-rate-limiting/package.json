@@ -1,0 +1,22 @@
+{
+  "name": "with-rate-limiting",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "run": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.23",
+    "@voltagent/core": "workspace:*",
+    "dotenv": "^17.2.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.2"
+  }
+}
