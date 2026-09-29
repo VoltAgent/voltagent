@@ -27,9 +27,7 @@ export const getInstalledPackageManagers = (): PackageManager[] => {
     if (commandExists(PACKAGE_MANAGER_CONFIG[pm].command)) {
       if (pm === "yarn") {
         try {
-          if (!getPackageManagerVersion(pm).startsWith("1.")) {
-            continue;
-          }
+          getPackageManagerVersion(pm);
         } catch {
           continue;
         }
@@ -62,7 +60,7 @@ export const getPackageManagerVersion = (packageManager: PackageManager): string
   const version = execSync(`${PACKAGE_MANAGER_CONFIG[packageManager].command} --version`, {
     encoding: "utf8",
   }).trim();
-  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)) {
     throw new Error(`Unsupported ${packageManager} version: ${version}`);
   }
   return version;

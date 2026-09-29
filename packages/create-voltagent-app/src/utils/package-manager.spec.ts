@@ -16,11 +16,18 @@ describe("package manager detection", () => {
     expect(getPackageManagerVersion("yarn")).toBe("1.22.22");
   });
 
-  it("does not offer Yarn Modern for a Docker scaffold", () => {
+  it("keeps Yarn Modern available for explicit Docker compatibility handling", () => {
     vi.mocked(execSync).mockImplementation((command) =>
       String(command).endsWith("yarn --version") ? "4.9.0\n" : "",
     );
-    expect(getInstalledPackageManagers()).not.toContain("yarn");
+    expect(getInstalledPackageManagers()).toContain("yarn");
+  });
+
+  it("accepts prerelease manager versions for Docker pinning", () => {
+    vi.mocked(execSync).mockImplementation((command) =>
+      String(command).endsWith("bun --version") ? "1.4.0-canary.1\n" : "",
+    );
+    expect(getPackageManagerVersion("bun")).toBe("1.4.0-canary.1");
   });
 
   it("skips Yarn when its version probe fails", () => {
