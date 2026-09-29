@@ -2532,6 +2532,67 @@ Use pandas and summarize findings.`.split("\n"),
       );
     });
 
+    it("returns the generated response after a memory write fails and saves it on the next turn", async () => {
+      const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+      const saveMessage = memory.saveMessageWithContext.bind(memory);
+      let failAssistantWrite = true;
+      vi.spyOn(memory, "saveMessageWithContext").mockImplementation(async (...args) => {
+        if (failAssistantWrite && args[0].role === "assistant") {
+          failAssistantWrite = false;
+          throw new Error("storage unavailable");
+        }
+        return saveMessage(...args);
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory,
+      });
+      const response = (text: string) => ({
+        text,
+        content: [{ type: "text", text }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: providerUsage,
+        warnings: [],
+        request: {},
+        response: {
+          id: text,
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: createAssistantResponseMessages(text),
+        },
+        steps: [],
+      });
+      vi.mocked(ai.generateText)
+        .mockResolvedValueOnce(response("First response") as any)
+        .mockResolvedValueOnce(response("Second response") as any);
+      const options = {
+        memory: {
+          userId: "retry-user",
+          conversationId: "retry-conversation",
+          options: { messageMetadataPersistence: true },
+        },
+      };
+
+      const first = await agent.generateText("First turn", options);
+      expect(first.text).toBe("First response");
+
+      const second = await agent.generateText("Second turn", options);
+      expect(second.text).toBe("Second response");
+
+      const saved = await memory.getMessages("retry-user", "retry-conversation");
+      expect(saved.filter((message) => message.role === "assistant")).toEqual([
+        expect.objectContaining({ parts: [{ type: "text", text: "First response" }] }),
+        expect.objectContaining({ parts: [{ type: "text", text: "Second response" }] }),
+      ]);
+    });
+
     it("should persist usage and finish reason in assistant message metadata for streamText", async () => {
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),
