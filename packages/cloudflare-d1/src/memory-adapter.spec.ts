@@ -25,6 +25,12 @@ describe("D1MemoryAdapter queryWorkflowRuns", () => {
       "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
       [2],
     );
+
+    await adapter.queryWorkflowRuns({ offset: 0 });
+    expect(allSpy).toHaveBeenLastCalledWith(
+      "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      [0],
+    );
   });
 
   it("builds metadata filters with JSON-aware comparisons", async () => {
@@ -106,6 +112,12 @@ describe("D1MemoryAdapter queryConversations", () => {
     expect(allSpy).toHaveBeenCalledWith(
       "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
       [2],
+    );
+
+    await adapter.queryConversations({ offset: 0 });
+    expect(allSpy).toHaveBeenLastCalledWith(
+      "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      [0],
     );
 
     await adapter.queryConversations({ limit: 0, offset: 2 });

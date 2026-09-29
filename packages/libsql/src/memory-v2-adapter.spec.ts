@@ -51,6 +51,13 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     });
 
     mockExecute.mockResolvedValueOnce({ rows: [] });
+    await adapter.queryConversations({ offset: 0 });
+    expect(mockExecute).toHaveBeenLastCalledWith({
+      sql: "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      args: [0],
+    });
+
+    mockExecute.mockResolvedValueOnce({ rows: [] });
     await adapter.queryConversations({ limit: 0, offset: 2 });
     expect(mockExecute).toHaveBeenLastCalledWith({
       sql: "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT ? OFFSET ?",
@@ -66,6 +73,13 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     expect(mockExecute).toHaveBeenCalledWith({
       sql: "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
       args: [2],
+    });
+
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    await adapter.queryWorkflowRuns({ offset: 0 });
+    expect(mockExecute).toHaveBeenLastCalledWith({
+      sql: "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      args: [0],
     });
   });
 
