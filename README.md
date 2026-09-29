@@ -355,7 +355,7 @@ Connect your agents to knowledge sources with built-in retrieval-augmented gener
 
 ## Contribution
 
-We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
+We welcome contributions! Please refer to our [contribution guidelines](CONTRIBUTING.md). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
 
 ## Contributor ♥️ Thanks
 
