@@ -25,8 +25,14 @@ export const getInstalledPackageManagers = (): PackageManager[] => {
 
   for (const pm of packageManagers) {
     if (commandExists(PACKAGE_MANAGER_CONFIG[pm].command)) {
-      if (pm === "yarn" && !getPackageManagerVersion(pm).startsWith("1.")) {
-        continue;
+      if (pm === "yarn") {
+        try {
+          if (!getPackageManagerVersion(pm).startsWith("1.")) {
+            continue;
+          }
+        } catch {
+          continue;
+        }
       }
       installedPackageManagers.push(pm);
     }

@@ -22,4 +22,14 @@ describe("package manager detection", () => {
     );
     expect(getInstalledPackageManagers()).not.toContain("yarn");
   });
+
+  it("skips Yarn when its version probe fails", () => {
+    vi.mocked(execSync).mockImplementation((command) => {
+      if (String(command).endsWith("yarn --version")) {
+        throw new Error("yarn failed to start");
+      }
+      return "";
+    });
+    expect(getInstalledPackageManagers()).not.toContain("yarn");
+  });
 });
