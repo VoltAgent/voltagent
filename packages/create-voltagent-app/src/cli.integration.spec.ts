@@ -17,7 +17,11 @@ import {
 import { showSuccessMessage } from "./utils/animation";
 import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 import { promptForApiKey } from "./utils/env-manager";
-import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
+import {
+  getDefaultPackageManager,
+  getInstalledPackageManagers,
+  getPackageManagerVersion,
+} from "./utils/package-manager";
 
 vi.mock("inquirer", () => ({
   default: {
@@ -46,6 +50,7 @@ vi.mock("./utils/animation", async () => {
 vi.mock("./utils/package-manager", () => ({
   getDefaultPackageManager: vi.fn(),
   getInstalledPackageManagers: vi.fn(),
+  getPackageManagerVersion: vi.fn(),
 }));
 
 vi.mock("./utils/env-manager", () => ({
@@ -202,6 +207,10 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
       Object.keys(PACKAGE_MANAGER_CONFIG) as PackageManager[],
     );
     vi.mocked(getDefaultPackageManager).mockReturnValue("pnpm");
+    vi.mocked(getPackageManagerVersion).mockImplementation(
+      (packageManager) =>
+        ({ npm: "10.9.3", yarn: "1.22.22", pnpm: "8.10.5", bun: "1.4.0" })[packageManager],
+    );
 
     vi.mocked(createBaseDependencyInstaller).mockImplementation(
       async (targetDir, projectName, server, packageManager) => {
@@ -296,12 +305,29 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
       const dockerfile = await fsExtra.readFile(path.join(projectDir, "Dockerfile"), "utf8");
       const lockfileCopies = dockerfile
         .split(/\r?\n/)
-        .filter((line) => /^COPY (?:yarn\.lock|pnpm-lock\.yaml|bun\.lock)/.test(line));
+        .filter((line) =>
+          /^COPY (?:package\*\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lock)/.test(line),
+        );
       const expectedLockfile = {
-        npm: [],
-        yarn: ["COPY yarn.lock ./", "COPY yarn.lock ./"],
-        pnpm: ["COPY pnpm-lock.yaml ./", "COPY pnpm-lock.yaml ./"],
-        bun: ["COPY bun.lock* ./", "COPY bun.lock* ./"],
+        npm: ["COPY package*.json ./", "COPY package*.json ./"],
+        yarn: [
+          "COPY package*.json ./",
+          "COPY yarn.lock ./",
+          "COPY package*.json ./",
+          "COPY yarn.lock ./",
+        ],
+        pnpm: [
+          "COPY package*.json ./",
+          "COPY pnpm-lock.yaml ./",
+          "COPY package*.json ./",
+          "COPY pnpm-lock.yaml ./",
+        ],
+        bun: [
+          "COPY package*.json ./",
+          "COPY bun.lock* ./",
+          "COPY package*.json ./",
+          "COPY bun.lock* ./",
+        ],
       }[scenario.packageManager];
       expect(lockfileCopies).toEqual(expectedLockfile);
       const installCommands = dockerfile
@@ -314,16 +340,22 @@ describe.sequential("create-voltagent-app CLI option matrix", () => {
             "RUN yarn install --frozen-lockfile",
             "RUN yarn install --frozen-lockfile --production",
           ],
-          pnpm: [
-            "RUN npm install -g pnpm && pnpm install --frozen-lockfile",
-            "RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod",
-          ],
+          pnpm: ["RUN pnpm install --frozen-lockfile", "RUN pnpm install --frozen-lockfile --prod"],
           bun: [
-            "RUN npm install -g bun && bun install --frozen-lockfile",
-            "RUN npm install -g bun && bun install --frozen-lockfile --production",
+            "RUN bun install --frozen-lockfile",
+            "RUN bun install --frozen-lockfile --production",
           ],
         }[scenario.packageManager],
       );
+      if (scenario.packageManager === "pnpm") {
+        expect(dockerfile.match(/RUN npm install -g pnpm@8\.10\.5/g)).toHaveLength(2);
+      }
+      if (scenario.packageManager === "bun") {
+        expect(dockerfile).toContain("FROM oven/bun:1.4.0-alpine AS bun-tool");
+        expect(
+          dockerfile.match(/COPY --from=bun-tool \/usr\/local\/bin\/bun \/usr\/local\/bin\/bun/g),
+        ).toHaveLength(2);
+      }
       expect(dockerfile).not.toContain("{{");
 
       const envContent = await fsExtra.readFile(path.join(projectDir, ".env"), "utf8");

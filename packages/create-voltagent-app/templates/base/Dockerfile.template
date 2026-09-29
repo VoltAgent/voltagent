@@ -1,4 +1,4 @@
-# Build stage
+{{bunStage}}# Build stage
 FROM node:22-alpine AS builder
 
 # Set working directory
@@ -7,6 +7,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 {{lockfileCopy}}
+{{toolSetup}}
 
 # Install dependencies with the selected package manager
 RUN {{installCommand}}
@@ -33,6 +34,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 {{lockfileCopy}}
+{{toolSetup}}
 
 # Install production dependencies only
 RUN {{productionInstallCommand}}

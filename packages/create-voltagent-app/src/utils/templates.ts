@@ -135,35 +135,54 @@ export const getBaseTemplates = (): TemplateFile[] => {
       sourcePath: path.join(TEMPLATES_DIR, "base/Dockerfile.template"),
       targetPath: "Dockerfile",
       transform: (content: string, options: ProjectOptions) => {
+        if (options.packageManager === "yarn" && !options.packageManagerVersion.startsWith("1.")) {
+          throw new Error("Docker generation currently supports Yarn Classic (1.x) only.");
+        }
         const packageManagers = {
           npm: {
+            bunStage: "",
             lockfileCopy: "",
+            toolSetup: "",
             installCommand: "npm ci",
             productionInstallCommand: "npm ci --omit=dev",
           },
           yarn: {
+            bunStage: "",
             lockfileCopy: "COPY yarn.lock ./",
+            toolSetup: "",
             installCommand: "yarn install --frozen-lockfile",
             productionInstallCommand: "yarn install --frozen-lockfile --production",
           },
           pnpm: {
+            bunStage: "",
             lockfileCopy: "COPY pnpm-lock.yaml ./",
-            installCommand: "npm install -g pnpm && pnpm install --frozen-lockfile",
-            productionInstallCommand: "npm install -g pnpm && pnpm install --frozen-lockfile --prod",
+            toolSetup: `RUN npm install -g pnpm@${options.packageManagerVersion}`,
+            installCommand: "pnpm install --frozen-lockfile",
+            productionInstallCommand: "pnpm install --frozen-lockfile --prod",
           },
           bun: {
+            bunStage: `FROM oven/bun:${options.packageManagerVersion}-alpine AS bun-tool\n\n`,
             lockfileCopy: "COPY bun.lock* ./",
-            installCommand: "npm install -g bun && bun install --frozen-lockfile",
-            productionInstallCommand: "npm install -g bun && bun install --frozen-lockfile --production",
+            toolSetup: "COPY --from=bun-tool /usr/local/bin/bun /usr/local/bin/bun",
+            installCommand: "bun install --frozen-lockfile",
+            productionInstallCommand: "bun install --frozen-lockfile --production",
           },
         } satisfies Record<
           ProjectOptions["packageManager"],
-          { lockfileCopy: string; installCommand: string; productionInstallCommand: string }
+          {
+            bunStage: string;
+            lockfileCopy: string;
+            toolSetup: string;
+            installCommand: string;
+            productionInstallCommand: string;
+          }
         >;
         const selected = packageManagers[options.packageManager];
 
         return content
+          .replace(/{{bunStage}}/g, selected.bunStage)
           .replace(/{{lockfileCopy}}/g, selected.lockfileCopy)
+          .replace(/{{toolSetup}}/g, selected.toolSetup)
           .replace(/{{installCommand}}/g, selected.installCommand)
           .replace(/{{productionInstallCommand}}/g, selected.productionInstallCommand);
       },

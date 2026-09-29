@@ -24,7 +24,11 @@ import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
-import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
+import {
+  getDefaultPackageManager,
+  getInstalledPackageManagers,
+  getPackageManagerVersion,
+} from "./utils/package-manager";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -127,6 +131,8 @@ export const runCLI = async (): Promise<void> => {
         packageManager = result.packageManager;
       }
 
+      const packageManagerVersion = getPackageManagerVersion(packageManager);
+
       // Start installing base dependencies immediately
       const baseDependencyInstaller = await createBaseDependencyInstaller(
         targetDir,
@@ -181,6 +187,7 @@ export const runCLI = async (): Promise<void> => {
         projectName,
         typescript: true, // VoltAgent uses TypeScript by default
         packageManager: packageManager || "npm",
+        packageManagerVersion,
         features: [], // Features aren't used anymore
         ide,
         aiProvider,
