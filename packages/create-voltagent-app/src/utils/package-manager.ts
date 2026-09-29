@@ -25,6 +25,13 @@ export const getInstalledPackageManagers = (): PackageManager[] => {
 
   for (const pm of packageManagers) {
     if (commandExists(PACKAGE_MANAGER_CONFIG[pm].command)) {
+      if (pm === "yarn") {
+        try {
+          getPackageManagerVersion(pm);
+        } catch {
+          continue;
+        }
+      }
       installedPackageManagers.push(pm);
     }
   }
@@ -47,4 +54,14 @@ export const getDefaultPackageManager = (): PackageManager => {
 
   // Fallback to npm (should always be available with Node.js)
   return "npm";
+};
+
+export const getPackageManagerVersion = (packageManager: PackageManager): string => {
+  const version = execSync(`${PACKAGE_MANAGER_CONFIG[packageManager].command} --version`, {
+    encoding: "utf8",
+  }).trim();
+  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)) {
+    throw new Error(`Unsupported ${packageManager} version: ${version}`);
+  }
+  return version;
 };

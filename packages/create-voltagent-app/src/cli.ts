@@ -24,7 +24,11 @@ import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
-import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
+import {
+  getDefaultPackageManager,
+  getInstalledPackageManagers,
+  getPackageManagerVersion,
+} from "./utils/package-manager";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -127,69 +131,72 @@ export const runCLI = async (): Promise<void> => {
         packageManager = result.packageManager;
       }
 
-      // Start installing base dependencies immediately
-      const baseDependencyInstaller = await createBaseDependencyInstaller(
-        targetDir,
-        projectName,
-        server || "hono",
-        packageManager || "npm",
-      );
-
-      // Wait for base dependencies to finish installing before asking more questions
-      await baseDependencyInstaller.waitForCompletion();
-
-      // Select AI provider
-      const { aiProvider } = await inquirer.prompt<{ aiProvider: AIProvider }>([
-        {
-          type: "list",
-          name: "aiProvider",
-          message: "Which AI provider would you like to use?",
-          choices: [
-            { name: `OpenAI (${AI_PROVIDER_CONFIG.openai.modelName})`, value: "openai" },
-            { name: `Anthropic (${AI_PROVIDER_CONFIG.anthropic.modelName})`, value: "anthropic" },
-            { name: `Google (${AI_PROVIDER_CONFIG.google.modelName})`, value: "google" },
-            { name: `Groq (${AI_PROVIDER_CONFIG.groq.modelName})`, value: "groq" },
-            { name: `Mistral (${AI_PROVIDER_CONFIG.mistral.modelName})`, value: "mistral" },
-            { name: `Ollama (${AI_PROVIDER_CONFIG.ollama.modelName} - Local)`, value: "ollama" },
-          ],
-          default: "openai",
-        },
-      ]);
-
-      // Prompt for API key if needed
-      const apiKey = await promptForApiKey(aiProvider);
-
-      // Select IDE for MCP configuration
-      const { ide } = await inquirer.prompt<{
-        ide: ProjectOptions["ide"];
-      }>([
-        {
-          type: "list",
-          name: "ide",
-          message: "Which IDE are you using? (For MCP Docs Server configuration)",
-          choices: [
-            { name: "None / I'll configure later", value: "none" },
-            { name: "Cursor", value: "cursor" },
-            { name: "Windsurf", value: "windsurf" },
-            { name: "VS Code", value: "vscode" },
-          ],
-          default: "none",
-        },
-      ]);
-
-      const projectOptions: ProjectOptions = {
-        projectName,
-        typescript: true, // VoltAgent uses TypeScript by default
-        packageManager: packageManager || "npm",
-        features: [], // Features aren't used anymore
-        ide,
-        aiProvider,
-        apiKey,
-        server: server || "hono",
-      };
-
-      // Create the project
       try {
+        const packageManagerVersion = getPackageManagerVersion(packageManager);
+
+        // Start installing base dependencies immediately
+        const baseDependencyInstaller = await createBaseDependencyInstaller(
+          targetDir,
+          projectName,
+          server || "hono",
+          packageManager || "npm",
+        );
+
+        // Wait for base dependencies to finish installing before asking more questions
+        await baseDependencyInstaller.waitForCompletion();
+
+        // Select AI provider
+        const { aiProvider } = await inquirer.prompt<{ aiProvider: AIProvider }>([
+          {
+            type: "list",
+            name: "aiProvider",
+            message: "Which AI provider would you like to use?",
+            choices: [
+              { name: `OpenAI (${AI_PROVIDER_CONFIG.openai.modelName})`, value: "openai" },
+              { name: `Anthropic (${AI_PROVIDER_CONFIG.anthropic.modelName})`, value: "anthropic" },
+              { name: `Google (${AI_PROVIDER_CONFIG.google.modelName})`, value: "google" },
+              { name: `Groq (${AI_PROVIDER_CONFIG.groq.modelName})`, value: "groq" },
+              { name: `Mistral (${AI_PROVIDER_CONFIG.mistral.modelName})`, value: "mistral" },
+              { name: `Ollama (${AI_PROVIDER_CONFIG.ollama.modelName} - Local)`, value: "ollama" },
+            ],
+            default: "openai",
+          },
+        ]);
+
+        // Prompt for API key if needed
+        const apiKey = await promptForApiKey(aiProvider);
+
+        // Select IDE for MCP configuration
+        const { ide } = await inquirer.prompt<{
+          ide: ProjectOptions["ide"];
+        }>([
+          {
+            type: "list",
+            name: "ide",
+            message: "Which IDE are you using? (For MCP Docs Server configuration)",
+            choices: [
+              { name: "None / I'll configure later", value: "none" },
+              { name: "Cursor", value: "cursor" },
+              { name: "Windsurf", value: "windsurf" },
+              { name: "VS Code", value: "vscode" },
+            ],
+            default: "none",
+          },
+        ]);
+
+        const projectOptions: ProjectOptions = {
+          projectName,
+          typescript: true, // VoltAgent uses TypeScript by default
+          packageManager: packageManager || "npm",
+          packageManagerVersion,
+          features: [], // Features aren't used anymore
+          ide,
+          aiProvider,
+          apiKey,
+          server: server || "hono",
+        };
+
+        // Create the project
         // Capture project creation event
         captureProjectCreation({
           projectName,
