@@ -130,6 +130,7 @@ export class MemoryPersistQueue {
 
     this.pruneRetainedBuffers();
     let firstError: unknown;
+    let hasError = false;
 
     for (const [buffer, queued] of [...entry.buffers]) {
       try {
@@ -139,13 +140,16 @@ export class MemoryPersistQueue {
         }
       } catch (error) {
         queued.retainedAt ??= Date.now();
-        firstError ??= error;
+        if (!hasError) {
+          firstError = error;
+          hasError = true;
+        }
       }
     }
 
     this.pruneRetainedBuffers();
     this.scheduleRetentionCleanup();
-    if (firstError) throw firstError;
+    if (hasError) throw firstError;
   }
 
   private async persist(buffer: ConversationBuffer, oc: OperationContext): Promise<void> {
