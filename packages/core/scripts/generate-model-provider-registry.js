@@ -33,6 +33,11 @@ const isEmbeddingModel = (modelId, modelInfo) => {
 const formatStringLiteral = (value) =>
   `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
+const PROVIDER_MODEL_OVERRIDES = {
+  minimax: ["MiniMax-M2.7"],
+  "minimax-cn": ["MiniMax-M2.7"],
+};
+
 async function fetchProviders() {
   const response = await fetch(API_URL);
   if (!response.ok) {
@@ -81,6 +86,12 @@ async function run() {
     if (embeddingModels.length) {
       providerEmbeddingModels[normalizedId] = embeddingModels;
     }
+  }
+
+  for (const [providerId, models] of Object.entries(PROVIDER_MODEL_OVERRIDES)) {
+    providerModels[providerId] = Array.from(
+      new Set([...(providerModels[providerId] || []), ...models].map(normalizeModelId)),
+    ).sort();
   }
 
   const registryContent = `${HEADER}
