@@ -8,6 +8,7 @@ import type { OperationContext } from "./types";
 interface QueueEntry {
   timer?: NodeJS.Timeout;
   pendingPromise: Promise<void>;
+  buffers: Map<ConversationBuffer, OperationContext>;
 }
 
 export interface MemoryPersistQueueOptions {
@@ -29,9 +30,13 @@ export interface AgentMetadataContextValue {
  * Debounced persistence manager responsible for writing buffered messages to memory.
  */
 export class MemoryPersistQueue {
+  private static readonly entriesByManager = new WeakMap<
+    MemoryPersistQueueMemoryManager,
+    Map<string, QueueEntry>
+  >();
   private readonly debounceMs: number;
   private readonly logger?: Logger;
-  private readonly entries = new Map<string, QueueEntry>();
+  private readonly entries: Map<string, QueueEntry>;
 
   constructor(
     private readonly memoryManager: MemoryPersistQueueMemoryManager,
@@ -39,6 +44,12 @@ export class MemoryPersistQueue {
   ) {
     this.debounceMs = options.debounceMs ?? 200;
     this.logger = options.logger;
+    let entries = MemoryPersistQueue.entriesByManager.get(memoryManager);
+    if (!entries) {
+      entries = new Map();
+      MemoryPersistQueue.entriesByManager.set(memoryManager, entries);
+    }
+    this.entries = entries;
   }
 
   scheduleSave(buffer: ConversationBuffer, oc: OperationContext): void {
@@ -48,6 +59,7 @@ export class MemoryPersistQueue {
 
     const key = this.getKey(oc);
     const entry = this.getOrCreateEntry(key);
+    entry.buffers.set(buffer, oc);
 
     if (entry.timer) {
       clearTimeout(entry.timer);
@@ -55,7 +67,7 @@ export class MemoryPersistQueue {
 
     entry.timer = setTimeout(() => {
       entry.timer = undefined;
-      this.enqueuePersist(key, () => this.persist(buffer, oc));
+      void this.enqueuePersist(key, () => this.persistAll(key)).catch(() => {});
     }, this.debounceMs);
 
     const logPayload = {
@@ -70,6 +82,7 @@ export class MemoryPersistQueue {
 
     const key = this.getKey(oc);
     const entry = this.getOrCreateEntry(key);
+    entry.buffers.set(buffer, oc);
 
     if (entry.timer) {
       clearTimeout(entry.timer);
@@ -82,7 +95,19 @@ export class MemoryPersistQueue {
     };
     this.logger?.debug?.("Flushing conversation persistence queue", flushPayload);
 
-    await this.enqueuePersist(key, () => this.persist(buffer, oc));
+    await this.enqueuePersist(key, () => this.persistAll(key));
+  }
+
+  private async persistAll(key: string): Promise<void> {
+    const entry = this.entries.get(key);
+    if (!entry) return;
+
+    for (const [buffer, oc] of entry.buffers) {
+      await this.persist(buffer, oc);
+      if (buffer.getPendingMessages().length === 0) {
+        entry.buffers.delete(buffer);
+      }
+    }
   }
 
   private async persist(buffer: ConversationBuffer, oc: OperationContext): Promise<void> {
@@ -157,7 +182,7 @@ export class MemoryPersistQueue {
       })
       .finally(() => {
         const current = this.entries.get(key);
-        if (current === entry && !current?.timer) {
+        if (current === entry && !current.timer && current.buffers.size === 0) {
           this.entries.delete(key);
         }
       });
@@ -168,14 +193,14 @@ export class MemoryPersistQueue {
   private getOrCreateEntry(key: string): QueueEntry {
     let entry = this.entries.get(key);
     if (!entry) {
-      entry = { pendingPromise: Promise.resolve() };
+      entry = { pendingPromise: Promise.resolve(), buffers: new Map() };
       this.entries.set(key, entry);
     }
     return entry;
   }
 
   private getKey(oc: OperationContext): string {
-    return `${oc.userId ?? "unknown"}:${oc.conversationId ?? "unknown"}`;
+    return `${oc.userId?.length ?? 0}:${oc.userId ?? ""}:${oc.conversationId ?? ""}`;
   }
 
   private applySubAgentMetadata(

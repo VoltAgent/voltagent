@@ -127,6 +127,124 @@ describe("MemoryPersistQueue", () => {
     expect(buffer.getPendingMessages()).toHaveLength(0);
   });
 
+  it("retries messages from a failed operation when the next operation flushes", async () => {
+    const oldMessage = createMessage("previous turn");
+    const newMessage = createMessage("next turn");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("storage unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const oldBuffer = new ConversationBuffer();
+    oldBuffer.ingestUIMessages([oldMessage], false);
+    const oldContext = createOperationContext();
+
+    await expect(
+      new MemoryPersistQueue(memoryManager).flush(oldBuffer, oldContext as any),
+    ).rejects.toThrow("storage unavailable");
+
+    const newBuffer = new ConversationBuffer();
+    newBuffer.ingestUIMessages([newMessage], false);
+    const newContext = createOperationContext();
+    await new MemoryPersistQueue(memoryManager).flush(newBuffer, newContext as any);
+
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      oldMessage.id,
+      oldMessage.id,
+      newMessage.id,
+    ]);
+    expect(memoryManager.saveMessage.mock.calls[1][0]).toBe(oldContext);
+    expect(oldBuffer.getPendingMessages()).toHaveLength(0);
+    expect(newBuffer.getPendingMessages()).toHaveLength(0);
+  });
+
+  it("handles a failed debounced save and retries it on a later operation", async () => {
+    const oldMessage = createMessage("previous turn");
+    const newMessage = createMessage("next turn");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("storage unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const oldBuffer = new ConversationBuffer();
+    oldBuffer.ingestUIMessages([oldMessage], false);
+    const oldContext = createOperationContext();
+    new MemoryPersistQueue(memoryManager, { debounceMs: 100 }).scheduleSave(
+      oldBuffer,
+      oldContext as any,
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+    expect(oldBuffer.getPendingMessages()).toHaveLength(1);
+
+    const newBuffer = new ConversationBuffer();
+    newBuffer.ingestUIMessages([newMessage], false);
+    await new MemoryPersistQueue(memoryManager).flush(newBuffer, createOperationContext() as any);
+
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      oldMessage.id,
+      oldMessage.id,
+      newMessage.id,
+    ]);
+    expect(oldBuffer.getPendingMessages()).toHaveLength(0);
+  });
+
+  it("keeps both operation buffers when a later schedule resets the debounce timer", async () => {
+    const messages = [createMessage("previous turn"), createMessage("next turn")];
+    const memoryManager = { saveMessage: vi.fn().mockResolvedValue(undefined) } as any;
+    const buffers = messages.map((message) => {
+      const buffer = new ConversationBuffer();
+      buffer.ingestUIMessages([message], false);
+      return buffer;
+    });
+
+    new MemoryPersistQueue(memoryManager, { debounceMs: 100 }).scheduleSave(
+      buffers[0],
+      createOperationContext() as any,
+    );
+    await vi.advanceTimersByTimeAsync(50);
+    new MemoryPersistQueue(memoryManager, { debounceMs: 100 }).scheduleSave(
+      buffers[1],
+      createOperationContext() as any,
+    );
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual(
+      messages.map((message) => message.id),
+    );
+    expect(buffers.every((buffer) => buffer.getPendingMessages().length === 0)).toBe(true);
+  });
+
+  it("keeps retries separate for user and conversation IDs containing colons", async () => {
+    const firstMessage = createMessage("first conversation");
+    const secondMessage = createMessage("second conversation");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("storage unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const firstBuffer = new ConversationBuffer();
+    firstBuffer.ingestUIMessages([firstMessage], false);
+    const firstContext = { ...createOperationContext(), userId: "a:b", conversationId: "c" };
+    const secondBuffer = new ConversationBuffer();
+    secondBuffer.ingestUIMessages([secondMessage], false);
+    const secondContext = { ...createOperationContext(), userId: "a", conversationId: "b:c" };
+
+    await expect(
+      new MemoryPersistQueue(memoryManager).flush(firstBuffer, firstContext as any),
+    ).rejects.toThrow("storage unavailable");
+    await new MemoryPersistQueue(memoryManager).flush(secondBuffer, secondContext as any);
+
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      firstMessage.id,
+      secondMessage.id,
+    ]);
+    expect(firstBuffer.getPendingMessages()).toHaveLength(1);
+  });
+
   it("retries only messages that were not saved before a later failure", async () => {
     const messages = [createMessage("first"), createMessage("second"), createMessage("third")];
     const memoryManager = {

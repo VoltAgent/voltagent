@@ -2,4 +2,4 @@
 "@voltagent/core": patch
 ---
 
-Keep conversation messages pending until their memory writes succeed, so failed writes can be retried without losing later messages.
+Keep conversation messages pending until their memory writes succeed and retry failed writes on the next operation for the same conversation. Memory failures remain best effort for agent responses.
