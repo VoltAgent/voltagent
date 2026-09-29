@@ -217,6 +217,104 @@ describe("MemoryPersistQueue", () => {
     expect(buffers.every((buffer) => buffer.getPendingMessages().length === 0)).toBe(true);
   });
 
+  it("attempts every retained buffer before rethrowing the first failure", async () => {
+    const firstMessage = createMessage("previous turn");
+    const secondMessage = createMessage("next turn");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("first buffer unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const firstBuffer = new ConversationBuffer();
+    firstBuffer.ingestUIMessages([firstMessage], false);
+    const secondBuffer = new ConversationBuffer();
+    secondBuffer.ingestUIMessages([secondMessage], false);
+    const queue = new MemoryPersistQueue(memoryManager, { debounceMs: 100 });
+    const firstContext = { ...createOperationContext(), isActive: false };
+    const secondContext = { ...createOperationContext(), isActive: false };
+
+    queue.scheduleSave(firstBuffer, firstContext as any);
+    queue.scheduleSave(secondBuffer, secondContext as any);
+
+    await expect(queue.flush(secondBuffer, secondContext as any)).rejects.toThrow(
+      "first buffer unavailable",
+    );
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      firstMessage.id,
+      secondMessage.id,
+    ]);
+    expect(firstBuffer.getPendingMessages()).toHaveLength(1);
+    expect(secondBuffer.getPendingMessages()).toHaveLength(0);
+  });
+
+  it("bounds retained failed buffers so old retries do not grow without limit", async () => {
+    const oldMessage = createMessage("old turn");
+    const newMessage = createMessage("new turn");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("old buffer unavailable"))
+        .mockRejectedValueOnce(new Error("old buffer unavailable"))
+        .mockRejectedValueOnce(new Error("new buffer unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const oldBuffer = new ConversationBuffer();
+    oldBuffer.ingestUIMessages([oldMessage], false);
+    const newBuffer = new ConversationBuffer();
+    newBuffer.ingestUIMessages([newMessage], false);
+    const oldContext = { ...createOperationContext(), isActive: false };
+    const newContext = { ...createOperationContext(), isActive: false };
+    const queue = new MemoryPersistQueue(memoryManager, {
+      maxRetryBuffers: 1,
+      retryRetentionMs: 60_000,
+    });
+
+    await expect(queue.flush(oldBuffer, oldContext as any)).rejects.toThrow(
+      "old buffer unavailable",
+    );
+    await expect(queue.flush(newBuffer, newContext as any)).rejects.toThrow(
+      "old buffer unavailable",
+    );
+    await queue.flush(newBuffer, newContext as any);
+
+    expect(memoryManager.saveMessage.mock.calls.map((call: any[]) => call[1].id)).toEqual([
+      oldMessage.id,
+      oldMessage.id,
+      newMessage.id,
+      newMessage.id,
+    ]);
+    expect(oldBuffer.getPendingMessages()).toHaveLength(1);
+    expect(newBuffer.getPendingMessages()).toHaveLength(0);
+  });
+
+  it("drops an inactive failed buffer after its retry retention window", async () => {
+    const message = createMessage("expired turn");
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("storage unavailable"))
+        .mockResolvedValue(undefined),
+    } as any;
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages([message], false);
+    const context = { ...createOperationContext(), isActive: false };
+    const queue = new MemoryPersistQueue(memoryManager, {
+      retryRetentionMs: 1_000,
+    });
+
+    await expect(queue.flush(buffer, context as any)).rejects.toThrow("storage unavailable");
+    await vi.advanceTimersByTimeAsync(1_001);
+
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(1);
+    expect(buffer.getPendingMessages()).toHaveLength(1);
+    const entriesByManager = (MemoryPersistQueue as any).entriesByManager as WeakMap<
+      object,
+      Map<string, unknown>
+    >;
+    expect(entriesByManager.get(memoryManager)?.size ?? 0).toBe(0);
+  });
+
   it("keeps retries separate for user and conversation IDs containing colons", async () => {
     const firstMessage = createMessage("first conversation");
     const secondMessage = createMessage("second conversation");
