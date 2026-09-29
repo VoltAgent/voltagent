@@ -14,6 +14,25 @@ function createMockBinding(): D1Database {
 }
 
 describe("D1MemoryAdapter queryWorkflowRuns", () => {
+  it("adds an unlimited LIMIT before an offset without an explicit limit", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    const allSpy = vi.spyOn(adapter as any, "all").mockResolvedValue([]);
+
+    await adapter.queryWorkflowRuns({ offset: 2 });
+
+    expect(allSpy).toHaveBeenCalledWith(
+      "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      [2],
+    );
+
+    await adapter.queryWorkflowRuns({ offset: 0 });
+    expect(allSpy).toHaveBeenLastCalledWith(
+      "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      [0],
+    );
+  });
+
   it("builds metadata filters with JSON-aware comparisons", async () => {
     vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
 
@@ -79,5 +98,32 @@ describe("D1MemoryAdapter queryWorkflowRuns", () => {
       5,
       2,
     ]);
+  });
+});
+
+describe("D1MemoryAdapter queryConversations", () => {
+  it("adds an unlimited LIMIT before an offset without an explicit limit", async () => {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    const adapter = new D1MemoryAdapter({ binding: createMockBinding(), tablePrefix: "test" });
+    const allSpy = vi.spyOn(adapter as any, "all").mockResolvedValue([]);
+
+    await adapter.queryConversations({ offset: 2 });
+
+    expect(allSpy).toHaveBeenCalledWith(
+      "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      [2],
+    );
+
+    await adapter.queryConversations({ offset: 0 });
+    expect(allSpy).toHaveBeenLastCalledWith(
+      "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      [0],
+    );
+
+    await adapter.queryConversations({ limit: 0, offset: 2 });
+    expect(allSpy).toHaveBeenLastCalledWith(
+      "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+      [0, 2],
+    );
   });
 });
