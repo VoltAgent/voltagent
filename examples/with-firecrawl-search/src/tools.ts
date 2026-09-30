@@ -2,6 +2,7 @@ import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
 const FIRECRAWL_API_URL = "https://api.firecrawl.dev/v2";
+const REQUEST_TIMEOUT_MS = 120_000;
 
 // Keep page content small enough for the model's context window
 const MAX_SEARCH_MARKDOWN_LENGTH = 5_000;
@@ -24,6 +25,7 @@ const callFirecrawl = async (path: string, apiKey: string, body: Record<string, 
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({ ...body, origin: "voltagent" }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   // Keep the HTTP status error for failed responses, but surface invalid JSON on success

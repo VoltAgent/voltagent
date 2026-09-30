@@ -1,17 +1,17 @@
 # VoltAgent with Firecrawl Search
 
-This example shows how to give a VoltAgent agent web search and page reading with Firecrawl. Firecrawl search returns web results and can include each page's content as Markdown in the same call. A second tool fetches any URL as Markdown.
+This example shows how to give a VoltAgent agent web search and page reading with Firecrawl. [Firecrawl search](https://www.firecrawl.dev/search?utm_source=voltagent&utm_medium=integration) returns web results and can include each page's content as Markdown in the same call. A second tool fetches any URL as Markdown.
 
 ## Features
 
 - **Web Search**: Find current pages on any topic, with titles, URLs and descriptions
-- **Page Content in Search**: Optionally get each result's full page as Markdown in the same call
+- **Page Content in Search**: Optionally get each result's page content as Markdown in the same call
 - **Page Reading**: Fetch any URL as clean Markdown
 - **Cited Answers**: The agent searches first, reads the most relevant pages when needed, and cites the URLs it used
 
 ## Prerequisites
 
-1. **Firecrawl API Key**: Get your API key from [Firecrawl](https://www.firecrawl.dev/search?utm_source=voltagent&utm_medium=integration)
+1. **Firecrawl API Key**: Get your API key from the [Firecrawl dashboard](https://www.firecrawl.dev/signin?utm_source=voltagent&utm_medium=integration&redirect=%2Fapp%2Fapi-keys)
 2. **OpenAI API Key**: For the AI model integration
 
 ## Setup
