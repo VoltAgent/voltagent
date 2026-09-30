@@ -26,7 +26,11 @@ const callFirecrawl = async (path: string, apiKey: string, body: Record<string, 
     body: JSON.stringify({ ...body, origin: "voltagent" }),
   });
 
-  const data = await response.json().catch(() => ({}));
+  // Keep the HTTP status error for failed responses, but surface invalid JSON on success
+  const data = await response.json().catch((error) => {
+    if (response.ok) throw error;
+    return {};
+  });
 
   if (!response.ok) {
     const detail = typeof data.error === "string" ? `: ${data.error}` : "";
