@@ -1,0 +1,33 @@
+{
+  "name": "voltagent-example-with-baizhi-research",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20.6.0" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-baizhi-research"
+  },
+  "scripts": {
+    "dev": "tsx --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@voltagent/core": "^2.10.0",
+    "@voltagent/internal": "^1.0.3",
+    "@voltagent/logger": "^2.0.2",
+    "ai": "^6.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  }
+}
