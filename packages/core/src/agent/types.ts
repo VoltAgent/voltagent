@@ -55,7 +55,7 @@ import type {
   WorkspaceSkillsToolkitOptions,
 } from "../workspace";
 import type { ContextInput } from "./agent";
-import type { AgentHooks } from "./hooks";
+import type { AgentHooks, AgentToolGuard } from "./hooks";
 import type { AgentTraceContext } from "./open-telemetry/trace-context";
 
 // Re-export for backward compatibility
@@ -717,6 +717,11 @@ export type AgentOptions = {
 
   // Hooks
   hooks?: AgentHooks;
+  /**
+   * Optional per-tool authorization guard.
+   * Return `false`, `{ allowed: false }`, or `{ denied: true }` to block execution.
+   */
+  toolGuard?: AgentToolGuard;
 
   // Guardrails
   inputGuardrails?: InputGuardrail[];

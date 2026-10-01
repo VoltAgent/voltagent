@@ -1,4 +1,4 @@
-import { type AgentHooks, createHooks } from ".";
+import { type AgentHooks, type ToolGuardResult, createHooks } from ".";
 import type { Tool } from "../../tool";
 import { createVoltAgentError } from "../errors";
 import { createMockLanguageModel, createMockTool, createTestAgent } from "../test-utils";
@@ -8,6 +8,20 @@ describe("Agent Hooks Functionality", () => {
   let hooks: AgentHooks;
   let agent: ReturnType<typeof createTestAgent>;
   let tool: Tool<any, any>;
+
+  it("models object toolGuard results as mutually exclusive outcomes", () => {
+    const allowed = { allowed: true } satisfies ToolGuardResult;
+    const denied = { denied: true, reason: "read-only" } satisfies ToolGuardResult;
+    const deniedByAllowedFalse = { allowed: false, reason: "read-only" } satisfies ToolGuardResult;
+
+    // @ts-expect-error allowed and denied are mutually exclusive outcomes.
+    const conflicting = { allowed: true, denied: true } satisfies ToolGuardResult;
+
+    expect(allowed.allowed).toBe(true);
+    expect(denied.denied).toBe(true);
+    expect(deniedByAllowedFalse.allowed).toBe(false);
+    expect(conflicting).toEqual({ allowed: true, denied: true });
+  });
 
   beforeEach(() => {
     hooks = createHooks();
