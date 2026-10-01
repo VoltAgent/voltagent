@@ -1,0 +1,32 @@
+{
+  "name": "voltagent-example-with-bilig-workpaper-mcp",
+  "description": "VoltAgent example using Bilig WorkPaper MCP tools for formula-backed workbook readback.",
+  "version": "0.1.0",
+  "dependencies": {
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.7.5",
+    "@voltagent/internal": "^1.0.3",
+    "ai": "^6.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2"
+  },
+  "main": "dist/index.js",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-bilig-workpaper-mcp"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "proof": "tsx ./src/proof.ts",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}

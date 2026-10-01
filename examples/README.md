@@ -116,6 +116,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
 - [Feedback Templates](./with-feedback) — Configure per-agent feedback templates for thumbs, numeric, and categorical feedback.
 - [Live Evals](./with-live-evals) — Run online evaluations against prompts/agents during development.
+- [Bilig WorkPaper (MCP)](./with-bilig-workpaper-mcp) — Edit formula-backed WorkPaper inputs, recalculate outputs, and verify persisted JSON through MCP tools.
 - [MCP Basics](./with-mcp) — Connect to MCP servers and call tools from an agent.
 - [MCP Elicitation](./with-mcp-elicitation) — Handle `elicitation/create` requests from MCP tools with per-request handlers.
 - [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
