@@ -1,6 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
@@ -23,7 +26,12 @@ vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js", () => ({
 
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
   StdioClientTransport: vi.fn(),
-  getDefaultEnvironment: vi.fn().mockReturnValue({}),
+  getDefaultEnvironment: vi.fn().mockReturnValue({
+    PATH: "/usr/bin",
+    HOME: "/home/test",
+    OPENAI_API_KEY: "secret-openai-key",
+    AWS_SECRET_ACCESS_KEY: "secret-aws-key",
+  }),
 }));
 
 vi.mock("zod-from-json-schema", () => ({
@@ -152,6 +160,89 @@ describe("MCPClient", () => {
         cwd: mockStdioServerConfig.cwd,
         env: expect.any(Object),
       });
+    });
+
+    it("should not pass sensitive parent environment variables to stdio servers", () => {
+      new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockStdioServerConfig,
+      });
+
+      expect(getDefaultEnvironment).toHaveBeenCalled();
+      const transportOptions = (StdioClientTransport as vi.Mock).mock.calls.at(-1)?.[0];
+      expect(transportOptions.env).toMatchObject({
+        PATH: "/usr/bin",
+        HOME: "/home/test",
+        TEST: "true",
+      });
+      expect(transportOptions.env).not.toHaveProperty("OPENAI_API_KEY");
+      expect(transportOptions.env).not.toHaveProperty("AWS_SECRET_ACCESS_KEY");
+    });
+
+    it("should reject unsupported MCP server URL protocols", () => {
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "http", url: "file:///etc/passwd" },
+          }),
+      ).toThrow("Unsupported MCP server URL protocol");
+
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "sse", url: "ftp://example.com/mcp" },
+          }),
+      ).toThrow("Unsupported MCP server URL protocol");
+    });
+
+    it("should reject MCP server URLs that target local or private addresses", () => {
+      const blockedUrls = [
+        "http://127.0.0.1:8080/mcp",
+        "https://localhost/mcp",
+        "http://127.0.0.1.:8080/mcp",
+        "https://localhost./mcp",
+        "http://10.0.0.1/mcp",
+        "http://192.168.1.1/mcp",
+        "http://172.16.0.1/mcp",
+        "http://172.31.255.254/mcp",
+        "http://169.254.169.254/mcp",
+        "http://100.64.0.1/mcp",
+        "http://[::ffff:127.0.0.1]:8080/mcp",
+        "http://[::ffff:10.0.0.1]:8080/mcp",
+        "http://[::ffff:169.254.169.254]/mcp",
+        "http://[::ffff:192.168.0.1]:8080/mcp",
+        "http://[fc00::1]/mcp",
+        "http://[fd12::1]/mcp",
+        "http://[fe80::1]/mcp",
+        "http://[fe90::1]/mcp",
+        "http://[fea0::1]/mcp",
+        "http://[febf::1]/mcp",
+      ];
+      const transportTypes = ["http", "sse", "streamable-http"] as const;
+
+      for (const type of transportTypes) {
+        for (const url of blockedUrls) {
+          expect(
+            () =>
+              new MCPClient({
+                clientInfo: mockClientInfo,
+                server: { type, url },
+              }),
+          ).toThrow("MCP server URL host is not allowed");
+        }
+      }
+    });
+
+    it("should allow public hostnames that start with private IPv6 prefixes", () => {
+      expect(
+        () =>
+          new MCPClient({
+            clientInfo: mockClientInfo,
+            server: { type: "streamable-http", url: "https://fc-public.example.com/mcp" },
+          }),
+      ).not.toThrow();
     });
 
     it("should throw an error for unsupported server config", () => {
