@@ -1,4 +1,11 @@
-export type AIProvider = "openai" | "anthropic" | "google" | "groq" | "mistral" | "ollama";
+export type AIProvider =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "groq"
+  | "mistral"
+  | "atlascloud"
+  | "ollama";
 export type ServerProvider = "hono" | "elysia";
 export type PackageManager = "npm" | "bun" | "yarn" | "pnpm";
 
@@ -56,6 +63,13 @@ export const AI_PROVIDER_CONFIG = {
     model: "mistral/mistral-large-latest",
     modelName: "Mistral Large 2",
     apiKeyUrl: "https://console.mistral.ai/api-keys",
+  },
+  atlascloud: {
+    name: "Atlas Cloud",
+    envVar: "ATLASCLOUD_API_KEY",
+    model: "atlascloud/qwen/qwen3.5-flash",
+    modelName: "Qwen3.5 Flash",
+    apiKeyUrl: "https://docs.atlascloud.ai",
   },
   ollama: {
     name: "Ollama (Local)",
