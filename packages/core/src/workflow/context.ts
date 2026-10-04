@@ -3,7 +3,12 @@ import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
 import type { Memory } from "../memory";
 import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
-import type { WorkflowStateStore, WorkflowStepData, WorkflowStreamWriter } from "./types";
+import type {
+  WorkflowStateStore,
+  WorkflowStepData,
+  WorkflowStepHistoryEntry,
+  WorkflowStreamWriter,
+} from "./types";
 
 /**
  * Context information for a workflow execution
@@ -45,7 +50,7 @@ export interface WorkflowExecutionContext {
   /**
    * Array of completed steps (for tracking)
    */
-  steps: any[]; // TODO: Type this properly
+  steps: WorkflowStepHistoryEntry[];
   /**
    * AbortSignal for cancelling the workflow
    */
