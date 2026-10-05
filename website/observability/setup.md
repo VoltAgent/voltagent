@@ -149,8 +149,8 @@ Recommended starting point:
 VoltAgent automatically detects serverless environments (Cloudflare Workers, Vercel Edge, Deno Deploy). For serverless apps, use `serverlessHono`:
 
 ```typescript
-import { VoltAgent, serverlessHono } from "@voltagent/core";
-import { honoServer } from "@voltagent/server";
+import { VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { serverlessHono } from "@voltagent/serverless-hono";
 
 new VoltAgent({
   agents: { supportAgent },

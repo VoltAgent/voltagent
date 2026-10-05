@@ -85,7 +85,7 @@ const mcpConfig = new MCPConfiguration({
 ## Exposing Agent as MCP Server
 
 ```typescript
-import { MCPServer } from "@voltagent/core";
+import { MCPServer } from "@voltagent/mcp-server";
 
 const mcpServer = new MCPServer({
   name: "my-agent-mcp",
