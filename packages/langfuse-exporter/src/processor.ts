@@ -1,39 +1,38 @@
-import { BatchSpanProcessor, type SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { LangfuseExporter } from "./exporter";
-
-export type { LangfuseOptions } from "langfuse";
-
-export interface LangfuseSpanProcessorOptions {
-  publicKey?: string;
-  secretKey?: string;
-  baseUrl?: string;
-  debug?: boolean;
-  // Batch processor tuning
-  batch?: {
-    maxQueueSize?: number; // Default: 2048
-    maxExportBatchSize?: number; // Default: 512
-    scheduledDelayMillis?: number; // Default: 5000
-    exportTimeoutMillis?: number; // Default: 30000
-  };
-}
+import { VoltAgentLangfuseProcessor } from "./exporter";
+import type { VoltAgentLangfuseProcessorOptions } from "./exporter";
 
 /**
- * Create a SpanProcessor that exports spans to Langfuse using LangfuseExporter
+ * Create a {@link VoltAgentLangfuseProcessor}.
+ *
+ * This factory is kept as a drop-in replacement for the `createLangfuseSpanProcessor`
+ * helper that shipped in 2.x and wrapped the old v3-based exporter in a
+ * `BatchSpanProcessor`. The v5 processor takes care of batching itself, so the
+ * factory is now a thin constructor wrapper.
+ *
+ * @deprecated Construct {@link VoltAgentLangfuseProcessor} directly — the public
+ * class name is clearer and lets you call `forceFlush()` / `shutdown()` on the
+ * processor you created. This factory will be removed in a future major release.
+ *
+ * @example
+ * ```ts
+ * import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
+ *
+ * const observability = new VoltAgentObservability({
+ *   spanProcessors: [
+ *     createLangfuseSpanProcessor({
+ *       publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+ *       secretKey: process.env.LANGFUSE_SECRET_KEY,
+ *       baseUrl: process.env.LANGFUSE_BASE_URL,
+ *     }),
+ *   ],
+ * });
+ * ```
  */
-export function createLangfuseSpanProcessor(options: LangfuseSpanProcessorOptions): SpanProcessor {
-  const exporter = new LangfuseExporter({
-    publicKey: options.publicKey,
-    secretKey: options.secretKey,
-    baseUrl: options.baseUrl,
-    debug: options.debug,
-  });
-
-  const processor = new BatchSpanProcessor(exporter, {
-    maxQueueSize: options.batch?.maxQueueSize ?? 2048,
-    maxExportBatchSize: options.batch?.maxExportBatchSize ?? 512,
-    scheduledDelayMillis: options.batch?.scheduledDelayMillis ?? 5000,
-    exportTimeoutMillis: options.batch?.exportTimeoutMillis ?? 30000,
-  });
-
-  return processor;
+export function createLangfuseSpanProcessor(
+  options: VoltAgentLangfuseProcessorOptions = {},
+): VoltAgentLangfuseProcessor {
+  return new VoltAgentLangfuseProcessor(options);
 }
+
+export { VoltAgentLangfuseProcessor };
+export type { VoltAgentLangfuseProcessorOptions };

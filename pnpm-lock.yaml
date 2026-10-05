@@ -1552,7 +1552,7 @@ importers:
         specifier: ^2.11.0
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
-        specifier: ^2.0.3
+        specifier: ^3.0.0
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
         specifier: ^2.1.2
@@ -4134,18 +4134,15 @@ importers:
 
   packages/langfuse-exporter:
     dependencies:
+      '@langfuse/otel':
+        specifier: ^5.0.0
+        version: 5.13.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@2.0.1)(@opentelemetry/exporter-trace-otlp-http@0.203.0)(@opentelemetry/otlp-exporter-base@0.204.0)(@opentelemetry/otlp-transformer@0.204.0)(@opentelemetry/sdk-trace-base@2.0.1)
       '@opentelemetry/api':
-        specifier: ^1.0.0
+        specifier: ^1.9.0
         version: 1.9.0
-      '@opentelemetry/core':
-        specifier: ^2.0.0
-        version: 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base':
         specifier: ^2.0.0
         version: 2.0.1(@opentelemetry/api@1.9.0)
-      langfuse:
-        specifier: ^3.38.6
-        version: 3.38.6
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -11928,6 +11925,34 @@ packages:
     dependencies:
       '@langchain/core': 0.3.70(openai@4.104.0)
       js-tiktoken: 1.0.21
+    dev: false
+
+  /@langfuse/core@5.13.0(@opentelemetry/api@1.9.0):
+    resolution: {integrity: sha512-s7VgCfHWLTIEluw/qP40SpsC4drWVtLVLE9X3iPiVDugdmmAY95Bc7kxJB5OtidLXakNRkgSCDzB/Spp9KkQAw==}
+    peerDependencies:
+      '@opentelemetry/api': ^1.9.0
+    dependencies:
+      '@opentelemetry/api': 1.9.0
+    dev: false
+
+  /@langfuse/otel@5.13.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@2.0.1)(@opentelemetry/exporter-trace-otlp-http@0.203.0)(@opentelemetry/otlp-exporter-base@0.204.0)(@opentelemetry/otlp-transformer@0.204.0)(@opentelemetry/sdk-trace-base@2.0.1):
+    resolution: {integrity: sha512-bPpBim4roGJ14R7OASxkwEse9bYjb3KU/4kgIS9GbOjVVylMb+99lnfjGHviQ/ix1wEEsZGWq2flMsLw1GhJIA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.9.0
+      '@opentelemetry/core': ^2.0.1
+      '@opentelemetry/exporter-trace-otlp-http': '>=0.202.0 <1.0.0'
+      '@opentelemetry/otlp-exporter-base': '>=0.202.0 <1.0.0'
+      '@opentelemetry/otlp-transformer': '>=0.202.0 <1.0.0'
+      '@opentelemetry/sdk-trace-base': ^2.0.1
+    dependencies:
+      '@langfuse/core': 5.13.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-exporter-base': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
     dev: false
 
   /@lerna/child-process@7.4.2:
@@ -31335,20 +31360,6 @@ packages:
       - '@opentelemetry/sdk-trace-base'
       - openai
       - ws
-    dev: false
-
-  /langfuse-core@3.38.6:
-    resolution: {integrity: sha512-EcZXa+DK9FJdi1I30+u19eKjuBJ04du6j2Nybk19KKCuraLczg/ppkTQcGvc4QOk//OAi3qUHrajUuV74RXsBQ==}
-    engines: {node: '>=18'}
-    dependencies:
-      mustache: 4.2.0
-    dev: false
-
-  /langfuse@3.38.6:
-    resolution: {integrity: sha512-mtwfsNGIYvObRh+NYNGlJQJDiBN+Wr3Hnr++wN25mxuOpSTdXX+JQqVCyAqGL5GD2TAXRZ7COsN42Vmp9krYmg==}
-    engines: {node: '>=18'}
-    dependencies:
-      langfuse-core: 3.38.6
     dev: false
 
   /langium@3.3.1:
