@@ -596,9 +596,9 @@ You can use several providers to store workflow history:
   - `@voltagent/supabase`: Provides `SupabaseMemoryAdapter` for Supabase integration.
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { Memory, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
-import { PostgresStorage } from "@voltagent/postgres";
+import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 
 // Example of overriding the default history storage for production
 const workflow = createWorkflowChain({
@@ -607,7 +607,9 @@ const workflow = createWorkflowChain({
   input: z.object({ id: z.string() }),
   result: z.object({ success: z.boolean() }),
   // Store workflow run history in a PostgreSQL database
-  memory: new PostgresStorage({ connectionString: process.env.DATABASE_URL }),
+  memory: new Memory({
+    storage: new PostgreSQLMemoryAdapter({ connection: process.env.DATABASE_URL! }),
+  }),
 }).andThen(/*... your steps ...*/);
 ```
 

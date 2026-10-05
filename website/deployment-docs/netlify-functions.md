@@ -143,14 +143,14 @@ const memory = new Memory({
 
 ```ts
 import { Memory } from "@voltagent/core";
-import { PostgresMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
+import { PostgreSQLMemoryAdapter, PostgreSQLVectorAdapter } from "@voltagent/postgres";
 
 const memory = new Memory({
-  storage: new PostgresMemoryAdapter({
-    connectionString: env.POSTGRES_URL,
+  storage: new PostgreSQLMemoryAdapter({
+    connection: env.POSTGRES_URL,
   }),
-  vector: new PostgresVectorAdapter({
-    connectionString: env.POSTGRES_URL,
+  vector: new PostgreSQLVectorAdapter({
+    connection: env.POSTGRES_URL,
   }),
 });
 ```
