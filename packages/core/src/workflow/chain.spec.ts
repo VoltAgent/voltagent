@@ -104,6 +104,7 @@ describe.sequential("workflow.startAsync", () => {
       executionId: expect.any(String),
       workflowId: "chain-start-async",
       startAt: expect.any(Date),
+      completion: expect.any(Promise),
     });
 
     let state = await memory.getWorkflowState(startResult.executionId);

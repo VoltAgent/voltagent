@@ -229,7 +229,10 @@ export interface WorkflowStreamResult<
 /**
  * Result returned when a workflow execution is started asynchronously
  */
-export interface WorkflowStartAsyncResult {
+export interface WorkflowStartAsyncResult<
+  RESULT_SCHEMA extends z.ZodTypeAny = z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+> {
   /**
    * Unique execution ID for this workflow run
    */
@@ -242,6 +245,11 @@ export interface WorkflowStartAsyncResult {
    * When the async execution was started
    */
   startAt: Date;
+  /**
+   * Resolves after execution and terminal handling finish. Rejects if execution
+   * fails before producing a result, after background failure persistence finishes.
+   */
+  completion: Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
 }
 
 export interface WorkflowTimeTravelOptions {
@@ -796,7 +804,7 @@ export type Workflow<
   startAsync: (
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
-  ) => Promise<WorkflowStartAsyncResult>;
+  ) => Promise<WorkflowStartAsyncResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
   /**
    * Replay an existing execution from a selected historical step.
    * A new execution ID is created and linked to the source run for audit safety.

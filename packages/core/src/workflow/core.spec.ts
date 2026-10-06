@@ -1,3 +1,4 @@
+import { getEventListeners } from "node:events";
 import { Output, type UIMessageChunk } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -8,6 +9,7 @@ import { AgentRegistry } from "../registries/agent-registry";
 import { VOLTAGENT_RESTART_CHECKPOINT_KEY, createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAgent, andThen, andWhen } from "./steps";
+import { createSuspendController } from "./suspend-controller";
 
 describe.sequential("workflow.run", () => {
   beforeEach(() => {
@@ -837,6 +839,161 @@ describe.sequential("workflow.startAsync", () => {
     (registry as any).workflows.clear();
   });
 
+  function gate() {
+    let resolve = () => {};
+    const promise = new Promise<void>((done) => {
+      resolve = done;
+    });
+    return { promise, resolve };
+  }
+
+  it("should expose completion after the initial checkpoint and terminal hooks", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const step = gate();
+    const hook = gate();
+    const hookEntered = gate();
+    const workflow = createWorkflow(
+      {
+        id: "async-terminal-hooks",
+        name: "Async Terminal Hooks",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+        hooks: {
+          onFinish: async () => {
+            hookEntered.resolve();
+            await hook.promise;
+          },
+        },
+      },
+      andThen({
+        id: "work",
+        execute: async ({ data }) => {
+          await step.promise;
+          return { result: data.value * 2 };
+        },
+      }),
+    );
+
+    const started = await workflow.startAsync({ value: 21 });
+    expect((await memory.getWorkflowState(started.executionId))?.status).toBe("running");
+    expect(started.completion).toBeInstanceOf(Promise);
+    let completed = false;
+    void started.completion.then(() => {
+      completed = true;
+    });
+    try {
+      step.resolve();
+      await hookEntered.promise;
+      expect(completed).toBe(false);
+    } finally {
+      step.resolve();
+      hook.resolve();
+    }
+    await expect(started.completion).resolves.toMatchObject({
+      executionId: started.executionId,
+      status: "completed",
+      result: { result: 42 },
+    });
+    expect(completed).toBe(true);
+  });
+
+  it.each(["suspended", "error"] as const)(
+    "should expose the %s result when a terminal hook throws",
+    async (status) => {
+      const workflow = createWorkflow(
+        {
+          id: `async-${status}-result`,
+          name: "Async Result",
+          input: z.object({}),
+          result: z.object({}),
+          memory: new Memory({ storage: new InMemoryStorageAdapter() }),
+          hooks: {
+            onFinish: async () => {
+              throw new Error("hook failed");
+            },
+          },
+        },
+        andThen({
+          id: "work",
+          execute: async (context) => {
+            if (status === "suspended") return context.suspend("pause");
+            throw new Error("step failed");
+          },
+        }),
+      );
+      const started = await workflow.startAsync({});
+      expect(started.completion).toBeInstanceOf(Promise);
+      const result = await started.completion;
+      expect(result.status).toBe(status);
+      if (status === "error") expect(result.error?.message).toBe("step failed");
+    },
+  );
+
+  it("should wait for fallback error persistence before rejecting completion", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const update = memory.updateWorkflowState.bind(memory);
+    const persist = gate();
+    const persistenceEntered = gate();
+    const updateSpy = vi
+      .spyOn(memory, "updateWorkflowState")
+      .mockRejectedValueOnce(new Error("checkpoint unavailable"))
+      .mockImplementation(async (...args) => {
+        persistenceEntered.resolve();
+        await persist.promise;
+        return update(...args);
+      });
+    const execute = vi.fn(async () => ({}));
+    const workflow = createWorkflow(
+      {
+        id: "async-fallback-persistence",
+        name: "Async Fallback Persistence",
+        input: z.object({}),
+        result: z.object({}),
+        memory,
+      },
+      andThen({ id: "work", execute }),
+    );
+    const started = await workflow.startAsync({});
+    expect(started.completion).toBeInstanceOf(Promise);
+    let settled = false;
+    void started.completion.catch(() => {
+      settled = true;
+    });
+    try {
+      await persistenceEntered.promise;
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(settled).toBe(false);
+    } finally {
+      persist.resolve();
+    }
+    await expect(started.completion).rejects.toThrow("checkpoint unavailable");
+    expect((await memory.getWorkflowState(started.executionId))?.status).toBe("error");
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("should preserve the execution failure when fallback persistence also fails", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    vi.spyOn(memory, "updateWorkflowState")
+      .mockRejectedValueOnce(new Error("checkpoint unavailable"))
+      .mockRejectedValueOnce(new Error("fallback unavailable"));
+    const execute = vi.fn(async () => ({}));
+    const workflow = createWorkflow(
+      {
+        id: "async-fallback-failure",
+        name: "Async Fallback Failure",
+        input: z.object({}),
+        result: z.object({}),
+        memory,
+      },
+      andThen({ id: "work", execute }),
+    );
+    const started = await workflow.startAsync({});
+    await expect(started.completion).rejects.toThrow("checkpoint unavailable");
+    expect(memory.updateWorkflowState).toHaveBeenCalledTimes(2);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("should return immediately and complete in the background", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let releaseStep: (() => void) | undefined;
@@ -870,6 +1027,7 @@ describe.sequential("workflow.startAsync", () => {
       executionId: expect.any(String),
       workflowId: "start-async-background",
       startAt: expect.any(Date),
+      completion: expect.any(Promise),
     });
 
     let runningState = await memory.getWorkflowState(startResult.executionId);
@@ -1479,4 +1637,69 @@ describe.sequential("workflow memory defaults", () => {
 
     expect(workflow.memory).toBe(explicitMemory);
   });
+});
+
+describe.sequential("workflow signal cleanup", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it.each(["completed", "error", "cancelled"] as const)(
+    "should release polling intervals and listeners after a %s step",
+    async (status) => {
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+      const controller = createSuspendController();
+      let enter = () => {};
+      let finish = () => {};
+      const entered = new Promise<void>((resolve) => {
+        enter = resolve;
+      });
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      const workflow = createWorkflow(
+        {
+          id: `signal-cleanup-${status}`,
+          name: "Signal Cleanup",
+          input: z.object({}),
+          result: z.object({}),
+          memory: new Memory({ storage: new InMemoryStorageAdapter() }),
+        },
+        andThen({
+          id: "work",
+          execute: () => {
+            if (status === "error") throw new Error("step failed");
+            return (async () => {
+              if (status === "cancelled") {
+                enter();
+                await pending;
+              }
+              return {};
+            })();
+          },
+        }),
+      );
+      const run = workflow.run({}, { suspendController: controller });
+      if (status === "cancelled") {
+        await entered;
+        controller.cancel("cancelled");
+      }
+      try {
+        expect((await run).status).toBe(status);
+        const polls = setIntervalSpy.mock.calls.flatMap((args, index) =>
+          typeof args[0] === "function" && args[0].name === "checkSignal"
+            ? [setIntervalSpy.mock.results[index].value]
+            : [],
+        );
+        expect(polls.length).toBeGreaterThan(0);
+        for (const poll of polls) expect(clearIntervalSpy).toHaveBeenCalledWith(poll);
+        expect(getEventListeners(controller.signal, "abort")).toHaveLength(0);
+      } finally {
+        finish();
+      }
+    },
+  );
 });

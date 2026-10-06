@@ -1,7 +1,9 @@
 import { describe, expectTypeOf, it } from "vitest";
+import { z } from "zod";
 import { andDoWhile, andForEach, andThen } from "./";
+import { createWorkflowChain } from "./chain";
 import type { WorkflowExecuteContext } from "./internal/types";
-import type { WorkflowStateStore, WorkflowStateUpdater } from "./types";
+import type { WorkflowExecutionResult, WorkflowStateStore, WorkflowStateUpdater } from "./types";
 
 describe("non-chaining API type inference", () => {
   describe("andThen", () => {
@@ -112,5 +114,25 @@ describe("non-chaining API type inference", () => {
       expectTypeOf<Context["logger"]>().not.toBeNever();
       expectTypeOf<Context["writer"]>().not.toBeNever();
     });
+  });
+});
+
+describe("asynchronous workflow completion types", () => {
+  it("should retain result and resume schemas through workflow and chain starts", () => {
+    const resultSchema = z.object({ value: z.number() });
+    const resumeSchema = z.object({ approved: z.boolean() });
+    const chain = createWorkflowChain({
+      id: "async-completion-types",
+      name: "Async Completion Types",
+      input: z.object({}),
+      result: resultSchema,
+      resumeSchema,
+    }).andThen({ id: "work", execute: async () => ({ value: 1 }) });
+    const workflow = chain.toWorkflow();
+    type Completion = Promise<WorkflowExecutionResult<typeof resultSchema, typeof resumeSchema>>;
+    type Started = Awaited<ReturnType<typeof workflow.startAsync>>;
+    type ChainStarted = Awaited<ReturnType<typeof chain.startAsync>>;
+    expectTypeOf<Started["completion"]>().toEqualTypeOf<Completion>();
+    expectTypeOf<ChainStarted["completion"]>().toEqualTypeOf<Completion>();
   });
 });

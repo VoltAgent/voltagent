@@ -268,7 +268,7 @@ const result = await workflow.run({ name: "World" });
 
 **2. Fire-and-Forget: `.startAsync()`**
 
-Use `.startAsync()` when you want to trigger a workflow and continue immediately without waiting for completion. It returns execution metadata (`executionId`, `workflowId`, `startAt`) right away.
+Use `.startAsync()` when you want to trigger a workflow and continue without waiting for completion. After persisting the initial running state, it returns execution metadata (`executionId`, `workflowId`, `startAt`) and a typed `completion` promise. You can await that promise later for the execution result, after terminal hooks and persistence have finished.
 
 ```typescript
 import { InMemoryStorageAdapter, Memory, createWorkflowChain } from "@voltagent/core";
@@ -295,7 +295,13 @@ console.log(started.executionId, started.startAt); // Track this run later
 // Query execution state later from workflow memory
 const state = await greeterChain.toWorkflow().memory.getWorkflowState(started.executionId);
 console.log(state?.status); // running | completed | suspended | cancelled | error
+
+// Or await the final result without polling
+const execution = await started.completion;
+console.log(execution.status, execution.result);
 ```
+
+Step failures resolve `completion` with an `error` status, just like `.run()`. If execution fails before producing a result, `completion` rejects after background failure persistence finishes. Existing callers can leave the promise unawaited to continue using background execution.
 
 **3. The Reusable Way: `.toWorkflow()`**
 

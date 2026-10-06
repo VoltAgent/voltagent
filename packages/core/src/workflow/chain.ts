@@ -979,13 +979,8 @@ export class WorkflowChain<
   async startAsync(
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
-  ): Promise<WorkflowStartAsyncResult> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
-      this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
-      ...this.steps,
-    );
-    return workflow.startAsync(input, options);
+  ): Promise<WorkflowStartAsyncResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
+    return this.toWorkflow().startAsync(input, options);
   }
 
   /**

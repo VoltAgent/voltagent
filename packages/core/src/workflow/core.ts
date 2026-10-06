@@ -3065,7 +3065,7 @@ export function createWorkflow<
     startAsync: async (
       input: WorkflowInput<INPUT_SCHEMA>,
       options?: WorkflowRunOptions,
-    ): Promise<WorkflowStartAsyncResult> => {
+    ): Promise<WorkflowStartAsyncResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
       const executionMemory = options?.memory ?? defaultMemory;
 
       if (options?.resumeFrom) {
@@ -3120,7 +3120,8 @@ export function createWorkflow<
         skipStateInit: true,
       };
 
-      executeInternal(input, executionOptions)
+      const execution = executeInternal(input, executionOptions);
+      const backgroundFailure = execution
         .catch(async (error) => {
           const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -3174,10 +3175,17 @@ export function createWorkflow<
           });
         });
 
+      const completion = backgroundFailure.then(
+        () => execution,
+        () => execution,
+      );
+      void completion.catch(() => {});
+
       return {
         executionId,
         workflowId: id,
         startAt,
+        completion,
       };
     },
     timeTravel: async (
@@ -3664,6 +3672,7 @@ async function executeWithSignalCheck<T>(
     return await fn();
   }
 
+  let cleanup = () => {};
   // Create a promise that rejects when signal is aborted
   const abortPromise = new Promise<never>((_, reject) => {
     const getAbortError = () => {
@@ -3692,19 +3701,20 @@ async function executeWithSignalCheck<T>(
     // Set up periodic checking
     const intervalId = setInterval(checkSignal, checkInterval);
 
-    // Clean up on signal abort
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearInterval(intervalId);
-        reject(getAbortError());
-      },
-      { once: true },
-    );
+    const onAbort = () => reject(getAbortError());
+    signal.addEventListener("abort", onAbort, { once: true });
+    cleanup = () => {
+      clearInterval(intervalId);
+      signal.removeEventListener("abort", onAbort);
+    };
   });
 
   // Race between the actual function and abort signal
-  return Promise.race([fn(), abortPromise]);
+  try {
+    return await Promise.race([fn(), abortPromise]);
+  } finally {
+    cleanup();
+  }
 }
 
 async function safeFlushOnFinish(observability: VoltAgentObservability): Promise<void> {
