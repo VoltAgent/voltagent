@@ -107,6 +107,7 @@ export class MemoryManager {
     message: UIMessage,
     userId?: string,
     conversationId?: string,
+    options?: { throwOnError?: boolean },
   ): Promise<void> {
     if (!this.conversationMemory || !userId) return;
 
@@ -202,6 +203,9 @@ export class MemoryManager {
           error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         },
       );
+      if (options?.throwOnError) {
+        throw error;
+      }
     }
   }
 

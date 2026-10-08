@@ -7,9 +7,9 @@ import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 
 type MessageSource = "user" | "system" | "memory" | "response";
 
-interface PendingMessage {
-  id: string;
+export interface PendingMessage {
   message: UIMessage;
+  version: number;
 }
 
 export interface ConversationBufferCheckpoint {
@@ -62,6 +62,8 @@ const extractOpenAIItemId = (metadata: unknown): string => {
 export class ConversationBuffer {
   private messages: UIMessage[] = [];
   private pendingMessageIds = new Set<string>();
+  private pendingMessageVersions = new Map<string, number>();
+  private nextPendingMessageVersion = 0;
   private toolPartIndex = new Map<string, { messageIndex: number; partIndex: number }>();
   private activeAssistantMessageId?: string;
 
@@ -128,6 +130,9 @@ export class ConversationBuffer {
   restoreCheckpoint(checkpoint: ConversationBufferCheckpoint): void {
     this.messages = checkpoint.messages.map((message) => this.cloneMessage(message));
     this.pendingMessageIds = new Set(checkpoint.pendingMessageIds);
+    this.pendingMessageVersions = new Map<string, number>(
+      checkpoint.pendingMessageIds.map((id) => [id, ++this.nextPendingMessageVersion]),
+    );
     this.activeAssistantMessageId = checkpoint.activeAssistantMessageId;
     this.rebuildToolPartIndex();
     this.log("restore-checkpoint", {
@@ -137,32 +142,53 @@ export class ConversationBuffer {
   }
 
   drainPendingMessages(): UIMessage[] {
+    const drained = this.getPendingMessages();
+    this.pendingMessageIds.clear();
+    this.pendingMessageVersions.clear();
+    if (
+      this.activeAssistantMessageId &&
+      drained.some((item) => item.message.id === this.activeAssistantMessageId)
+    ) {
+      this.activeAssistantMessageId = undefined;
+    }
+    if (drained.length > 0) {
+      this.log("drain-pending", {
+        count: drained.length,
+        ids: drained.map((item) => item.message.id),
+      });
+    }
+    return drained.map((item) => item.message);
+  }
+
+  getPendingMessages(): PendingMessage[] {
     if (this.pendingMessageIds.size === 0) {
       return [];
     }
 
-    const drained: PendingMessage[] = [];
+    const pending: PendingMessage[] = [];
 
     this.messages.forEach((message) => {
       if (this.pendingMessageIds.has(message.id)) {
-        drained.push({ id: message.id, message: this.cloneMessage(message) });
+        pending.push({
+          message: this.cloneMessage(message),
+          version: this.pendingMessageVersions.get(message.id) ?? 0,
+        });
       }
     });
 
-    this.pendingMessageIds.clear();
+    return pending;
+  }
 
-    if (drained.length > 0) {
-      const drainedIds = new Set(drained.map((item) => item.id));
-      if (this.activeAssistantMessageId && drainedIds.has(this.activeAssistantMessageId)) {
-        this.activeAssistantMessageId = undefined;
-      }
+  markMessagePersisted(id: string, version: number): void {
+    if (this.pendingMessageVersions.get(id) !== version) {
+      return;
     }
 
-    if (drained.length > 0) {
-      this.log("drain-pending", { count: drained.length, ids: drained.map((item) => item.id) });
+    this.pendingMessageIds.delete(id);
+    this.pendingMessageVersions.delete(id);
+    if (this.activeAssistantMessageId === id) {
+      this.activeAssistantMessageId = undefined;
     }
-
-    return drained.map((item) => item.message);
   }
 
   getAllMessages(): UIMessage[] {
@@ -197,7 +223,7 @@ export class ConversationBuffer {
       ...(existing as Record<string, unknown>),
       ...metadata,
     } as UIMessage["metadata"];
-    this.pendingMessageIds.add(target.id);
+    this.markPending(target.id);
     return true;
   }
 
@@ -211,7 +237,7 @@ export class ConversationBuffer {
     this.registerToolParts(this.messages.length - 1);
 
     if (!options.markAsSaved) {
-      this.pendingMessageIds.add(hydrated.id);
+      this.markPending(hydrated.id);
     }
 
     this.log("append-existing", {
@@ -314,7 +340,7 @@ export class ConversationBuffer {
     }
 
     if (modified) {
-      this.pendingMessageIds.add(target.id);
+      this.markPending(target.id);
       this.registerToolParts(lastAssistantIndex);
     }
   }
@@ -370,17 +396,23 @@ export class ConversationBuffer {
     const cloned = this.cloneMessage(message);
     this.ensureMessageId(cloned);
     this.messages.push(cloned);
-    this.pendingMessageIds.add(cloned.id);
+    this.markPending(cloned.id);
     this.registerToolParts(this.messages.length - 1);
     this.log("append-message", { messageId: cloned.id, role: cloned.role, source });
 
     if (source === "memory") {
       this.pendingMessageIds.delete(cloned.id);
+      this.pendingMessageVersions.delete(cloned.id);
     }
 
     if (source === "response") {
       this.activeAssistantMessageId = cloned.id;
     }
+  }
+
+  private markPending(id: string): void {
+    this.pendingMessageIds.add(id);
+    this.pendingMessageVersions.set(id, ++this.nextPendingMessageVersion);
   }
 
   private registerToolParts(messageIndex: number): void {
