@@ -20,7 +20,7 @@
     "@ai-sdk/togetherai": "^2.0.13",
     "@ai-sdk/vercel": "^2.0.13",
     "@ai-sdk/xai": "^3.0.26",
-    "@aihubmix/ai-sdk-provider": "^1.0.1",
+    "@aihubmix/ai-sdk-provider": "^2.2.1",
     "@gitlab/gitlab-ai-provider": "^3.1.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@mymediset/sap-ai-provider": "^2.1.0",
