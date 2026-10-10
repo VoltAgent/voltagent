@@ -41,6 +41,12 @@ describe("InMemoryStorageAdapter string identifiers", () => {
       await adapter.addMessage(message, "user", conversationId);
       await adapter.clearMessages("user", conversationId);
       expect(await adapter.getMessages("user", conversationId)).toEqual([]);
+      await adapter.clearMessages("user");
+      await adapter.addMessage(message, "user", conversationId);
+      expect(await adapter.getMessages("user", conversationId)).toHaveLength(1);
+      adapter.clear();
+      await adapter.addMessage(message, "user", conversationId);
+      expect(await adapter.getMessages("user", conversationId)).toHaveLength(1);
     },
   );
 });
