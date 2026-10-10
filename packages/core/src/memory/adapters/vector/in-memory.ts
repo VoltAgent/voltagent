@@ -74,6 +74,8 @@ export class InMemoryVectorAdapter implements VectorAdapter {
       if (score >= threshold) {
         results.push({
           ...item,
+          vector: [...item.vector],
+          metadata: item.metadata ? { ...item.metadata } : undefined,
           score,
           distance: 1 - similarity, // Convert to distance metric
         });
