@@ -6,7 +6,7 @@ import { isObject } from "./lang";
  * Deep clone an object
  *
  * @param obj - The object to clone
- * @returns A deep copy of the object (fallback to shallow clone for failures)
+ * @returns A deep copy of the object, preserving functions by reference in the fallback
  */
 export function deepClone<T>(obj: T): T {
   try {
@@ -17,12 +17,54 @@ export function deepClone<T>(obj: T): T {
 
     throw new Error("structuredClone is not available");
   } catch (_error) {
-    // Fallback to shallow clone for primitive types and simple objects
-    if (obj === null || typeof obj !== "object") {
-      return obj;
-    }
-    return { ...obj } as T;
+    return cloneFallback(obj);
   }
+}
+
+/** Clone nested data when structuredClone rejects a value such as a function. */
+function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+  if (seen.has(value)) {
+    return seen.get(value) as T;
+  }
+
+  let clone: object;
+  if (value instanceof Date) {
+    clone = new Date(value.getTime());
+  } else if (value instanceof RegExp) {
+    clone = new RegExp(value.source, value.flags);
+  } else if (value instanceof Map) {
+    clone = new Map();
+  } else if (value instanceof Set) {
+    clone = new Set();
+  } else {
+    clone = Array.isArray(value)
+      ? new Array(value.length)
+      : Object.create(Object.getPrototypeOf(value));
+  }
+  seen.set(value, clone);
+
+  if (value instanceof Map && clone instanceof Map) {
+    for (const [key, nested] of value) {
+      clone.set(cloneFallback(key, seen), cloneFallback(nested, seen));
+    }
+  } else if (value instanceof Set && clone instanceof Set) {
+    for (const nested of value) {
+      clone.add(cloneFallback(nested, seen));
+    }
+  } else {
+    for (const [key, nested] of Object.entries(value)) {
+      Object.defineProperty(clone, key, {
+        value: cloneFallback(nested, seen),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
+  }
+  return clone as T;
 }
 
 /**

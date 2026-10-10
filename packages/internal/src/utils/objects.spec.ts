@@ -1,7 +1,77 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { deepClone, hasKey } from "./objects";
 
 describe("deepClone", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("isolates nested data when functions prevent structured cloning", () => {
+    const shared = { labels: ["original"] };
+    const original = { fn: () => "test", first: shared, second: shared };
+    const cloned = deepClone(original);
+    cloned.first.labels.push("changed");
+    expect(original.first.labels).toEqual(["original"]);
+    expect(cloned.second).toBe(cloned.first);
+    expect(cloned.fn).toBe(original.fn);
+  });
+
+  it("preserves cycles when functions prevent structured cloning", () => {
+    const original: { fn: () => string; self?: unknown } = { fn: () => "test" };
+    original.self = original;
+    const cloned = deepClone(original);
+    expect(cloned.self).toBe(cloned);
+    expect(cloned.fn).toBe(original.fn);
+  });
+
+  it("deep-clones arrays and primitives when structuredClone is unavailable", () => {
+    vi.stubGlobal("structuredClone", undefined);
+    const original = [{ nested: [1, null, undefined, false, "value"] }];
+    const cloned = deepClone(original);
+    expect(Array.isArray(cloned)).toBe(true);
+    expect(cloned).toEqual(original);
+    expect(cloned[0].nested).not.toBe(original[0].nested);
+    expect(deepClone(null)).toBeNull();
+    expect(deepClone(undefined)).toBeUndefined();
+    expect(deepClone(42)).toBe(42);
+  });
+
+  it("preserves collection types and shared references in the fallback", () => {
+    const shared = { label: "original" };
+    const original = {
+      fn: () => "test",
+      shared,
+      map: new Map([[shared, shared]]),
+      set: new Set([shared]),
+      date: new Date("2023-01-01"),
+      regex: /test/g,
+    };
+    const cloned = deepClone(original);
+    expect(cloned.map).toBeInstanceOf(Map);
+    expect(cloned.map.get(cloned.shared)).toBe(cloned.shared);
+    expect(cloned.set).toBeInstanceOf(Set);
+    expect(cloned.set.has(cloned.shared)).toBe(true);
+    expect(cloned.date).toEqual(original.date);
+    expect(cloned.date).not.toBe(original.date);
+    expect(cloned.regex).toEqual(original.regex);
+    expect(cloned.regex).not.toBe(original.regex);
+  });
+
+  it("copies an own __proto__ key without changing the fallback object's prototype", () => {
+    const original = { fn: () => "test" };
+    Object.defineProperty(original, "__proto__", {
+      value: { nested: "original" },
+      enumerable: true,
+    });
+    const cloned = deepClone(original);
+    expect(Object.getPrototypeOf(cloned)).toBe(Object.prototype);
+    expect(Object.hasOwn(cloned, "__proto__")).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(cloned, "__proto__")?.value).toEqual({
+      nested: "original",
+    });
+    expect(Object.getOwnPropertyDescriptor(cloned, "__proto__")?.value).not.toBe(
+      Object.getOwnPropertyDescriptor(original, "__proto__")?.value,
+    );
+  });
+
   it("should deep clone a simple object", () => {
     const original = { a: 1, b: "test", c: true };
     const cloned = deepClone(original);
@@ -168,7 +238,7 @@ describe("deepClone", () => {
   });
 
   it("should handle Map objects", () => {
-    const map = new Map([
+    const map = new Map<string, string | { nested: string }>([
       ["key1", "value1"],
       ["key2", { nested: "value2" }],
     ]);
