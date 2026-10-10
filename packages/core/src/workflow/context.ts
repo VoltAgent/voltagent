@@ -19,6 +19,11 @@ export interface WorkflowExecutionContext {
    */
   executionId: string;
   /**
+   * Stable identity for the current step within this workflow execution.
+   * Use this as the base for idempotency keys around external side effects.
+   */
+  stepExecutionId?: string;
+  /**
    * Human-readable name of the workflow
    */
   workflowName: string;
