@@ -2,6 +2,28 @@ import { describe, expect, it } from "vitest";
 import { InMemoryVectorAdapter } from "./in-memory";
 
 describe("InMemoryVectorAdapter search result isolation", () => {
+  it.each(["search", "get", "store"])(
+    "isolates nested metadata at the %s boundary",
+    async (operation) => {
+      const adapter = new InMemoryVectorAdapter();
+      const metadata = { context: { labels: ["original"] } };
+      await adapter.store("memory", [1, 0], metadata);
+
+      if (operation === "store") {
+        metadata.context.labels.push("changed");
+      } else {
+        const result =
+          operation === "search" ? (await adapter.search([1, 0]))[0] : await adapter.get("memory");
+        const context = result?.metadata?.context as typeof metadata.context;
+        context.labels.push("changed");
+      }
+
+      expect((await adapter.get("memory"))?.metadata).toEqual({
+        context: { labels: ["original"] },
+      });
+    },
+  );
+
   it("does not let a returned embedding corrupt future similarity searches", async () => {
     const adapter = new InMemoryVectorAdapter();
     await adapter.store("matching", [1, 0], { userId: "alice" });
