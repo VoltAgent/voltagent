@@ -31,6 +31,7 @@ function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
   }
 
   let clone: object;
+  let copyProperties = true;
   if (value instanceof Date) {
     clone = new Date(value.getTime());
   } else if (value instanceof RegExp) {
@@ -39,12 +40,35 @@ function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
     clone = new Map();
   } else if (value instanceof Set) {
     clone = new Set();
+  } else if (
+    value instanceof ArrayBuffer ||
+    (typeof SharedArrayBuffer !== "undefined" && value instanceof SharedArrayBuffer)
+  ) {
+    clone = value.slice(0);
+    copyProperties = false;
+  } else if (ArrayBuffer.isView(value)) {
+    const buffer = cloneFallback(value.buffer, seen);
+    if (value instanceof DataView) {
+      clone = new DataView(buffer, value.byteOffset, value.byteLength);
+    } else {
+      const TypedArray = value.constructor as {
+        new (buffer: ArrayBufferLike, byteOffset: number, length: number): ArrayBufferView;
+        readonly BYTES_PER_ELEMENT: number;
+      };
+      clone = new TypedArray(
+        buffer,
+        value.byteOffset,
+        value.byteLength / TypedArray.BYTES_PER_ELEMENT,
+      );
+    }
+    copyProperties = false;
   } else {
-    clone = Array.isArray(value)
-      ? new Array(value.length)
-      : Object.create(Object.getPrototypeOf(value));
+    clone = Array.isArray(value) ? new Array(value.length) : {};
   }
   seen.set(value, clone);
+  if (!copyProperties) {
+    return clone as T;
+  }
 
   if (value instanceof Map && clone instanceof Map) {
     for (const [key, nested] of value) {

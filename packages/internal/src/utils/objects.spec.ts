@@ -4,6 +4,51 @@ import { deepClone, hasKey } from "./objects";
 describe("deepClone", () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it("preserves binary data and shared backing buffers in the fallback", () => {
+    const buffer = new ArrayBuffer(8);
+    const bytes = new Uint8Array(buffer, 2, 4);
+    bytes.set([1, 2, 3, 4]);
+    const view = new DataView(buffer, 2, 4);
+    const original = { fn: () => "test", buffer, bytes, view, repeated: bytes };
+    const cloned = deepClone(original);
+    expect(cloned.buffer).toBeInstanceOf(ArrayBuffer);
+    expect(cloned.buffer).not.toBe(buffer);
+    expect(cloned.bytes).toBeInstanceOf(Uint8Array);
+    expect(cloned.bytes.byteLength).toBe(4);
+    expect(cloned.bytes.byteOffset).toBe(2);
+    expect([...cloned.bytes]).toEqual([1, 2, 3, 4]);
+    expect(cloned.bytes.buffer).toBe(cloned.buffer);
+    expect(cloned.view.buffer).toBe(cloned.buffer);
+    expect(cloned.view.byteOffset).toBe(2);
+    expect(cloned.view.getUint8(1)).toBe(2);
+    expect(cloned.repeated).toBe(cloned.bytes);
+    cloned.bytes[0] = 9;
+    expect(cloned.view.getUint8(0)).toBe(9);
+    expect(bytes[0]).toBe(1);
+  });
+
+  it("clones shared buffers and their views without sharing the original storage", () => {
+    const buffer = new SharedArrayBuffer(8);
+    const bytes = new Uint16Array(buffer, 2, 2);
+    bytes.set([123, 456]);
+    const cloned = deepClone({ fn: () => "test", bytes, buffer });
+    expect(cloned.buffer).toBeInstanceOf(SharedArrayBuffer);
+    expect(cloned.buffer).not.toBe(buffer);
+    expect(cloned.bytes.buffer).toBe(cloned.buffer);
+    expect(cloned.bytes.byteOffset).toBe(2);
+    expect([...cloned.bytes]).toEqual([123, 456]);
+    cloned.bytes[0] = 999;
+    expect(bytes[0]).toBe(123);
+  });
+
+  it("supports environments without SharedArrayBuffer during the fallback", () => {
+    vi.stubGlobal("SharedArrayBuffer", undefined);
+    const original = { fn: () => "test", nested: { value: 1 } };
+    const cloned = deepClone(original);
+    expect(cloned.nested).toEqual(original.nested);
+    expect(cloned.nested).not.toBe(original.nested);
+  });
+
   it("isolates nested data when functions prevent structured cloning", () => {
     const shared = { labels: ["original"] };
     const original = { fn: () => "test", first: shared, second: shared };
