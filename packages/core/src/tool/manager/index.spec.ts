@@ -204,6 +204,76 @@ describe("ToolManager", () => {
       expect(toolManager.getToolkits()).toHaveLength(1);
     });
 
+    it("should replace a toolkit while retaining a tool name", async () => {
+      const originalTool = createTool({
+        name: "search",
+        description: "Original search",
+        parameters: z.object({ query: z.string() }),
+        execute: vi.fn().mockResolvedValue("original result"),
+      });
+      const replacementTool = createTool({
+        name: "search",
+        description: "Updated search",
+        parameters: z.object({ query: z.string(), limit: z.number() }),
+        execute: vi.fn().mockResolvedValue("updated result"),
+      });
+
+      expect(
+        toolManager.addToolkit(createToolkit({ name: "search-kit", tools: [originalTool] })),
+      ).toBe(true);
+      expect(
+        toolManager.addToolkit(createToolkit({ name: "search-kit", tools: [replacementTool] })),
+      ).toBe(true);
+
+      expect(toolManager.getToolkits()).toHaveLength(1);
+      expect(toolManager.getAllToolNames()).toEqual(["search"]);
+      expect(toolManager.getToolByName("search")).toBe(replacementTool);
+      const preparedTools = toolManager.prepareToolsForExecution(
+        (tool) => (args, options) => tool.execute?.(args, options),
+      );
+      expect(preparedTools.search.inputSchema).toBe(replacementTool.parameters);
+      await expect(preparedTools.search.execute({ query: "agent", limit: 3 })).resolves.toBe(
+        "updated result",
+      );
+    });
+
+    it("should preserve the existing toolkit when a replacement conflicts with another toolkit", () => {
+      const originalToolkit = createToolkit({ name: "shared-kit", tools: [mockTool1] });
+      const otherToolkit = createToolkit({ name: "other-kit", tools: [mockTool2] });
+      expect(toolManager.addToolkit(originalToolkit)).toBe(true);
+      expect(toolManager.addToolkit(otherToolkit)).toBe(true);
+
+      const replacementToolkit = createToolkit({
+        name: "shared-kit",
+        tools: [mockTool1, mockTool2],
+      });
+      expect(toolManager.addToolkit(replacementToolkit)).toBe(false);
+      expect(toolManager.getToolkits()).toHaveLength(2);
+      expect(toolManager.getToolByName(mockTool1.name)).toBe(mockTool1);
+      expect(toolManager.getToolkits()[0].getAllToolNames()).toEqual([mockTool1.name]);
+      expect(toolManager.getToolByName(mockTool2.name)).toBe(mockTool2);
+    });
+
+    it("should preserve the existing toolkit when a replacement conflicts with a standalone tool", () => {
+      const standaloneTool = createTool({
+        name: mockTool1.name,
+        description: "Standalone search",
+        parameters: z.object({}),
+        execute: vi.fn(),
+      });
+      expect(
+        toolManager.addToolkit(createToolkit({ name: "shared-kit", tools: [mockTool1] })),
+      ).toBe(true);
+      expect(toolManager.addStandaloneTool(standaloneTool)).toBe(true);
+
+      expect(
+        toolManager.addToolkit(createToolkit({ name: "shared-kit", tools: [mockTool1] })),
+      ).toBe(false);
+      expect(toolManager.getToolkits()).toHaveLength(1);
+      expect(toolManager.getToolkits()[0].getToolByName(mockTool1.name)).toBe(mockTool1);
+      expect(toolManager.getToolByName(mockTool1.name)).toBe(standaloneTool);
+    });
+
     it("should skip toolkit when tools conflict with existing standalone tool", () => {
       const standaloneTool = createTool({
         name: "conflicting-tool",
@@ -383,6 +453,41 @@ describe("provider-defined tools", () => {
     expect(manager.getAllProviderTools().map((t) => (t as ProviderTool).name)).toEqual([
       "dup-prov",
     ]);
+  });
+
+  it("should replace a toolkit while retaining a provider tool name", () => {
+    const originalTool = createProviderTool("provider-search");
+    const replacementTool = {
+      ...originalTool,
+      description: "Updated provider search",
+    } as ProviderTool;
+    expect(manager.addToolkit(createToolkit({ name: "provider-kit", tools: [originalTool] }))).toBe(
+      true,
+    );
+    expect(
+      manager.addToolkit(createToolkit({ name: "provider-kit", tools: [replacementTool] })),
+    ).toBe(true);
+
+    expect(manager.getToolkits()).toHaveLength(1);
+    expect(manager.getAllProviderTools()).toEqual([replacementTool]);
+    expect(manager.getToolByName(replacementTool.name)).toBe(replacementTool);
+    expect(manager.prepareToolsForExecution(vi.fn())[replacementTool.name]).toBe(replacementTool);
+  });
+
+  it("should reject replacement after a conflicting standalone provider tool is added", () => {
+    const originalTool = createProviderTool("provider-search");
+    const standaloneTool = { ...originalTool, description: "Standalone provider" } as ProviderTool;
+    expect(manager.addToolkit(createToolkit({ name: "provider-kit", tools: [originalTool] }))).toBe(
+      true,
+    );
+    expect(manager.addStandaloneTool(standaloneTool)).toBe(true);
+
+    expect(manager.addToolkit(createToolkit({ name: "provider-kit", tools: [originalTool] }))).toBe(
+      false,
+    );
+    expect(manager.getToolkits()).toHaveLength(1);
+    expect(manager.getToolkits()[0].getToolByName(originalTool.name)).toBe(originalTool);
+    expect(manager.getToolByName(originalTool.name)).toBe(standaloneTool);
   });
 
   it("should remove standalone provider tool via removeTool", () => {
