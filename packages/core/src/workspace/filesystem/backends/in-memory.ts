@@ -309,7 +309,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
       return { error: `Cannot create directory ${dirPath} because a file exists at that path.` };
     }
 
-    if (this.hasDirectory(dirPath)) {
+    if (!recursive && this.hasDirectory(dirPath)) {
       return { path: dirPath };
     }
 
@@ -325,10 +325,19 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     }
 
     if (recursive) {
+      const parents: string[] = [];
       let parent = dirPath.slice(0, -1);
       while (parent.lastIndexOf("/") > 0) {
         parent = parent.slice(0, parent.lastIndexOf("/"));
-        this.directories.add(`${parent}/`);
+        if (files[parent]) {
+          return {
+            error: `Cannot create directory ${dirPath} because a file exists at '${parent}'.`,
+          };
+        }
+        parents.push(`${parent}/`);
+      }
+      for (const parent of parents) {
+        this.directories.add(parent);
       }
     }
 
