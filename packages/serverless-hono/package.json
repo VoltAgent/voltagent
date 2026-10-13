@@ -1,11 +1,11 @@
 {
   "name": "@voltagent/serverless-hono",
   "description": "Serverless (fetch-based) runtime provider for VoltAgent using Hono",
-  "version": "3.0.0-next.0",
+  "version": "3.0.0-next.1",
   "dependencies": {
     "@voltagent/internal": "^2.0.0-next.0",
     "@voltagent/resumable-streams": "^3.0.0-next.0",
-    "@voltagent/server-core": "^3.0.0-next.0",
+    "@voltagent/server-core": "^3.0.0-next.1",
     "hono": "^4.9.1"
   },
   "devDependencies": {},

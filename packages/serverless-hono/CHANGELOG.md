@@ -1,5 +1,14 @@
 # @voltagent/serverless-hono
 
+## 3.0.0-next.1
+
+### Patch Changes
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Align the Hono dependency range to ^4.9.1 across server adapters and examples.
+
+- Updated dependencies [[`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79)]:
+  - @voltagent/server-core@3.0.0-next.1
+
 ## 3.0.0-next.0
 
 ### Major Changes

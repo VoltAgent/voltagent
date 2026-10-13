@@ -1,5 +1,16 @@
 # @voltagent/server-core
 
+## 3.0.0-next.1
+
+### Patch Changes
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Add optional `contextSchema` validation to the existing VoltAgent context API. Infer schema input types for constructor/call context and output types for dynamic instructions, models, tools, inline agent hooks, and generation results. Preserve the Map API, shared parent/per-call Maps, and extra runtime entries.
+
+  Validate the merged context once before execution, applying defaults and async transforms. Constructor-only defaults are copied per invocation for schema-enabled agents. Invalid context throws `AgentContextValidationError` and returns HTTP 400 (`INVALID_CONTEXT`) through server adapters. Agent tools can receive default context through `toTool({ context })`.
+
+- Updated dependencies [[`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79), [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79)]:
+  - @voltagent/core@3.0.0-next.2
+
 ## 3.0.0-next.0
 
 ### Major Changes
