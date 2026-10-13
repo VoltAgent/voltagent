@@ -324,6 +324,14 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
       }
     }
 
+    if (recursive) {
+      let parent = dirPath.slice(0, -1);
+      while (parent.lastIndexOf("/") > 0) {
+        parent = parent.slice(0, parent.lastIndexOf("/"));
+        this.directories.add(`${parent}/`);
+      }
+    }
+
     this.directories.add(dirPath);
     return { path: dirPath };
   }
