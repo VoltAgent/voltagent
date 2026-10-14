@@ -1,4 +1,5 @@
 import { createTool } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 
 const FIRECRAWL_API_URL = "https://api.firecrawl.dev/v2";
@@ -24,7 +25,7 @@ const callFirecrawl = async (path: string, apiKey: string, body: Record<string, 
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ ...body, origin: "voltagent" }),
+    body: safeStringify({ ...body, origin: "voltagent" }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
