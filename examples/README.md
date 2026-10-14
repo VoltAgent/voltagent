@@ -105,6 +105,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Custom Endpoints](./with-custom-endpoints) — Add bespoke REST endpoints alongside agent/workflow routes.
 - [Dynamic Parameters](./with-dynamic-parameters) — Validate and inject runtime parameters into agents with Zod.
 - [Dynamic Prompts](./with-dynamic-prompts) — Build prompts from templates and live data programmatically.
+- [Firecrawl Search](./with-firecrawl-search) — Search the web and read pages as clean Markdown with Firecrawl.
 - [Google AI](./with-google-ai) — Use Google Gemini models via the AI SDK provider.
 - [Google Drive (MCP)](./with-google-drive-mcp) — Browse and read Drive files through a Google Drive MCP server.
 - [Google Vertex AI](./with-google-vertex-ai) — Connect agents to Vertex AI models in your GCP project.
