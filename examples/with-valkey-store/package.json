@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-valkey-store",
   "version": "0.0.0",
   "dependencies": {
-    "@valkey/valkey-glide": "^2.3.1",
+    "@valkey/valkey-glide": "^2.5.2",
     "@voltagent/a2a-server": "^2.0.3",
     "@voltagent/core": "^2.7.2",
     "@voltagent/internal": "^1.0.3",

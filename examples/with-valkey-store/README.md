@@ -132,6 +132,7 @@ const clusterClient = await GlideClusterClient.createClient({
     { host: "node2.example.com", port: 6379 },
   ],
   useTLS: true,
+  clientInfoTag: "voltagent",
 });
 
 const taskStore = new ValkeyTaskStore({ client: clusterClient });

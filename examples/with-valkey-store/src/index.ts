@@ -30,6 +30,7 @@ async function main() {
   const valkeyClient = await GlideClient.createClient({
     addresses: [{ host, port }],
     clientName: "voltagent_a2a_store_client",
+    clientInfoTag: "voltagent",
   });
   logger.info(`Connected to Valkey at ${host}:${port}`);
 
@@ -41,7 +42,11 @@ async function main() {
 
   const streamStore = await createResumableStreamValkeyStore({
     client: valkeyClient,
-    clientConfig: { addresses: [{ host, port }], clientName: "voltagent_a2a_stream_client" },
+    clientConfig: {
+      addresses: [{ host, port }],
+      clientName: "voltagent_a2a_stream_client",
+      clientInfoTag: "voltagent",
+    },
     keyPrefix: "example-streams",
     ttlSeconds: 600,
   });

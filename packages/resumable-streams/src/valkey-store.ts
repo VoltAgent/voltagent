@@ -8,6 +8,7 @@ import {
 import type { ResumableStreamActiveStore, ResumableStreamStore } from "./types";
 
 const DEFAULT_KEY_PREFIX = "resumable-stream";
+const DEFAULT_CLIENT_INFO_TAG = "voltagent";
 
 /**
  * Connection configuration passed to the Valkey GLIDE client.
@@ -21,6 +22,8 @@ export interface ValkeyConnectionConfig {
   useTLS?: boolean;
   requestTimeout?: number;
   clientName?: string;
+  /** Library-name tag sent via `CLIENT SETINFO LIB-NAME`. Defaults to `"voltagent"` on subscription clients. */
+  clientInfoTag?: string;
   [key: string]: unknown;
 }
 
@@ -178,6 +181,7 @@ export async function createResumableStreamValkeyStore(
       try {
         const pubsubConfig = {
           ...clientConfig,
+          clientInfoTag: clientConfig.clientInfoTag ?? DEFAULT_CLIENT_INFO_TAG,
           pubsubSubscriptions: {
             channelsAndPatterns: {
               [GlideClientConfigurationClass.PubSubChannelModes.Exact]: new Set([channel]),

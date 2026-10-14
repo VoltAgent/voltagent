@@ -39,7 +39,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@valkey/valkey-glide": ">=2.3.1",
+    "@valkey/valkey-glide": ">=2.5.2",
     "@voltagent/core": "^2.0.0"
   },
   "peerDependenciesMeta": {
