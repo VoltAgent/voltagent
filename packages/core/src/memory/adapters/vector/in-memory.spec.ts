@@ -3,6 +3,54 @@ import { InMemoryVectorAdapter } from "./in-memory";
 
 describe("InMemoryVectorAdapter search result isolation", () => {
   it.each(["store", "get", "search"])(
+    "isolates metadata with an overridden buffer slice at the %s boundary",
+    async (operation) => {
+      const adapter = new InMemoryVectorAdapter();
+      const buffer = new ArrayBuffer(4);
+      Object.defineProperty(buffer, "slice", { value: () => buffer, enumerable: true });
+      new Uint8Array(buffer)[0] = 1;
+      await adapter.store("memory", [1, 0], { fn: () => "test", buffer });
+      if (operation === "store") {
+        new Uint8Array(buffer)[0] = 9;
+      } else {
+        const result =
+          operation === "search" ? (await adapter.search([1, 0]))[0] : await adapter.get("memory");
+        new Uint8Array(result?.metadata?.buffer as ArrayBuffer)[0] = 9;
+      }
+      const stored = (await adapter.get("memory"))?.metadata?.buffer as ArrayBuffer;
+      expect(new Uint8Array(stored)[0]).toBe(1);
+    },
+  );
+
+  it.each(["native", "fallback"])(
+    "copies custom class metadata as plain data using the %s clone path",
+    async (mode) => {
+      class CustomMetadata {
+        labels = ["original"];
+        label() {
+          return this.labels[0];
+        }
+      }
+      const adapter = new InMemoryVectorAdapter();
+      const item = new CustomMetadata();
+      await adapter.store("memory", [1, 0], {
+        item,
+        fn: mode === "fallback" ? () => "test" : undefined,
+      });
+      item.labels.push("changed");
+      const fetched = await adapter.get("memory");
+      const [searched] = await adapter.search([1, 0]);
+      for (const result of [fetched, searched]) {
+        const copied = result?.metadata?.item as CustomMetadata;
+        expect(Object.getPrototypeOf(copied)).toBe(Object.prototype);
+        expect(copied).not.toBeInstanceOf(CustomMetadata);
+        expect(copied.label).toBeUndefined();
+        expect(copied.labels).toEqual(["original"]);
+      }
+    },
+  );
+
+  it.each(["store", "get", "search"])(
     "preserves and isolates binary metadata at the %s boundary",
     async (operation) => {
       const adapter = new InMemoryVectorAdapter();

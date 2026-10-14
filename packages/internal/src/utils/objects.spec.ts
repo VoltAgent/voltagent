@@ -4,6 +4,45 @@ import { deepClone, hasKey } from "./objects";
 describe("deepClone", () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it.each([ArrayBuffer, SharedArrayBuffer])(
+    "ignores an overridden %s slice method in the fallback",
+    (BufferType) => {
+      const buffer = new BufferType(4);
+      Object.defineProperty(buffer, "slice", { value: () => buffer, enumerable: true });
+      new Uint8Array(buffer)[0] = 1;
+      const cloned = deepClone({ fn: () => "test", buffer });
+      expect(cloned.buffer).not.toBe(buffer);
+      new Uint8Array(buffer)[0] = 9;
+      expect(new Uint8Array(cloned.buffer)[0]).toBe(1);
+    },
+  );
+
+  it.each([
+    new ArrayBuffer(4),
+    new SharedArrayBuffer(4),
+    new Uint8Array([1, 2]),
+    new DataView(new ArrayBuffer(4)),
+  ])("preserves custom binary properties and cycles in the fallback (%s)", (binary) => {
+    const value = Object.assign(binary, { tag: { label: "original" }, self: binary });
+    const cloned = deepClone({ fn: () => "test", value });
+    expect(cloned.value.tag).toEqual(value.tag);
+    expect(cloned.value.tag).not.toBe(value.tag);
+    expect(cloned.value.self).toBe(cloned.value);
+    cloned.value.tag.label = "changed";
+    expect(value.tag.label).toBe("original");
+  });
+
+  it("preserves a view referenced by its own backing buffer's custom property", () => {
+    const bytes = new Uint8Array([1, 2]);
+    const buffer = Object.assign(bytes.buffer, { view: bytes });
+    const cloned = deepClone({ fn: () => "test", bytes, buffer });
+    expect(cloned.buffer.view).toBe(cloned.bytes);
+    expect(cloned.bytes.buffer).toBe(cloned.buffer);
+    expect([...cloned.bytes]).toEqual([1, 2]);
+    cloned.bytes[0] = 9;
+    expect(bytes[0]).toBe(1);
+  });
+
   it("preserves binary data and shared backing buffers in the fallback", () => {
     const buffer = new ArrayBuffer(8);
     const bytes = new Uint8Array(buffer, 2, 4);

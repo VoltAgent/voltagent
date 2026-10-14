@@ -31,7 +31,6 @@ function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
   }
 
   let clone: object;
-  let copyProperties = true;
   if (value instanceof Date) {
     clone = new Date(value.getTime());
   } else if (value instanceof RegExp) {
@@ -44,10 +43,16 @@ function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
     value instanceof ArrayBuffer ||
     (typeof SharedArrayBuffer !== "undefined" && value instanceof SharedArrayBuffer)
   ) {
-    clone = value.slice(0);
-    copyProperties = false;
+    clone =
+      value instanceof ArrayBuffer
+        ? ArrayBuffer.prototype.slice.call(value, 0)
+        : SharedArrayBuffer.prototype.slice.call(value, 0);
   } else if (ArrayBuffer.isView(value)) {
     const buffer = cloneFallback(value.buffer, seen);
+    // Cloning the buffer's own properties may already have cloned this view.
+    if (seen.has(value)) {
+      return seen.get(value) as T;
+    }
     if (value instanceof DataView) {
       clone = new DataView(buffer, value.byteOffset, value.byteLength);
     } else {
@@ -61,14 +66,10 @@ function cloneFallback<T>(value: T, seen = new WeakMap<object, unknown>()): T {
         value.byteLength / TypedArray.BYTES_PER_ELEMENT,
       );
     }
-    copyProperties = false;
   } else {
     clone = Array.isArray(value) ? new Array(value.length) : {};
   }
   seen.set(value, clone);
-  if (!copyProperties) {
-    return clone as T;
-  }
 
   if (value instanceof Map && clone instanceof Map) {
     for (const [key, nested] of value) {
