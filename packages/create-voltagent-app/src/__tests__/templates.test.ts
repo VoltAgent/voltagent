@@ -28,21 +28,43 @@ describe("Dockerfile template", () => {
     expect(dockerfile).not.toContain("pnpm-lock.yaml");
   });
 
-  it("copies only the selected package manager lockfile", () => {
-    expect(renderDockerfile("yarn")).toContain("COPY yarn.lock* ./");
-    expect(renderDockerfile("pnpm")).toContain("COPY pnpm-lock.yaml* ./");
-    expect(renderDockerfile("bun")).toContain("COPY bun.lock* ./");
-
-    const yarnDockerfile = renderDockerfile("yarn");
-    expect(yarnDockerfile).not.toContain("pnpm-lock.yaml");
-    expect(yarnDockerfile).not.toContain("bun.lock");
-  });
-
-  it("renders the matching install command per package manager", () => {
-    expect(renderDockerfile("yarn")).toContain("yarn install --frozen-lockfile --production");
-    expect(renderDockerfile("pnpm")).toContain("pnpm install --frozen-lockfile");
-    expect(renderDockerfile("bun")).toContain("bun install --frozen-lockfile");
-  });
+  it.each([
+    ["npm", "", "RUN npm ci", "RUN npm ci --omit=dev"],
+    [
+      "yarn",
+      "yarn.lock",
+      "RUN yarn install --frozen-lockfile",
+      "RUN yarn install --frozen-lockfile --production",
+    ],
+    [
+      "pnpm",
+      "pnpm-lock.yaml",
+      "RUN npm install -g pnpm && pnpm install --frozen-lockfile",
+      "RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod",
+    ],
+    [
+      "bun",
+      "bun.lock",
+      "RUN npm install -g bun && bun install --frozen-lockfile",
+      "RUN npm install -g bun && bun install --frozen-lockfile --production",
+    ],
+  ] as const)(
+    "renders only %s dependency layers",
+    (manager, lockfile, builderCommand, runtimeCommand) => {
+      const dockerfile = renderDockerfile(manager);
+      const [builder, runtime] = dockerfile.split("# Production stage");
+      expect(builder.split("\n")).toContain(builderCommand);
+      expect(runtime.split("\n")).toContain(runtimeCommand);
+      for (const candidate of ["yarn.lock", "pnpm-lock.yaml", "bun.lock"]) {
+        if (candidate === lockfile) {
+          expect(builder).toContain(`COPY ${candidate}* ./`);
+          expect(runtime).toContain(`COPY ${candidate}* ./`);
+        } else {
+          expect(dockerfile).not.toContain(candidate);
+        }
+      }
+    },
+  );
 
   it("keeps the package.json copy in both stages", () => {
     const dockerfile = renderDockerfile("npm");
