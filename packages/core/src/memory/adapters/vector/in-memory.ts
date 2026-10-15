@@ -5,7 +5,7 @@ import type { SearchResult, VectorAdapter, VectorItem } from "./types";
 /**
  * Lightweight in-memory vector database adapter
  * Suitable for development, testing, and small datasets (< 10k vectors)
- * Metadata is copied as data; custom class prototypes and methods are not retained.
+ * Metadata is copied as data; custom class prototypes and prototype methods are not retained.
  */
 export class InMemoryVectorAdapter implements VectorAdapter {
   private vectors: Map<string, VectorItem>;
