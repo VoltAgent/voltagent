@@ -60,5 +60,16 @@
     "@voltagent/voice": "2.1.0",
     "@voltagent/voltagent-memory": "1.0.4"
   },
-  "changesets": ["ai-sdk-tools-next", "voltagent-3-next"]
+  "changesets": [
+    "ai-sdk-tools-next",
+    "align-hono-dependencies",
+    "generated-output-consistency",
+    "model-call-recovery",
+    "native-call-boundaries",
+    "native-stream-results",
+    "native-tool-execution-contract",
+    "tool-helper-inference",
+    "typed-agent-context",
+    "voltagent-3-next"
+  ]
 }

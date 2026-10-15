@@ -1,5 +1,39 @@
 # @voltagent/core
 
+## 3.0.0-next.2
+
+### Minor Changes
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Retry and fall back at the individual provider-call boundary, preserving completed tool executions, step results, and memory records. Keep ordered model lists, per-model/call retry settings, retry/fallback hooks, and tracing. Stream failures before the current step emits content can recover even after earlier steps completed; failures after content starts are surfaced without replay.
+
+  Backoff honors cancellation and SDK step/total timeouts. Retry counts must be non-negative integers. Explicit prepareStep model selections receive retries without falling through to the agent model list. Structured-output/parsing failures outside provider execution no longer restart the generation; explicit middleware retries retain their full-pipeline behavior. Document these migration differences.
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Support per-call models through the agent's retry and tracing pipeline and accept native message arrays in `prompt`. A call model replaces the constructor model/fallback list only for that invocation.
+
+  Align input checks with AI SDK: reject conflicting prompt/messages and empty message arrays, prefer `instructions` over the deprecated `system` alias, and require `allowSystemInMessages` for caller-supplied system messages. Framework instructions remain additive.
+
+  Derive generate/stream options and callbacks from the corresponding installed SDK method. Stream-only settings are no longer accepted by `generateText`; newer SDK features require their supporting SDK version.
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Preserve the AI SDK streaming result interface, including typed structured output, array elements, metadata, tool aggregates, runtime context, and readable stream methods. Retain VoltAgent context, feedback, guardrails, and subagent events.
+
+  With output guardrails, structured values wait for the final decision and parse sanitized final-step text. SDK diagnostic records remain unchanged. UI completion callbacks receive the delivered guarded message, and native SDK stream retry callback return values are preserved without ending recovered operations as errors. Native stream retries require an SDK release that supports `streamRetries`.
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Preserve AI SDK execution semantics for native tools: thrown errors become `tool-error`, and functions returning an AsyncIterable retain preliminary outputs. Keep tracing, guardrails, hooks, approval, and explicit recovery. Native final-output validation now requires `voltagent.validateOutput: true`; legacy `createTool` retains automatic validation and serialized errors. Preserve error states in persisted UI messages and history, synchronize routed contexts after `prepareStep`, and document migration behavior.
+
+  Native streaming requires a directly returned AsyncIterable; a Promise resolving to an iterable remains an ordinary SDK output. Move asynchronous setup into an async generator when migrating. VoltAgent start hooks and the parallel guardrail wait finish before the SDK's per-tool timeout begins; long-running hooks need their own deadline and must honor the operation abort signal.
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Add optional `contextSchema` validation to the existing VoltAgent context API. Infer schema input types for constructor/call context and output types for dynamic instructions, models, tools, inline agent hooks, and generation results. Preserve the Map API, shared parent/per-call Maps, and extra runtime entries.
+
+  Validate the merged context once before execution, applying defaults and async transforms. Constructor-only defaults are copied per invocation for schema-enabled agents. Invalid context throws `AgentContextValidationError` and returns HTTP 400 (`INVALID_CONTEXT`) through server adapters. Agent tools can receive default context through `toTool({ context })`.
+
+### Patch Changes
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Keep `generateText` output consistent with text modified by output middleware or guardrails. Reparse changed text with the requested output specification before successful VoltAgent completion hooks; invalid transformed output rejects without provider retries, fallback, or tool replay. Unchanged text preserves the native parsed value and missing-output behavior. Subagent bail results also include parsed output.
+
+  Infer default text output as a string and preserve runtime context types in generated steps and the final step. Native SDK callbacks and diagnostic records remain unchanged.
+
+- [#1378](https://github.com/VoltAgent/voltagent/pull/1378) [`783491f`](https://github.com/VoltAgent/voltagent/commit/783491fae2393d9445c0d66d4b16fb31fad97e79) Thanks [@omeraplak](https://github.com/omeraplak)! - Match AI SDK tool helper overloads so client-side tools can omit both execute and outputSchema, and tools with execute retain a directly callable execute function. Preserve input, output, context, and VoltAgent metadata inference.
+
 ## 3.0.0-next.1
 
 ### Patch Changes
