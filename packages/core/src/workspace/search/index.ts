@@ -1,4 +1,3 @@
-import type { Span } from "@opentelemetry/api";
 import micromatch from "micromatch";
 import { z } from "zod";
 import type { Agent } from "../../agent/agent";
@@ -14,6 +13,7 @@ import type {
 import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
+import { getToolSpan } from "../../utils/tool-span";
 import type { WorkspaceFilesystem, WorkspaceFilesystemCallContext } from "../filesystem";
 import { truncateIfTooLong, validatePath } from "../filesystem/utils";
 import { withOperationTimeout } from "../timeout";
@@ -652,7 +652,7 @@ const setWorkspaceSpanAttributes = (
   operationContext: OperationContext,
   attributes: Record<string, unknown>,
 ): void => {
-  const toolSpan = operationContext.systemContext.get("parentToolSpan") as Span | undefined;
+  const toolSpan = getToolSpan(operationContext);
   if (!toolSpan) {
     return;
   }

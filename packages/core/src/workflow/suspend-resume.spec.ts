@@ -365,6 +365,15 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should list all suspended workflows", async () => {
     const { memory } = createTestStores();
+    let entered = 0;
+    let bothStarted!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => {
+      bothStarted = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
 
     const workflow1 = createWorkflow(
       {
@@ -378,7 +387,8 @@ describe.sequential("workflow suspend/resume functionality", () => {
         id: "step-1",
         name: "Step 1",
         execute: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          if (++entered === 2) bothStarted();
+          await gate;
           return "step1";
         },
       }),
@@ -404,7 +414,8 @@ describe.sequential("workflow suspend/resume functionality", () => {
         id: "step-1",
         name: "Step 1",
         execute: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          if (++entered === 2) bothStarted();
+          await gate;
           return "step1";
         },
       }),
@@ -432,10 +443,10 @@ describe.sequential("workflow suspend/resume functionality", () => {
       suspendController: controller2,
     });
 
-    setTimeout(() => {
-      controller1.suspend("Suspend 1");
-      controller2.suspend("Suspend 2");
-    }, 50);
+    await started;
+    controller1.suspend("Suspend 1");
+    controller2.suspend("Suspend 2");
+    release();
 
     const [result1, result2] = await Promise.all([run1, run2]);
 

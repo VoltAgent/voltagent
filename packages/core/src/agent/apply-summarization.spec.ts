@@ -1,5 +1,6 @@
 import * as ai from "ai";
 import type { UIMessage } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { applySummarization } from "./apply-summarization";
 import type { OperationContext } from "./types";
@@ -65,6 +66,40 @@ describe("applySummarization", () => {
 
     expect(result).toEqual(messages);
     expect(vi.mocked(ai.generateText)).not.toHaveBeenCalled();
+  });
+
+  it("summarizes through the real AI SDK prompt validator", async () => {
+    const actual = await vi.importActual<typeof import("ai")>("ai");
+    vi.mocked(ai.generateText).mockImplementationOnce(actual.generateText);
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => ({
+        content: [{ type: "text", text: "The user prefers tea." }],
+        finishReason: { unified: "stop", raw: "stop" },
+        warnings: [],
+        usage: { inputTokens: { total: 10 }, outputTokens: { total: 8 } },
+      }),
+    });
+    const oc = createOperationContext("real-sdk-summary");
+    const result = await applySummarization({
+      messages: [
+        createMessage("user", "I like tea", "first"),
+        createMessage("user", "Continue", "last"),
+      ],
+      operationContext: oc,
+      summarization: { enabled: true, triggerTokens: 0, keepMessages: 1 },
+      model,
+      resolveModel: async () => model,
+      agent: createAgentStub(),
+    });
+    expect(result[0].parts).toEqual([
+      { type: "text", text: expect.stringContaining("The user prefers tea.") },
+    ]);
+    expect(oc.traceContext.endChildSpan).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "error",
+      expect.anything(),
+    );
+    vi.mocked(ai.generateText).mockClear();
   });
 
   it("summarizes older messages and keeps the tail", async () => {

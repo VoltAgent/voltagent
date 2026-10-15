@@ -2863,7 +2863,7 @@ export class Agent<
                 modelId,
               },
             });
-            const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+            const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan, oc.abortController.signal);
 
             const nativeStreamRetriesEnabled = options?.streamRetries !== undefined;
             const handleTerminalError = async (
@@ -5441,9 +5441,9 @@ export class Agent<
     return span;
   }
 
-  private createLLMSpanFinalizer(span: Span) {
+  private createLLMSpanFinalizer(span: Span, signal?: AbortSignal) {
     let ended = false;
-    return (
+    const finalize = (
       status: SpanStatusCode,
       details?: {
         message?: string;
@@ -5455,6 +5455,7 @@ export class Agent<
       if (ended) {
         return;
       }
+      signal?.removeEventListener("abort", onAbort);
       if (details?.usage) {
         this.recordLLMUsage(span, details.usage);
       }
@@ -5472,6 +5473,13 @@ export class Agent<
       span.end();
       ended = true;
     };
+    const onAbort = () => {
+      span.setAttribute("llm.state", "cancelled");
+      finalize(SpanStatusCode.ERROR, { message: "Model operation aborted" });
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    return finalize;
   }
 
   private buildLLMSpanAttributes(params: {
@@ -6951,7 +6959,7 @@ export class Agent<
               label: "Model attempt",
             });
             span.setAttribute("llm.provider_attempt", true);
-            const finalize = this.createLLMSpanFinalizer(span);
+            const finalize = this.createLLMSpanFinalizer(span, signal);
             try {
               const response = await oc.traceContext.withSpan(span, () =>
                 invoke(attempt.model as Exclude<LanguageModel, string>),
@@ -9207,6 +9215,25 @@ export class Agent<
       }
 
       if (part.type === "tool-call") {
+        if (part.invalid) {
+          const rejected = oc.traceContext.createChildSpan(
+            "tool.input.rejected",
+            "tool-validation",
+            {
+              label: `${part.toolName} · input rejected`,
+              attributes: {
+                "tool.name": part.toolName,
+                "tool.call.id": part.toolCallId,
+                "tool.executed": false,
+                "tool.input.rejected": true,
+                input: safeStringify(part.input),
+              },
+            },
+          );
+          oc.traceContext.endChildSpan(rejected, "error", {
+            error: part.error instanceof Error ? part.error : new Error(String(part.error)),
+          });
+        }
         oc.logger.debug(`Step: Calling tool '${part.toolName}'`, {
           event: LogEvents.AGENT_STEP_TOOL_CALL,
           toolName: part.toolName,

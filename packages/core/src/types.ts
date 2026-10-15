@@ -253,6 +253,21 @@ export type VoltAgentOptions = {
   server?: ServerProviderFactory;
 
   /**
+   * Local playground on its own loopback port (3142 by default).
+   * Enabled automatically outside production/test when a Node server is configured.
+   * Set false to disable, true to enable explicitly, or configure enabled/port.
+   * Requires a running server provider; serverless runtimes do not start it.
+   */
+  playground?:
+    | boolean
+    | {
+        enabled?: boolean;
+        port?: number;
+        /** Override the API address for a server bound to a custom host or HTTPS. */
+        apiUrl?: string;
+      };
+
+  /**
    * Serverless provider factory function for fetch-based runtimes
    * Example: serverlessHono({ corsOrigin: '*' })
    */

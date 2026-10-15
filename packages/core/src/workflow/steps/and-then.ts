@@ -51,16 +51,23 @@ export function andThen<
     resumeSchema,
     originalExecute: execute, // ✅ Store original function for serialization
     execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
+      const validatedContext = inputSchema
+        ? { ...context, data: (await inputSchema.parseAsync(context.data)) as DATA }
+        : context;
+      const run = async () => {
+        const result = await execute(validatedContext);
+        return outputSchema ? await outputSchema.parseAsync(result) : result;
+      };
       const { state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
-        return await execute(context);
+        return await run();
       }
 
       // Step events removed - now handled by OpenTelemetry spans
 
       try {
-        const result = await execute(context);
+        const result = await run();
 
         // Step events removed - now handled by OpenTelemetry spans
 

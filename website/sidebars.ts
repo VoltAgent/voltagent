@@ -310,6 +310,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "observability/overview",
         "observability/developer-console",
+        "observability/local-playground",
         "observability/logging",
         "observability/langfuse",
         "observability/mlflow",

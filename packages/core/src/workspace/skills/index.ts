@@ -1,4 +1,4 @@
-import type { AttributeValue, Span } from "@opentelemetry/api";
+import type { AttributeValue } from "@opentelemetry/api";
 import { safeStringify } from "@voltagent/internal";
 import matter from "gray-matter";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
 import { randomUUID } from "../../utils/id";
+import { getToolSpan } from "../../utils/tool-span";
 import type { WorkspaceFilesystem, WorkspaceFilesystemCallContext } from "../filesystem";
 import { WorkspaceBm25Index, tokenizeSearchText } from "../search/bm25";
 import { withOperationTimeout } from "../timeout";
@@ -230,7 +231,7 @@ const setWorkspaceSpanAttributes = (
   operationContext: OperationContext,
   attributes: Record<string, unknown>,
 ): void => {
-  const toolSpan = operationContext.systemContext.get("parentToolSpan") as Span | undefined;
+  const toolSpan = getToolSpan(operationContext);
   if (!toolSpan) {
     return;
   }

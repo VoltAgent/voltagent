@@ -10,6 +10,7 @@ If you are still on 1.x, follow the **Migration guide: 1.x → 2.x** section fir
 ## What changed
 
 - Runtime: Node.js `>=22` is required.
+- Local playground: a configured Node server now also starts an account-free UI on loopback port `3142` outside production/test. Set `playground: false` to retain API-only startup.
 - Module format: VoltAgent 3.x is ESM-only. CommonJS `require("@voltagent/core")` is no longer supported.
 - AI SDK: `ai` moves to `^7`.
 - AI SDK provider packages need v7-compatible majors, for example `@ai-sdk/openai@^4`.
@@ -808,7 +809,53 @@ expect(result.stream).toBeDefined();
 
 Use `result.output` for structured output assertions instead of `result.experimental_output`.
 
+## Local playground startup
+
+A Node server configured through `new VoltAgent()` now also starts the local playground on `http://localhost:3142` in development. The API keeps its existing port and routes.
+
+```ts
+new VoltAgent({
+  agents: { assistant },
+  server: honoServer({ port: 3141 }),
+  playground: { enabled: true, port: 3142 },
+});
+```
+
+Use `playground: false` or `{ enabled: false }` to disable it. Omitted configuration defaults off when `NODE_ENV` is `production` or `test`; explicit `true` or an options object enables it. Serverless providers do not start the UI. If port `3142` is busy, only playground startup fails and the API remains running. Each simultaneously running project should use a different playground port.
+
+`stopPlayground()` leaves the API running; `startPlayground()` starts it again. `stopServer()` and `shutdown()` stop both listeners. UI settings and chat copies stay in browser storage; traces continue to use your configured observability adapter. See [Local Playground](../observability/local-playground.md) for usage and limitations.
+
+The playground’s live traces/logs use the existing observability WebSocket endpoint, with HTTP polling as a fallback. A custom proxy should forward WebSocket upgrades. Chat reconnection is opt-in in run settings and still requires a server resumable-stream adapter; adding the playground does not configure one. The new tool tests and workspace explorer use existing API endpoints and require no application migration.
+
+Console-style execution cards and the local SpanDetailsAI inspector also use existing trace attributes. No application changes are needed for message views, instructions/context, token details, or memory/guardrail diffs; fields appear when recorded. The inspector does not require a VoltOps account. See [SpanDetailsAI](../observability/local-playground.md#spandetailsai) for supported details and data availability.
+
+The playground distinguishes pending approvals and client results from completed requests using local conversation state. Retry/fallback explanations, iteration labels, collapsible groups, run comparisons and local debug exports require no API migration. Replay controls select top-level steps and preview the rerun scope. Reload existing tabs once to load this UI; subsequent builds display an update notice. The header’s **Refresh API data** button does not reload frontend code. The simplified layout keeps Structure focused on code configuration and execution statuses in Execution. Workflow **New run** opens a separate draft; **Back to result** preserves the previous run. Detailed cards, step search, history filters and compare/export remain available through their controls. These layout changes require no application or API migration.
+
+Playground navigation exposes **Chat/Run**, **Result**, and **Tests**; Memory, Tools, Workspace and API remain under **Utilities**. Selecting a historical run opens its recorded result. **Run again** prepares a fresh execution and keeps the previous output as its comparison baseline; **Result → Compare runs** opens the comparison. **Steps** replaces the separate step strip, finder and overview list. **View** collects layout, logs, detailed cards, framing and previous-run visibility. Replay moves from every workflow card into the selected step's inspector. Continued runs label timing as **this segment**, with previous-run and lifecycle details available through a collapsed link. Successful results omit empty diagnostic sections, and passing test checks start collapsed; failed, pending or unavailable checks remain expanded. Checks support execution status, output text and recorded tool calls. Existing cases, names, pins and baselines continue to work. Names, pins and debug export are under **Result → Compare runs → Organize & export**. Reruns do not restore server memory, external state or historical code. No application or API migration is required. Reload the UI to pick up the layout. See [test cases](../observability/local-playground.md#save-and-repeat-test-cases).
+
+Playground cards now expose type-specific facts and expandable input/output by default. Model titles use the recorded model name; call order and retry attempts remain separate. **View → Extra metadata** adds secondary metadata. Wider cards use a new browser-local position layout; old saved positions are left in storage but are not applied to this layout. Historical traces remain unchanged, and missing per-call usage is not filled from agent totals. No API or application changes are required.
+
+Playground readability updates require no API migration. **Overview** uses concise summaries; selecting a step restores the full card at readable zoom. Completed runs start at the beginning, while failures and waiting operations retain targeted focus. **Steps** includes query/input previews and model call numbers. The inspector opens Input and Output, expands small JSON results, and keeps configuration/telemetry below; full messages, schemas and IDs remain accessible. Model cards prioritize the latest request message and outcome. Usage labels distinguish run/agent totals, individual calls and context estimates. Recent runs show status, duration and tool count instead of repeating similar response previews. Reload the frontend to pick up these changes; stored traces, cases, pins and detailed-card positions are preserved.
+
+The local playground also adds read-only Memory browsing, API usage examples/OpenAPI inspection, local Monaco JSON editing, panel resizing, trace/span links, inline subagent output and richer middleware/scorer/workflow cards. These consume existing local APIs and attributes; no change to agent calls or context is required. Presentation cards do not become telemetry spans.
+
+Workspace operations and PlanAgent filesystem tools now record metadata on each call's tool span, including parallel calls. Update core to populate workspace event categories and details in new traces; previously recorded traces are unchanged. No application changes are required.
+
+Voice is optional: configure an agent's `voice` provider to enable dictation, speech playback and turn-based voice conversation. Updated Hono/server-core packages add `/agents/:id/voice/{listener,voices,listen,speak}` routes under the existing agent authentication rules. No voice provider is created automatically. Custom server providers need equivalent routes to enable these controls. See [Voice in the playground](../observability/local-playground.md#voice) for limits and behavior.
+
 ## Step 12. Validate the migration
+
+### Workflow runtime corrections
+
+Workflow Zod input schemas now parse fresh-run input before executing steps. Defaults, coercions and transforms take effect; invalid input produces an error execution. `andThen` input/output schemas also parse at runtime, including steps inside parallel branches. Normal workflow completion parses the configured result schema. Resume checkpoints are not re-parsed as fresh input; early `bail` exits retain their existing output behavior.
+
+Review schemas that were previously used only for TypeScript inference. Zod object parsing removes unknown keys by default: declare fields that must survive, or use `z.looseObject(...)` when extra fields are intentional. A workflow with `input: z.object({ value: z.number().default(2) })` now receives `value: 2` for `{}`. A step returning a string against a boolean output schema now fails visibly. Check `status`/`error` on execution results; streamed validation failures are reported in workflow error events.
+
+`andRace` now proceeds as soon as the first branch settles and signals cancellation to losing branches. Pass `state.signal` into cancellable I/O or check it in long tasks; JavaScript work that ignores the signal may continue in the background. A first-settling rejection still fails the race. Use `andAll` when every branch must finish.
+
+Nested workflows use their own execution ID and fail the parent step when the child does not complete successfully. Code that assumed a shared parent/child execution ID should use conversation IDs and trace relationships for correlation. This does not add transparent nested suspension/resumption.
+
+The local playground scenario lab exercises these paths without provider credentials; see [Local Playground](../observability/local-playground.md#develop-the-playground-in-this-repository).
 
 Run your normal checks after the package and code changes:
 
@@ -1721,3 +1768,9 @@ If you previously relied on core’s internal server exports (custom endpoints, 
 
 - Node >= 20 is recommended/required for 1.x deployments.
 - TypeScript 5.x recommended (repo uses 5.9). Typical `tsconfig` basics: `moduleResolution` matching your toolchain (NodeNext/Bundler), `skipLibCheck: true`, and DOM libs only if needed.
+
+### Playground diagnostics and suspended cancellation
+
+Conversation summarization now passes its system prompt through AI SDK 7’s `instructions` option. No configuration change is required. Invalid tool inputs produce a `tool-validation` span with `tool.executed=false`; dashboards counting executed tools should count `tool` spans rather than every span with `tool.name`. Non-matching `andBranch` branches now produce skipped spans with a recorded reason; workflow results are unchanged.
+
+The workflow cancel API now persists cancellation for suspended executions, including when no in-memory controller remains. Such executions can no longer resume. Their earlier trace spans retain the historical checkpoint state; the local playground also reads the persisted execution state. Context validation errors now include field paths in the message; rely on the `INVALID_CONTEXT` code rather than matching the full error text.

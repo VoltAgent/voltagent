@@ -760,6 +760,52 @@ export async function handleCancelWorkflow(
       };
     }
 
+    // A suspended executor has already returned; cancelling its controller alone
+    // cannot persist a terminal state. This also works after a server restart.
+    const memory = deps.workflowRegistry.getWorkflow(body?.__workflowId ?? "")?.workflow.memory;
+    const stored = await memory?.getWorkflowState(executionId);
+    if (stored?.status === "cancelled") {
+      return { success: true, data: { executionId, status: "cancelled", ...stored.cancellation } };
+    }
+    if (stored?.status === "suspended" && memory) {
+      const cancelledAt = new Date();
+      const cancellationReason = reason || "API request";
+      await memory.updateWorkflowState(executionId, {
+        status: "cancelled",
+        cancellation: { cancelledAt, reason: cancellationReason },
+        updatedAt: cancelledAt,
+        metadata: { ...stored.metadata, cancellationReason },
+        events: [
+          ...(stored.events ?? []),
+          {
+            id: crypto.randomUUID(),
+            type: "workflow-cancelled",
+            from: stored.workflowName,
+            startTime: cancelledAt.toISOString(),
+            status: "cancelled",
+            metadata: { reason: cancellationReason },
+          },
+        ],
+      });
+      const session = activeWorkflowStreamSessions.get(executionId);
+      if (session) {
+        broadcastWorkflowStreamEvent(session, {
+          type: "workflow-cancelled",
+          executionId,
+          status: "cancelled",
+          timestamp: cancelledAt.toISOString(),
+          metadata: { reason: cancellationReason },
+        });
+        closeWorkflowStreamSession(session);
+      }
+      deps.workflowRegistry.activeExecutions.get(executionId)?.cancel(cancellationReason);
+      deps.workflowRegistry.activeExecutions.delete(executionId);
+      return {
+        success: true,
+        data: { executionId, status: "cancelled", cancelledAt, reason: cancellationReason },
+      };
+    }
+
     const suspendController = deps.workflowRegistry.activeExecutions.get(executionId);
 
     if (!suspendController) {

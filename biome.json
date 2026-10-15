@@ -61,7 +61,8 @@
       ".wrangler",
       "packages/server-hono/src/vendor",
       "examples/with-nuxt",
-      "examples/with-assistant-ui"
+      "examples/with-assistant-ui",
+      "**/routeTree.gen.ts"
     ]
   },
   "overrides": [

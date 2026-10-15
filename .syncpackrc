@@ -2,6 +2,12 @@
   "dependencyTypes": ["prod", "dev"],
   "semverGroups": [
     {
+      "range": "",
+      "dependencies": ["@tanstack/react-start", "@tanstack/react-router"],
+      "packages": ["@voltagent/playground"],
+      "label": "Keep TanStack Start/Router compatible with the workspace Vite major."
+    },
+    {
       "range": "^",
       "dependencies": ["**"],
       "packages": ["@voltagent/*"]

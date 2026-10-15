@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import type { Span } from "@opentelemetry/api";
+import { describe, expect, it, vi } from "vitest";
 import { Workspace } from "../index";
 import { createWorkspaceFilesystemToolkit } from "./index";
 
@@ -17,6 +18,35 @@ const buildFileData = (content: string) => {
 };
 
 describe("Workspace filesystem toolkit", () => {
+  it("records each concurrent file operation on its own tool span, not the shared fallback", async () => {
+    const workspace = new Workspace({
+      id: "trace-test",
+      filesystem: { files: { "/a.txt": buildFileData("A"), "/b.txt": buildFileData("B") } },
+    });
+    const toolkit = createWorkspaceFilesystemToolkit({
+      filesystem: workspace.filesystem,
+      workspace: { id: workspace.id, scope: workspace.scope },
+    });
+    const read = toolkit.tools.find((tool) => tool.name === "read_file");
+    const shared = { setAttribute: vi.fn() };
+    const first = { setAttribute: vi.fn() };
+    const second = { setAttribute: vi.fn() };
+    const systemContext = new Map([["parentToolSpan", shared]]);
+    await Promise.all([
+      read?.execute?.(
+        { file_path: "/a.txt" },
+        { ...createExecuteOptions(), systemContext, parentToolSpan: first as unknown as Span },
+      ),
+      read?.execute?.(
+        { file_path: "/b.txt" },
+        { ...createExecuteOptions(), systemContext, parentToolSpan: second as unknown as Span },
+      ),
+    ]);
+    expect(first.setAttribute).toHaveBeenCalledWith("workspace.fs.path", "/a.txt");
+    expect(second.setAttribute).toHaveBeenCalledWith("workspace.fs.path", "/b.txt");
+    expect(shared.setAttribute).not.toHaveBeenCalled();
+  });
+
   it("supports list_tree, glob, grep, stat, mkdir, and rmdir", async () => {
     const workspace = new Workspace({
       filesystem: {

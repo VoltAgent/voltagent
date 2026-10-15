@@ -20,6 +20,7 @@ export * from "./a2a/types";
 
 // Export handlers
 export * from "./handlers/agent.handlers";
+export * from "./handlers/voice.handlers";
 export * from "./handlers/agent-additional.handlers";
 export * from "./handlers/workflow.handlers";
 export * from "./handlers/tool.handlers";

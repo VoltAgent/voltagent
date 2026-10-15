@@ -195,6 +195,7 @@ export class AgentTraceContext {
     name: string,
     type:
       | "tool"
+      | "tool-validation"
       | "memory"
       | "retriever"
       | "embedding"
@@ -232,6 +233,7 @@ export class AgentTraceContext {
     name: string,
     type:
       | "tool"
+      | "tool-validation"
       | "memory"
       | "retriever"
       | "embedding"

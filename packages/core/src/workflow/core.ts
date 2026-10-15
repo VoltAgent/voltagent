@@ -1011,13 +1011,16 @@ export function createWorkflow<
   // Set default schemas if not provided
   const effectiveSuspendSchema = suspendSchema || z.any();
   const effectiveResumeSchema = resumeSchema || z.any();
+  const workflowInputSchema = input;
+  const workflowResultSchema = result;
 
   // Internal execution function shared by both run and stream
   const executeInternal = async (
-    input: WorkflowInput<INPUT_SCHEMA>,
+    rawInput: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
     externalStreamController?: WorkflowStreamController | null,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+    let input = rawInput;
     const workflowRegistry = WorkflowRegistry.getInstance();
     const executionMemory = options?.memory ?? defaultMemory;
 
@@ -1074,7 +1077,10 @@ export function createWorkflow<
     }) => {
       // Emit to stream if available
       if (streamController) {
-        streamController.emit(event as any);
+        streamController.emit({
+          ...event,
+          ...(event.error !== undefined ? { error: serializeStepError(event.error) } : {}),
+        } as any);
       }
 
       // Collect for persistence (convert to storage format)
@@ -1088,7 +1094,13 @@ export function createWorkflow<
         status: event.status,
         input: event.input,
         output: event.output,
-        metadata: event.metadata,
+        metadata:
+          event.error === undefined
+            ? event.metadata
+            : {
+                ...event.metadata,
+                error: serializeStepError(event.error),
+              },
         context: event.context as Record<string, unknown> | undefined,
       };
       collectedEvents.push(collectedEvent);
@@ -1183,6 +1195,7 @@ export function createWorkflow<
       context: contextMap,
       resumedFrom,
       replayedFrom,
+      parentSpan: options?.parentSpan,
     });
 
     // Wrap entire execution in root span
@@ -1407,6 +1420,15 @@ export function createWorkflow<
       >();
 
       // Enhanced state with workflow context
+      let inputValidationError: unknown;
+      if (!options?.resumeFrom && workflowInputSchema instanceof z.ZodType) {
+        try {
+          input = (await workflowInputSchema.parseAsync(input)) as WorkflowInput<INPUT_SCHEMA>;
+          await executionMemory.updateWorkflowState(executionId, { input });
+        } catch (error) {
+          inputValidationError = error;
+        }
+      }
       if (options?.resumeFrom?.executionId) {
         // When resuming, use the existing execution ID
         stateManager.start(input, {
@@ -1761,6 +1783,7 @@ export function createWorkflow<
       };
 
       try {
+        if (inputValidationError) throw inputValidationError;
         if (workflowGuardrailRuntime && guardrailSets.input.length > 0) {
           if (!isWorkflowGuardrailInput(input)) {
             throw new Error(
@@ -2519,8 +2542,9 @@ export function createWorkflow<
           });
         }
 
-        const finalResult = (stateManager.state.result ??
-          stateManager.state.data) as z.infer<RESULT_SCHEMA>;
+        const finalResult = await workflowResultSchema.parseAsync(
+          stateManager.state.result ?? stateManager.state.data,
+        );
         return completeSuccessfulExecution(finalResult);
       } catch (error) {
         // Check if this is a cancellation or suspension, not an error

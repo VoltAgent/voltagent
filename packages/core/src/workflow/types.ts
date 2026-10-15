@@ -1,3 +1,4 @@
+import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { StreamTextResult, UIMessage } from "ai";
@@ -292,6 +293,8 @@ export type WorkflowStateUpdater =
   | ((previous: WorkflowStateStore) => WorkflowStateStore);
 
 export interface WorkflowRunOptions {
+  /** @internal Parent operation when a workflow is executed as a nested step. */
+  parentSpan?: Span;
   /**
    * The active step, this can be used to track the current step in a workflow
    * @default 0

@@ -28,10 +28,6 @@ export function andBranch<INPUT, DATA, RESULT>({
 
       const results = await Promise.all(
         branches.map(async (branch, index) => {
-          if (!conditionResults[index]) {
-            return undefined;
-          }
-
           throwIfAborted(state.signal);
 
           const finalStep = matchStep(branch.step);
@@ -48,10 +44,20 @@ export function andBranch<INPUT, DATA, RESULT>({
                 input: context.data,
                 attributes: {
                   "workflow.step.branch": true,
+                  "workflow.step.condition_met": Boolean(conditionResults[index]),
                   "workflow.step.parent_type": "branch",
                 },
               },
             );
+          }
+
+          if (!conditionResults[index]) {
+            if (childSpan && traceContext) {
+              traceContext.endStepSpan(childSpan, "skipped", {
+                skippedReason: "Branch condition not met",
+              });
+            }
+            return undefined;
           }
 
           const subState = {

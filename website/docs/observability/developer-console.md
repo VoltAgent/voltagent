@@ -7,6 +7,8 @@ The VoltAgent VoltOps Platform is a web-based tool designed to help you observe 
 
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
+For an account-free UI bundled with your local project, see the [Local Playground](./local-playground.md). It runs on its own port and can be controlled through `new VoltAgent({ playground: ... })`.
+
 ### Accessing the Console
 
 You can access the hosted VoltOps Platform at:

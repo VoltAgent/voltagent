@@ -2,6 +2,8 @@
 
 > Validate your data at every step. Catch errors early, not in production.
 
+Fresh runs parse the workflow input schema, function steps parse their `inputSchema`/`outputSchema`, and normal completion parses the result schema. Defaults and transforms are applied, including in parallel branches. Invalid data produces an execution with `status: "error"`; inspect `error` or the streamed workflow error event. Zod object schemas strip undeclared keys by default; use `z.looseObject` when those keys should be preserved. Resume checkpoints and early `bail` outputs retain their existing behavior.
+
 ## What are Schemas?
 
 A schema is a blueprint for your data. It defines what shape your data should have.

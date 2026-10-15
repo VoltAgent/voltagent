@@ -4,7 +4,8 @@ import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
 /**
  * Creates an async function step for the workflow
  *
- * EXPERIMENTAL: This step is experimental and doesn't directly hook into or support the Observability
+ * Child runs use their own execution identity and nest under the current step's trace span.
+ * Suspended child runs do not automatically suspend/resume their parent.
  *
  * @example
  * ```ts
@@ -43,14 +44,18 @@ export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA
     name: workflow.name,
     purpose: workflow.purpose,
     execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
-      const { result } = await workflow.run(context.data, {
-        active: context.state.active,
-        executionId: context.state.executionId,
+      const execution = await workflow.run(context.data, {
         conversationId: context.state.conversationId,
         userId: context.state.userId,
         context: context.state.context,
+        parentSpan: context.state.workflowContext?.currentStepSpan,
       });
-      return result;
+      if (execution.status !== "completed") {
+        throw execution.error instanceof Error
+          ? execution.error
+          : new Error(`Nested workflow ${workflow.id} ${execution.status}`);
+      }
+      return execution.result;
     },
   } as WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
 }

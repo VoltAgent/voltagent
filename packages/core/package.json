@@ -35,6 +35,7 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@voltagent/internal": "^2.0.0-next.0",
+    "@voltagent/playground": "^1.0.0-next.0",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "micromatch": "^4.0.8",

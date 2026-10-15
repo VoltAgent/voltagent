@@ -12,12 +12,16 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "vitest": "^3.2.4"
   },
   "private": true,
   "scripts": {
     "build": "echo \"No build step for @voltagent/e2e\"",
     "lint": "biome check .",
+    "playground:smoke": "tsx fixtures/local-playground.ts",
+    "playground:test": "vitest run --config vitest.playground.config.mts",
+    "playground:typecheck": "tsc -p fixtures/playground/tsconfig.json",
     "test": "sh -c 'docker compose -f ../postgres/docker-compose.test.yaml up -d && vitest run --config vitest.config.mts; status=$?; docker compose -f ../postgres/docker-compose.test.yaml down -v; exit $status'"
   },
   "type": "module"

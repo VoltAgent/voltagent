@@ -60,6 +60,7 @@ describe.sequential("andWorkflow", () => {
         result: z.object({
           processed: z.boolean(),
           workflow: z.string().nullable(),
+          count: z.number(),
         }),
         ...createTestStores(),
       },

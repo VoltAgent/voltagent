@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createMockWorkflowExecuteContext } from "../../test-utils";
 import { andBranch } from "./and-branch";
 import { andThen } from "./and-then";
@@ -69,6 +69,33 @@ describe("andBranch", () => {
     );
 
     expect(result).toEqual([undefined, undefined]);
+  });
+
+  it("records a skipped branch without executing its step", async () => {
+    const childSpan = {};
+    const traceContext = { createStepSpan: vi.fn(() => childSpan), endStepSpan: vi.fn() };
+    const execute = vi.fn();
+    const step = andBranch({
+      id: "choose-route",
+      branches: [{ condition: async () => false, step: andThen({ id: "unselected", execute }) }],
+    });
+    const context = createMockWorkflowExecuteContext({
+      data: {},
+      state: { workflowContext: { traceContext } } as any,
+    });
+    expect(await step.execute(context)).toEqual([undefined]);
+    expect(execute).not.toHaveBeenCalled();
+    expect(traceContext.createStepSpan).toHaveBeenCalledWith(
+      0,
+      "func",
+      "unselected",
+      expect.objectContaining({
+        attributes: expect.objectContaining({ "workflow.step.condition_met": false }),
+      }),
+    );
+    expect(traceContext.endStepSpan).toHaveBeenCalledWith(childSpan, "skipped", {
+      skippedReason: "Branch condition not met",
+    });
   });
 
   it("returns an empty array when no branches are provided", async () => {

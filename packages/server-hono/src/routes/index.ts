@@ -58,6 +58,7 @@ import {
   workspaceReadFileRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
+import { registerVoiceRoutes } from "./voice.routes";
 export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
 export { registerToolRoutes } from "./tool.routes";
@@ -72,6 +73,7 @@ export function registerAgentRoutes(
   deps: ServerProviderDeps,
   logger: Logger,
 ) {
+  registerVoiceRoutes(app, deps);
   // GET /agents - List all agents
   app.openapi(getAgentsRoute, async (c) => {
     const response = await handleGetAgents(deps, logger);

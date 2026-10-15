@@ -57,6 +57,7 @@ function createDeps(options?: {
     stream,
     memory: {
       getWorkflowState,
+      updateWorkflowState: vi.fn(),
       queryWorkflowRuns: vi.fn().mockResolvedValue([]),
     },
   };
@@ -382,5 +383,38 @@ describe("workflow stream attach handler", () => {
       releaseStream();
       await streamReader.cancel();
     },
+  );
+});
+
+it("persists cancellation of a suspended execution without an in-memory controller", async () => {
+  const { deps } = createDeps({
+    workflowState: {
+      id: "paused",
+      workflowId: "wf-1",
+      workflowName: "Example",
+      status: "suspended",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      events: [],
+      metadata: { retained: true },
+    },
+  });
+  const result = await handleCancelWorkflow(
+    "paused",
+    { __workflowId: "wf-1", reason: "Stop" },
+    deps,
+    createLogger(),
+  );
+  expect(result.success).toBe(true);
+  expect(
+    deps.workflowRegistry.getWorkflow("wf-1")?.workflow.memory.updateWorkflowState,
+  ).toHaveBeenCalledWith(
+    "paused",
+    expect.objectContaining({
+      status: "cancelled",
+      cancellation: { cancelledAt: expect.any(Date), reason: "Stop" },
+      metadata: { retained: true, cancellationReason: "Stop" },
+      events: [expect.objectContaining({ type: "workflow-cancelled", status: "cancelled" })],
+    }),
   );
 });

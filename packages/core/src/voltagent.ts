@@ -2,6 +2,7 @@ import type { Logger } from "@voltagent/internal";
 import type { A2AServerDeps, A2AServerFactory, A2AServerLike } from "@voltagent/internal/a2a";
 import type { MCPServerDeps, MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { PlaygroundServer } from "@voltagent/playground";
 import { NoOutputGeneratedError } from "ai";
 import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
@@ -34,6 +35,11 @@ export class VoltAgent {
   private registry: AgentRegistry;
   private workflowRegistry: WorkflowRegistry;
   private serverInstance?: IServerProvider;
+  private serverPort?: number;
+  private serverStartPromise?: Promise<void>;
+  private playgroundInstance?: PlaygroundServer;
+  private playgroundStartPromise?: Promise<string | undefined>;
+  private readonly playgroundOptions: { enabled: boolean; port: number; apiUrl?: string };
   private serverlessProvider?: IServerlessProvider;
   private logger: Logger;
   private observability?: VoltAgentObservability;
@@ -56,6 +62,20 @@ export class VoltAgent {
   public initError?: unknown;
   public degraded = false;
   constructor(options: VoltAgentOptions) {
+    const playground = typeof options.playground === "object" ? options.playground : undefined;
+    this.playgroundOptions = {
+      enabled:
+        typeof options.playground === "boolean"
+          ? options.playground
+          : (playground?.enabled ??
+            (playground
+              ? true
+              : typeof process !== "undefined" &&
+                process.env.NODE_ENV !== "production" &&
+                process.env.NODE_ENV !== "test")),
+      port: playground?.port ?? 3142,
+      apiUrl: playground?.apiUrl,
+    };
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
     this.triggerRegistry = TriggerRegistry.getInstance();
@@ -578,6 +598,7 @@ export class VoltAgent {
    * Start the server
    */
   public async startServer(): Promise<void> {
+    if (this.serverStartPromise) return this.serverStartPromise;
     if (!this.serverInstance) {
       this.logger.warn("No server provider configured");
       return;
@@ -588,21 +609,83 @@ export class VoltAgent {
       return;
     }
 
+    const server = this.serverInstance;
+    this.serverStartPromise = (async () => {
+      try {
+        const { port } = await server.start();
+        this.serverPort = port;
+        await this.startConfiguredMcpTransports();
+        if (this.playgroundOptions.enabled && !isServerlessRuntime()) {
+          try {
+            await this.startPlayground();
+          } catch (error) {
+            this.logger.warn("Local playground could not start; the API is still running", {
+              error,
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        throw error;
+      }
+    })();
     try {
-      await this.serverInstance.start();
-      await this.startConfiguredMcpTransports();
-    } catch (error) {
-      this.logger.error(
-        `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      throw error;
+      await this.serverStartPromise;
+    } finally {
+      this.serverStartPromise = undefined;
     }
+  }
+
+  /** Start the local playground independently of the API server. */
+  public async startPlayground(): Promise<string | undefined> {
+    if (this.playgroundStartPromise) return this.playgroundStartPromise;
+    if (this.playgroundInstance) return this.playgroundInstance.url;
+    if (
+      !this.serverInstance?.isRunning() ||
+      this.serverPort === undefined ||
+      isServerlessRuntime()
+    ) {
+      throw new Error("Start a Node server provider before starting the playground");
+    }
+    this.playgroundStartPromise = (async () => {
+      const { startPlaygroundServer } = await import("@voltagent/playground");
+      this.playgroundInstance = await startPlaygroundServer({
+        port: this.playgroundOptions.port,
+        apiUrl: this.playgroundOptions.apiUrl ?? `http://127.0.0.1:${this.serverPort}`,
+      });
+      this.logger.info(`Local playground: ${this.playgroundInstance.url}`);
+      return this.playgroundInstance.url;
+    })();
+    try {
+      return await this.playgroundStartPromise;
+    } finally {
+      this.playgroundStartPromise = undefined;
+    }
+  }
+
+  /** Stop only the playground, leaving the agent API running. */
+  public async stopPlayground(): Promise<void> {
+    // A caller may stop the UI while automatic API startup is still in flight.
+    await this.ready.catch(() => undefined);
+    await this.serverStartPromise?.catch(() => undefined);
+    await this.playgroundStartPromise?.catch(() => undefined);
+    const playground = this.playgroundInstance;
+    this.playgroundInstance = undefined;
+    await playground?.stop();
+  }
+
+  public getPlaygroundUrl(): string | undefined {
+    return this.playgroundInstance?.url;
   }
 
   /**
    * Stop the server
    */
   public async stopServer(): Promise<void> {
+    await this.serverStartPromise?.catch(() => undefined);
+    await this.stopPlayground();
     if (!this.serverInstance) {
       return;
     }
@@ -729,6 +812,8 @@ export class VoltAgent {
     this.logger.info("[VoltAgent] Starting graceful shutdown...");
 
     try {
+      await this.serverStartPromise?.catch(() => undefined);
+      await this.stopPlayground();
       // Stop the server first to prevent new requests
       if (this.serverInstance?.isRunning()) {
         this.logger.info("[VoltAgent] Stopping server...");

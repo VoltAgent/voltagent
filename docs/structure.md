@@ -29,6 +29,7 @@ Core packages, AI provider integrations, and utilities:
 - **langfuse-exporter** - LangFuse telemetry exporter
 - **libsql** - LibSQL database integration
 - **logger** - Universal logger implementation
+- **playground** - Bundled TanStack Start local playground and its independent loopback HTTP server.
 - **postgres** - PostgreSQL database integration
 - **sdk** - JavaScript/TypeScript SDK for VoltAgent API
 - **server-core** - Core server handlers, schemas, and business logic

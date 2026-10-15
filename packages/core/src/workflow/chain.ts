@@ -917,7 +917,10 @@ export class WorkflowChain<
   >({
     steps,
     ...config
-  }: WorkflowStepParallelRaceConfig<STEPS, CURRENT_DATA, NEW_DATA>): WorkflowChain<
+  }: Omit<
+    WorkflowStepParallelRaceConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+    "steps"
+  > & { steps: STEPS }): WorkflowChain<
     INPUT_SCHEMA,
     RESULT_SCHEMA,
     INFERRED_RESULT,

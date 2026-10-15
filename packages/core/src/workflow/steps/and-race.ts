@@ -71,176 +71,60 @@ export function andRace<
     type: "parallel-race",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
     execute: async (context) => {
+      if (steps.length === 0) throw new Error("andRace requires at least one step");
       const { data, state } = context;
-      // No workflow context, execute without events
-      if (!state.workflowContext) {
-        const promises = steps.map((step) => matchStep(step).execute(context));
-        return (await Promise.race(promises)) as INFERRED_RESULT;
-      }
-
-      // Step events removed - now handled by OpenTelemetry spans
-
-      try {
-        // Create child spans for parallel execution if traceContext is available
-        const traceContext = state.workflowContext?.traceContext;
-        const childSpans: Span[] = [];
-
-        if (traceContext) {
-          // Create a child span for each parallel step
-          steps.forEach((step, index) => {
-            const childSpan = traceContext.createStepSpan(
-              index,
-              "func", // Child steps in parallel-race are typically functions
-              step.name || step.id || `Race Step ${index + 1}`,
-              {
-                stepId: step.id,
-                parentStepId: config.id,
-                parallelIndex: index,
-                input: data,
-                attributes: {
-                  "workflow.step.parallel": true,
-                  "workflow.step.parent_type": "parallel-race",
-                },
-              },
-            );
-            childSpans.push(childSpan);
+      const traceContext = state.workflowContext?.traceContext;
+      const controllers = steps.map(() => new AbortController());
+      const childSpans: Array<Span | undefined> = steps.map((step, index) =>
+        traceContext?.createStepSpan(index, matchStep(step).type, step.name || step.id, {
+          stepId: step.id,
+          parentStepId: config.id,
+          parallelIndex: index,
+          input: data,
+          attributes: {
+            "workflow.step.parallel": true,
+            "workflow.step.parent_type": "parallel-race",
+          },
+        }),
+      );
+      // Every branch settles to a value, so late loser rejections are consumed.
+      const promises = steps.map(async (step, index) => {
+        const signal = state.signal
+          ? AbortSignal.any([state.signal, controllers[index].signal])
+          : controllers[index].signal;
+        const executeStep = () =>
+          matchStep(step).execute({
+            ...context,
+            state: { ...state, signal, workflowContext: undefined },
           });
+        try {
+          const span = childSpans[index];
+          const result =
+            span && traceContext
+              ? await traceContext.withSpan(span, executeStep)
+              : await executeStep();
+          return { index, success: true as const, result };
+        } catch (error) {
+          return { index, success: false as const, error };
         }
-
-        // Track which step wins the race with execution times
-        const stepPromises = steps.map(async (step, index) => {
-          const startTime = new Date();
-          const childSpan = childSpans[index];
-
-          // Step events removed - now handled by OpenTelemetry spans
-
-          const subState = {
-            ...state,
-            workflowContext: undefined, // ❌ Remove workflow context to prevent individual event publishing
-          };
-
-          // Execute within span context if available
-          const executeStep = async () => {
-            return matchStep(step).execute({ ...context, state: subState });
-          };
-
-          // Return promise with index and timing to track winner and execution times
-          return (
-            childSpan && traceContext
-              ? traceContext.withSpan(childSpan, executeStep)
-              : executeStep()
-          )
-            .then((result) => ({
-              result,
-              index,
-              success: true,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-              childSpan, // Keep reference to span for later ending
-            }))
-            .catch((error) => ({
-              error,
-              index,
-              success: false,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-              childSpan, // Keep reference to span for later ending
-            }));
-        });
-
-        // Wait for the first step to complete (winner)
-        const winner = await Promise.race(stepPromises);
-
-        // 🕐 Collect execution results from all steps for duration tracking
-        const allStepResults = await Promise.allSettled(stepPromises);
-        const stepTimings = allStepResults.map((result, index) => {
-          if (result.status === "fulfilled") {
-            return result.value;
-          }
-          // For rejected promises, create a timing entry with error info
-          return {
-            error: result.reason,
-            index,
-            success: false,
-            startTime: new Date().toISOString(), // Fallback timing
-            endTime: new Date().toISOString(),
-          };
-        });
-
-        // Handle winner result with proper type discrimination
-        let finalResult: INFERRED_RESULT;
-        if (winner.success) {
-          finalResult = (
-            winner as {
-              result: RESULT;
-              index: number;
-              success: boolean;
-              startTime: string;
-              endTime: string;
-            }
-          ).result as unknown as INFERRED_RESULT;
-        } else {
-          throw (
-            winner as {
-              error: any;
-              index: number;
-              success: boolean;
-              startTime: string;
-              endTime: string;
-            }
-          ).error;
+      });
+      const winner = await Promise.race(promises);
+      for (const [index, controller] of controllers.entries()) {
+        const span = childSpans[index];
+        if (index !== winner.index) {
+          controller.abort(new Error("Another step settled the race"));
+          if (span)
+            traceContext?.endStepSpan(span, "skipped", {
+              skippedReason: "Another step settled the race",
+            });
+        } else if (span) {
+          if (winner.success)
+            traceContext?.endStepSpan(span, "completed", { output: winner.result });
+          else traceContext?.endStepSpan(span, "error", { error: winner.error });
         }
-
-        // End child spans with appropriate status
-        if (traceContext) {
-          for (let i = 0; i < stepTimings.length; i++) {
-            const stepResult = stepTimings[i] as any;
-            const childSpan = stepResult?.childSpan;
-
-            if (childSpan) {
-              const isWinner = i === winner.index;
-
-              if (stepResult.success) {
-                if (isWinner) {
-                  // Winner span - mark as completed
-                  traceContext.endStepSpan(childSpan, "completed", {
-                    output: stepResult.result,
-                  });
-                } else {
-                  // Non-winner spans - mark as skipped
-                  traceContext.endStepSpan(childSpan, "skipped", {
-                    output: stepResult.result,
-                    skippedReason: "Another step won the race",
-                  });
-                }
-              } else {
-                // Error span
-                traceContext.endStepSpan(childSpan, "error", {
-                  error: stepResult.error,
-                });
-              }
-            }
-          }
-        }
-
-        // Step events removed - now handled by OpenTelemetry spans
-
-        return finalResult;
-      } catch (error) {
-        // Check if this is a suspension, not an error
-        if (
-          error instanceof Error &&
-          (error.message === "WORKFLOW_SUSPENDED" || error.message === "WORKFLOW_CANCELLED")
-        ) {
-          // For suspension, we don't publish an error event
-          // The workflow core will handle publishing the suspend event
-          throw error;
-        }
-
-        // Step events removed - now handled by OpenTelemetry spans
-
-        throw error;
       }
+      if (!winner.success) throw winner.error;
+      return winner.result as INFERRED_RESULT;
     },
   } satisfies WorkflowStepParallelRace<INPUT, DATA, INFERRED_RESULT>;
 }

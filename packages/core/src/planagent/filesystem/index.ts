@@ -1,4 +1,4 @@
-import type { AttributeValue, Span } from "@opentelemetry/api";
+import type { AttributeValue } from "@opentelemetry/api";
 import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import type { Agent } from "../../agent/agent";
@@ -8,6 +8,7 @@ import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
 import { randomUUID } from "../../utils/id";
+import { getToolSpan } from "../../utils/tool-span";
 import { loadPlanAgentState, updatePlanAgentState } from "../state";
 import type { PlanAgentFileData } from "../types";
 import type {
@@ -97,7 +98,7 @@ function setWorkspaceSpanAttributes(
   operationContext: OperationContext,
   attributes: Record<string, unknown>,
 ): void {
-  const toolSpan = operationContext.systemContext.get("parentToolSpan") as Span | undefined;
+  const toolSpan = getToolSpan(operationContext);
   if (!toolSpan) {
     return;
   }

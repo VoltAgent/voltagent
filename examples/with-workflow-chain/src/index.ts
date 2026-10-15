@@ -613,6 +613,7 @@ new VoltAgent({
   },
   logger,
   server: honoServer({ port: 3141 }),
+  playground: { enabled: true, port: 3142 },
   workflows: {
     orderProcessingWorkflow,
     expenseApprovalWorkflow,

@@ -124,16 +124,11 @@ export const applySummarization = async ({
       try {
         const summaryModel = config.model ?? model;
         const resolvedModel = await resolveModel(summaryModel, oc);
-        const summaryMessages: Array<{ role: "system" | "user"; content: string }> = [];
-        if (systemPrompt.trim()) {
-          summaryMessages.push({ role: "system" as const, content: systemPrompt });
-        }
-        summaryMessages.push({ role: "user" as const, content: summaryInput });
-
         const result = await oc.traceContext.withSpan(summarySpan, async () =>
           generateText({
             model: resolvedModel,
-            messages: summaryMessages,
+            instructions: systemPrompt.trim() || undefined,
+            prompt: summaryInput,
             temperature: 0,
             maxOutputTokens,
             abortSignal: oc.abortController?.signal,

@@ -328,8 +328,9 @@ export interface InternalWorkflow<_INPUT, DATA, RESULT>
     executionId: string;
     startAt: Date;
     endAt: Date;
-    status: "completed";
-    result: RESULT;
+    status: "completed" | "suspended" | "cancelled" | "error";
+    result: RESULT | null;
+    error?: unknown;
   }>;
 }
 

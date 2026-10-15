@@ -7,6 +7,50 @@ import { createWorkflow } from "./core";
 import { andThen } from "./steps";
 
 describe("workflow chain - type inference", () => {
+  it("accepts a workflow instance and preserves its result type", () => {
+    const schema = z.object({ value: z.number() });
+    const child = createWorkflowChain({ id: "child", name: "Child", input: schema, result: schema })
+      .andThen({ id: "child-step", execute: async ({ data }) => data })
+      .toWorkflow();
+    createWorkflowChain({ id: "parent", name: "Parent", input: schema, result: schema })
+      .andWorkflow(child)
+      .andThen({
+        id: "parent-step",
+        execute: async ({ data }) => {
+          expectTypeOf(data).toEqualTypeOf<{ value: number }>();
+          return data;
+        },
+      });
+  });
+  it("preserves the input and infers the union of race branch results", () => {
+    createWorkflowChain({
+      id: "race-types",
+      name: "Race type inference",
+      input: z.object({ value: z.number() }),
+      result: z.union([z.number(), z.string()]),
+    })
+      .andRace({
+        id: "race",
+        steps: [
+          andThen({
+            id: "number",
+            execute: async ({ data }: { data: { value: number } }) => data.value,
+          }),
+          andThen({
+            id: "string",
+            execute: async ({ data }: { data: { value: number } }) => String(data.value),
+          }),
+        ] as const,
+      })
+      .andThen({
+        id: "verify",
+        execute: async ({ data, state }) => {
+          expectTypeOf(data).toEqualTypeOf<number | string>();
+          expectTypeOf(state.input).toEqualTypeOf<{ value: number }>();
+          return data;
+        },
+      });
+  });
   // Mock agent for testing - we just need the type, not a real instance
   const mockAgent = {} as Agent;
 

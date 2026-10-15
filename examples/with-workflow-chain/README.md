@@ -45,6 +45,12 @@ Escape the limitations of no-code builders and the complexity of starting from s
 > [!TIP]
 > Looking for the **functional API**? See the [with-workflow](../with-workflow) example which uses `createWorkflow` with step functions passed as arguments.
 
+## Local playground
+
+After starting this example, open `http://localhost:3142`. Select a workflow, inspect its node graph and input schema, and run it with JSON input. The expense approval workflow demonstrates suspend/resume; provide its expected manager decision in **Resume data**. The agent API remains on port `3141`.
+
+The example configures `playground: { enabled: true, port: 3142 }` in `new VoltAgent()`. Set it to `false` to disable the UI or choose another port when running multiple projects. No Console login is needed; agent model calls still require your configured provider credentials.
+
 ## VoltAgent: Build AI Agents Fast and Flexibly
 
 VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.

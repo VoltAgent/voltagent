@@ -1,0 +1,26 @@
+{
+  "name": "voltagent-example-local-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test:live": "tsx scripts/smoke.ts",
+    "test:voice": "tsx scripts/voice-smoke.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.0",
+    "@voltagent/core": "^3.0.0-next.1",
+    "@voltagent/internal": "^2.0.0-next.0",
+    "@voltagent/server-hono": "^3.0.0-next.0",
+    "@voltagent/voice": "^3.0.0-next.0",
+    "ai": "^7.0.0",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2"
+  }
+}

@@ -39,6 +39,10 @@ High-performance server implementation using [Elysia](https://elysiajs.com/):
 - Built-in OpenAPI and Swagger UI support
 - Excellent developer experience with strict typing
 
+## Local Playground
+
+In development, `new VoltAgent({ server: honoServer() })` also starts the [local playground](../observability/local-playground.md) on loopback port `3142`. The API keeps its own port. Configure `playground: false` to disable it or `playground: { enabled: true, port: 4000 }` to choose a port. It defaults off in production/test and does not start for serverless providers.
+
 ## Core Concepts
 
 ### Server Provider Interface
