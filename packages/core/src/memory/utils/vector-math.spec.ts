@@ -16,7 +16,13 @@ describe("topKSimilar k validation", () => {
     expect(topKSimilar(query, targets, 0)).toEqual([]);
   });
 
-  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+  it.each([
+    -1,
+    1.5,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])(
     "rejects invalid k=%s instead of silently returning an arbitrary slice",
     (k) => {
       expect(() => topKSimilar(query, targets, k)).toThrow(RangeError);
