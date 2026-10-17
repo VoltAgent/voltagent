@@ -33,6 +33,9 @@ export function serializeValueForDebug(value: unknown): unknown {
   }
   if (type === "object") {
     if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) {
+        return "[Date: Invalid Date]";
+      }
       return `[Date: ${value.toISOString()}]`;
     }
     if (value instanceof RegExp) {
