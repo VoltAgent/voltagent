@@ -115,6 +115,10 @@ export function topKSimilar(
   targets: { id: string; vector: number[] }[],
   k: number,
 ): { id: string; score: number }[] {
+  if (!Number.isSafeInteger(k) || k < 0) {
+    throw new RangeError("k must be a non-negative safe integer");
+  }
+
   const similarities = targets.map((target) => ({
     id: target.id,
     score: cosineSimilarity(query, target.vector),
