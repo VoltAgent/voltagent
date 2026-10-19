@@ -19,8 +19,9 @@ export interface WorkflowExecutionContext {
    */
   executionId: string;
   /**
-   * Stable identity for the current step within this workflow execution.
-   * Use this as the base for idempotency keys around external side effects.
+   * Stable identity for the current top-level step within this workflow execution.
+   * Nested steps and andForEach iterations share the enclosing top-level identity.
+   * Add a stable nested-step or item discriminator when using it for idempotency keys.
    */
   stepExecutionId?: string;
   /**
