@@ -74,7 +74,7 @@ describe("MiniMax provider registry", () => {
 
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
-    const model = await registry.resolveLanguageModel("minimax/MiniMax-M2.7");
+    const model = await registry.resolveLanguageModel("minimax/MiniMax-M3.1-Flash");
 
     expect(model).toBeDefined();
     expect(createOpenAICompatibleCalls.length).toBeGreaterThan(0);
@@ -91,7 +91,7 @@ describe("MiniMax provider registry", () => {
 
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
-    const model = await registry.resolveLanguageModel("minimax-cn/MiniMax-M2.7");
+    const model = await registry.resolveLanguageModel("minimax-cn/MiniMax-M3.1-Flash");
 
     expect(model).toBeDefined();
 
@@ -115,7 +115,7 @@ describe("MiniMax provider registry", () => {
 
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
-    await registry.resolveLanguageModel("minimax/MiniMax-M2.7");
+    await registry.resolveLanguageModel("minimax/MiniMax-M3.1-Flash");
 
     const minimaxCall = createOpenAICompatibleCalls.find((call) => {
       const config = call[0] as Record<string, unknown>;
@@ -137,7 +137,7 @@ describe("MiniMax provider registry", () => {
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
 
-    await expect(registry.resolveLanguageModel("minimax/MiniMax-M2.7")).rejects.toThrow(
+    await expect(registry.resolveLanguageModel("minimax/MiniMax-M3.1-Flash")).rejects.toThrow(
       /MINIMAX_API_KEY/,
     );
   });
@@ -149,7 +149,9 @@ describe("MiniMax provider registry", () => {
     const registry = ModelProviderRegistry.getInstance();
 
     const modelIds = [
+      "MiniMax-M3.1-Flash",
       "MiniMax-M3",
+      "custom-model",
       "MiniMax-M2.7",
       "MiniMax-M2.7-highspeed",
       "MiniMax-M2.5",
@@ -169,7 +171,7 @@ describe("MiniMax provider registry", () => {
 
     const { ModelProviderRegistry } = await import("./model-provider-registry");
     const registry = ModelProviderRegistry.getInstance();
-    await registry.resolveLanguageModel("minimax/MiniMax-M2.7");
+    await registry.resolveLanguageModel("minimax/MiniMax-M3.1-Flash");
 
     // Anthropic adapter should NOT have been called for MiniMax
     expect(createAnthropicCalls.length).toBe(anthropicCallsBefore);

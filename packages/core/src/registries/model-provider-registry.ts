@@ -115,7 +115,14 @@ const buildTypesContent = (providerModels: Record<string, string[]>): string => 
   const providerLines = Object.entries(providerModels)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([providerId, models]) => {
-      const sorted = [...models].sort();
+      const sorted =
+        providerId === "minimax" || providerId === "minimax-cn"
+          ? [
+              "MiniMax-M3.1-Flash",
+              "MiniMax-M3",
+              ...models.filter((modelId) => !/^MiniMax-M\d/i.test(modelId)).sort(),
+            ]
+          : [...models].sort();
       const modelLines = sorted.map((modelId) => `    ${formatStringLiteral(modelId)},`);
       return `  readonly ${formatStringLiteral(providerId)}: readonly [\n${modelLines.join("\n")}\n  ];`;
     });

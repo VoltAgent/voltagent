@@ -34,8 +34,8 @@ const formatStringLiteral = (value) =>
   `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
 const PROVIDER_MODEL_OVERRIDES = {
-  minimax: ["MiniMax-M2.7"],
-  "minimax-cn": ["MiniMax-M2.7"],
+  minimax: ["MiniMax-M3.1-Flash", "MiniMax-M3"],
+  "minimax-cn": ["MiniMax-M3.1-Flash", "MiniMax-M3"],
 };
 
 async function fetchProviders() {
@@ -89,9 +89,11 @@ async function run() {
   }
 
   for (const [providerId, models] of Object.entries(PROVIDER_MODEL_OVERRIDES)) {
-    providerModels[providerId] = Array.from(
-      new Set([...(providerModels[providerId] || []), ...models].map(normalizeModelId)),
-    ).sort();
+    // Replace native text suggestions while retaining nontext catalog entries.
+    providerModels[providerId] = [
+      ...models,
+      ...(providerModels[providerId] || []).filter((modelId) => !/^MiniMax-M\d/i.test(modelId)),
+    ];
   }
 
   const registryContent = `${HEADER}
