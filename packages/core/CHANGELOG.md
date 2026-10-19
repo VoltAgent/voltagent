@@ -1,5 +1,27 @@
 # @voltagent/core
 
+## 2.11.0
+
+### Minor Changes
+
+- [#1423](https://github.com/VoltAgent/voltagent/pull/1423) [`316538a`](https://github.com/VoltAgent/voltagent/commit/316538a96860ee675931bbbf4f9dd1f6dec3937e) Thanks [@jiangjiang248](https://github.com/jiangjiang248)! - Allow custom workspace sandboxes to receive the original execute_command command and args by disabling toolkit command normalization. Fixes #1422.
+
+## 2.10.0
+
+### Minor Changes
+
+- [`9aedd49`](https://github.com/VoltAgent/voltagent/commit/9aedd4917795023a1ee17a29691f7a87865bdf2a) Thanks [@omeraplak](https://github.com/omeraplak)! - Add type-safe MCP annotations and metadata to tools and forward them through the MCP server adapter.
+
+### Patch Changes
+
+- [#1402](https://github.com/VoltAgent/voltagent/pull/1402) [`844939c`](https://github.com/VoltAgent/voltagent/commit/844939cd225ec21c9ba098ebdba748da24de97ec) Thanks [@Iams4kura](https://github.com/Iams4kura)! - Preserve JavaScript replacement tokens in simple template variable values.
+
+## 2.9.2
+
+### Patch Changes
+
+- [`d1dd2d9`](https://github.com/VoltAgent/voltagent/commit/d1dd2d9c4566beee0429d70e3fbb032c0351ceb6) Thanks [@omeraplak](https://github.com/omeraplak)! - Upgrade the official Model Context Protocol SDK to 1.30.0 and add stateless Streamable HTTP handling with `startHTTP`, `serverless`, and request-scoped streaming options.
+
 ## 2.9.1
 
 ### Patch Changes

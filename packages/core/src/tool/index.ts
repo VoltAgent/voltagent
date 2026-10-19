@@ -84,6 +84,32 @@ export type {
 export type AgentTool = BaseTool;
 
 /**
+ * MCP annotations that describe a tool's behavior to protocol clients.
+ *
+ * These values are hints and must not be treated as trusted authorization data.
+ */
+export interface MCPToolAnnotations {
+  /** Human-readable title used by MCP clients. */
+  title?: string;
+  /** Whether the tool only reads data and has no side effects. */
+  readOnlyHint?: boolean;
+  /** Whether the tool may perform destructive updates. */
+  destructiveHint?: boolean;
+  /** Whether repeated calls with the same arguments have no additional effect. */
+  idempotentHint?: boolean;
+  /** Whether the tool may interact with external entities. */
+  openWorldHint?: boolean;
+}
+
+/** MCP-specific properties forwarded when a tool is exposed through an MCP server. */
+export interface MCPToolProperties {
+  /** Standard MCP tool annotations. */
+  annotations?: MCPToolAnnotations;
+  /** Arbitrary metadata forwarded to MCP clients. */
+  _meta?: Record<string, unknown>;
+}
+
+/**
  * Block access to user-defined and dynamic tools by requiring provider-defined type
  * */
 export type ProviderTool = VercelTool & {
@@ -152,6 +178,12 @@ export type ToolOptions<
    * ```
    */
   providerOptions?: ProviderOptions;
+
+  /**
+   * MCP-specific annotations and metadata.
+   * Used when this tool is exposed through `@voltagent/mcp-server`.
+   */
+  mcp?: MCPToolProperties;
 
   /**
    * Optional function to convert tool output to multi-modal content.
@@ -238,6 +270,9 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    */
   readonly providerOptions?: ProviderOptions;
 
+  /** MCP-specific annotations and metadata. */
+  readonly mcp?: MCPToolProperties;
+
   /**
    * Optional function to convert tool output to multi-modal content.
    * Enables returning images, media, or structured content to the LLM.
@@ -299,6 +334,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     this.tags = options.tags;
     this.needsApproval = options.needsApproval;
     this.providerOptions = options.providerOptions;
+    this.mcp = options.mcp;
     this.toModelOutput = options.toModelOutput;
     this.execute = options.execute;
     this.hooks = options.hooks;

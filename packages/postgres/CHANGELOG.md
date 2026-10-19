@@ -1,5 +1,11 @@
 # @voltagent/postgres
 
+## 2.1.3
+
+### Patch Changes
+
+- [#1349](https://github.com/VoltAgent/voltagent/pull/1349) [`1c98550`](https://github.com/VoltAgent/voltagent/commit/1c98550d2e0e6784053c5c0cf55a475e011fbfa9) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 2.1.2
 
 ### Patch Changes
