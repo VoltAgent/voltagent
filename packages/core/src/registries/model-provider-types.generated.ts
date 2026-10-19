@@ -1426,7 +1426,8 @@ export type ProviderModelsMap = {
     "grok-code",
     "kimi-k2",
     "kimi-k2-thinking",
-    "minimax-m2.1-free",
+    "minimax-m3",
+    "minimax-m3.1-flash-free",
     "qwen3-coder",
   ];
   readonly openrouter: readonly [
@@ -1474,10 +1475,8 @@ export type ProviderModelsMap = {
     "meta-llama/llama-3.3-70b-instruct:free",
     "meta-llama/llama-4-scout:free",
     "microsoft/mai-ds-r1:free",
-    "minimax/minimax-01",
-    "minimax/minimax-m1",
-    "minimax/minimax-m2",
-    "minimax/minimax-m2.1",
+    "minimax/minimax-m3",
+    "minimax/minimax-m3.1-flash:free",
     "mistralai/codestral-2508",
     "mistralai/devstral-2512",
     "mistralai/devstral-2512:free",
