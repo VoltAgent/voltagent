@@ -1,5 +1,6 @@
 import type { Chunk, ChunkMetadataInput, Chunker, Tokenizer } from "../types";
 import { buildMetadata } from "../utils/metadata";
+import { buildLineMap, positionForRange } from "../utils/position";
 import { defaultTokenizer } from "../utils/tokenizer";
 import { SentenceChunker } from "./sentence-chunker";
 import { TokenChunker } from "./token-chunker";
@@ -35,6 +36,7 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
     const label = options?.label ?? "table";
 
     const lines = text.split("\n");
+    const lineMap = buildLineMap(text);
     const lineStarts: number[] = [];
     {
       let cursor = 0;
@@ -46,8 +48,9 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
 
     const chunks: Chunk[] = [];
     let buffer: string[] = [];
+    let bufferStart = 0;
 
-    const flushText = (raw: string) => {
+    const flushText = (raw: string, startChar: number) => {
       if (!raw.trim()) return;
       const sentenceChunks = this.sentenceChunker.chunk(raw, {
         maxTokens,
@@ -58,12 +61,17 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
         ...sentenceChunks.map((chunk, idx) => ({
           ...chunk,
           id: `${label}-text-${chunks.length + idx}`,
+          start: startChar + chunk.start,
+          end: startChar + chunk.end,
           metadata: {
             ...buildMetadata({
               format: "table",
               sourceType: "text",
               base: options,
-              extra: chunk.metadata,
+              extra: {
+                ...chunk.metadata,
+                ...positionForRange(startChar + chunk.start, startChar + chunk.end, lineMap),
+              },
             }),
           },
         })),
@@ -86,7 +94,10 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
             format: "table",
             sourceType: "table",
             base: options,
-            extra: { type: "table" },
+            extra: {
+              type: "table",
+              ...positionForRange(startChar, startChar + tableText.length, lineMap),
+            },
           }),
         });
         return;
@@ -102,11 +113,17 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
         ...rowChunks.map((chunk, idx) => ({
           ...chunk,
           id: `${label}-${chunks.length + idx}`,
+          start: startChar + chunk.start,
+          end: startChar + chunk.end,
           metadata: buildMetadata({
             format: "table",
             sourceType: "table",
             base: options,
-            extra: { type: "table", ...chunk.metadata },
+            extra: {
+              type: "table",
+              ...chunk.metadata,
+              ...positionForRange(startChar + chunk.start, startChar + chunk.end, lineMap),
+            },
           }),
         })),
       );
@@ -117,7 +134,7 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
       if (line === undefined) break;
       if (isTableLine(line)) {
         if (buffer.length) {
-          flushText(buffer.join("\n"));
+          flushText(buffer.join("\n"), bufferStart);
           buffer = [];
         }
         const tableLines: string[] = [];
@@ -132,12 +149,13 @@ export class TableChunker implements Chunker<TableChunkerOptions> {
         flushTable(tableLines, startPos);
         i = j - 1;
       } else {
+        if (buffer.length === 0) bufferStart = lineStarts[i] ?? 0;
         buffer.push(line);
       }
     }
 
     if (buffer.length) {
-      flushText(buffer.join("\n"));
+      flushText(buffer.join("\n"), bufferStart);
     }
 
     return chunks;
