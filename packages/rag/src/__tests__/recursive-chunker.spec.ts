@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { RecursiveChunker } from "../chunkers/recursive-chunker";
+import { whitespaceTokenizer } from "../utils/tokenizer";
 
 describe("RecursiveChunker", () => {
+  it.each([
+    "Alpha one. Beta two. Gamma three. Delta four.",
+    "Intro.\n\nAlpha one. Beta two. This sentence has enough words to need several token chunks. End.",
+  ])("assigns distinct IDs to expanded chunks for %s", (text) => {
+    const chunks = new RecursiveChunker(whitespaceTokenizer).chunk(text, { maxTokens: 4 });
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(new Set(chunks.map((chunk) => chunk.id)).size).toBe(chunks.length);
+  });
+
   it("splits long paragraphs then falls back to sentence/token chunking", () => {
     const text = [
       "Paragraph one short.",
