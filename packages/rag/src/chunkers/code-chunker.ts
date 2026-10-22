@@ -27,7 +27,7 @@ type Segment =
 
 function splitCodeAndText(text: string): Segment[] {
   const segments: Segment[] = [];
-  const codeFence = /```(\w+)?([\s\S]*?)```/g;
+  const codeFence = /```([^\s`]+)?([\s\S]*?)```/g;
   let lastIndex = 0;
 
   for (let match = codeFence.exec(text); match !== null; match = codeFence.exec(text)) {

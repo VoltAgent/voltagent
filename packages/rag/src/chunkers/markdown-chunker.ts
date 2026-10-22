@@ -51,7 +51,7 @@ function parseBlocks(markdown: string): MdBlock[] {
       continue;
     }
 
-    const codeFence = /^```(\w+)?\s*$/.exec(trimmed);
+    const codeFence = /^```([^\s`]+)?\s*$/.exec(trimmed);
     if (codeFence) {
       flushParagraph();
       const language = codeFence[1]?.trim();
