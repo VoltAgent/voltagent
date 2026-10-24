@@ -22,6 +22,12 @@ This example shows how to give a VoltAgent agent web search and page reading wit
    pnpm install
    ```
 
+   If you are running the example inside a clone of the VoltAgent repository, build the linked workspace packages before starting it:
+
+   ```bash
+   pnpm --filter "voltagent-example-with-firecrawl-search^..." build
+   ```
+
 2. **Configure environment variables**:
    Copy the example environment file and add your API keys:
 
