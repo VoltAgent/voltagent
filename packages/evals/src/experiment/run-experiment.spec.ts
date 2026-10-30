@@ -181,6 +181,72 @@ describe("runExperiment callback failures", () => {
       );
     }
 
+    it.each([new Error(`${callbackName} failed`), undefined, null])(
+      `propagates ${callbackName} failure %# without waiting for a stalled dataset`,
+      async (error) => {
+        const client = new FakeVoltOpsClient();
+        let releaseRead = () => {};
+        let markReadPending = () => {};
+        let markSourceClosed = () => {};
+        const readBlocked = new Promise<void>((resolve) => {
+          releaseRead = resolve;
+        });
+        const readPending = new Promise<void>((resolve) => {
+          markReadPending = resolve;
+        });
+        const sourceClosed = new Promise<void>((resolve) => {
+          markSourceClosed = resolve;
+        });
+        let processed = 0;
+        const experiment = createExperiment({
+          id: "stalled-dataset-callback-failure",
+          dataset: {
+            items: (async function* () {
+              try {
+                yield createDatasetItems()[0];
+                markReadPending();
+                await readBlocked;
+                yield createDatasetItems()[1];
+              } finally {
+                markSourceClosed();
+              }
+            })(),
+          },
+          runner: async () => {
+            processed += 1;
+            return { output: "response" };
+          },
+        });
+        const outcome = runExperiment(experiment, {
+          concurrency: 3,
+          voltOpsClient: client,
+          [callbackName]: async () => {
+            await readPending;
+            throw error;
+          },
+        }).then(
+          () => ({ status: "resolved" }),
+          (reason: unknown) => ({ status: "rejected", reason }),
+        );
+
+        try {
+          await readPending;
+          await setImmediate();
+          expect(await Promise.race([outcome, Promise.resolve({ status: "pending" })])).toEqual({
+            status: "rejected",
+            reason: error,
+          });
+          expect(client.failCalls).toHaveLength(1);
+          expect(client.completeCalls).toHaveLength(0);
+        } finally {
+          releaseRead();
+          await outcome;
+          await sourceClosed;
+        }
+        expect(processed).toBe(1);
+      },
+    );
+
     it(`retains ${callbackName} failures while awaiting the next dataset item`, async () => {
       const error = new Error(`${callbackName} failed`);
       const client = new FakeVoltOpsClient();
@@ -210,4 +276,41 @@ describe("runExperiment callback failures", () => {
       expect(client.completeCalls).toHaveLength(0);
     });
   }
+});
+
+describe("runExperiment concurrency", () => {
+  it("preserves bounded parallelism and ordered successful results", async () => {
+    let active = 0;
+    let maximumActive = 0;
+    let callbackCount = 0;
+    const progress: number[] = [];
+    const experiment = createExperiment({
+      id: "parallel-success",
+      dataset: { items: Array.from({ length: 6 }, (_, input) => ({ id: `item-${input}`, input })) },
+      runner: async ({ item }) => {
+        active += 1;
+        maximumActive = Math.max(maximumActive, active);
+        await setImmediate();
+        active -= 1;
+        return { output: item.input };
+      },
+    });
+    const result = await runExperiment(experiment, {
+      concurrency: 2,
+      onItem: async () => {
+        await setImmediate();
+        callbackCount += 1;
+      },
+      onProgress: ({ completed }) => {
+        progress.push(completed);
+      },
+    });
+
+    expect(maximumActive).toBe(2);
+    expect(result.items.map((item) => item.runner.output)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(result.summary.successCount).toBe(6);
+    expect(callbackCount).toBe(6);
+    expect(progress).toHaveLength(6);
+    expect(progress.at(-1)).toBe(6);
+  });
 });
