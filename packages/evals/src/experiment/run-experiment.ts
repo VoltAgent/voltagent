@@ -172,9 +172,14 @@ export async function runExperiment<
       })();
 
       active.add(task);
-      void task.finally(() => {
-        active.delete(task);
-      });
+      void task.then(
+        () => {
+          active.delete(task);
+        },
+        () => {
+          // Keep failed tasks until the scheduling loop observes their rejection.
+        },
+      );
 
       if (active.size >= concurrency) {
         await Promise.race(active);

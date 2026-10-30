@@ -1,3 +1,4 @@
+import { setImmediate } from "node:timers/promises";
 import { describe, expect, it } from "vitest";
 
 import { FakeVoltOpsClient } from "../test-utils/fake-voltops-client.js";
@@ -142,4 +143,71 @@ describe("runExperiment integration", () => {
     expect(result.summary.scorers.hede?.passRate).toBe(1);
     expect(result.summary.scorers).not.toHaveProperty("original-id");
   });
+});
+
+describe("runExperiment callback failures", () => {
+  for (const callbackName of ["onItem", "onProgress"] as const) {
+    for (const asynchronous of [false, true]) {
+      it.each([1, 3])(
+        `propagates ${asynchronous ? "async" : "sync"} ${callbackName} failures at concurrency %i`,
+        async (concurrency) => {
+          const error = new Error(`${callbackName} failed`);
+          const client = new FakeVoltOpsClient();
+          const experiment = createExperiment({
+            id: "callback-failure",
+            dataset: { items: createDatasetItems().slice(0, 1) },
+            runner: async () => ({ output: "response" }),
+          });
+          const callback = asynchronous
+            ? async () => {
+                throw error;
+              }
+            : () => {
+                throw error;
+              };
+
+          await expect(
+            runExperiment(experiment, {
+              concurrency,
+              voltOpsClient: client,
+              [callbackName]: callback,
+            }),
+          ).rejects.toBe(error);
+          await setImmediate();
+
+          expect(client.failCalls).toHaveLength(1);
+          expect(client.completeCalls).toHaveLength(0);
+        },
+      );
+    }
+
+    it(`retains ${callbackName} failures while awaiting the next dataset item`, async () => {
+      const error = new Error(`${callbackName} failed`);
+      const client = new FakeVoltOpsClient();
+      const experiment = createExperiment({
+        id: "streamed-callback-failure",
+        dataset: {
+          items: (async function* () {
+            yield createDatasetItems()[0];
+            await setImmediate();
+          })(),
+        },
+        runner: async () => ({ output: "response" }),
+      });
+
+      await expect(
+        runExperiment(experiment, {
+          concurrency: 3,
+          voltOpsClient: client,
+          [callbackName]: async () => {
+            throw error;
+          },
+        }),
+      ).rejects.toBe(error);
+      await setImmediate();
+
+      expect(client.failCalls).toHaveLength(1);
+      expect(client.completeCalls).toHaveLength(0);
+    });
+  }
 });
