@@ -314,3 +314,57 @@ describe("runExperiment concurrency", () => {
     expect(progress.at(-1)).toBe(6);
   });
 });
+
+describe("runExperiment dataset read failures", () => {
+  for (const readMode of ["synchronous", "asynchronous"] as const) {
+    for (const cleanupMode of ["rejecting", "stalled"] as const) {
+      it(`preserves a ${readMode} read error without ${cleanupMode} iterator cleanup`, async () => {
+        const readError = new Error("dataset read failed");
+        const cleanupError = new Error("dataset cleanup failed");
+        let cleanupCalls = 0;
+        let releaseCleanup = () => {};
+        const cleanupBlocked = new Promise<void>((resolve) => {
+          releaseCleanup = resolve;
+        });
+        const items: AsyncIterable<ReturnType<typeof createDatasetItems>[number]> = {
+          [Symbol.asyncIterator]: () => ({
+            next: () => {
+              if (readMode === "synchronous") throw readError;
+              return Promise.reject(readError);
+            },
+            return: async () => {
+              cleanupCalls += 1;
+              if (cleanupMode === "rejecting") throw cleanupError;
+              await cleanupBlocked;
+              return { done: true, value: undefined };
+            },
+          }),
+        };
+        const client = new FakeVoltOpsClient();
+        const experiment = createExperiment({
+          id: "dataset-read-failure",
+          dataset: { items },
+          runner: async () => ({ output: "unused" }),
+        });
+        const outcome = runExperiment(experiment, { voltOpsClient: client }).then(
+          () => ({ status: "resolved" }),
+          (error: unknown) => ({ status: "rejected", error }),
+        );
+        try {
+          await setImmediate();
+          expect(await Promise.race([outcome, Promise.resolve({ status: "pending" })])).toEqual({
+            status: "rejected",
+            error: readError,
+          });
+          // Like for-await-of, a rejected next() must not invoke return().
+          expect(cleanupCalls).toBe(0);
+          expect(client.failCalls).toHaveLength(1);
+          expect(client.completeCalls).toHaveLength(0);
+        } finally {
+          releaseCleanup();
+          await outcome;
+        }
+      });
+    }
+  }
+});

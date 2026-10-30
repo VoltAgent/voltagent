@@ -223,7 +223,16 @@ async function* observeTaskFailures<Item>(
 ): AsyncGenerator<Item> {
   const iterator = items[Symbol.asyncIterator]();
   let finished = false;
+  let readFailed = false;
   const failureReason = () => (failureSignal.reason as { error: unknown }).error;
+  const readNext = async () => {
+    try {
+      return await iterator.next();
+    } catch (error) {
+      readFailed = true;
+      throw error;
+    }
+  };
 
   try {
     while (true) {
@@ -237,7 +246,7 @@ async function* observeTaskFailures<Item>(
       });
       let next: IteratorResult<Item>;
       try {
-        next = await Promise.race([iterator.next(), failure]);
+        next = await Promise.race([readNext(), failure]);
       } finally {
         failureSignal.removeEventListener("abort", onFailure);
       }
@@ -251,7 +260,7 @@ async function* observeTaskFailures<Item>(
       yield next.value;
     }
   } finally {
-    if (!finished && iterator.return) {
+    if (!finished && !readFailed && iterator.return) {
       const closing = Promise.resolve().then(() => iterator.return?.());
       if (failureSignal.aborted) {
         // An async generator's return can wait for its pending next call. Request
