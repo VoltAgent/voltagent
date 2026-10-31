@@ -199,6 +199,31 @@ describe("in-memory persistence snapshots through Memory", () => {
     expect(restored?.context?.[0][1]).toBe(value);
   });
 
+  it.each(["g", "y"])("preserves context RegExp match positions with flag %s", async (flag) => {
+    const id = "regexp-context";
+    await memory.setWorkflowState(id, {
+      id,
+      workflowId: "workflow",
+      workflowName: "Test",
+      status: "running",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    });
+    const key = Symbol("pattern");
+    const pattern = new RegExp("a", flag);
+    pattern.lastIndex = 1;
+    await memory.updateWorkflowState(id, { context: [[key, pattern]] });
+    pattern.lastIndex = 0;
+
+    const restored = await memory.getWorkflowState(id);
+    const saved = restored?.context?.[0][1] as RegExp;
+    expect(restored?.context?.[0][0]).toBe(key);
+    expect(saved).toBeInstanceOf(RegExp);
+    expect(saved.lastIndex).toBe(1);
+    expect(saved.test("aa")).toBe(true);
+    expect(saved.lastIndex).toBe(2);
+  });
+
   it.each(["key", Symbol("key")])("snapshots workflow updates with context key %s", async (key) => {
     const state: WorkflowStateEntry = {
       id: "execution",

@@ -653,6 +653,9 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     if (Object.hasOwn(updates, "context")) {
       clonedUpdates.context = context?.map(([key, value]) => {
         const clonedValue = deepClone(value);
+        if (value instanceof RegExp && clonedValue instanceof RegExp) {
+          clonedValue.lastIndex = value.lastIndex;
+        }
         if (
           value !== null &&
           typeof value === "object" &&
