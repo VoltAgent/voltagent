@@ -651,7 +651,17 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     const { context, ...otherUpdates } = updates;
     const clonedUpdates: Partial<WorkflowStateEntry> = deepClone(otherUpdates);
     if (Object.hasOwn(updates, "context")) {
-      clonedUpdates.context = context?.map(([key, value]) => [key, deepClone(value)]);
+      clonedUpdates.context = context?.map(([key, value]) => {
+        const clonedValue = deepClone(value);
+        if (
+          value !== null &&
+          typeof value === "object" &&
+          Object.getPrototypeOf(value) !== Object.getPrototypeOf(clonedValue)
+        ) {
+          return [key, value];
+        }
+        return [key, clonedValue];
+      });
     }
 
     const updated: WorkflowStateEntry = {

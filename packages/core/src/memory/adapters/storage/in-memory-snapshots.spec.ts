@@ -166,6 +166,39 @@ describe("in-memory persistence snapshots through Memory", () => {
     });
   });
 
+  it.each([
+    ["Map with callback", new Map([["callback", () => "saved"]])],
+    ["array with callback", [() => "saved"]],
+    [
+      "service with callback",
+      new (class Service {
+        callback = () => "saved";
+      })(),
+    ],
+    [
+      "service with prototype method",
+      new (class Service {
+        read() {
+          return "saved";
+        }
+      })(),
+    ],
+  ])("preserves the type of context value %s", async (_name, value) => {
+    await memory.setWorkflowState("context-types", {
+      id: "context-types",
+      workflowId: "workflow",
+      workflowName: "Test",
+      status: "running",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    });
+    const key = Symbol("service");
+    await memory.updateWorkflowState("context-types", { context: [[key, value]] });
+    const restored = await memory.getWorkflowState("context-types");
+    expect(restored?.context?.[0][0]).toBe(key);
+    expect(restored?.context?.[0][1]).toBe(value);
+  });
+
   it.each(["key", Symbol("key")])("snapshots workflow updates with context key %s", async (key) => {
     const state: WorkflowStateEntry = {
       id: "execution",
