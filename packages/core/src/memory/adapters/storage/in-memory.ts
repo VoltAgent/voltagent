@@ -116,7 +116,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
     // Create stored message with metadata
     const storedMessage: StoredUIMessage = {
-      ...message,
+      ...deepClone(message),
       createdAt: new Date(),
       userId,
       conversationId,
@@ -212,7 +212,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     for (const step of steps) {
       const userSteps = this.getOrCreateUserSteps(step.userId);
       const conversationSteps = this.getOrCreateConversationSteps(userSteps, step.conversationId);
-      const record = { ...step };
+      const record = deepClone(step);
       const existingIndex = conversationSteps.findIndex((item) => item.id === step.id);
       if (existingIndex >= 0) {
         conversationSteps[existingIndex] = record;
@@ -246,12 +246,14 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       steps = steps.slice(steps.length - options.limit);
     }
 
-    return steps.map((step) => ({
-      ...step,
-      arguments: step.arguments ? { ...step.arguments } : step.arguments,
-      result: step.result ? { ...step.result } : step.result,
-      usage: step.usage ? { ...step.usage } : step.usage,
-    }));
+    return steps.map((step) =>
+      deepClone({
+        ...step,
+        arguments: step.arguments,
+        result: step.result,
+        usage: step.usage,
+      }),
+    );
   }
 
   /**
@@ -432,7 +434,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
     const updatedConversation: Conversation = {
       ...conversation,
-      ...updates,
+      ...deepClone(updates),
       updatedAt: new Date().toISOString(),
     };
 
@@ -648,7 +650,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
     const updated: WorkflowStateEntry = {
       ...existing,
-      ...updates,
+      ...deepClone(updates),
       updatedAt: new Date(),
     };
 
