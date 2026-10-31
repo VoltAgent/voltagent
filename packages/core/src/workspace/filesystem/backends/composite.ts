@@ -196,10 +196,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
           errors.push(raw);
         } else {
           allMatches.push(
-            ...raw.map((match) => ({
-              ...match,
-              path: routePrefix.slice(0, -1) + match.path,
-            })),
+            ...raw
+              .map((match) => ({
+                ...match,
+                path: routePrefix.slice(0, -1) + match.path,
+              }))
+              .filter((match) => this.getMountPrefix(match.path) === routePrefix),
           );
         }
         break;
@@ -211,7 +213,7 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       if (typeof rawDefault === "string") {
         errors.push(rawDefault);
       } else {
-        allMatches.push(...rawDefault);
+        allMatches.push(...rawDefault.filter((match) => this.getMountPrefix(match.path) === null));
       }
     }
 
@@ -227,10 +229,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       }
 
       allMatches.push(
-        ...raw.map((match) => ({
-          ...match,
-          path: routePrefix.slice(0, -1) + match.path,
-        })),
+        ...raw
+          .map((match) => ({
+            ...match,
+            path: routePrefix.slice(0, -1) + match.path,
+          }))
+          .filter((match) => this.getMountPrefix(match.path) === routePrefix),
       );
     }
 
@@ -262,10 +266,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
 
         matchedPrefix = routePrefix;
         results.push(
-          ...infos.map((info) => ({
-            ...info,
-            path: routePrefix.slice(0, -1) + info.path,
-          })),
+          ...infos
+            .map((info) => ({
+              ...info,
+              path: routePrefix.slice(0, -1) + info.path,
+            }))
+            .filter((info) => this.getMountPrefix(info.path) === routePrefix),
         );
         break;
       }
@@ -273,7 +279,7 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
 
     if (matchedPrefix === null) {
       const defaultInfos = await this.defaultBackend.globInfo(pattern, searchPrefix);
-      results.push(...defaultInfos);
+      results.push(...defaultInfos.filter((info) => this.getMountPrefix(info.path) === null));
     }
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
@@ -282,10 +288,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       }
       const infos = await backend.globInfo(pattern, "/");
       results.push(
-        ...infos.map((info) => ({
-          ...info,
-          path: routePrefix.slice(0, -1) + info.path,
-        })),
+        ...infos
+          .map((info) => ({
+            ...info,
+            path: routePrefix.slice(0, -1) + info.path,
+          }))
+          .filter((info) => this.getMountPrefix(info.path) === routePrefix),
       );
     }
 

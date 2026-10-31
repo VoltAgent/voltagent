@@ -38,7 +38,6 @@ const rootPaths = [
   "/notes/sub/deep.txt",
   "/notes2/local.txt",
   "/notes2/shared/team.txt",
-  "/notes20/default.txt",
   "/notes20/other.txt",
 ];
 
@@ -62,7 +61,6 @@ const cases: [string, string[]][] = [
       "/notes/sub/deep.txt",
       "/notes2/local.txt",
       "/notes2/shared/team.txt",
-      "/notes20/default.txt",
       "/notes20/other.txt",
     ],
   ],
@@ -99,6 +97,40 @@ for (const method of ["grep", "glob"] as const) {
         const expected = ["/notes/parent.txt", "/notes/shared/child.txt"];
         if (path === "/") expected.push("/root.txt");
         expect(results.map((result) => result.path).sort()).toEqual(expected);
+      },
+    );
+
+    it.each(["/", "/notes", "/notes/shared", "/notes/shared/nested"])(
+      "excludes shadowed files and duplicates when searching %s",
+      async (path) => {
+        const filesystem = new WorkspaceFilesystem({
+          backend: new CompositeFilesystemBackend(
+            createBackend(["/root.txt", "/notes/hidden-default.txt"]),
+            {
+              "/notes/": createBackend([
+                "/parent.txt",
+                "/shared/child.txt",
+                "/shared/hidden-parent.txt",
+              ]),
+              "/notes/shared/": createBackend(["/child.txt", "/nested/hidden-child.txt"]),
+              "/notes/shared/nested/": createBackend(["/deep.txt"]),
+            },
+          ),
+        });
+        const results =
+          method === "grep"
+            ? await filesystem.grepRaw("needle", { path })
+            : await filesystem.globInfo("**/*.txt", path);
+        if (typeof results === "string") throw new Error(results);
+        const visiblePaths = [
+          "/root.txt",
+          "/notes/parent.txt",
+          "/notes/shared/child.txt",
+          "/notes/shared/nested/deep.txt",
+        ];
+        expect(results.map((result) => result.path).sort()).toEqual(
+          visiblePaths.filter((file) => path === "/" || file.startsWith(`${path}/`)).sort(),
+        );
       },
     );
 
