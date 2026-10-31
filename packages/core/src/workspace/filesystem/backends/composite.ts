@@ -178,40 +178,45 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
   ): Promise<GrepMatch[] | string> {
     let searchPrefix: string;
     try {
-      searchPrefix = validatePath(path);
+      searchPrefix = validatePath(posixPath.normalize(validatePath(path).replace(/\\/g, "/")));
     } catch {
       return [];
     }
     const errors: string[] = [];
+    const allMatches: GrepMatch[] = [];
+    let matchedPrefix: string | null = null;
     for (const [routePrefix, backend] of this.sortedRoutes) {
       const prefix = routePrefix.replace(/\/$/, "");
       if (searchPrefix.startsWith(`${prefix}/`)) {
         const searchPath = searchPrefix.substring(prefix.length) || "/";
         const raw = await backend.grepRaw(pattern, searchPath, glob);
 
+        matchedPrefix = routePrefix;
         if (typeof raw === "string") {
           errors.push(raw);
-          continue;
+        } else {
+          allMatches.push(
+            ...raw.map((match) => ({
+              ...match,
+              path: routePrefix.slice(0, -1) + match.path,
+            })),
+          );
         }
-
-        return raw.map((match) => ({
-          ...match,
-          path: routePrefix.slice(0, -1) + match.path,
-        }));
+        break;
       }
     }
 
-    const allMatches: GrepMatch[] = [];
-    const rawDefault = await this.defaultBackend.grepRaw(pattern, path, glob);
-
-    if (typeof rawDefault === "string") {
-      errors.push(rawDefault);
-    } else {
-      allMatches.push(...rawDefault);
+    if (matchedPrefix === null) {
+      const rawDefault = await this.defaultBackend.grepRaw(pattern, searchPrefix, glob);
+      if (typeof rawDefault === "string") {
+        errors.push(rawDefault);
+      } else {
+        allMatches.push(...rawDefault);
+      }
     }
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
-      if (!routePrefix.startsWith(searchPrefix)) {
+      if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
       const raw = await backend.grepRaw(pattern, "/", glob);
@@ -241,11 +246,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
   async globInfo(pattern: string, path = "/"): Promise<FileInfo[]> {
     let searchPrefix: string;
     try {
-      searchPrefix = validatePath(path);
+      searchPrefix = validatePath(posixPath.normalize(validatePath(path).replace(/\\/g, "/")));
     } catch {
       return [];
     }
     const results: FileInfo[] = [];
+    let matchedPrefix: string | null = null;
 
     for (const [routePrefix, backend] of this.sortedRoutes) {
       const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
@@ -254,18 +260,24 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
         const searchPath = suffix ? `/${suffix}` : "/";
         const infos = await backend.globInfo(pattern, searchPath);
 
-        return infos.map((info) => ({
-          ...info,
-          path: routePrefix.slice(0, -1) + info.path,
-        }));
+        matchedPrefix = routePrefix;
+        results.push(
+          ...infos.map((info) => ({
+            ...info,
+            path: routePrefix.slice(0, -1) + info.path,
+          })),
+        );
+        break;
       }
     }
 
-    const defaultInfos = await this.defaultBackend.globInfo(pattern, path);
-    results.push(...defaultInfos);
+    if (matchedPrefix === null) {
+      const defaultInfos = await this.defaultBackend.globInfo(pattern, searchPrefix);
+      results.push(...defaultInfos);
+    }
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
-      if (!routePrefix.startsWith(searchPrefix)) {
+      if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
       const infos = await backend.globInfo(pattern, "/");

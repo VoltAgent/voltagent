@@ -1,20 +1,25 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CompositeFilesystemBackend,
   InMemoryFilesystemBackend,
+  NodeFilesystemBackend,
   WorkspaceFilesystem,
 } from "../index";
 
+const createBackend = (paths: string[]) =>
+  new InMemoryFilesystemBackend(
+    Object.fromEntries(
+      paths.map((path) => [
+        path,
+        { content: ["needle"], created_at: "2026-01-01", modified_at: "2026-01-01" },
+      ]),
+    ),
+  );
+
 async function createFilesystem(): Promise<WorkspaceFilesystem> {
-  const createBackend = (paths: string[]) =>
-    new InMemoryFilesystemBackend(
-      Object.fromEntries(
-        paths.map((path) => [
-          path,
-          { content: ["needle"], created_at: "2026-01-01", modified_at: "2026-01-01" },
-        ]),
-      ),
-    );
   const defaults = createBackend(["/notes2/local.txt", "/notes20/default.txt"]);
   const notes = createBackend(["/outside.txt", "/sub/deep.txt"]);
   const shared = createBackend(["/team.txt"]);
@@ -28,10 +33,24 @@ async function createFilesystem(): Promise<WorkspaceFilesystem> {
   });
 }
 
+const rootPaths = [
+  "/notes/outside.txt",
+  "/notes/sub/deep.txt",
+  "/notes2/local.txt",
+  "/notes2/shared/team.txt",
+  "/notes20/default.txt",
+  "/notes20/other.txt",
+];
+
 const cases: [string, string[]][] = [
   ["/notes2", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
   ["/notes2/", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
   ["notes2", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
+  [".", rootPaths],
+  ["notes/../notes2", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
+  ["notes\\..\\notes2", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
+  ["/notes2/./", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
+  ["//notes2//", ["/notes2/local.txt", "/notes2/shared/team.txt"]],
   ["   ", []],
   ["/missing", []],
   ["/notes", ["/notes/outside.txt", "/notes/sub/deep.txt"]],
@@ -57,11 +76,58 @@ for (const method of ["grep", "glob"] as const) {
         method === "grep"
           ? await filesystem.grepRaw("needle", { path })
           : await filesystem.globInfo("**/*.txt", path);
-      expect(results).toBeInstanceOf(Array);
       if (typeof results === "string") {
         throw new Error(results);
       }
+      expect(results).toBeInstanceOf(Array);
       expect(results.map((result) => result.path).sort()).toEqual(expected);
+    });
+    it.each(["/notes", "/notes/", "notes", "/"])(
+      "includes descendant mounts when searching %s",
+      async (path) => {
+        const filesystem = new WorkspaceFilesystem({
+          backend: new CompositeFilesystemBackend(createBackend(["/root.txt"]), {
+            "/notes/": createBackend(["/parent.txt"]),
+            "/notes/shared/": createBackend(["/child.txt"]),
+          }),
+        });
+        const results =
+          method === "grep"
+            ? await filesystem.grepRaw("needle", { path })
+            : await filesystem.globInfo("**/*.txt", path);
+        if (typeof results === "string") throw new Error(results);
+        const expected = ["/notes/parent.txt", "/notes/shared/child.txt"];
+        if (path === "/") expected.push("/root.txt");
+        expect(results.map((result) => result.path).sort()).toEqual(expected);
+      },
+    );
+
+    it("resolves dot segments before choosing a native backend", async () => {
+      const directory = await mkdtemp(join(tmpdir(), "voltagent-search-"));
+      try {
+        const defaults = join(directory, "default");
+        const notes = join(directory, "notes");
+        const other = join(directory, "other");
+        await mkdir(join(defaults, "other"), { recursive: true });
+        await mkdir(notes, { recursive: true });
+        await mkdir(other, { recursive: true });
+        await writeFile(join(defaults, "other", "expected.txt"), "needle");
+        await writeFile(join(other, "unrelated.txt"), "needle");
+        const filesystem = new WorkspaceFilesystem({
+          backend: new CompositeFilesystemBackend(
+            new NodeFilesystemBackend({ rootDir: defaults }),
+            { "/notes/": new NodeFilesystemBackend({ rootDir: notes, contained: false }) },
+          ),
+        });
+        const results =
+          method === "grep"
+            ? await filesystem.grepRaw("needle", { path: "notes/../other" })
+            : await filesystem.globInfo("**/*.txt", "notes/../other");
+        if (typeof results === "string") throw new Error(results);
+        expect(results.map((result) => result.path)).toEqual(["/other/expected.txt"]);
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
     });
   });
 }
