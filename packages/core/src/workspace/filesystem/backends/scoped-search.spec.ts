@@ -134,6 +134,36 @@ for (const method of ["grep", "glob"] as const) {
       },
     );
 
+    it.each([
+      ["/notes", "shared/*.txt", ["/notes/shared/child.txt"]],
+      ["/", "notes/shared/*.txt", ["/notes/shared/child.txt"]],
+      ["/notes", "*.txt", ["/notes/parent.txt"]],
+      [
+        "/notes",
+        "**/*.txt",
+        ["/notes/other/other.txt", "/notes/parent.txt", "/notes/shared/child.txt"],
+      ],
+      ["/notes", "{shared,other}/*.txt", ["/notes/other/other.txt", "/notes/shared/child.txt"]],
+      ["/notes", "shared/!(*.md)", ["/notes/shared/child.txt"]],
+    ] as [string, string, string[]][])(
+      "matches %s-relative glob %s across descendant mounts",
+      async (path, glob, expected) => {
+        const filesystem = new WorkspaceFilesystem({
+          backend: new CompositeFilesystemBackend(createBackend([]), {
+            "/notes/": createBackend(["/parent.txt"]),
+            "/notes/shared/": createBackend(["/child.txt", "/guide.md"]),
+            "/notes/other/": createBackend(["/other.txt"]),
+          }),
+        });
+        const results =
+          method === "grep"
+            ? await filesystem.grepRaw("needle", { path, glob })
+            : await filesystem.globInfo(glob, path);
+        if (typeof results === "string") throw new Error(results);
+        expect(results.map((result) => result.path).sort()).toEqual(expected);
+      },
+    );
+
     it("resolves dot segments before choosing a native backend", async () => {
       const directory = await mkdtemp(join(tmpdir(), "voltagent-search-"));
       try {
@@ -157,6 +187,21 @@ for (const method of ["grep", "glob"] as const) {
             : await filesystem.globInfo("**/*.txt", "notes/../other");
         if (typeof results === "string") throw new Error(results);
         expect(results.map((result) => result.path)).toEqual(["/other/expected.txt"]);
+        const mounted = new WorkspaceFilesystem({
+          backend: new CompositeFilesystemBackend(
+            new NodeFilesystemBackend({ rootDir: defaults }),
+            {
+              "/notes/": new NodeFilesystemBackend({ rootDir: notes }),
+              "/notes/shared/": new NodeFilesystemBackend({ rootDir: other }),
+            },
+          ),
+        });
+        const globResults =
+          method === "grep"
+            ? await mounted.grepRaw("needle", { path: "/notes", glob: "shared/*.txt" })
+            : await mounted.globInfo("shared/*.txt", "/notes");
+        if (typeof globResults === "string") throw new Error(globResults);
+        expect(globResults.map((result) => result.path)).toEqual(["/notes/shared/unrelated.txt"]);
       } finally {
         await rm(directory, { recursive: true, force: true });
       }

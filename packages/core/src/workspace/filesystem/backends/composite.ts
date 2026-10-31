@@ -1,4 +1,5 @@
 import { posix as posixPath } from "node:path";
+import micromatch from "micromatch";
 import { validatePath } from "../utils";
 import type {
   DeleteOptions,
@@ -221,7 +222,7 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
-      const raw = await backend.grepRaw(pattern, "/", glob);
+      const raw = await backend.grepRaw(pattern, "/", null);
 
       if (typeof raw === "string") {
         errors.push(raw);
@@ -234,7 +235,15 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
             ...match,
             path: routePrefix.slice(0, -1) + match.path,
           }))
-          .filter((match) => this.getMountPrefix(match.path) === routePrefix),
+          .filter(
+            (match) =>
+              this.getMountPrefix(match.path) === routePrefix &&
+              (!glob ||
+                micromatch.isMatch(match.path.substring(searchPrefix.length), glob, {
+                  dot: true,
+                  nobrace: false,
+                })),
+          ),
       );
     }
 
@@ -286,14 +295,21 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
-      const infos = await backend.globInfo(pattern, "/");
+      const infos = await backend.globInfo("**/*", "/");
       results.push(
         ...infos
           .map((info) => ({
             ...info,
             path: routePrefix.slice(0, -1) + info.path,
           }))
-          .filter((info) => this.getMountPrefix(info.path) === routePrefix),
+          .filter(
+            (info) =>
+              this.getMountPrefix(info.path) === routePrefix &&
+              micromatch.isMatch(info.path.substring(searchPrefix.length), pattern, {
+                dot: true,
+                nobrace: false,
+              }),
+          ),
       );
     }
 
