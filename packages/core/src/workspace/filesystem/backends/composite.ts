@@ -172,6 +172,98 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
   }
 
+  private getMountedGlob(
+    glob: string,
+    searchPrefix: string,
+    mountPrefix: string,
+  ): string | null | undefined {
+    const relativePrefix = mountPrefix.substring(searchPrefix.length);
+    if (!/[\\*?\[\]{}()!+@|]/.test(relativePrefix) && glob.startsWith(relativePrefix)) {
+      const relativeGlob = glob.substring(relativePrefix.length);
+      if (relativeGlob) return relativeGlob;
+    }
+    if (glob === "**" || (glob.startsWith("**/") && !glob.substring(3).includes("/"))) {
+      return glob;
+    }
+    if (!glob.includes("**") && /^[\w.*?-]+$/.test(glob)) {
+      return null;
+    }
+    return undefined;
+  }
+
+  private async grepBackend(
+    backend: FilesystemBackend,
+    pattern: string,
+    searchPath: string,
+    options: {
+      mountPrefix: string | null;
+      searchPrefix: string;
+      glob: string | null;
+      backendGlob: string | null | undefined;
+    },
+  ): Promise<GrepMatch[] | string> {
+    const { mountPrefix, searchPrefix, glob, backendGlob } = options;
+    const prefix = mountPrefix?.slice(0, -1) ?? "";
+    const backendScope = prefix + searchPath;
+    const hasChildMount = Object.keys(this.routes).some(
+      (route) => route !== mountPrefix && route.startsWith(backendScope),
+    );
+    if (backendGlob !== undefined && !hasChildMount) {
+      return backend.grepRaw(pattern, searchPath, backendGlob);
+    }
+
+    // Resolve visible files before a backend's grep match limit is applied.
+    const infos = await backend.globInfo(backendGlob ?? "**/*", searchPath);
+    const files = new Set<string>();
+    for (const info of infos) {
+      const mappedPath = prefix + info.path;
+      if (
+        !info.is_dir &&
+        mappedPath.startsWith(searchPrefix) &&
+        this.getMountPrefix(mappedPath) === mountPrefix &&
+        (!glob ||
+          micromatch.isMatch(mappedPath.substring(searchPrefix.length), glob, {
+            dot: true,
+            nobrace: false,
+          }))
+      ) {
+        const relative = info.path.substring(searchPath.length);
+        files.add(relative.replace(/([\\*?\[\]{}()!+@|,])/g, "\\$1"));
+      }
+    }
+    if (files.size === 0) {
+      const raw = await backend.grepRaw(pattern, searchPath, backendGlob ?? glob);
+      return typeof raw === "string" ? raw : [];
+    }
+
+    const matches: GrepMatch[] = [];
+    const errors: string[] = [];
+    let batch: string[] = [];
+    let length = 0;
+    const flush = async () => {
+      const queryGlob = batch.length === 1 ? batch[0] : `{${batch.join(",")}}`;
+      const raw = await backend.grepRaw(pattern, searchPath, queryGlob);
+      if (typeof raw === "string") errors.push(raw);
+      else matches.push(...raw);
+      batch = [];
+      length = 0;
+    };
+    for (const file of files) {
+      if (batch.length > 0 && (batch.length >= 64 || length + file.length > 8192)) {
+        await flush();
+      }
+      batch.push(file);
+      length += file.length + 1;
+    }
+    if (batch.length > 0) await flush();
+    return matches.length > 0 ? matches : (errors[0] ?? []);
+  }
+
+  /**
+   * Search visible virtual files before applying backend grep limits.
+   * Composite glob matching includes dotfiles; direct backend fast paths
+   * retain the backend's own dotfile policy.
+   */
   async grepRaw(
     pattern: string,
     path = "/",
@@ -190,7 +282,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       const prefix = routePrefix.replace(/\/$/, "");
       if (searchPrefix.startsWith(`${prefix}/`)) {
         const searchPath = searchPrefix.substring(prefix.length) || "/";
-        const raw = await backend.grepRaw(pattern, searchPath, glob);
+        const raw = await this.grepBackend(backend, pattern, searchPath, {
+          mountPrefix: routePrefix,
+          searchPrefix,
+          glob,
+          backendGlob: glob,
+        });
 
         matchedPrefix = routePrefix;
         if (typeof raw === "string") {
@@ -210,7 +307,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
 
     if (matchedPrefix === null) {
-      const rawDefault = await this.defaultBackend.grepRaw(pattern, searchPrefix, glob);
+      const rawDefault = await this.grepBackend(this.defaultBackend, pattern, searchPrefix, {
+        mountPrefix: null,
+        searchPrefix,
+        glob,
+        backendGlob: glob,
+      });
       if (typeof rawDefault === "string") {
         errors.push(rawDefault);
       } else {
@@ -222,7 +324,14 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
-      const raw = await backend.grepRaw(pattern, "/", null);
+      const backendGlob = glob ? this.getMountedGlob(glob, searchPrefix, routePrefix) : null;
+      if (glob && backendGlob === null) continue;
+      const raw = await this.grepBackend(backend, pattern, "/", {
+        mountPrefix: routePrefix,
+        searchPrefix,
+        glob,
+        backendGlob,
+      });
 
       if (typeof raw === "string") {
         errors.push(raw);
@@ -295,7 +404,9 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       if (routePrefix === matchedPrefix || !routePrefix.startsWith(searchPrefix)) {
         continue;
       }
-      const infos = await backend.globInfo("**/*", "/");
+      const backendGlob = this.getMountedGlob(pattern, searchPrefix, routePrefix);
+      if (backendGlob === null) continue;
+      const infos = await backend.globInfo(backendGlob ?? "**/*", "/");
       results.push(
         ...infos
           .map((info) => ({

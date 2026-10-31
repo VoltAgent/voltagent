@@ -202,9 +202,115 @@ for (const method of ["grep", "glob"] as const) {
             : await mounted.globInfo("shared/*.txt", "/notes");
         if (typeof globResults === "string") throw new Error(globResults);
         expect(globResults.map((result) => result.path)).toEqual(["/notes/shared/unrelated.txt"]);
+        await writeFile(join(other, "literal[1],{x}.txt"), "needle");
+        const complexResults =
+          method === "grep"
+            ? await mounted.grepRaw("needle", { path: "/notes", glob: "{shared,other}/*.txt" })
+            : await mounted.globInfo("{shared,other}/*.txt", "/notes");
+        if (typeof complexResults === "string") throw new Error(complexResults);
+        expect(complexResults.map((result) => result.path).sort()).toEqual([
+          "/notes/shared/literal[1],{x}.txt",
+          "/notes/shared/unrelated.txt",
+        ]);
       } finally {
         await rm(directory, { recursive: true, force: true });
       }
     });
   });
 }
+
+describe("grep with capped backend results", () => {
+  it.each(["shared/target.txt", "{shared,other}/target.txt", "**/shared/target.txt"])(
+    "keeps scoped matches beyond unrelated capped results for %s",
+    async (glob) => {
+      const files = Array.from({ length: 5000 }, (_, index) => `/noise-${index}.txt`);
+      files.push("/target.txt");
+      const filesystem = new WorkspaceFilesystem({
+        backend: new CompositeFilesystemBackend(createBackend([]), {
+          "/notes/shared/": createBackend(files),
+        }),
+      });
+      const result = await filesystem.grepRaw("needle", { path: "/notes", glob });
+      if (typeof result === "string") throw new Error(result);
+      expect(result.map((match) => match.path)).toEqual(["/notes/shared/target.txt"]);
+    },
+  );
+
+  it.each(["/notes", "/"])(
+    "does not let shadowed results consume the visible budget for %s",
+    async (path) => {
+      const files = Array.from({ length: 5000 }, (_, index) => `/shared/shadowed-${index}.txt`);
+      files.push("/target.txt");
+      const filesystem = new WorkspaceFilesystem({
+        backend: new CompositeFilesystemBackend(createBackend([]), {
+          "/notes/": createBackend(files),
+          "/notes/shared/": createBackend(["/child.txt"]),
+        }),
+      });
+      const result = await filesystem.grepRaw("needle", { path, glob: "**/*.txt" });
+      if (typeof result === "string") throw new Error(result);
+      expect(result.map((match) => match.path).sort()).toEqual([
+        "/notes/shared/child.txt",
+        "/notes/target.txt",
+      ]);
+    },
+  );
+});
+
+describe("grep selected-file glob batches", () => {
+  it("keeps all matches across multiple batches", async () => {
+    const paths = Array.from({ length: 130 }, (_, index) => `/file-${index}.txt`);
+    const filesystem = new WorkspaceFilesystem({
+      backend: new CompositeFilesystemBackend(createBackend([]), {
+        "/notes/shared/": createBackend(paths),
+      }),
+    });
+    const result = await filesystem.grepRaw("needle", {
+      path: "/notes",
+      glob: "{shared,other}/*.txt",
+    });
+    if (typeof result === "string") throw new Error(result);
+    expect(result.map((match) => match.path).sort()).toEqual(
+      paths.map((path) => `/notes/shared${path}`).sort(),
+    );
+  });
+
+  it("treats glob metacharacters in selected filenames literally", async () => {
+    const paths = [
+      "/literal[1].txt",
+      "/with,comma.txt",
+      "/with{brace}.txt",
+      "/plus+@().txt",
+      "/asterisk*.txt",
+    ];
+    const filesystem = new WorkspaceFilesystem({
+      backend: new CompositeFilesystemBackend(createBackend([]), {
+        "/notes/shared/": createBackend(paths),
+      }),
+    });
+    const result = await filesystem.grepRaw("needle", {
+      path: "/notes",
+      glob: "{shared,other}/*.txt",
+    });
+    if (typeof result === "string") throw new Error(result);
+    expect(result.map((match) => match.path).sort()).toEqual(
+      paths.map((path) => `/notes/shared${path}`).sort(),
+    );
+  });
+});
+
+it("filters default-backend shadowed files before its grep result limit", async () => {
+  const paths = Array.from({ length: 5000 }, (_, index) => `/notes/shared/shadowed-${index}.txt`);
+  paths.push("/root-target.txt");
+  const filesystem = new WorkspaceFilesystem({
+    backend: new CompositeFilesystemBackend(createBackend(paths), {
+      "/notes/shared/": createBackend(["/child.txt"]),
+    }),
+  });
+  const result = await filesystem.grepRaw("needle", { path: "/", glob: "**/*.txt" });
+  if (typeof result === "string") throw new Error(result);
+  expect(result.map((match) => match.path).sort()).toEqual([
+    "/notes/shared/child.txt",
+    "/root-target.txt",
+  ]);
+});
