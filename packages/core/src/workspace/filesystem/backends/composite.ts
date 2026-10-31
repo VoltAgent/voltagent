@@ -1,4 +1,5 @@
 import { posix as posixPath } from "node:path";
+import { validatePath } from "../utils";
 import type {
   DeleteOptions,
   DeleteResult,
@@ -175,11 +176,17 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     path = "/",
     glob: string | null = null,
   ): Promise<GrepMatch[] | string> {
+    let searchPrefix: string;
+    try {
+      searchPrefix = validatePath(path);
+    } catch {
+      return [];
+    }
     const errors: string[] = [];
     for (const [routePrefix, backend] of this.sortedRoutes) {
       const prefix = routePrefix.replace(/\/$/, "");
-      if (path.startsWith(prefix)) {
-        const searchPath = path.substring(prefix.length) || "/";
+      if (searchPrefix.startsWith(`${prefix}/`)) {
+        const searchPath = searchPrefix.substring(prefix.length) || "/";
         const raw = await backend.grepRaw(pattern, searchPath, glob);
 
         if (typeof raw === "string") {
@@ -204,6 +211,9 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
+      if (!routePrefix.startsWith(searchPrefix)) {
+        continue;
+      }
       const raw = await backend.grepRaw(pattern, "/", glob);
 
       if (typeof raw === "string") {
@@ -229,13 +239,18 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
   }
 
   async globInfo(pattern: string, path = "/"): Promise<FileInfo[]> {
+    let searchPrefix: string;
+    try {
+      searchPrefix = validatePath(path);
+    } catch {
+      return [];
+    }
     const results: FileInfo[] = [];
 
     for (const [routePrefix, backend] of this.sortedRoutes) {
       const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
-      const prefixRoot = normalizedPrefix.slice(0, -1);
-      if (path === prefixRoot || path.startsWith(normalizedPrefix)) {
-        const suffix = path === prefixRoot ? "" : path.substring(normalizedPrefix.length);
+      if (searchPrefix.startsWith(normalizedPrefix)) {
+        const suffix = searchPrefix.substring(normalizedPrefix.length);
         const searchPath = suffix ? `/${suffix}` : "/";
         const infos = await backend.globInfo(pattern, searchPath);
 
@@ -250,6 +265,9 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     results.push(...defaultInfos);
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
+      if (!routePrefix.startsWith(searchPrefix)) {
+        continue;
+      }
       const infos = await backend.globInfo(pattern, "/");
       results.push(
         ...infos.map((info) => ({
