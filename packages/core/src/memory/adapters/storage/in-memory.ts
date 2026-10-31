@@ -249,9 +249,9 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     return steps.map((step) =>
       deepClone({
         ...step,
-        arguments: step.arguments,
-        result: step.result,
-        usage: step.usage,
+        arguments: step.arguments ? { ...step.arguments } : step.arguments,
+        result: step.result ? { ...step.result } : step.result,
+        usage: step.usage ? { ...step.usage } : step.usage,
       }),
     );
   }
@@ -648,9 +648,15 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       throw new Error(`Workflow state ${executionId} not found`);
     }
 
+    const { context, ...otherUpdates } = updates;
+    const clonedUpdates: Partial<WorkflowStateEntry> = deepClone(otherUpdates);
+    if (Object.hasOwn(updates, "context")) {
+      clonedUpdates.context = context?.map(([key, value]) => [key, deepClone(value)]);
+    }
+
     const updated: WorkflowStateEntry = {
       ...existing,
-      ...deepClone(updates),
+      ...clonedUpdates,
       updatedAt: new Date(),
     };
 

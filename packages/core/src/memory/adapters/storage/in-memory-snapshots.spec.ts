@@ -130,6 +130,24 @@ describe("in-memory persistence snapshots through Memory", () => {
     expect(filtered[0].arguments).toEqual({ nested: { value: "replacement" } });
   });
 
+  it("preserves shallow step isolation when a payload cannot be cloned", async () => {
+    await memory.saveConversationSteps([
+      step({
+        arguments: { value: "saved", callback: () => "callback" },
+        result: { value: "saved" },
+        usage: { promptTokens: 1, completionTokens: 2, totalTokens: 3 },
+      }),
+    ]);
+    const first = (await memory.getConversationSteps(...scope))[0];
+    if (first.arguments) first.arguments.value = "changed";
+    if (first.result) first.result.value = "changed";
+    if (first.usage) first.usage.totalTokens = 99;
+    const next = (await memory.getConversationSteps(...scope))[0];
+    expect(next.arguments?.value).toBe("saved");
+    expect(next.result?.value).toBe("saved");
+    expect(next.usage?.totalTokens).toBe(3);
+  });
+
   it("preserves null step fields and omitted usage", async () => {
     await memory.saveConversationSteps([step({ arguments: null, result: null })]);
     const stored = (await memory.getConversationSteps(...scope))[0];
@@ -148,7 +166,7 @@ describe("in-memory persistence snapshots through Memory", () => {
     });
   });
 
-  it("snapshots workflow updates including nested values and dates", async () => {
+  it.each(["key", Symbol("key")])("snapshots workflow updates with context key %s", async (key) => {
     const state: WorkflowStateEntry = {
       id: "execution",
       workflowId: "workflow",
@@ -165,9 +183,10 @@ describe("in-memory persistence snapshots through Memory", () => {
     await memory.updateWorkflowState(state.id, {
       workflowState,
       input,
-      context: [["key", contextValue]],
+      context: [[key, contextValue]],
       suspension: { suspendedAt, stepIndex: 0 },
     });
+    await memory.updateWorkflowState(state.id, { status: "suspended" });
     workflowState.values.push(99);
     input.values.push(99);
     contextValue.value = 99;
@@ -176,7 +195,7 @@ describe("in-memory persistence snapshots through Memory", () => {
     const stored = await memory.getWorkflowState(state.id);
     expect(stored?.workflowState).toEqual({ values: [1] });
     expect(stored?.input).toEqual({ values: [2] });
-    expect(stored?.context).toEqual([["key", { value: 3 }]]);
+    expect(stored?.context).toEqual([[key, { value: 3 }]]);
     expect(stored?.suspension?.suspendedAt).toEqual(new Date("2026-01-02"));
   });
 });
