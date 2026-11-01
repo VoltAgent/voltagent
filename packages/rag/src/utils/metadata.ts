@@ -36,7 +36,10 @@ export function buildMetadata(params: BuildMetadataParams): Record<string, unkno
     }
   });
 
-  Object.assign(meta, params.extra ?? {});
+  // Chunkers delegate to inner chunkers and forward the child chunk metadata through `extra`,
+  // which already carries the child's `format`/`sourceType`; re-assert ours so the reporter's
+  // own identifiers are not replaced by those of the chunker we delegated to.
+  Object.assign(meta, params.extra ?? {}, { format: params.format, sourceType: params.sourceType });
 
   return meta;
 }
