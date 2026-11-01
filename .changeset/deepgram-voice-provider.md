@@ -2,4 +2,4 @@
 "@voltagent/voice": minor
 ---
 
-Add a Deepgram voice provider: Aura text-to-speech, Nova speech-to-text, and real-time streaming transcription (with an `onTranscript` callback on `connect`).
+Add a Deepgram voice provider: Aura text-to-speech (`speak`) and Nova pre-recorded speech-to-text (`listen`), with the Aura voice catalog via `getVoices`.

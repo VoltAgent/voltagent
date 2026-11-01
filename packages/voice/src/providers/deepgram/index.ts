@@ -87,7 +87,7 @@ export class DeepgramVoiceProvider extends BaseVoiceProvider {
    */
   async listen(
     audio: NodeJS.ReadableStream,
-    options?: DeepgramListenOptions & { stream?: boolean },
+    options?: DeepgramListenOptions,
   ): Promise<string | ReadableStreamType> {
     try {
       this.emit("listening", { audio });

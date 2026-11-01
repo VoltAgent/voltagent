@@ -32,7 +32,7 @@ export type DeepgramVoiceOptions = BaseVoiceProviderOptions & {
 
   /**
    * Model to use for speech-to-text.
-   * @default "nova-2"
+   * @default "nova-3"
    */
   speechModel?: string;
 
@@ -40,13 +40,13 @@ export type DeepgramVoiceOptions = BaseVoiceProviderOptions & {
    * Aura model to use for text-to-speech.
    * @default "aura-asteria-en"
    */
-  ttsModel?: DeepgramVoice | string;
+  ttsModel?: DeepgramVoice | (string & {});
 
   /**
    * Voice (Aura model) to use for text-to-speech. Alias of `ttsModel`.
    * @default "aura-asteria-en"
    */
-  voice?: DeepgramVoice | string;
+  voice?: DeepgramVoice | (string & {});
 };
 
 /**
@@ -81,8 +81,4 @@ export type DeepgramListenOptions = {
    * @default true
    */
   smartFormat?: boolean;
-  /**
-   * MIME type of the supplied audio (e.g. "audio/wav", "audio/mpeg").
-   */
-  mimetype?: string;
 };
