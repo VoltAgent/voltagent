@@ -48,5 +48,12 @@ Closing paragraph after.`;
 
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks.every((chunk) => chunk.metadata?.format === "table")).toBe(true);
+
+    const prose = chunks.filter((chunk) => chunk.id.includes("-text-"));
+    const table = chunks.filter((chunk) => !chunk.id.includes("-text-"));
+    expect(prose.length).toBeGreaterThan(0);
+    expect(table.length).toBeGreaterThan(0);
+    expect(prose.every((chunk) => chunk.metadata?.sourceType === "text")).toBe(true);
+    expect(table.every((chunk) => chunk.metadata?.sourceType === "table")).toBe(true);
   });
 });
