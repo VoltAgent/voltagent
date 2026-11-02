@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "sap-ai-core-agent",
   instructions: "You are a helpful assistant",
-  model: "sap-ai-core/anthropic--claude-3-haiku",
+  model: "sap-ai-core/amazon--nova-lite",
 });
 ```
 
@@ -26,7 +26,9 @@ const agent = new Agent({
 
 ## Provider package
 
-`@mymediset/sap-ai-provider`
+`@jerome-benoit/sap-ai-provider-v2`
+
+
 
 ## Default base URL
 
@@ -41,21 +43,45 @@ You can override the base URL by setting `SAP_AI_CORE_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (14)</summary>
+  <summary>Show models (38)</summary>
 
+- amazon--nova-lite
+- amazon--nova-micro
+- amazon--nova-pro
+- amazon--titan-embed-text
 - anthropic--claude-3-haiku
-- anthropic--claude-3-opus
-- anthropic--claude-3-sonnet
-- anthropic--claude-3.5-sonnet
-- anthropic--claude-3.7-sonnet
-- anthropic--claude-4-opus
-- anthropic--claude-4-sonnet
 - anthropic--claude-4.5-haiku
+- anthropic--claude-4.5-opus
 - anthropic--claude-4.5-sonnet
-- gemini-2.5-flash
-- gemini-2.5-pro
+- anthropic--claude-4.6-opus
+- anthropic--claude-4.6-sonnet
+- anthropic--claude-4.7-opus
+- anthropic--claude-4.8-opus
+- gemini-3.1-flash-lite
+- gemini-3.5-flash
+- gemini-3.5-flash-lite
+- gemini-3.6-flash
+- gemini-3.8-flash
+- gemini-embedding
+- gemini-embedding-2
 - gpt-5
 - gpt-5-mini
 - gpt-5-nano
+- gpt-5.2
+- gpt-5.4
+- gpt-5.5
+- gpt-5.6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-6-astra
+- gpt-6-luna
+- gpt-6.1-sol
+- mistralai--mistral-medium
+- nvidia--llama-nemotron-embed-1b
+- sonar
+- sonar-deep-research
+- sonar-pro
+- text-embedding-3-large
+- text-embedding-3-small
 
 </details>

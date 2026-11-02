@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "alibaba-agent",
   instructions: "You are a helpful assistant",
-  model: "alibaba/qvq-max",
+  model: "alibaba/deepseek-v4-flash-0731",
 });
 ```
 
@@ -43,46 +43,37 @@ You can override the base URL by setting `ALIBABA_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (39)</summary>
+  <summary>Show models (30)</summary>
 
-- qvq-max
+- deepseek-v4-flash-0731
+- glm-5.2
+- kimi-k3
 - qwen-flash
 - qwen-max
 - qwen-mt-plus
-- qwen-mt-turbo
-- qwen-omni-turbo
-- qwen-omni-turbo-realtime
 - qwen-plus
 - qwen-plus-character-ja
-- qwen-turbo
-- qwen-vl-max
 - qwen-vl-ocr
-- qwen-vl-plus
-- qwen2-5-14b-instruct
-- qwen2-5-32b-instruct
-- qwen2-5-72b-instruct
-- qwen2-5-7b-instruct
-- qwen2-5-omni-7b
-- qwen2-5-vl-72b-instruct
-- qwen2-5-vl-7b-instruct
-- qwen3-14b
-- qwen3-235b-a22b
-- qwen3-32b
-- qwen3-8b
 - qwen3-asr-flash
-- qwen3-coder-30b-a3b-instruct
-- qwen3-coder-480b-a35b-instruct
 - qwen3-coder-flash
-- qwen3-coder-plus
-- qwen3-livetranslate-flash-realtime
-- qwen3-max
-- qwen3-next-80b-a3b-instruct
-- qwen3-next-80b-a3b-thinking
 - qwen3-omni-flash
-- qwen3-omni-flash-realtime
-- qwen3-vl-235b-a22b
 - qwen3-vl-30b-a3b
 - qwen3-vl-plus
-- qwq-plus
+- qwen3.5-122b-a10b
+- qwen3.5-27b
+- qwen3.5-35b-a3b
+- qwen3.5-397b-a17b
+- qwen3.5-flash
+- qwen3.5-plus
+- qwen3.6-27b
+- qwen3.6-35b-a3b
+- qwen3.6-flash
+- qwen3.6-plus
+- qwen3.7-flash
+- qwen3.7-max
+- qwen3.7-plus
+- qwen3.8-flash
+- qwen3.8-max
+- qwen3.8-omni-flash
 
 </details>

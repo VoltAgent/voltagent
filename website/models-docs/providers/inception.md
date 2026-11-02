@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "inception-agent",
   instructions: "You are a helpful assistant",
-  model: "inception/mercury",
+  model: "inception/mercury-2",
 });
 ```
 
@@ -38,14 +38,16 @@ You can override the base URL by setting `INCEPTION_BASE_URL`.
 
 ## Provider docs
 
-- https://platform.inceptionlabs.ai/docs
+- https://docs.inceptionlabs.ai/get-started/models
 
 ## Models
 
 <details>
-  <summary>Show models (2)</summary>
+  <summary>Show models (4)</summary>
 
-- mercury
-- mercury-coder
+- mercury-2
+- mercury-2.5
+- mercury-3
+- mercury-edit-2
 
 </details>

@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "zhipuai-coding-plan-agent",
   instructions: "You are a helpful assistant",
-  model: "zhipuai-coding-plan/glm-4.5",
+  model: "zhipuai-coding-plan/glm-5.3",
 });
 ```
 
@@ -43,15 +43,10 @@ You can override the base URL by setting `ZHIPUAI_CODING_PLAN_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (8)</summary>
+  <summary>Show models (3)</summary>
 
-- glm-4.5
-- glm-4.5-air
-- glm-4.5-flash
-- glm-4.5v
-- glm-4.6
-- glm-4.6v
-- glm-4.6v-flash
-- glm-4.7
+- glm-5.3
+- glm-5.3-flash
+- glm-5.3-highspeed
 
 </details>

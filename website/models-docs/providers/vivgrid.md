@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "vivgrid-agent",
   instructions: "You are a helpful assistant",
-  model: "vivgrid/gpt-5.1-codex",
+  model: "vivgrid/claude-fable-5",
 });
 ```
 
@@ -27,6 +27,8 @@ const agent = new Agent({
 ## Provider package
 
 `@ai-sdk/openai`
+
+
 
 ## Default base URL
 
@@ -41,8 +43,32 @@ You can override the base URL by setting `VIVGRID_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (1)</summary>
+  <summary>Show models (25)</summary>
 
-- gpt-5.1-codex
+- claude-fable-5
+- claude-fable-5-1
+- claude-haiku-5-5
+- claude-opus-5
+- claude-opus-5-5
+- claude-sonnet-5
+- claude-sonnet-5-5
+- deepseek-v4-flash
+- deepseek-v4-pro
+- deepseek-v4-pro-0813
+- deepseek-v4.1-flash
+- gemini-3.7-flash
+- gemini-3.8-flash
+- glm-5.3
+- glm-5.3-flash
+- gpt-5.6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-6-astra
+- gpt-6-luna
+- gpt-6-sol
+- gpt-6.1-sol
+- gpt-6.1-terra
+- kimi-k3
+- viv-fast
 
 </details>

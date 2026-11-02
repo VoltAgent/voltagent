@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "google-vertex-anthropic-agent",
   instructions: "You are a helpful assistant",
-  model: "google-vertex-anthropic/claude-3-5-haiku@20241022",
+  model: "google-vertex-anthropic/claude-fable-5-1@default",
 });
 ```
 
@@ -28,7 +28,9 @@ const agent = new Agent({
 
 ## Provider package
 
-`@ai-sdk/google-vertex`
+`@ai-sdk/google-vertex/anthropic`
+
+
 
 ## Default base URL
 
@@ -43,16 +45,20 @@ You can override the base URL by setting `GOOGLE_VERTEX_ANTHROPIC_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (9)</summary>
+  <summary>Show models (13)</summary>
 
-- claude-3-5-haiku@20241022
-- claude-3-5-sonnet@20241022
-- claude-3-7-sonnet@20250219
+- claude-fable-5-1@default
+- claude-fable-5@default
 - claude-haiku-4-5@20251001
-- claude-opus-4-1@20250805
+- claude-haiku-5-5@default
 - claude-opus-4-5@20251101
-- claude-opus-4@20250514
-- claude-sonnet-4-5@20250929
-- claude-sonnet-4@20250514
+- claude-opus-4-6@default
+- claude-opus-4-7@default
+- claude-opus-4-8@default
+- claude-opus-5-5@default
+- claude-opus-5@default
+- claude-sonnet-4-6@default
+- claude-sonnet-5-5@default
+- claude-sonnet-5@default
 
 </details>

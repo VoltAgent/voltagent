@@ -32,7 +32,7 @@ This provider uses the OpenAI-compatible adapter.
 
 ## Default base URL
 
-`https://api.tbox.cn/api/llm/v1/chat/completions`
+`https://api.tbox.cn/api/llm/v1`
 
 You can override the base URL by setting `BAILING_BASE_URL`.
 

@@ -43,21 +43,45 @@ You can override the base URL by setting `FASTROUTER_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (14)</summary>
+  <summary>Show models (38)</summary>
 
 - anthropic/claude-opus-4.1
-- anthropic/claude-sonnet-4
-- deepseek-ai/deepseek-r1-distill-llama-70b
+- anthropic/claude-opus-4.8
+- anthropic/claude-sonnet-4.6
+- bytedance/seedance-2
+- deepseek/deepseek-v4-pro
 - google/gemini-2.5-flash
 - google/gemini-2.5-pro
-- moonshotai/kimi-k2
+- google/gemini-3-pro-image-preview
+- google/gemini-3.1-flash-image-preview
+- google/gemini-3.1-pro-preview
+- google/gemini-3.5-flash
+- google/gemma-4-31b-it
+- google/veo3.1
+- google/veo3.1-fast
+- google/veo3.1-lite
+- leonardo-ai/lucid-origin
+- leonardo-ai/lucid-realism
+- minimax/minimax-m2.7
+- minimax/minimax-m2.7-highspeed
+- moonshotai/kimi-k2.6
 - openai/gpt-4.1
 - openai/gpt-5
 - openai/gpt-5-mini
 - openai/gpt-5-nano
+- openai/gpt-5.3-codex
+- openai/gpt-5.4-mini
+- openai/gpt-5.4-nano
+- openai/gpt-5.5
+- openai/gpt-5.5-pro
+- openai/gpt-image-2
 - openai/gpt-oss-120b
 - openai/gpt-oss-20b
-- qwen/qwen3-coder
-- x-ai/grok-4
+- sarvam/sarvam-105b
+- wanx/wan-v2-6
+- x-ai/grok-4.3
+- x-ai/grok-build-0.1
+- z-ai/glm-5
+- z-ai/glm-5.1
 
 </details>
