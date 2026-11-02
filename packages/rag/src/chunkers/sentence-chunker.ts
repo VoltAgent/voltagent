@@ -18,6 +18,15 @@ export class SentenceChunker implements Chunker<SentenceChunkerOptions> {
     this.tokenizer = tokenizer;
   }
 
+  /**
+   * Group sentences while preserving trimmed source spans and their positions.
+   * Overlap may repeat sentences, and an individual oversized sentence is kept
+   * intact rather than split to enforce a strict token limit.
+   *
+   * @param text Source text whose offsets are reported in each chunk.
+   * @param options Token budget, sentence overlap and metadata overrides.
+   * @returns Sentence groups with content sliced directly from the source.
+   */
   chunk(text: string, options?: SentenceChunkerOptions): Chunk[] {
     const tokenizer = options?.tokenizer ?? this.tokenizer;
     const maxTokens = Math.max(1, options?.maxTokens ?? 200);

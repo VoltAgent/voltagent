@@ -24,6 +24,15 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
     this.tokenChunker = new TokenChunker(tokenizer);
   }
 
+  /**
+   * Split paragraphs, then sentence groups, falling back to token chunks for
+   * oversized groups. Child start/end offsets are rebased to the supplied text.
+   * Token-fallback offsets retain the selected tokenizer's limitations.
+   *
+   * @param text Source text to split.
+   * @param options Token budget, optional overlap and metadata overrides.
+   * @returns Paragraph, sentence or token chunks, with optional overlap snippets.
+   */
   chunk(text: string, options?: RecursiveChunkerOptions): Chunk[] {
     const tokenizer = options?.tokenizer ?? this.tokenizer;
     const maxTokens = Math.max(1, options?.maxTokens ?? 300);

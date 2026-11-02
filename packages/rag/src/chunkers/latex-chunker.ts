@@ -17,6 +17,10 @@ type LatexSection = {
   kind: "section" | "subsection" | "subsubsection" | "none";
 };
 
+/**
+ * Split section commands from their trimmed bodies, retaining each body's
+ * start offset in the original input and its preceding heading metadata.
+ */
 function splitLatex(text: string): LatexSection[] {
   const regex = /\\(section|subsection|subsubsection)\*?\{([^}]*)\}/g;
   const sections: LatexSection[] = [];
@@ -61,6 +65,15 @@ export class LatexChunker implements Chunker<LatexChunkerOptions> {
     this.recursiveChunker = new RecursiveChunker(tokenizer);
   }
 
+  /**
+   * Recursively chunk LaTeX section bodies, excluding section commands.
+   * Child ranges and position metadata are rebased to the supplied document;
+   * token-fallback range accuracy still depends on the selected tokenizer.
+   *
+   * @param text Original LaTeX document, including any preamble.
+   * @param options Token budget, tokenizer and document metadata overrides.
+   * @returns Body chunks with section headings and original-document offsets.
+   */
   chunk(text: string, options?: LatexChunkerOptions): Chunk[] {
     const tokenizer = options?.tokenizer ?? this.tokenizer;
     const maxTokens = Math.max(1, options?.maxTokens ?? 300);
