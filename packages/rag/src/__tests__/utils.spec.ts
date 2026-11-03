@@ -31,4 +31,21 @@ describe("createTikTokenizer", () => {
     const tokenizer = createTikTokenizer();
     expect(tokenizer.countTokens("hello")).toBeGreaterThan(0);
   });
+
+  it.each([
+    ["Japanese", "日本語のテキストです。"],
+    ["emoji", "naïve café “quotes” 😀🎉 end"],
+    ["mixed scripts", "Hello 世界 😀 مرحبا"],
+  ])("gives token offsets that match the text for %s", (_name, text) => {
+    const tokenizer = createTikTokenizer();
+    const tokens = tokenizer.tokenize(text);
+
+    expect(tokens).toHaveLength(tokenizer.countTokens(text));
+    expect(tokens[0]?.start).toBe(0);
+    expect(tokens[tokens.length - 1]?.end).toBe(text.length);
+    for (let i = 1; i < tokens.length; i++) {
+      expect(tokens[i]?.start).toBe(tokens[i - 1]?.end);
+    }
+    expect(tokens.map((token) => text.slice(token.start, token.end)).join("")).toBe(text);
+  });
 });

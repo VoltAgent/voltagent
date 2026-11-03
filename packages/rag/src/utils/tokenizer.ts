@@ -49,12 +49,23 @@ export function createTikTokenizer(config?: {
       const ids = encode(text);
       const tokens: Token[] = [];
       let cursor = 0;
-      ids.forEach((id) => {
-        const piece = decode([id]);
+      let pending: number[] = [];
+      ids.forEach((id, index) => {
+        // A character can span several tokens. Decoding one of those tokens alone gives U+FFFD,
+        // which is one unit long whatever the character really is, so offsets would drift. Keep
+        // the tokens of an unfinished character at its start and give the whole character to
+        // the token that completes it.
+        pending.push(id);
+        const piece = decode(pending);
         const start = cursor;
+        if (piece.endsWith("�") && index < ids.length - 1) {
+          tokens.push({ value: "", start, end: start });
+          return;
+        }
         const end = start + piece.length;
         tokens.push({ value: piece, start, end });
         cursor = end;
+        pending = [];
       });
       return tokens;
     },
