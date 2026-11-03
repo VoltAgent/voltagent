@@ -3080,8 +3080,14 @@ export class Agent {
                 }),
               );
 
-              // Save the message to memory
-              await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+              // Save the message to memory (best effort — a storage failure
+              // must not fail the finished operation; the persist queue owns
+              // retry semantics).
+              try {
+                await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+              } catch (error) {
+                oc.logger.warn?.("Failed to persist assistant message", { error });
+              }
 
               // Add step to history
               const step: StepWithContent = {
@@ -3535,7 +3541,17 @@ export class Agent {
                       }),
                     );
 
-                    await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+                    // Best effort — see the persist-queue retry semantics note.
+                    try {
+                      await this.memoryManager.saveMessage(
+                        oc,
+                        message,
+                        oc.userId,
+                        oc.conversationId,
+                      );
+                    } catch (error) {
+                      oc.logger.warn?.("Failed to persist assistant message", { error });
+                    }
 
                     const step: StepWithContent = {
                       id: randomUUID(),

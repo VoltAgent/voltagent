@@ -165,6 +165,56 @@ export class ConversationBuffer {
     return drained.map((item) => item.message);
   }
 
+  /**
+   * Messages currently pending persistence, in insertion order.
+   *
+   * Unlike {@link drainPendingMessages}, the pending set is left intact so a
+   * failed batch can acknowledge only the messages that actually reached
+   * storage and retry the rest on a later flush.
+   */
+  peekPendingMessages(): UIMessage[] {
+    if (this.pendingMessageIds.size === 0) {
+      return [];
+    }
+
+    const pending: UIMessage[] = [];
+
+    this.messages.forEach((message) => {
+      if (this.pendingMessageIds.has(message.id)) {
+        pending.push(this.cloneMessage(message));
+      }
+    });
+
+    return pending;
+  }
+
+  /**
+   * Stop tracking *snapshot* as pending after its storage write succeeded.
+   *
+   * The acknowledgment is skipped when the message changed since it was read —
+   * the newer content stays pending and is saved by a later flush.
+   */
+  acknowledgeSavedMessage(snapshot: UIMessage): void {
+    if (!this.pendingMessageIds.has(snapshot.id)) {
+      return;
+    }
+
+    const current = this.messages.find((message) => message.id === snapshot.id);
+    if (!current) {
+      return;
+    }
+    if (JSON.stringify(current) !== JSON.stringify(snapshot)) {
+      this.log("ack-skipped-updated", { messageId: snapshot.id });
+      return;
+    }
+
+    this.pendingMessageIds.delete(snapshot.id);
+
+    if (this.activeAssistantMessageId === snapshot.id) {
+      this.activeAssistantMessageId = undefined;
+    }
+  }
+
   getAllMessages(): UIMessage[] {
     return this.messages.map((message) => this.cloneMessage(message));
   }

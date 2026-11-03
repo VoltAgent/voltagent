@@ -186,7 +186,7 @@ describe("MemoryManager", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("should surface storage errors to the caller", async () => {
       // Create manager with mocked memory that throws error
       const errorMemory = new Memory({
         storage: new InMemoryStorageAdapter(),
@@ -204,10 +204,11 @@ describe("MemoryManager", () => {
 
       const message = createTestUIMessage();
 
-      // Should not throw even if save fails
-      await expect(
-        errorManager.saveMessage(context, message, "user-1", "conv-1"),
-      ).resolves.not.toThrow();
+      // The rejection is the contract: the persistence queue keeps the message
+      // pending and retries. Best-effort callers wrap the call themselves.
+      await expect(errorManager.saveMessage(context, message, "user-1", "conv-1")).rejects.toThrow(
+        "Save failed",
+      );
     });
   });
 
