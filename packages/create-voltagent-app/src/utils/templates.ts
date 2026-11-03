@@ -1,6 +1,7 @@
 import path from "node:path";
 import {
   AI_PROVIDER_CONFIG,
+  type PackageManager,
   type ProjectOptions,
   SERVER_CONFIG,
   type TemplateFile,
@@ -20,6 +21,52 @@ const resolveTemplatesDir = () => {
 };
 
 const TEMPLATES_DIR = resolveTemplatesDir();
+
+// Docker needs each COPY source to match a real file in the build context, and
+// the install command must match the package manager that produced the
+// lockfile. Render both stages from the manager the user picked in the wizard
+// instead of copying every possible lockfile and detecting at run time —
+// "optional-looking" globs like `yarn.lock*` still fail the build when the
+// project has none (#1427).
+const DOCKER_SETUP: Record<
+  PackageManager,
+  { baseImage: string; copyFiles: string; install: string; installProd: string }
+> = {
+  npm: {
+    baseImage: "node:22-alpine",
+    copyFiles: "COPY package*.json ./",
+    install: "npm ci",
+    installProd: "npm ci --omit=dev",
+  },
+  yarn: {
+    baseImage: "node:22-alpine",
+    copyFiles: "COPY package*.json ./\nCOPY yarn.lock ./",
+    install: "corepack enable && yarn install --frozen-lockfile",
+    installProd: "corepack enable && yarn install --frozen-lockfile --production",
+  },
+  pnpm: {
+    baseImage: "node:22-alpine",
+    copyFiles: "COPY package*.json ./\nCOPY pnpm-lock.yaml ./",
+    install: "corepack enable && pnpm install --frozen-lockfile",
+    installProd: "corepack enable && pnpm install --frozen-lockfile --prod",
+  },
+  bun: {
+    baseImage: "oven/bun:1-alpine",
+    copyFiles: "COPY package.json ./\nCOPY bun.lock* ./",
+    install: "bun install --frozen-lockfile",
+    installProd: "bun install --frozen-lockfile --production",
+  },
+};
+
+export const renderDockerfile = (content: string, packageManager: PackageManager): string => {
+  const setup = DOCKER_SETUP[packageManager] ?? DOCKER_SETUP.npm;
+
+  return content
+    .replace(/\{\{dockerBaseImage\}\}/g, setup.baseImage)
+    .replace(/\{\{dockerCopyFiles\}\}/g, setup.copyFiles)
+    .replace(/\{\{dockerInstallProd\}\}/g, setup.installProd)
+    .replace(/\{\{dockerInstall\}\}/g, setup.install);
+};
 
 export const getBaseTemplates = (): TemplateFile[] => {
   return [
@@ -134,6 +181,9 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/Dockerfile.template"),
       targetPath: "Dockerfile",
+      transform: (content: string, options: ProjectOptions) => {
+        return renderDockerfile(content, options.packageManager);
+      },
     },
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.dockerignore.template"),
