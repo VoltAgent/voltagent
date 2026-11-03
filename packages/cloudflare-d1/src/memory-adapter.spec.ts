@@ -81,3 +81,49 @@ describe("D1MemoryAdapter queryWorkflowRuns", () => {
     ]);
   });
 });
+
+describe("D1MemoryAdapter offset-only queries", () => {
+  function createAdapter() {
+    vi.spyOn(D1MemoryAdapter.prototype as any, "ensureInitialized").mockResolvedValue(undefined);
+    return new D1MemoryAdapter({
+      binding: createMockBinding(),
+      tablePrefix: "test",
+    });
+  }
+
+  it("caps the limit with LIMIT -1 when queryConversations gets an offset without a limit", async () => {
+    const adapter = createAdapter();
+    const allSpy = vi.spyOn(adapter as any, "all").mockResolvedValue([]);
+
+    await adapter.queryConversations({ offset: 2 });
+
+    const [sql, args] = allSpy.mock.calls[0];
+    expect(sql).toContain("ORDER BY updated_at DESC");
+    expect(sql).toContain("LIMIT -1 OFFSET ?");
+    expect(args).toEqual([2]);
+  });
+
+  it("keeps an explicit limit bound and injects no LIMIT -1 (queryConversations)", async () => {
+    const adapter = createAdapter();
+    const allSpy = vi.spyOn(adapter as any, "all").mockResolvedValue([]);
+
+    await adapter.queryConversations({ limit: 5, offset: 2 });
+
+    const [sql, args] = allSpy.mock.calls[0];
+    expect(sql).toContain("LIMIT ? OFFSET ?");
+    expect(sql).not.toContain("LIMIT -1");
+    expect(args).toEqual([5, 2]);
+  });
+
+  it("caps the limit with LIMIT -1 when queryWorkflowRuns gets an offset without a limit", async () => {
+    const adapter = createAdapter();
+    const allSpy = vi.spyOn(adapter as any, "all").mockResolvedValue([]);
+
+    await adapter.queryWorkflowRuns({ offset: 2 });
+
+    const [sql, args] = allSpy.mock.calls[0];
+    expect(sql).toContain("ORDER BY created_at DESC");
+    expect(sql).toContain("LIMIT -1 OFFSET ?");
+    expect(args).toEqual([2]);
+  });
+});

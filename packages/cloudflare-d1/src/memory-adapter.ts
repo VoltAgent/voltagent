@@ -985,6 +985,9 @@ export class D1MemoryAdapter implements StorageAdapter {
     if (options.limit) {
       sql += " LIMIT ?";
       args.push(options.limit);
+    } else if (options.offset) {
+      // SQLite requires LIMIT before OFFSET; -1 caps nothing.
+      sql += " LIMIT -1";
     }
 
     if (options.offset) {
@@ -1389,6 +1392,9 @@ export class D1MemoryAdapter implements StorageAdapter {
     if (query.limit !== undefined) {
       sql += " LIMIT ?";
       args.push(query.limit);
+    } else if (query.offset !== undefined) {
+      // SQLite requires LIMIT before OFFSET; -1 caps nothing.
+      sql += " LIMIT -1";
     }
 
     if (query.offset !== undefined) {
