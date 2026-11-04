@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { splitIntoParagraphs, splitIntoSentences } from "../utils/text";
 import { createTikTokenizer, sliceByTokenRange, tokenizeWithPositions } from "../utils/tokenizer";
+import { detectFormat } from "../utils/format-detector";
 
 describe("Tokenizer utils", () => {
   it("tokenizes with positions and slices by range", () => {
@@ -30,5 +31,19 @@ describe("createTikTokenizer", () => {
   it("creates tokenizer with tiktoken encoding", () => {
     const tokenizer = createTikTokenizer();
     expect(tokenizer.countTokens("hello")).toBeGreaterThan(0);
+  });
+});
+
+describe("detectFormat", () => {
+  it("detects JSON objects", () => {
+    expect(detectFormat('{"id":1}')).toBe("json");
+  });
+
+  it("detects top-level JSON arrays", () => {
+    expect(detectFormat('[{"id":1},{"id":2}]')).toBe("json");
+  });
+
+  it("falls back to text for incomplete JSON", () => {
+    expect(detectFormat('[{"id":1}')).not.toBe("json");
   });
 });
