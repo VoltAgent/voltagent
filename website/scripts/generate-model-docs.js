@@ -323,6 +323,13 @@ const preferredModelByProvider = {
   xai: "grok-4",
 };
 
+const vertexExpressNote =
+  "If `GOOGLE_VERTEX_API_KEY` is set, Vertex uses express mode with that key and ignores `GOOGLE_VERTEX_PROJECT`, `GOOGLE_VERTEX_LOCATION` and `GOOGLE_APPLICATION_CREDENTIALS`.";
+
+const envNoteByProvider = {
+  "google-vertex": vertexExpressNote,
+};
+
 const buildProviderDoc = (providerId, entry, models) => {
   const name = entry?.name ?? providerId;
   const docLink = entry?.doc ? `- ${entry.doc}` : "- Not available.";
@@ -364,7 +371,7 @@ const agent = new Agent({
 ## Environment variables
 
 ${envBlock}
-
+${envNoteByProvider[providerId] ? `\n${envNoteByProvider[providerId]}\n` : ""}
 ## Provider package
 
 ${providerPackage}
