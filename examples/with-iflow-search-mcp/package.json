@@ -1,0 +1,41 @@
+{
+  "name": "voltagent-example-with-iflow-search-mcp",
+  "description": "VoltAgent example wiring the iFlow Search MCP stdio server to expose web search, image search, and page fetch tools.",
+  "version": "0.1.0",
+  "dependencies": {
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.7.5",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.13",
+    "ai": "^6.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "iflow",
+    "mcp",
+    "search",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-iflow-search-mcp"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}
