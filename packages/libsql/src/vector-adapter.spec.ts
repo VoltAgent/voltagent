@@ -3,7 +3,7 @@
  * Uses in-memory database for fast and reliable testing
  */
 
-import type { VectorItem } from "@voltagent/core";
+import { type VectorItem, encodeCursor } from "@voltagent/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LibSQLVectorAdapter } from "./vector-adapter";
 
@@ -705,6 +705,139 @@ describe("LibSQLVectorAdapter", () => {
       expect(results).toHaveLength(10);
       expect(insertTime).toBeLessThan(5000); // Should insert 1000 vectors in < 5s
       expect(searchTime).toBeLessThan(1000); // Should search 1000 vectors in < 1s
+    });
+  });
+
+  describe("logical and comparison filters with cursor pagination", () => {
+    it("should handle $and logical filter", async () => {
+      const vectors: VectorItem[] = [
+        { id: "vec-1", vector: [1, 0, 0], metadata: { category: "A", status: "active" } },
+        { id: "vec-2", vector: [1, 0, 0], metadata: { category: "A", status: "inactive" } },
+        { id: "vec-3", vector: [1, 0, 0], metadata: { category: "B", status: "active" } },
+        { id: "vec-4", vector: [0, 1, 0], metadata: { category: "A", status: "active" } },
+      ];
+
+      await adapter.storeBatch(vectors);
+
+      // $and: category must be "A" AND status must be "active"
+      const results = await adapter.search([1, 0, 0], {
+        logicalFilter: { $and: [{ category: "A" }, { status: "active" }] },
+      });
+
+      expect(
+        results.every((r) => r.metadata?.category === "A" && r.metadata?.status === "active"),
+      ).toBe(true);
+      expect(results.length).toBe(2); // vec-1 (exact match) and vec-4 (orthogonal)
+      expect(results[0].id).toBe("vec-1");
+    });
+
+    it("should handle $or logical filter", async () => {
+      const vectors: VectorItem[] = [
+        { id: "vec-1", vector: [1, 0, 0], metadata: { category: "A", status: "active" } },
+        { id: "vec-2", vector: [1, 0, 0], metadata: { category: "A", status: "inactive" } },
+        { id: "vec-3", vector: [1, 0, 0], metadata: { category: "B", status: "active" } },
+        { id: "vec-4", vector: [0, 1, 0], metadata: { category: "C", status: "active" } },
+      ];
+
+      await adapter.storeBatch(vectors);
+
+      // $or: category must be "A" OR status must be "active"
+      const results = await adapter.search([1, 0, 0], {
+        logicalFilter: { $or: [{ category: "A" }, { status: "active" }] },
+      });
+
+      // Should match vec-1 (A and active), vec-3 (B but active), vec-4 (C but active)
+      expect(results.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("should handle comparison filter ($gt)", async () => {
+      const vectors: VectorItem[] = [
+        { id: "vec-1", vector: [1, 0, 0], metadata: { price: 50 } },
+        { id: "vec-2", vector: [1, 0, 0], metadata: { price: 100 } },
+        { id: "vec-3", vector: [1, 0, 0], metadata: { price: 150 } },
+        { id: "vec-4", vector: [0, 1, 0], metadata: { price: 200 } },
+      ];
+
+      await adapter.storeBatch(vectors);
+
+      // $gt: price must be greater than 75
+      const results = await adapter.search([1, 0, 0], {
+        comparisonFilter: { price: { $gt: 75 } },
+      });
+
+      expect(results.every((r) => r.metadata?.price > 75)).toBe(true);
+      expect(results.length).toBe(3); // vec-2, vec-3, vec-4
+    });
+
+    it("should handle comparison filter ($lt)", async () => {
+      const vectors: VectorItem[] = [
+        { id: "vec-1", vector: [1, 0, 0], metadata: { price: 50 } },
+        { id: "vec-2", vector: [1, 0, 0], metadata: { price: 100 } },
+        { id: "vec-3", vector: [1, 0, 0], metadata: { price: 150 } },
+        { id: "vec-4", vector: [0, 1, 0], metadata: { price: 200 } },
+      ];
+
+      await adapter.storeBatch(vectors);
+
+      // $lt: price must be less than 150
+      const results = await adapter.search([1, 0, 0], {
+        comparisonFilter: { price: { $lt: 150 } },
+      });
+
+      expect(results.every((r) => r.metadata?.price < 150)).toBe(true);
+      expect(results.length).toBe(2); // vec-1, vec-2
+    });
+
+    it("should support cursor-based pagination", async () => {
+      const vectors: VectorItem[] = [];
+      // Insert 10 vectors with deterministic ids
+      for (let i = 0; i < 10; i++) {
+        vectors.push({
+          id: `vec-${i}`,
+          vector: [Math.random(), Math.random(), Math.random()],
+          metadata: { group: i % 3 },
+        });
+      }
+      await adapter.storeBatch(vectors);
+
+      // First page: get first 3 vectors (top results by similarity)
+      const firstPage = await adapter.search([0.5, 0.5, 0.5], { limit: 3 });
+      expect(firstPage).toHaveLength(3);
+
+      // Cursor is an opaque value derived from the last item in the page
+      const cursor = encodeCursor(firstPage[firstPage.length - 1].id);
+
+      // Second page: the cursor keyset bounds the candidate set to rows
+      // strictly before it, so pages never repeat the bound item
+      const bound = firstPage[firstPage.length - 1].id;
+      const secondPage = await adapter.search([0.5, 0.5, 0.5], { limit: 3, cursor });
+
+      expect(secondPage.every((r) => r.id < bound)).toBe(true);
+      expect(secondPage.some((r) => r.id === bound)).toBe(false);
+    });
+
+    it("should support cursor pagination with metadata filter", async () => {
+      const vectors: VectorItem[] = [];
+      for (let i = 0; i < 10; i++) {
+        vectors.push({
+          id: `vec-${i}`,
+          vector: [Math.random(), Math.random(), Math.random()],
+          metadata: { group: i % 3, active: i > 5 },
+        });
+      }
+      await adapter.storeBatch(vectors);
+
+      // Page using a keyset bound: only active rows strictly before "vec-9".
+      // vec-6, vec-7 and vec-8 are active and strictly before the bound.
+      const page = await adapter.search([0.5, 0.5, 0.5], {
+        filter: { active: true },
+        limit: 10,
+        cursor: encodeCursor("vec-9"),
+      });
+
+      expect(page).toHaveLength(3);
+      expect(page.every((r) => r.metadata?.active === true)).toBe(true);
+      expect(page.every((r) => r.id < "vec-9")).toBe(true);
     });
   });
 });

@@ -1289,5 +1289,8 @@ export type {
   SearchResult,
 } from "./adapters/vector/types";
 
+// Export vector cursor helpers
+export { encodeCursor, decodeCursor } from "./adapters/vector/types";
+
 // Export vector math utilities
 export { cosineSimilarity } from "./utils/vector-math";
