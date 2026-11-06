@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { createWorkflow } from "./core";
+import { VOLTAGENT_RESUME_CHECKPOINT_KEY, createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
 
@@ -314,5 +314,97 @@ describe.sequential("workflow.timeTravel", () => {
     expect(startedSteps).toContain("step-2");
     expect(startedSteps).toContain("step-3");
     expect(startedSteps).not.toContain("step-1");
+  });
+
+  it("should persist resume data before running a resumed replay stream step", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let suspendNextReplay = false;
+    let replayExecutionId = "";
+    let resumeCheckpoint: Record<string, unknown> | undefined;
+    const workflow = createWorkflow(
+      {
+        id: "time-travel-stream-resume-checkpoint",
+        name: "Time Travel Stream Resume Checkpoint",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "approval",
+        resumeSchema: z.object({ approved: z.boolean() }),
+        execute: async ({ data, suspend, resumeData }) => {
+          if (suspendNextReplay && !resumeData) {
+            suspendNextReplay = false;
+            await suspend("approval required");
+          }
+          if (resumeData) {
+            const persisted = await memory.getWorkflowState(replayExecutionId);
+            resumeCheckpoint = persisted?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY] as
+              | Record<string, unknown>
+              | undefined;
+          }
+          return { value: data.value };
+        },
+      }),
+    );
+
+    const original = await workflow.run({ value: 11 });
+    suspendNextReplay = true;
+    const replay = workflow.timeTravelStream({
+      executionId: original.executionId,
+      stepId: "approval",
+    });
+    replayExecutionId = replay.executionId;
+    await expect(replay.status).resolves.toBe("suspended");
+
+    const resumed = await replay.resume({ approved: true });
+    await expect(resumed.status).resolves.toBe("completed");
+
+    expect(resumeCheckpoint).toEqual(
+      expect.objectContaining({
+        stepIndex: 0,
+        resumeData: { approved: true },
+      }),
+    );
+  });
+
+  it("should not copy a source resume checkpoint into replay metadata", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "time-travel-resume-checkpoint-metadata",
+        name: "Time Travel Resume Checkpoint Metadata",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        execute: async ({ data }) => data,
+      }),
+      andThen({
+        id: "step-2",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const original = await workflow.run({ value: 5 });
+    await memory.updateWorkflowState(original.executionId, {
+      metadata: {
+        [VOLTAGENT_RESUME_CHECKPOINT_KEY]: {
+          stepIndex: 0,
+          checkpoint: { stepExecutionState: { value: 5 } },
+          resumeData: { approved: true },
+        },
+      },
+    });
+
+    const replay = await workflow.timeTravel({
+      executionId: original.executionId,
+      stepId: "step-2",
+    });
+    const replayState = await memory.getWorkflowState(replay.executionId);
+
+    expect(replayState?.metadata).not.toHaveProperty(VOLTAGENT_RESUME_CHECKPOINT_KEY);
   });
 });

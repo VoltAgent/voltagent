@@ -5,9 +5,23 @@ import { createTestAgent } from "../agent/test-utils";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
-import { VOLTAGENT_RESTART_CHECKPOINT_KEY, createWorkflow } from "./core";
+import {
+  VOLTAGENT_RESTART_CHECKPOINT_KEY,
+  VOLTAGENT_RESUME_CHECKPOINT_KEY,
+  createWorkflow,
+} from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAgent, andThen, andWhen } from "./steps";
+
+class SnapshottingInMemoryStorageAdapter extends InMemoryStorageAdapter {
+  async updateWorkflowState(
+    executionId: Parameters<InMemoryStorageAdapter["updateWorkflowState"]>[0],
+    updates: Parameters<InMemoryStorageAdapter["updateWorkflowState"]>[1],
+  ): Promise<void> {
+    const snapshot = updates.events ? { ...updates, events: [...updates.events] } : updates;
+    return super.updateWorkflowState(executionId, snapshot);
+  }
+}
 
 describe.sequential("workflow.run", () => {
   beforeEach(() => {
@@ -712,6 +726,138 @@ describe.sequential("workflow streaming", () => {
     );
   });
 
+  it("should persist the completed state before notifying stream observers", async () => {
+    const memory = new Memory({ storage: new SnapshottingInMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "stream-completion-state-order",
+        name: "Stream Completion State Order",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "multiply",
+        execute: async ({ data }) => ({ result: data.value * 2 }),
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const stream = workflow.stream({ value: 5 });
+    let persistedStatusAtCompletion: string | undefined;
+    let persistedCompletionEvent = false;
+    let completionObservation: Promise<void> | undefined;
+    stream.watch((event) => {
+      if (event.type === "workflow-complete") {
+        completionObservation = (async () => {
+          const persisted = await memory.getWorkflowState(stream.executionId);
+          persistedStatusAtCompletion = persisted?.status;
+          persistedCompletionEvent =
+            persisted?.events?.some(
+              (persistedEvent) => persistedEvent.type === "workflow-complete",
+            ) ?? false;
+        })();
+      }
+    });
+
+    for await (const _event of stream) {
+      // Drain the stream so completion has been observed.
+    }
+    await stream.result;
+    await completionObservation;
+
+    expect(persistedStatusAtCompletion).toBe("completed");
+    expect(persistedCompletionEvent).toBe(true);
+  });
+
+  it("should persist resume data before running a resumed stream step", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let executionId = "";
+    let resumeCheckpoint: Record<string, unknown> | undefined;
+    const workflow = createWorkflow(
+      {
+        id: "stream-resume-checkpoint",
+        name: "Stream Resume Checkpoint",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "approval",
+        resumeSchema: z.object({ approved: z.boolean() }),
+        execute: async ({ data, suspend, resumeData }) => {
+          if (!resumeData) {
+            await suspend("approval required");
+          }
+          const persisted = await memory.getWorkflowState(executionId);
+          resumeCheckpoint = persisted?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY] as
+            | Record<string, unknown>
+            | undefined;
+          return { value: data.value };
+        },
+      }),
+    );
+
+    const stream = workflow.stream({ value: 7 });
+    executionId = stream.executionId;
+    await expect(stream.status).resolves.toBe("suspended");
+
+    const resumed = await stream.resume({ approved: true });
+    await expect(resumed.status).resolves.toBe("completed");
+
+    expect(resumeCheckpoint).toEqual(
+      expect.objectContaining({
+        stepIndex: 0,
+        resumeData: { approved: true },
+      }),
+    );
+  });
+
+  it("should clear a stale resume checkpoint when resumed without data", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "stream-resume-clears-stale-checkpoint",
+        name: "Stream Resume Clears Stale Checkpoint",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "approval",
+        execute: async ({ data, suspend, resumeData }) => {
+          if (!resumeData) {
+            await suspend("approval required");
+          }
+          return { value: data.value };
+        },
+      }),
+    );
+
+    const stream = workflow.stream({ value: 7 });
+    await expect(stream.status).resolves.toBe("suspended");
+
+    const persisted = await memory.getWorkflowState(stream.executionId);
+    expect(persisted).toBeDefined();
+    await memory.updateWorkflowState(stream.executionId, {
+      metadata: {
+        ...persisted?.metadata,
+        [VOLTAGENT_RESUME_CHECKPOINT_KEY]: {
+          stepIndex: 0,
+          resumeData: { approved: true },
+        },
+      },
+    });
+
+    const resumed = await stream.resume(undefined);
+    await expect(resumed.status).resolves.toBe("suspended");
+
+    const resumedState = await memory.getWorkflowState(stream.executionId);
+    expect(resumedState?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY]).toBeUndefined();
+  });
+
   it("should expose observeStream as readable stream on workflow stream results", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     const workflow = createWorkflow(
@@ -1116,6 +1262,177 @@ describe.sequential("workflow.restart", () => {
 
     const persisted = await memory.getWorkflowState(executionId);
     expect(persisted?.status).toBe("completed");
+  });
+
+  it("should restore resume data and a stable step identity after an interrupted approval", async () => {
+    const memory = new Memory({ storage: new SnapshottingInMemoryStorageAdapter() });
+    const idempotencyKeys = new Set<string>();
+    let payments = 0;
+    let executions = 0;
+    let suspensionRequests = 0;
+    const observedKeys: string[] = [];
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-approved-side-effect",
+        name: "Restart Approved Side Effect",
+        input: z.object({ invoice: z.string() }),
+        result: z.object({ paymentCount: z.number() }),
+        resumeSchema: z.object({ approved: z.boolean() }),
+        memory,
+      },
+      andThen({
+        id: "charge-invoice",
+        execute: async ({ data, suspend, resumeData, state }) => {
+          if (!resumeData?.approved) {
+            suspensionRequests += 1;
+            await suspend("approval required");
+          }
+
+          const stepExecutionId = state.workflowContext?.stepExecutionId;
+          expect(stepExecutionId).toBe(`${state.executionId}:charge-invoice`);
+          if (!stepExecutionId) {
+            throw new Error("Missing step execution identity");
+          }
+          observedKeys.push(stepExecutionId);
+
+          // Model an idempotent provider: the same step identity never charges twice.
+          if (!idempotencyKeys.has(stepExecutionId)) {
+            idempotencyKeys.add(stepExecutionId);
+            payments += 1;
+          }
+
+          executions += 1;
+          if (executions === 1) {
+            throw new Error("simulated process interruption after payment commit");
+          }
+
+          return { paymentCount: payments, invoice: data.invoice };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const suspended = await workflow.run({ invoice: "INV-1001" });
+    expect(suspended.status).toBe("suspended");
+
+    const interrupted = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId, {
+      approved: true,
+    });
+    expect(interrupted?.status).toBe("error");
+    expect(payments).toBe(1);
+
+    // A killed process leaves the persisted execution running with the approval
+    // checkpoint written by resumeSuspendedWorkflow.
+    await memory.updateWorkflowState(suspended.executionId, { status: "running" });
+    const restarted = await workflow.restart(suspended.executionId);
+
+    expect(restarted.status).toBe("completed");
+    expect(suspensionRequests).toBe(1);
+    expect(payments).toBe(1);
+    expect(observedKeys).toHaveLength(2);
+    expect(observedKeys[0]).toBe(observedKeys[1]);
+    const persisted = await memory.getWorkflowState(suspended.executionId);
+    expect(persisted?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY]).toBeUndefined();
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-start");
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-suspended");
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-complete");
+  });
+
+  it("should persist a running approval before starting the resumed workflow", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let approvalRequests = 0;
+    let approvedExecutions = 0;
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-approval-before-run",
+        name: "Restart Approval Before Run",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        resumeSchema: z.object({ approved: z.boolean() }),
+        memory,
+      },
+      andThen({
+        id: "approval-step",
+        execute: async ({ data, suspend, resumeData }) => {
+          if (!resumeData?.approved) {
+            approvalRequests += 1;
+            await suspend("approval required");
+          }
+          approvedExecutions += 1;
+          return data;
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const suspended = await workflow.run({ value: 7 });
+    expect(suspended.status).toBe("suspended");
+
+    const runSpy = vi
+      .spyOn(workflow, "run")
+      .mockRejectedValueOnce(new Error("simulated interruption before resumed workflow starts"));
+    await expect(
+      registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId, { approved: true }),
+    ).rejects.toThrow("simulated interruption before resumed workflow starts");
+    runSpy.mockRestore();
+
+    const persistedBeforeRestart = await memory.getWorkflowState(suspended.executionId);
+    expect(persistedBeforeRestart?.status).toBe("running");
+    expect(persistedBeforeRestart?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY]).toEqual(
+      expect.objectContaining({ resumeData: { approved: true } }),
+    );
+
+    const restarted = await workflow.restart(suspended.executionId);
+    expect(restarted.status).toBe("completed");
+    expect(approvalRequests).toBe(1);
+    expect(approvedExecutions).toBe(1);
+  });
+
+  it("should clear the resume marker when checkpointing is disabled", async () => {
+    const memory = new Memory({ storage: new SnapshottingInMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "resume-without-checkpointing",
+        name: "Resume Without Checkpointing",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        resumeSchema: z.object({ approved: z.boolean() }),
+        disableCheckpointing: true,
+        memory,
+      },
+      andThen({
+        id: "approval-step",
+        execute: async ({ data, suspend, resumeData }) => {
+          if (!resumeData?.approved) {
+            await suspend("approval required");
+          }
+          return { value: data.value + 1 };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const suspended = await workflow.run({ value: 3 });
+    expect(suspended.status).toBe("suspended");
+    const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId, {
+      approved: true,
+    });
+
+    expect(resumed?.status).toBe("completed");
+    const persisted = await memory.getWorkflowState(suspended.executionId);
+    expect(persisted?.metadata?.[VOLTAGENT_RESUME_CHECKPOINT_KEY]).toBeUndefined();
+    expect(persisted?.metadata?.[VOLTAGENT_RESTART_CHECKPOINT_KEY]).toBeUndefined();
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-start");
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-suspended");
+    expect(persisted?.events?.map((event) => event.type)).toContain("workflow-complete");
   });
 
   it("should fail restart when execution is not running", async () => {

@@ -1,6 +1,6 @@
 import { LoggerProxy } from "../logger";
 import { SimpleEventEmitter } from "../utils/simple-event-emitter";
-import { serializeWorkflowStep } from "./core";
+import { VOLTAGENT_RESUME_CHECKPOINT_KEY, serializeWorkflowStep } from "./core";
 import type {
   Workflow,
   WorkflowExecutionResult,
@@ -246,6 +246,23 @@ export class WorkflowRegistry extends SimpleEventEmitter {
           ...resumeOptions.resumeFrom,
           resumeData,
         };
+
+        // Persist the approval/input before executing the resumed step. If the
+        // process dies while that step is running, restart() can replay it with
+        // the same resume data instead of presenting the approval again.
+        await registeredWorkflow.workflow.memory.updateWorkflowState(executionId, {
+          status: "running",
+          metadata: {
+            ...workflowState.metadata,
+            [VOLTAGENT_RESUME_CHECKPOINT_KEY]: {
+              stepIndex: resumeOptions.resumeFrom.resumeStepIndex,
+              lastEventSequence: resumeOptions.resumeFrom.lastEventSequence,
+              checkpoint: resumeOptions.resumeFrom.checkpoint,
+              resumeData,
+            },
+          },
+          updatedAt: new Date(),
+        });
       }
 
       const result = await registeredWorkflow.workflow.run(inputToUse, resumeOptions);
