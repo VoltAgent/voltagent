@@ -1,6 +1,7 @@
 import path from "node:path";
 import {
   AI_PROVIDER_CONFIG,
+  type PackageManager,
   type ProjectOptions,
   SERVER_CONFIG,
   type TemplateFile,
@@ -134,6 +135,39 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/Dockerfile.template"),
       targetPath: "Dockerfile",
+      transform: (content: string, options: ProjectOptions) => {
+        // Docker validates COPY sources before any RUN fallback executes, so
+        // the dependency layers must only reference the lockfile of the
+        // package manager selected in the wizard.
+        const packageManager = options.packageManager;
+        const lockfileCopy: Record<PackageManager, string> = {
+          npm: "",
+          yarn: "COPY yarn.lock* ./",
+          pnpm: "COPY pnpm-lock.yaml* ./",
+          bun: "COPY bun.lock* ./",
+        };
+        const installCommand: Record<PackageManager, { builder: string; runtime: string }> = {
+          npm: { builder: "RUN npm ci", runtime: "RUN npm ci --omit=dev" },
+          yarn: {
+            builder: "RUN yarn install --frozen-lockfile",
+            runtime: "RUN yarn install --frozen-lockfile --production",
+          },
+          pnpm: {
+            builder: "RUN npm install -g pnpm && pnpm install --frozen-lockfile",
+            runtime: "RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod",
+          },
+          bun: {
+            builder: "RUN npm install -g bun && bun install --frozen-lockfile",
+            runtime: "RUN npm install -g bun && bun install --frozen-lockfile --production",
+          },
+        };
+        const lockfile = lockfileCopy[packageManager];
+
+        return content
+          .replace(/\n\{\{dockerLockfileCopy\}\}/g, lockfile ? `\n${lockfile}` : "")
+          .replace(/\{\{dockerInstallBuilder\}\}/g, installCommand[packageManager].builder)
+          .replace(/\{\{dockerInstallProd\}\}/g, installCommand[packageManager].runtime);
+      },
     },
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.dockerignore.template"),
