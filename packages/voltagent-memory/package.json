@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/voltagent-memory",
   "description": "VoltAgent managed memory adapter backed by VoltOps",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "dependencies": {
     "@voltagent/internal": "^1.0.2"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^2.3.7",
+    "@voltagent/core": "^2.10.0",
     "ai": "^6.0.0"
   },
   "exports": {
