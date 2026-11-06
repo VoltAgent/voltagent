@@ -13,6 +13,7 @@ import { ResourceType, buildLogContext, buildVoltOpsLogMessage } from "../logger
 import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -467,8 +468,8 @@ export class VoltOpsClient implements IVoltOpsClient {
           this.getManagedMemoryConversation(databaseId, conversationId),
         query: (databaseId, options) => this.queryManagedMemoryConversations(databaseId, options),
         update: (databaseId, input) => this.updateManagedMemoryConversation(databaseId, input),
-        delete: (databaseId, conversationId) =>
-          this.deleteManagedMemoryConversation(databaseId, conversationId),
+        delete: (databaseId, conversationId, options) =>
+          this.deleteManagedMemoryConversation(databaseId, conversationId, options),
       },
       workingMemory: {
         get: (databaseId, input) => this.getManagedMemoryWorkingMemory(databaseId, input),
@@ -817,13 +818,18 @@ export class VoltOpsClient implements IVoltOpsClient {
     databaseId: string,
     input: ManagedMemoryUpdateConversationInput,
   ): Promise<Conversation> {
+    const body = {
+      updates: input.updates,
+      ...(input.expectedUserId !== undefined ? { expectedUserId: input.expectedUserId } : {}),
+    };
+
     const payload = await this.request<{
       success: boolean;
       data?: { conversation?: Conversation };
     }>(
       "PATCH",
       `/managed-memory/projects/databases/${databaseId}/conversations/${input.conversationId}`,
-      { updates: input.updates },
+      body,
     );
 
     if (!payload?.success || !payload.data?.conversation) {
@@ -836,10 +842,16 @@ export class VoltOpsClient implements IVoltOpsClient {
   private async deleteManagedMemoryConversation(
     databaseId: string,
     conversationId: string,
+    options?: ConversationMutationOptions,
   ): Promise<void> {
+    const body =
+      options?.expectedUserId !== undefined
+        ? { expectedUserId: options.expectedUserId }
+        : undefined;
     const payload = await this.request<{ success: boolean }>(
       "DELETE",
       `/managed-memory/projects/databases/${databaseId}/conversations/${conversationId}`,
+      body,
     );
 
     if (!payload?.success) {

@@ -5,9 +5,14 @@
  */
 
 import { type SupabaseClient, createClient } from "@supabase/supabase-js";
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
+} from "@voltagent/core";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -1066,6 +1071,7 @@ END OF MIGRATION SQL
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
     await this.initialize();
 
@@ -1073,6 +1079,10 @@ END OF MIGRATION SQL
     const conversation = await this.getConversation(id);
     if (!conversation) {
       throw new ConversationNotFoundError(id);
+    }
+
+    if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+      throw new ConversationOwnershipMismatchError(id);
     }
 
     const now = new Date().toISOString();
@@ -1090,14 +1100,18 @@ END OF MIGRATION SQL
       updateData.metadata = updates.metadata;
     }
 
-    const { data, error } = await this.client
-      .from(conversationsTable)
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
+    let query = this.client.from(conversationsTable).update(updateData).eq("id", id);
+
+    if (options?.expectedUserId !== undefined) {
+      query = query.eq("user_id", options.expectedUserId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) {
+      if (options?.expectedUserId !== undefined && error.code === "PGRST116") {
+        throw new ConversationOwnershipMismatchError(id);
+      }
       throw new Error(`Failed to update conversation: ${error.message}`);
     }
 
@@ -1115,12 +1129,31 @@ END OF MIGRATION SQL
   /**
    * Delete a conversation
    */
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     await this.initialize();
 
     const conversationsTable = `${this.baseTableName}_conversations`;
 
-    const { error } = await this.client.from(conversationsTable).delete().eq("id", id);
+    const deleteQuery = this.client.from(conversationsTable).delete().eq("id", id);
+
+    if (options?.expectedUserId !== undefined) {
+      const { error } = await deleteQuery
+        .eq("user_id", options.expectedUserId)
+        .select("id")
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          throw new ConversationOwnershipMismatchError(id);
+        }
+        throw new Error(`Failed to delete conversation: ${error.message}`);
+      }
+
+      this.log(`Deleted conversation ${id}`);
+      return;
+    }
+
+    const { error } = await deleteQuery;
 
     if (error) {
       throw new Error(`Failed to delete conversation: ${error.message}`);

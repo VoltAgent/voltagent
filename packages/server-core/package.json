@@ -46,7 +46,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^2.9.1",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "repository": {
