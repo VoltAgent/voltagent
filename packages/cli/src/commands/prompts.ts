@@ -395,7 +395,18 @@ const fetchRemotePrompt = async (
     );
   }
 
-  return (await response.json()) as RemotePrompt;
+  let parsed: unknown;
+  try {
+    parsed = await response.json();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to parse prompt '${name}' response: ${reason}. ` +
+        `The upstream returned a non-JSON body (status ${response.status} ${response.statusText}).`,
+    );
+  }
+
+  return parsed as RemotePrompt;
 };
 
 const buildCreatePayload = (local: LocalPrompt) => ({
