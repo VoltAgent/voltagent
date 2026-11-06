@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "zenmux-agent",
   instructions: "You are a helpful assistant",
-  model: "zenmux/anthropic/claude-haiku-4.5",
+  model: "zenmux/anthropic/claude-fable-5",
 });
 ```
 
@@ -43,52 +43,89 @@ You can override the base URL by setting `ZENMUX_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (51)</summary>
+  <summary>Show models (99)</summary>
 
+- anthropic/claude-fable-5
+- anthropic/claude-fable-5.1
 - anthropic/claude-haiku-4.5
-- anthropic/claude-opus-4
 - anthropic/claude-opus-4.1
 - anthropic/claude-opus-4.5
-- anthropic/claude-sonnet-4
+- anthropic/claude-opus-4.6
+- anthropic/claude-opus-4.7
+- anthropic/claude-opus-4.8
+- anthropic/claude-opus-5.5
 - anthropic/claude-sonnet-4.5
+- anthropic/claude-sonnet-4.6
+- anthropic/claude-sonnet-5
 - baidu/ernie-5.0-thinking-preview
-- deepseek/deepseek-chat
-- deepseek/deepseek-reasoner
+- bytedance/doubao-seed-1.8
+- bytedance/doubao-seed-2.0-code
+- bytedance/doubao-seed-2.0-lite
+- bytedance/doubao-seed-2.0-mini
+- bytedance/doubao-seed-2.0-pro
+- bytedance/doubao-seed-code
 - deepseek/deepseek-v3.2
-- deepseek/deepseek-v3.2-exp
+- deepseek/deepseek-v4-flash
+- deepseek/deepseek-v4-pro
+- deepseek/deepseek-v4.1-flash
 - google/gemini-2.5-flash
 - google/gemini-2.5-flash-lite
 - google/gemini-2.5-pro
 - google/gemini-3-flash-preview
-- google/gemini-3-flash-preview-free
-- google/gemini-3-pro-preview
-- inclusionai/ling-1t
-- inclusionai/ring-1t
-- kuaishou/kat-coder-pro-v1
-- kuaishou/kat-coder-pro-v1-free
+- google/gemini-3.1-flash-lite
+- google/gemini-3.1-pro-preview
+- google/gemini-3.5-flash
+- inclusionai/ring-2.6-1t
 - minimax/minimax-m2
 - minimax/minimax-m2.1
-- moonshotai/kimi-k2-0905
-- moonshotai/kimi-k2-thinking
-- moonshotai/kimi-k2-thinking-turbo
+- minimax/minimax-m2.5
+- minimax/minimax-m2.5-lightning
+- minimax/minimax-m2.7
+- minimax/minimax-m2.7-highspeed
+- minimax/minimax-m3
+- minimax/minimax-m3.1-flash
+- moonshotai/kimi-k2.6
+- moonshotai/kimi-k2.7-code
+- moonshotai/kimi-k2.7-code-highspeed
+- moonshotai/kimi-k3
+- openai/chat-latest
 - openai/gpt-5
 - openai/gpt-5-codex
 - openai/gpt-5.1
-- openai/gpt-5.1-chat
 - openai/gpt-5.1-codex
 - openai/gpt-5.1-codex-mini
 - openai/gpt-5.2
-- qwen/qwen3-coder-plus
-- stepfun/step-3
-- volcengine/doubao-seed-1.8
-- volcengine/doubao-seed-code
-- x-ai/grok-4
-- x-ai/grok-4-fast
-- x-ai/grok-4.1-fast
-- x-ai/grok-4.1-fast-non-reasoning
-- x-ai/grok-code-fast-1
-- xiaomi/mimo-v2-flash
-- xiaomi/mimo-v2-flash-free
+- openai/gpt-5.2-codex
+- openai/gpt-5.2-pro
+- openai/gpt-5.3-codex
+- openai/gpt-5.4
+- openai/gpt-5.4-mini
+- openai/gpt-5.4-nano
+- openai/gpt-5.4-pro
+- openai/gpt-5.5
+- openai/gpt-5.5-pro
+- openai/gpt-5.6-luna
+- openai/gpt-5.6-sol
+- openai/gpt-5.6-terra
+- openai/gpt-6-astra
+- openai/gpt-6-sol
+- qwen/qwen3.5-flash
+- qwen/qwen3.5-plus
+- qwen/qwen3.6-plus
+- qwen/qwen3.7-max
+- qwen/qwen3.7-plus
+- stepfun/step-3.5-flash
+- stepfun/step-3.7-flash
+- x-ai/grok-4.2-fast
+- x-ai/grok-4.2-fast-non-reasoning
+- x-ai/grok-4.3
+- x-ai/grok-4.5
+- x-ai/grok-4.6
+- x-ai/grok-build-0.1
+- x-ai/grok-imagine-image-2.0
+- x-ai/grok-voice-stt-1.0
+- x-ai/grok-voice-tts-1.0
+- xiaomi/mimo-v2.6-pro
 - z-ai/glm-4.5
 - z-ai/glm-4.5-air
 - z-ai/glm-4.6
@@ -96,5 +133,16 @@ You can override the base URL by setting `ZENMUX_BASE_URL`.
 - z-ai/glm-4.6v-flash
 - z-ai/glm-4.6v-flash-free
 - z-ai/glm-4.7
+- z-ai/glm-4.7-flash-free
+- z-ai/glm-4.7-flashx
+- z-ai/glm-5
+- z-ai/glm-5-turbo
+- z-ai/glm-5.1
+- z-ai/glm-5.2
+- z-ai/glm-5.3
+- z-ai/glm-5.3-flash
+- z-ai/glm-5.3-flashx
+- z-ai/glm-5v-turbo
+- z-ai/glm-image
 
 </details>

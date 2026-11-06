@@ -43,16 +43,10 @@ You can override the base URL by setting `INFERENCE_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (9)</summary>
+  <summary>Show models (3)</summary>
 
 - google/gemma-3
-- meta/llama-3.1-8b-instruct
-- meta/llama-3.2-11b-vision-instruct
 - meta/llama-3.2-1b-instruct
 - meta/llama-3.2-3b-instruct
-- mistral/mistral-nemo-12b-instruct
-- osmosis/osmosis-structure-0.6b
-- qwen/qwen-2.5-7b-vision-instruct
-- qwen/qwen3-embedding-4b
 
 </details>

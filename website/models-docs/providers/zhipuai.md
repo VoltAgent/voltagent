@@ -38,12 +38,12 @@ You can override the base URL by setting `ZHIPUAI_BASE_URL`.
 
 ## Provider docs
 
-- https://docs.z.ai/guides/overview/pricing
+- https://docs.bigmodel.cn/cn/guide/start/pricing
 
 ## Models
 
 <details>
-  <summary>Show models (8)</summary>
+  <summary>Show models (17)</summary>
 
 - glm-4.5
 - glm-4.5-air
@@ -53,5 +53,14 @@ You can override the base URL by setting `ZHIPUAI_BASE_URL`.
 - glm-4.6v
 - glm-4.6v-flash
 - glm-4.7
+- glm-4.7-flash
+- glm-4.7-flashx
+- glm-5
+- glm-5.1
+- glm-5.2
+- glm-5.3
+- glm-5.3-flash
+- glm-5.3-flashx
+- glm-5v-turbo
 
 </details>

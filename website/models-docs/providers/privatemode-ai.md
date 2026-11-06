@@ -16,14 +16,13 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "privatemode-ai-agent",
   instructions: "You are a helpful assistant",
-  model: "privatemode-ai/gemma-3-27b",
+  model: "privatemode-ai/deepseek-ocr-2",
 });
 ```
 
 ## Environment variables
 
 - `PRIVATEMODE_API_KEY`
-- `PRIVATEMODE_ENDPOINT`
 
 ## Provider package
 
@@ -44,12 +43,16 @@ You can override the base URL by setting `PRIVATEMODE_AI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (5)</summary>
+  <summary>Show models (9)</summary>
 
-- gemma-3-27b
+- deepseek-ocr-2
+- glm-5.3
+- glm-5.3-flash
+- glm-flash-latest
+- glm-latest
 - gpt-oss-120b
-- qwen3-coder-30b-a3b
 - qwen3-embedding-4b
+- voxtral-mini-3b
 - whisper-large-v3
 
 </details>

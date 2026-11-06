@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "fireworks-ai-agent",
   instructions: "You are a helpful assistant",
-  model: "fireworks-ai/accounts/fireworks/models/deepseek-r1-0528",
+  model: "fireworks-ai/accounts/fireworks/models/deepseek-v4p1-flash",
 });
 ```
 
@@ -43,23 +43,32 @@ You can override the base URL by setting `FIREWORKS_AI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (16)</summary>
+  <summary>Show models (25)</summary>
 
-- accounts/fireworks/models/deepseek-r1-0528
-- accounts/fireworks/models/deepseek-v3-0324
-- accounts/fireworks/models/deepseek-v3p1
-- accounts/fireworks/models/deepseek-v3p2
-- accounts/fireworks/models/glm-4p5
-- accounts/fireworks/models/glm-4p5-air
-- accounts/fireworks/models/glm-4p6
-- accounts/fireworks/models/glm-4p7
-- accounts/fireworks/models/gpt-oss-120b
-- accounts/fireworks/models/gpt-oss-20b
-- accounts/fireworks/models/kimi-k2-instruct
-- accounts/fireworks/models/kimi-k2-thinking
-- accounts/fireworks/models/minimax-m2
-- accounts/fireworks/models/minimax-m2p1
-- accounts/fireworks/models/qwen3-235b-a22b
-- accounts/fireworks/models/qwen3-coder-480b-a35b-instruct
+- accounts/fireworks/models/deepseek-v4p1-flash
+- accounts/fireworks/models/deepseek-v4p1-flash-1017
+- accounts/fireworks/models/ember-1
+- accounts/fireworks/models/glm-5p3
+- accounts/fireworks/models/glm-5p3-flash
+- accounts/fireworks/models/kimi-k3
+- accounts/fireworks/models/minimax-m3
+- accounts/fireworks/models/minimax-m3p1-flash
+- accounts/fireworks/models/muse-spark-open
+- accounts/fireworks/models/qwen3p8-2p4t-a95b
+- accounts/fireworks/models/qwen3p8-max
+- accounts/fireworks/routers/deepseek-flash-latest
+- accounts/fireworks/routers/deepseek-v4p1-flash-1017-spot
+- accounts/fireworks/routers/deepseek-v4p1-flash-spot
+- accounts/fireworks/routers/glm-5p3-fast
+- accounts/fireworks/routers/glm-5p3-spot
+- accounts/fireworks/routers/glm-fast-latest
+- accounts/fireworks/routers/glm-flash-latest
+- accounts/fireworks/routers/glm-latest
+- accounts/fireworks/routers/kimi-fast-latest
+- accounts/fireworks/routers/kimi-k3-fast
+- accounts/fireworks/routers/kimi-k3-spot
+- accounts/fireworks/routers/kimi-latest
+- accounts/fireworks/routers/minimax-latest
+- accounts/fireworks/routers/qwen-max-latest
 
 </details>

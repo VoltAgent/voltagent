@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "baseten-agent",
   instructions: "You are a helpful assistant",
-  model: "baseten/Qwen/Qwen3-Coder-480B-A35B-Instruct",
+  model: "baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
 });
 ```
 
@@ -38,18 +38,26 @@ You can override the base URL by setting `BASETEN_BASE_URL`.
 
 ## Provider docs
 
-- https://docs.baseten.co/development/model-apis/overview
+- https://docs.baseten.co/inference/model-apis/overview
 
 ## Models
 
 <details>
-  <summary>Show models (6)</summary>
+  <summary>Show models (14)</summary>
 
-- Qwen/Qwen3-Coder-480B-A35B-Instruct
-- deepseek-ai/DeepSeek-V3.2
-- moonshotai/Kimi-K2-Instruct-0905
-- moonshotai/Kimi-K2-Thinking
-- zai-org/GLM-4.6
-- zai-org/GLM-4.7
+- deepseek-ai/DeepSeek-V4-Flash-0731
+- deepseek-ai/DeepSeek-V4-Pro-0813
+- deepseek-ai/DeepSeek-V4.1-Flash
+- deepseek-ai/DeepSeek-V4.1-Flash-1017
+- deepseek-ai/DeepSeek-V4.1-Flash-1017-Fast
+- deepseek-ai/DeepSeek-V4.1-Flash-Fast
+- moonshotai/Kimi-K3
+- nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B
+- openai/gpt-oss-120b
+- zai-org/GLM-5.2
+- zai-org/GLM-5.2-Fast
+- zai-org/GLM-5.3
+- zai-org/GLM-5.3-Fast
+- zai-org/GLM-5.3-Flash
 
 </details>
