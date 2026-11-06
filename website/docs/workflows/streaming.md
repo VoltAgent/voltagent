@@ -861,15 +861,21 @@ interface WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>
 
 ### WorkflowStartAsyncResult
 
-Returned by `.startAsync()` method - starts in the background and returns immediately:
+Returned by `.startAsync()` after persisting the initial running state. Execution continues in the background; `completion` can be awaited for the final result after terminal handling finishes:
 
 ```typescript
-interface WorkflowStartAsyncResult {
+interface WorkflowStartAsyncResult<
+  RESULT_SCHEMA extends z.ZodTypeAny = z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+> {
   executionId: string;
   workflowId: string;
   startAt: Date;
+  completion: Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
 }
 ```
+
+`completion` resolves with the same result statuses as `.run()`, including `suspended`, `cancelled`, and `error`. If execution fails before it can return a result, the promise rejects with that failure after background failure persistence finishes. Awaiting the promise is optional.
 
 ### WorkflowTimeTravelOptions
 
@@ -892,7 +898,7 @@ interface WorkflowTimeTravelOptions {
 | Feature          | `.run()`                  | `.startAsync()`            | `.stream()`            |
 | ---------------- | ------------------------- | -------------------------- | ---------------------- |
 | Returns          | `WorkflowExecutionResult` | `WorkflowStartAsyncResult` | `WorkflowStreamResult` |
-| Waits for finish | Yes                       | No                         | No                     |
+| Waits for finish | Yes                       | Via `completion`           | Via `result`           |
 | Event streaming  | No                        | No                         | Yes (AsyncIterable)    |
 | Field resolution | Immediate                 | Immediate metadata         | Promise-based          |
 | Use case         | Simple execution          | Background trigger         | Real-time monitoring   |
