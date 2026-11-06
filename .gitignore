@@ -188,3 +188,6 @@ node_modules/
 
 # example skills
 !examples/with-workspace/workspace/skills
+
+# Local scratchpad
+/.scratch/

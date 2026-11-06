@@ -26,6 +26,8 @@ const agent = new Agent({
 - `GOOGLE_VERTEX_LOCATION`
 - `GOOGLE_APPLICATION_CREDENTIALS`
 
+If `GOOGLE_VERTEX_API_KEY` is set, Vertex uses express mode with that key and ignores `GOOGLE_VERTEX_PROJECT`, `GOOGLE_VERTEX_LOCATION` and `GOOGLE_APPLICATION_CREDENTIALS`.
+
 ## Provider package
 
 `@ai-sdk/google-vertex`
