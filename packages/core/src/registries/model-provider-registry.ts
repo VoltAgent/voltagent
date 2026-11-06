@@ -523,6 +523,51 @@ const requireApiKey = (config: ModelProviderRegistryEntry): ProviderEnvMatch => 
   return match;
 };
 
+const NEAR_AI_PROVIDER_ID = "nearai";
+
+const sanitizeNearAIRequestBody = (args: Record<string, unknown>): Record<string, unknown> => {
+  const { reasoning_effort: _reasoningEffort, store: _store, ...sanitized } = args;
+
+  if (Array.isArray(sanitized.messages)) {
+    sanitized.messages = sanitized.messages.map((message) => {
+      if (!isRecord(message) || message.role !== "developer") {
+        return message;
+      }
+      return { ...message, role: "system" };
+    });
+  }
+
+  if (Array.isArray(sanitized.tools)) {
+    sanitized.tools = sanitized.tools.map((tool) => {
+      if (!isRecord(tool)) {
+        return tool;
+      }
+
+      const toolFunction = tool.function;
+      if (!isRecord(toolFunction) || !("strict" in toolFunction)) {
+        return tool;
+      }
+
+      const { strict: _strict, ...sanitizedFunction } = toolFunction;
+      return { ...tool, function: sanitizedFunction };
+    });
+  }
+
+  const responseFormat = sanitized.response_format;
+  if (isRecord(responseFormat)) {
+    const jsonSchema = responseFormat.json_schema;
+    if (isRecord(jsonSchema) && "strict" in jsonSchema) {
+      const { strict: _strict, ...sanitizedJsonSchema } = jsonSchema;
+      sanitized.response_format = {
+        ...responseFormat,
+        json_schema: sanitizedJsonSchema,
+      };
+    }
+  }
+
+  return sanitized;
+};
+
 const isModelProvider = (value: unknown): value is ModelProvider =>
   Boolean(
     value &&
@@ -608,11 +653,13 @@ const buildOpenAICompatibleProvider: ProviderAdapter = (config, moduleExports) =
     throw new Error(`Missing base URL for "${config.id}". Set ${formatEnvList(config.env ?? [])}.`);
   }
 
+  const isNearAI = normalizeProviderId(config.id) === NEAR_AI_PROVIDER_ID;
   const provider = createFn({
     name: config.id,
     baseURL,
     apiKey: apiKeyMatch.value,
-    supportsStructuredOutputs: true,
+    supportsStructuredOutputs: !isNearAI,
+    ...(isNearAI ? { transformRequestBody: sanitizeNearAIRequestBody } : {}),
   });
 
   return provider as ModelProviderEntry;
