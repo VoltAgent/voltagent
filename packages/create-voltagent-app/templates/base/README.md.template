@@ -145,6 +145,8 @@ The included expense approval workflow has test scenarios:
 
 ## 🐳 Docker Deployment
 
+The Dockerfile uses the package manager selected when this project was created. Keep its lockfile in the project root when building the image.
+
 Build and run with Docker:
 
 ```bash

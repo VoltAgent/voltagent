@@ -6,6 +6,7 @@ export type ProjectOptions = {
   projectName: string;
   typescript: boolean;
   packageManager: PackageManager;
+  packageManagerVersion: string;
   features: Feature[];
   ide?: "cursor" | "windsurf" | "vscode" | "none";
   aiProvider?: AIProvider;
