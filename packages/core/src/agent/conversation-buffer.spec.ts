@@ -284,4 +284,51 @@ describe("ConversationBuffer", () => {
     expect(pending).toHaveLength(1);
     expect(pending[0]?.id).toBe("user-1");
   });
+
+  it("peekPendingMessages leaves the pending set intact for retry batches", () => {
+    const buffer = new ConversationBuffer();
+    buffer.ingestUIMessages(
+      [{ id: "m-1", role: "user", parts: [{ type: "text", text: "one" }] }],
+      false,
+    );
+    buffer.ingestUIMessages(
+      [{ id: "m-2", role: "user", parts: [{ type: "text", text: "two" }] }],
+      false,
+    );
+
+    const first = buffer.peekPendingMessages();
+    expect(first.map((message) => message.id)).toEqual(["m-1", "m-2"]);
+
+    // A failed flush must not lose the batch: peek again, same content.
+    const second = buffer.peekPendingMessages();
+    expect(second.map((message) => message.id)).toEqual(["m-1", "m-2"]);
+  });
+
+  it("acknowledgeSavedMessage clears pending state and the active assistant marker", () => {
+    const buffer = new ConversationBuffer();
+    buffer.addModelMessages([assistantToolCall], "response");
+    buffer.addModelMessages([assistantText], "response");
+
+    const [snapshot] = buffer.peekPendingMessages();
+    expect(snapshot).toBeDefined();
+
+    buffer.acknowledgeSavedMessage(snapshot);
+    expect(buffer.peekPendingMessages()).toHaveLength(0);
+  });
+
+  it("acknowledgeSavedMessage keeps a message pending when it changed after the snapshot", () => {
+    const buffer = new ConversationBuffer();
+    buffer.addModelMessages([assistantText], "response");
+
+    const [snapshot] = buffer.peekPendingMessages();
+    expect(snapshot).toBeDefined();
+
+    // Simulate a streaming update merged into the same message after the
+    // snapshot was taken for the in-flight write.
+    const current = (buffer as any).messages[0];
+    current.parts.push({ type: "text", text: " more" });
+
+    buffer.acknowledgeSavedMessage(snapshot);
+    expect(buffer.peekPendingMessages()).toHaveLength(1);
+  });
 });
