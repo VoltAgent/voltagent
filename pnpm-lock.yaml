@@ -4534,6 +4534,33 @@ importers:
         specifier: ^6.0.0
         version: 6.0.3(zod@4.3.5)
 
+  packages/taskmarket:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      '@voltagent/core':
+        specifier: ^2.9.2
+        version: link:../core
+      '@voltagent/internal':
+        specifier: ^1.0.3
+        version: link:../internal
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.6.2)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
   packages/voice:
     dependencies:
       '@xsai/generate-speech':
