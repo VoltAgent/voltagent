@@ -282,7 +282,7 @@ Deep dive into agent execution flow with detailed traces and performance metrics
 
 Get a comprehensive overview of all your agents, workflows, and system performance metrics.
 
-<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
+<img alt="dashboard" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### Logs
 

@@ -48,7 +48,7 @@ Sometimes you just need to get humans in the loop. Automatic metrics can overloo
 
 **Crowd-sourcing** scales this by using multiple reviewers per example. You can avail services like Amazon Mechanical Turk or specialized annotation services. It gives you a broader perspective and helps catch evaluator bias.
 
-The sacrifice is obvious: human testing is expensive and time-consuming. But for high-risk applications or when you're testing novel methods, it's typically worth it. And human feedback will also pinpoint issues that you won't think to test for programatically.
+The sacrifice is obvious: human testing is expensive and time-consuming. But for high-risk applications or when you're testing novel methods, it's typically worth it. And human feedback will also pinpoint issues that you won't think to test for programmatically.
 
 ### Hybrid Approaches
 
