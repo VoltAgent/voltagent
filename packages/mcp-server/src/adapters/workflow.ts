@@ -61,6 +61,8 @@ function toMcpTool(workflow: RegisteredWorkflow, name: string): MCPTool {
     inputSchema: finalInputSchema as MCPTool["inputSchema"],
     annotations: {
       title: workflowInstance.name,
+    },
+    _meta: {
       workflowId: workflowInstance.id,
       toolType: "workflow",
     },
@@ -222,6 +224,8 @@ function toResumeTool(workflow: RegisteredWorkflow, name: string): MCPTool {
     inputSchema: inputSchema as MCPTool["inputSchema"],
     annotations: {
       title: `${workflow.workflow.name} Resume`,
+    },
+    _meta: {
       workflowId: workflow.workflow.id,
       toolKind: "workflow_resume",
       toolType: "workflow_resume",

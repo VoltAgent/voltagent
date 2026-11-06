@@ -68,10 +68,9 @@ You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to
 
 ## 💛 Sponsors
 
-|                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                                                     |
-| :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|                                             <a href="https://www.testmuai.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-white.png"><img alt="TestMu AI" src="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-black.png" width="425"></picture></a>                                              | [TestMu AI (formerly LambdaTest)](https://www.testmuai.com) is an AI-native testing cloud platform built for modern engineering teams. Covering everything from autonomous test creation and fast execution to testing AI agents, chatbots and voice assistants.                                                                    |
-| <a href="https://lite.ego.app/?utm_campaign=ego-sponsor&utm_source=voltagent-github&utm_medium=sponsor"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cdn.voltagent.dev/awesome-repo/ego-lite/logo_wordmark_lite_white.svg"><img alt="Ego Lite" src="https://cdn.voltagent.dev/awesome-repo/ego-lite/logo_wordmark_lite_dark.svg" width="425"></picture></a> | [Ego Lite](https://lite.ego.app/?utm_campaign=ego-sponsor&utm_source=voltagent-github&utm_medium=sponsor) is the fastest browser for your AI agents to run browser automation tasks, 3.45x faster than agent-browser (Vercel), always free, no setup, and lets your agents run 100+ browser tasks at the same time in their Spaces. |
+|                                                                                                                                                                                                                                                                                             |                                                                                                                                                                                                                                                                  |
+| :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a href="https://www.testmuai.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-white.png"><img alt="TestMu AI" src="https://cdn.voltagent.dev/awesome-repo/testmui/testmuai-black.png" width="425"></picture></a> | [TestMu AI (formerly LambdaTest)](https://www.testmuai.com) is an AI-native testing cloud platform built for modern engineering teams. Covering everything from autonomous test creation and fast execution to testing AI agents, chatbots and voice assistants. |
 
 ## ⚡ Quick Start
 
@@ -283,7 +282,7 @@ Deep dive into agent execution flow with detailed traces and performance metrics
 
 Get a comprehensive overview of all your agents, workflows, and system performance metrics.
 
-<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
+<img alt="dashboard" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### Logs
 
@@ -356,7 +355,7 @@ Connect your agents to knowledge sources with built-in retrieval-augmented gener
 
 ## Contribution
 
-We welcome contributions! Please refer to the contribution guidelines (link needed if available). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
+We welcome contributions! Please refer to our [contribution guidelines](CONTRIBUTING.md). Join our [Discord](https://s.voltagent.dev/discord) server for questions and discussions.
 
 ## Contributor ♥️ Thanks
 

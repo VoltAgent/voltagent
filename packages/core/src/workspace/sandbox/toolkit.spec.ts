@@ -57,6 +57,49 @@ describe("Workspace sandbox toolkit", () => {
     expect(executeCalls[0]?.args).toEqual(["-p", "/data/playwright/voltagent/screenshots"]);
   });
 
+  it("forwards command and args unchanged when normalization is disabled", async () => {
+    const executeCalls: Array<Record<string, unknown>> = [];
+    const workspace = new Workspace({
+      sandbox: {
+        name: "recording",
+        status: "ready",
+        async execute(options) {
+          executeCalls.push(options as unknown as Record<string, unknown>);
+          return {
+            stdout: "",
+            stderr: "",
+            exitCode: 0,
+            durationMs: 1,
+            timedOut: false,
+            aborted: false,
+            stdoutTruncated: false,
+            stderrTruncated: false,
+          };
+        },
+      },
+      filesystem: {},
+    });
+
+    const toolkit = workspace.createSandboxToolkit({ normalizeCommandAndArgs: false });
+    const executeTool = toolkit.tools.find((tool) => tool.name === "execute_command");
+    if (!executeTool?.execute) {
+      throw new Error("execute_command tool not found");
+    }
+
+    await executeTool.execute(
+      { command: "git status", args: ["--short"] },
+      buildExecuteOptions() as any,
+    );
+    await executeTool.execute({ command: " echo hi " }, buildExecuteOptions() as any);
+
+    expect(executeCalls.map(({ command, args }) => ({ command, args }))).toEqual([
+      { command: "git status", args: ["--short"] },
+      { command: " echo hi ", args: undefined },
+    ]);
+    expect(toolkit.instructions).toContain("without tokenization or changes");
+    expect(executeTool.description).toContain("exactly as provided");
+  });
+
   it("keeps quoted arguments while normalizing command + args", async () => {
     const executeCalls: Array<Record<string, unknown>> = [];
     const workspace = new Workspace({

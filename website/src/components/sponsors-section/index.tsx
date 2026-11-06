@@ -1,13 +1,11 @@
 import React from "react";
 
-const SPONSORS = [
-  {
-    name: "Ego Lite",
-    description: "Fast browser automation for AI agents.",
-    href: "https://lite.ego.app/?utm_campaign=ego-sponsor&utm_source=voltagent&utm_medium=sponsor",
-    logo: "https://cdn.voltagent.dev/awesome-repo/ego-lite/logo_wordmark_lite_white.svg",
-  },
-];
+const SPONSORS: {
+  name: string;
+  description: string;
+  href: string;
+  logo: string;
+}[] = [];
 
 export function SponsorsSection() {
   return (

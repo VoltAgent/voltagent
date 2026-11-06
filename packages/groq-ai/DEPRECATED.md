@@ -63,8 +63,8 @@ const agent = new Agent({
 If you need help with migration, please:
 
 - Check the [migration guide](https://voltagent.dev/docs/providers/groq-ai/)
-- Visit our [GitHub discussions](https://github.com/voltagentdev/voltagent/discussions)
-- Review the [examples](https://github.com/voltagentdev/voltagent/tree/main/examples) using the new provider
+- Visit our [GitHub discussions](https://github.com/VoltAgent/voltagent/discussions)
+- Review the [examples](https://github.com/VoltAgent/voltagent/tree/main/examples) using the new provider
 
 ---
 
