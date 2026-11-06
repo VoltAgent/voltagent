@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "perplexity-agent",
   instructions: "You are a helpful assistant",
-  model: "perplexity/sonar",
+  model: "perplexity/model-id",
 });
 ```
 
@@ -40,11 +40,4 @@ You can override the base URL by setting `PERPLEXITY_BASE_URL`.
 
 ## Models
 
-<details>
-  <summary>Show models (3)</summary>
-
-- sonar
-- sonar-pro
-- sonar-reasoning-pro
-
-</details>
+No models listed in the registry snapshot.

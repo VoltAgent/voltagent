@@ -317,7 +317,10 @@ ${rows}
 
 const preferredModelByProvider = {
   anthropic: "claude-3-5-sonnet",
+  evroc: "Qwen/Qwen3.8-27B",
   google: "gemini-2.0-flash",
+  "google-vertex": "gemini-3.5-flash",
+  nearai: "Qwen/Qwen3.8-27B",
   openai: "gpt-4o-mini",
   openrouter: "anthropic/claude-haiku-4-5",
   xai: "grok-4",

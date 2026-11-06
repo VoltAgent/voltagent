@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "cloudflare-ai-gateway-agent",
   instructions: "You are a helpful assistant",
-  model: "cloudflare-ai-gateway/anthropic/claude-3-5-haiku",
+  model: "cloudflare-ai-gateway/alibaba/qwen3-max",
 });
 ```
 
@@ -45,71 +45,80 @@ You can override the base URL by setting `CLOUDFLARE_AI_GATEWAY_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (64)</summary>
+  <summary>Show models (73)</summary>
 
-- anthropic/claude-3-5-haiku
-- anthropic/claude-3-haiku
-- anthropic/claude-3-opus
-- anthropic/claude-3-sonnet
-- anthropic/claude-3.5-haiku
-- anthropic/claude-3.5-sonnet
-- anthropic/claude-haiku-4-5
-- anthropic/claude-opus-4
-- anthropic/claude-opus-4-1
-- anthropic/claude-opus-4-5
-- anthropic/claude-sonnet-4
-- anthropic/claude-sonnet-4-5
-- openai/gpt-3.5-turbo
-- openai/gpt-4
-- openai/gpt-4-turbo
+- alibaba/qwen3-max
+- alibaba/qwen3.5-397b-a17b
+- alibaba/qwen3.7-max
+- alibaba/qwen3.7-plus
+- alibaba/qwen3.8-max
+- anthropic/claude-fable-5
+- anthropic/claude-fable-5.1
+- anthropic/claude-haiku-4.5
+- anthropic/claude-haiku-5.5
+- anthropic/claude-opus-4.5
+- anthropic/claude-opus-4.6
+- anthropic/claude-opus-4.7
+- anthropic/claude-opus-4.8
+- anthropic/claude-opus-5
+- anthropic/claude-opus-5.5
+- anthropic/claude-sonnet-4.5
+- anthropic/claude-sonnet-4.6
+- anthropic/claude-sonnet-5
+- anthropic/claude-sonnet-5.5
+- deepseek/deepseek-v4-pro
+- fireworks/ember-1
+- google/gemini-2.5-flash
+- google/gemini-2.5-flash-lite
+- google/gemini-2.5-pro
+- google/gemini-3-flash
+- google/gemini-3.1-flash-lite
+- google/gemini-3.1-pro
+- google/gemini-3.5-flash
+- google/gemini-3.5-flash-lite
+- google/gemini-3.6-flash
+- google/gemini-3.7-flash
+- google/gemini-3.8-flash
+- google/gemini-4-argon
+- meta/muse-spark-1.1
+- meta/muse-spark-1.2
+- meta/muse-spark-1.3
+- meta/muse-spark-open
+- meta/muse-wonder-1.0
+- minimax/m3.1-flash
+- moonshotai/kimi-k3
+- openai/gpt-4.1
+- openai/gpt-4.1-mini
+- openai/gpt-4.1-nano
 - openai/gpt-4o
 - openai/gpt-4o-mini
+- openai/gpt-5
+- openai/gpt-5-mini
+- openai/gpt-5-nano
 - openai/gpt-5.1
-- openai/gpt-5.1-codex
-- openai/gpt-5.2
-- openai/o1
+- openai/gpt-5.4
+- openai/gpt-5.4-mini
+- openai/gpt-5.4-nano
+- openai/gpt-5.4-pro
+- openai/gpt-5.5
+- openai/gpt-5.5-pro
+- openai/gpt-5.6-luna
+- openai/gpt-5.6-sol
+- openai/gpt-5.6-terra
+- openai/gpt-6-astra
+- openai/gpt-6-luna
+- openai/gpt-6-sol
+- openai/gpt-6.1-sol
 - openai/o3
 - openai/o3-mini
-- openai/o3-pro
 - openai/o4-mini
-- workers-ai/@cf/ai4bharat/indictrans2-en-indic-1B
-- workers-ai/@cf/aisingapore/gemma-sea-lion-v4-27b-it
-- workers-ai/@cf/baai/bge-base-en-v1.5
-- workers-ai/@cf/baai/bge-large-en-v1.5
-- workers-ai/@cf/baai/bge-m3
-- workers-ai/@cf/baai/bge-reranker-base
-- workers-ai/@cf/baai/bge-small-en-v1.5
-- workers-ai/@cf/deepgram/aura-2-en
-- workers-ai/@cf/deepgram/aura-2-es
-- workers-ai/@cf/deepgram/nova-3
-- workers-ai/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b
-- workers-ai/@cf/facebook/bart-large-cnn
-- workers-ai/@cf/google/gemma-3-12b-it
-- workers-ai/@cf/huggingface/distilbert-sst-2-int8
-- workers-ai/@cf/ibm-granite/granite-4.0-h-micro
-- workers-ai/@cf/meta/llama-2-7b-chat-fp16
-- workers-ai/@cf/meta/llama-3-8b-instruct
-- workers-ai/@cf/meta/llama-3-8b-instruct-awq
-- workers-ai/@cf/meta/llama-3.1-8b-instruct
-- workers-ai/@cf/meta/llama-3.1-8b-instruct-awq
-- workers-ai/@cf/meta/llama-3.1-8b-instruct-fp8
-- workers-ai/@cf/meta/llama-3.2-11b-vision-instruct
-- workers-ai/@cf/meta/llama-3.2-1b-instruct
-- workers-ai/@cf/meta/llama-3.2-3b-instruct
-- workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
-- workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct
-- workers-ai/@cf/meta/llama-guard-3-8b
-- workers-ai/@cf/meta/m2m100-1.2b
-- workers-ai/@cf/mistral/mistral-7b-instruct-v0.1
-- workers-ai/@cf/mistralai/mistral-small-3.1-24b-instruct
-- workers-ai/@cf/myshell-ai/melotts
-- workers-ai/@cf/openai/gpt-oss-120b
-- workers-ai/@cf/openai/gpt-oss-20b
-- workers-ai/@cf/pfnet/plamo-embedding-1b
-- workers-ai/@cf/pipecat-ai/smart-turn-v2
-- workers-ai/@cf/qwen/qwen2.5-coder-32b-instruct
-- workers-ai/@cf/qwen/qwen3-30b-a3b-fp8
-- workers-ai/@cf/qwen/qwen3-embedding-0.6b
-- workers-ai/@cf/qwen/qwq-32b
+- reflection-ai/beam-1.0-501b-a23b
+- unbiased/pareto
+- xai/grok-4.20-0309-non-reasoning
+- xai/grok-4.20-0309-reasoning
+- xai/grok-4.3
+- xai/grok-4.5
+- xai/grok-4.6
+- xai/grok-4.7
 
 </details>

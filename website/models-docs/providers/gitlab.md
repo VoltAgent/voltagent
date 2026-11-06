@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "gitlab-agent",
   instructions: "You are a helpful assistant",
-  model: "gitlab/duo-chat-haiku-4-5",
+  model: "gitlab/duo-chat-fable-5",
 });
 ```
 
@@ -41,10 +41,30 @@ You can override the base URL by setting `GITLAB_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (3)</summary>
+  <summary>Show models (23)</summary>
 
+- duo-chat-fable-5
+- duo-chat-fable-5-1
+- duo-chat-gpt-5-2
+- duo-chat-gpt-5-4
+- duo-chat-gpt-5-4-mini
+- duo-chat-gpt-5-5
+- duo-chat-gpt-5-6-luna
+- duo-chat-gpt-5-6-sol
+- duo-chat-gpt-5-6-terra
+- duo-chat-gpt-6-1-sol
+- duo-chat-gpt-6-astra
+- duo-chat-gpt-6-luna
+- duo-chat-gpt-6-sol
 - duo-chat-haiku-4-5
 - duo-chat-opus-4-5
-- duo-chat-sonnet-4-5
+- duo-chat-opus-4-6
+- duo-chat-opus-4-7
+- duo-chat-opus-4-8
+- duo-chat-opus-5
+- duo-chat-opus-5-5
+- duo-chat-sonnet-4-6
+- duo-chat-sonnet-5
+- duo-chat-sonnet-5-5
 
 </details>

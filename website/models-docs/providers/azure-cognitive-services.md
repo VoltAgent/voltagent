@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "azure-cognitive-services-agent",
   instructions: "You are a helpful assistant",
-  model: "azure-cognitive-services/claude-haiku-4-5",
+  model: "azure-cognitive-services/claude-fable-5",
 });
 ```
 
@@ -42,89 +42,80 @@ You can override the base URL by setting `AZURE_COGNITIVE_SERVICES_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (90)</summary>
+  <summary>Show models (81)</summary>
 
+- claude-fable-5
+- claude-fable-5-1
 - claude-haiku-4-5
-- claude-opus-4-1
+- claude-haiku-5-5
+- claude-mythos-5
 - claude-opus-4-5
+- claude-opus-4-6
+- claude-opus-4-7
+- claude-opus-4-8
+- claude-opus-5
+- claude-opus-5-5
 - claude-sonnet-4-5
+- claude-sonnet-4-6
+- claude-sonnet-5
+- claude-sonnet-5-5
 - codestral-2501
-- codex-mini
 - cohere-command-a
-- cohere-command-r-08-2024
-- cohere-command-r-plus-08-2024
 - cohere-embed-v-4-0
 - cohere-embed-v3-english
 - cohere-embed-v3-multilingual
-- deepseek-r1
-- deepseek-r1-0528
-- deepseek-v3-0324
-- deepseek-v3.1
 - deepseek-v3.2
 - deepseek-v3.2-speciale
-- gpt-3.5-turbo-0125
-- gpt-3.5-turbo-0301
-- gpt-3.5-turbo-0613
-- gpt-3.5-turbo-1106
-- gpt-3.5-turbo-instruct
-- gpt-4
-- gpt-4-32k
-- gpt-4-turbo
-- gpt-4-turbo-vision
-- gpt-4.1
-- gpt-4.1-mini
-- gpt-4.1-nano
-- gpt-4o
-- gpt-4o-mini
+- deepseek-v4-flash
+- deepseek-v4-pro
+- deepseek-v4.1-flash
 - gpt-5
-- gpt-5-chat
 - gpt-5-codex
 - gpt-5-mini
 - gpt-5-nano
 - gpt-5-pro
 - gpt-5.1
-- gpt-5.1-chat
 - gpt-5.1-codex
+- gpt-5.1-codex-max
 - gpt-5.1-codex-mini
-- gpt-5.2-chat
-- grok-3
-- grok-3-mini
-- grok-4
-- grok-4-fast-non-reasoning
-- grok-4-fast-reasoning
-- grok-code-fast-1
-- kimi-k2-thinking
-- llama-3.2-11b-vision-instruct
-- llama-3.2-90b-vision-instruct
+- gpt-5.2
+- gpt-5.2-codex
+- gpt-5.3-codex
+- gpt-5.4
+- gpt-5.4-mini
+- gpt-5.4-nano
+- gpt-5.4-pro
+- gpt-5.5
+- gpt-5.6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-6-astra
+- gpt-6-luna
+- gpt-6-sol
+- gpt-6.1-sol
+- gpt-chat-latest
+- gpt-image-1
+- gpt-image-1.5
+- gpt-image-2
+- gpt-image-2.5-flare
+- gpt-image-2.5-sunburst
+- grok-4-1-fast-non-reasoning
+- grok-4-1-fast-reasoning
+- grok-4-20-non-reasoning
+- grok-4-20-reasoning
+- grok-4.6
+- grok-4.7
+- kimi-k2.5
+- kimi-k2.6
+- kimi-k2.7-code
 - llama-3.3-70b-instruct
 - llama-4-maverick-17b-128e-instruct-fp8
 - llama-4-scout-17b-16e-instruct
-- mai-ds-r1
-- meta-llama-3-70b-instruct
-- meta-llama-3-8b-instruct
-- meta-llama-3.1-405b-instruct
-- meta-llama-3.1-70b-instruct
-- meta-llama-3.1-8b-instruct
 - ministral-3b
-- mistral-large-2411
 - mistral-medium-2505
-- mistral-nemo
 - mistral-small-2503
 - model-router
-- o1
-- o1-mini
-- o1-preview
 - o3
-- o3-mini
-- o4-mini
-- phi-3-medium-128k-instruct
-- phi-3-medium-4k-instruct
-- phi-3-mini-128k-instruct
-- phi-3-mini-4k-instruct
-- phi-3-small-128k-instruct
-- phi-3-small-8k-instruct
-- phi-3.5-mini-instruct
-- phi-3.5-moe-instruct
 - phi-4
 - phi-4-mini
 - phi-4-mini-reasoning

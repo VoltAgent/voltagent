@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "ollama-cloud-agent",
   instructions: "You are a helpful assistant",
-  model: "ollama-cloud/cogito-2.1:671b-cloud",
+  model: "ollama-cloud/beam",
 });
 ```
 
@@ -43,19 +43,30 @@ You can override the base URL by setting `OLLAMA_CLOUD_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (12)</summary>
+  <summary>Show models (23)</summary>
 
-- cogito-2.1:671b-cloud
-- deepseek-v3.1:671b-cloud
-- gemini-3-pro-preview:latest
-- glm-4.6:cloud
-- gpt-oss:120b-cloud
-- gpt-oss:20b-cloud
-- kimi-k2-thinking:cloud
-- kimi-k2:1t-cloud
-- minimax-m2:cloud
-- qwen3-coder:480b-cloud
-- qwen3-vl-235b-cloud
-- qwen3-vl-235b-instruct-cloud
+- beam
+- deepseek-v4-pro
+- deepseek-v4-pro:0813
+- deepseek-v4.1-flash
+- deepseek-v4.1-flash:1017
+- gemma4:31b
+- glm-5.2
+- glm-5.3
+- glm-5.3-flash
+- gpt-oss:120b
+- gpt-oss:20b
+- kimi-k2.6
+- kimi-k2.7-code
+- kimi-k3
+- minimax-m2.7
+- minimax-m3
+- minimax-m3.1-flash
+- mistral-large-3:675b
+- mistral-large-4
+- muse-spark-open
+- nemotron-3-nano:30b
+- nemotron-3-super
+- nemotron-3-ultra
 
 </details>

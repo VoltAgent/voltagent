@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "xai-agent",
   instructions: "You are a helpful assistant",
-  model: "xai/grok-4",
+  model: "xai/grok-4.20-0309-non-reasoning",
 });
 ```
 
@@ -41,29 +41,19 @@ You can override the base URL by setting `XAI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (22)</summary>
+  <summary>Show models (12)</summary>
 
-- grok-2
-- grok-2-1212
-- grok-2-latest
-- grok-2-vision
-- grok-2-vision-1212
-- grok-2-vision-latest
-- grok-3
-- grok-3-fast
-- grok-3-fast-latest
-- grok-3-latest
-- grok-3-mini
-- grok-3-mini-fast
-- grok-3-mini-fast-latest
-- grok-3-mini-latest
-- grok-4
-- grok-4-1-fast
-- grok-4-1-fast-non-reasoning
-- grok-4-fast
-- grok-4-fast-non-reasoning
-- grok-beta
-- grok-code-fast-1
-- grok-vision-beta
+- grok-4.20-0309-non-reasoning
+- grok-4.20-0309-reasoning
+- grok-4.20-multi-agent-0309
+- grok-4.3
+- grok-4.5
+- grok-4.6
+- grok-4.7
+- grok-build-0.1
+- grok-imagine-image
+- grok-imagine-video
+- grok-imagine-video-1.5
+- grok-imagine-video-1.5-lite
 
 </details>

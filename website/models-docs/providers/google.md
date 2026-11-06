@@ -16,12 +16,13 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "google-agent",
   instructions: "You are a helpful assistant",
-  model: "google/gemini-2.0-flash",
+  model: "google/deep-research-max-preview-04-2026",
 });
 ```
 
 ## Environment variables
 
+- `GOOGLE_API_KEY`
 - `GOOGLE_GENERATIVE_AI_API_KEY`
 - `GEMINI_API_KEY`
 
@@ -37,38 +38,49 @@ You can override the base URL by setting `GOOGLE_BASE_URL`.
 
 ## Provider docs
 
-- https://ai.google.dev/gemini-api/docs/pricing
+- https://ai.google.dev/gemini-api/docs/models
 
 ## Models
 
 <details>
-  <summary>Show models (26)</summary>
+  <summary>Show models (37)</summary>
 
-- gemini-1.5-flash
-- gemini-1.5-flash-8b
-- gemini-1.5-pro
-- gemini-2.0-flash
-- gemini-2.0-flash-lite
+- deep-research-max-preview-04-2026
+- deep-research-preview-04-2026
+- gemini-2.5-computer-use-preview-10-2025
 - gemini-2.5-flash
 - gemini-2.5-flash-image
-- gemini-2.5-flash-image-preview
 - gemini-2.5-flash-lite
-- gemini-2.5-flash-lite-preview-06-17
-- gemini-2.5-flash-lite-preview-09-2025
-- gemini-2.5-flash-preview-04-17
-- gemini-2.5-flash-preview-05-20
-- gemini-2.5-flash-preview-09-2025
 - gemini-2.5-flash-preview-tts
 - gemini-2.5-pro
-- gemini-2.5-pro-preview-05-06
-- gemini-2.5-pro-preview-06-05
 - gemini-2.5-pro-preview-tts
 - gemini-3-flash-preview
-- gemini-3-pro-preview
+- gemini-3-pro-image
+- gemini-3-pro-image-preview
+- gemini-3.1-flash-image
+- gemini-3.1-flash-image-preview
+- gemini-3.1-flash-lite
+- gemini-3.1-flash-lite-image
+- gemini-3.1-flash-live-preview
+- gemini-3.1-flash-tts-preview
+- gemini-3.1-pro-preview
+- gemini-3.1-pro-preview-customtools
+- gemini-3.5-flash
+- gemini-3.5-flash-lite
+- gemini-3.5-live-translate-preview
+- gemini-3.6-flash
+- gemini-3.7-flash
+- gemini-3.8-flash
+- gemini-4-argon
 - gemini-embedding-001
+- gemini-embedding-2
 - gemini-flash-latest
 - gemini-flash-lite-latest
-- gemini-live-2.5-flash
-- gemini-live-2.5-flash-preview-native-audio
+- gemini-omni-flash-preview
+- gemini-pro-latest
+- gemma-4-26b-a4b-it
+- gemma-4-31b-it
+- lyria-3-clip-preview
+- lyria-3-pro-preview
 
 </details>

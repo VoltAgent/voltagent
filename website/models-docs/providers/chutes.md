@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "chutes-agent",
   instructions: "You are a helpful assistant",
-  model: "chutes/MiniMaxAI/MiniMax-M2.1-TEE",
+  model: "chutes/Nemotron-3-Nano-Omni-30B-TEE",
 });
 ```
 
@@ -43,63 +43,21 @@ You can override the base URL by setting `CHUTES_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (56)</summary>
+  <summary>Show models (14)</summary>
 
-- MiniMaxAI/MiniMax-M2.1-TEE
-- NousResearch/DeepHermes-3-Mistral-24B-Preview
-- NousResearch/Hermes-4-14B
-- NousResearch/Hermes-4-405B-FP8-TEE
-- NousResearch/Hermes-4-70B
-- NousResearch/Hermes-4.3-36B
-- OpenGVLab/InternVL3-78B-TEE
-- Qwen/Qwen2.5-72B-Instruct
-- Qwen/Qwen2.5-Coder-32B-Instruct
-- Qwen/Qwen2.5-VL-32B-Instruct
-- Qwen/Qwen2.5-VL-72B-Instruct-TEE
-- Qwen/Qwen3-14B
-- Qwen/Qwen3-235B-A22B
-- Qwen/Qwen3-235B-A22B-Instruct-2507-TEE
-- Qwen/Qwen3-235B-A22B-Thinking-2507
-- Qwen/Qwen3-30B-A3B
-- Qwen/Qwen3-30B-A3B-Instruct-2507
-- Qwen/Qwen3-32B
-- Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8-TEE
-- Qwen/Qwen3-Next-80B-A3B-Instruct
-- Qwen/Qwen3-VL-235B-A22B-Instruct
-- Qwen/Qwen3Guard-Gen-0.6B
-- XiaomiMiMo/MiMo-V2-Flash
-- chutesai/Mistral-Small-3.1-24B-Instruct-2503
-- chutesai/Mistral-Small-3.2-24B-Instruct-2506
-- deepseek-ai/DeepSeek-R1-0528-TEE
-- deepseek-ai/DeepSeek-R1-Distill-Llama-70B
-- deepseek-ai/DeepSeek-R1-TEE
-- deepseek-ai/DeepSeek-V3
-- deepseek-ai/DeepSeek-V3-0324-TEE
-- deepseek-ai/DeepSeek-V3.1-TEE
-- deepseek-ai/DeepSeek-V3.1-Terminus-TEE
-- deepseek-ai/DeepSeek-V3.2-Speciale-TEE
+- Nemotron-3-Nano-Omni-30B-TEE
+- Qwen/Qwen3-235B-A22B-Thinking-2507-TEE
+- Qwen/Qwen3-32B-TEE
+- Qwen/Qwen3.5-397B-A17B-TEE
+- Qwen/Qwen3.6-27B-TEE
+- Qwen/Qwen3.8-27B-TEE
 - deepseek-ai/DeepSeek-V3.2-TEE
-- miromind-ai/MiroThinker-v1.5-235B
-- mistralai/Devstral-2-123B-Instruct-2512
-- mistralai/Devstral-2-123B-Instruct-2512-TEE
-- moonshotai/Kimi-K2-Instruct-0905
-- moonshotai/Kimi-K2-Thinking-TEE
-- nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
-- openai/gpt-oss-120b-TEE
-- openai/gpt-oss-20b
-- rednote-hilab/dots.ocr
-- tngtech/DeepSeek-R1T-Chimera
-- tngtech/DeepSeek-TNG-R1T2-Chimera
-- tngtech/TNG-R1T-Chimera-TEE
-- unsloth/Mistral-Nemo-Instruct-2407
-- unsloth/Mistral-Small-24B-Instruct-2501
-- unsloth/gemma-3-12b-it
-- unsloth/gemma-3-27b-it
-- unsloth/gemma-3-4b-it
-- zai-org/GLM-4.5-Air
-- zai-org/GLM-4.5-TEE
-- zai-org/GLM-4.6-TEE
-- zai-org/GLM-4.6V
-- zai-org/GLM-4.7-TEE
+- deepseek-ai/DeepSeek-V4-Flash-0731-TEE
+- google/gemma-4-31B-turbo-TEE
+- moonshotai/Kimi-K2.6-TEE
+- moonshotai/Kimi-K3-TEE
+- unsloth/Mistral-Nemo-Instruct-2407-TEE
+- zai-org/GLM-5.1-TEE
+- zai-org/GLM-5.2-TEE
 
 </details>

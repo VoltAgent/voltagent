@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "mistral-agent",
   instructions: "You are a helpful assistant",
-  model: "mistral/codestral-latest",
+  model: "mistral/codestral-2508",
 });
 ```
 
@@ -41,33 +41,28 @@ You can override the base URL by setting `MISTRAL_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (26)</summary>
+  <summary>Show models (21)</summary>
 
+- codestral-2508
 - codestral-latest
-- devstral-2512
-- devstral-medium-2507
-- devstral-medium-latest
-- devstral-small-2505
-- devstral-small-2507
-- labs-devstral-small-2512
-- magistral-medium-latest
-- magistral-small
+- ministral-14b-2512
+- ministral-3b-2512
 - ministral-3b-latest
+- ministral-8b-2512
 - ministral-8b-latest
 - mistral-embed
-- mistral-large-2411
 - mistral-large-2512
+- mistral-large-4
 - mistral-large-latest
-- mistral-medium-2505
-- mistral-medium-2508
+- mistral-medium-2604
 - mistral-medium-latest
-- mistral-nemo
-- mistral-small-2506
+- mistral-small-2603
 - mistral-small-latest
-- open-mistral-7b
-- open-mixtral-8x22b
-- open-mixtral-8x7b
-- pixtral-12b
-- pixtral-large-latest
+- voxtral-mini-latest
+- voxtral-mini-tts-latest
+- voxtral-small-2507
+- voxtral-small-latest
+- zai-glm-5-3
+- zai-glm-5-3-flash
 
 </details>

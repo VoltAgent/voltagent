@@ -43,7 +43,7 @@ You can override the base URL by setting `HELICONE_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (91)</summary>
+  <summary>Show models (90)</summary>
 
 - chatgpt-4o-latest
 - claude-3-haiku-20240307
@@ -59,7 +59,6 @@ You can override the base URL by setting `HELICONE_BASE_URL`.
 - claude-opus-4-1-20250805
 - claude-sonnet-4
 - claude-sonnet-4-5-20250929
-- codex-mini-latest
 - deepseek-r1-distill-llama-70b
 - deepseek-reasoner
 - deepseek-tng-r1t2-chimera

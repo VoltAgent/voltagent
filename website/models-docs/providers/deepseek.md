@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "deepseek-agent",
   instructions: "You are a helpful assistant",
-  model: "deepseek/deepseek-chat",
+  model: "deepseek/deepseek-flash",
 });
 ```
 
@@ -38,14 +38,14 @@ You can override the base URL by setting `DEEPSEEK_BASE_URL`.
 
 ## Provider docs
 
-- https://platform.deepseek.com/api-docs/pricing
+- https://api-docs.deepseek.com/quick_start/pricing
 
 ## Models
 
 <details>
   <summary>Show models (2)</summary>
 
-- deepseek-chat
-- deepseek-reasoner
+- deepseek-flash
+- deepseek-v4-pro
 
 </details>

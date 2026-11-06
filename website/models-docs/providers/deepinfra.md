@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "deepinfra-agent",
   instructions: "You are a helpful assistant",
-  model: "deepinfra/MiniMaxAI/MiniMax-M2",
+  model: "deepinfra/ByteDance/Seed-2.0-code",
 });
 ```
 
@@ -41,16 +41,63 @@ You can override the base URL by setting `DEEPINFRA_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (9)</summary>
+  <summary>Show models (56)</summary>
 
-- MiniMaxAI/MiniMax-M2
-- MiniMaxAI/MiniMax-M2.1
-- Qwen/Qwen3-Coder-480B-A35B-Instruct
+- ByteDance/Seed-2.0-code
+- ByteDance/Seed-2.0-mini
+- ByteDance/Seed-2.0-pro
+- MiniMaxAI/MiniMax-M3
+- Qwen/Qwen3-235B-A22B-Instruct-2507
+- Qwen/Qwen3-30B-A3B
+- Qwen/Qwen3-32B
 - Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo
-- moonshotai/Kimi-K2-Instruct
-- moonshotai/Kimi-K2-Thinking
+- Qwen/Qwen3-Next-80B-A3B-Instruct
+- Qwen/Qwen3-VL-235B-A22B-Instruct
+- Qwen/Qwen3-VL-30B-A3B-Instruct
+- Qwen/Qwen3.5-27B
+- Qwen/Qwen3.5-35B-A3B
+- Qwen/Qwen3.5-397B-A17B
+- Qwen/Qwen3.5-9B
+- Qwen/Qwen3.6-27B
+- Qwen/Qwen3.6-35B-A3B
+- Qwen/Qwen3.7-Max
+- Qwen/Qwen3.8-27B
+- Qwen/Qwen3.8-Flash
+- Qwen/Qwen3.8-Max
+- XiaomiMiMo/MiMo-V2.6-Flash
+- XiaomiMiMo/MiMo-V2.6-Pro
+- anthropic/claude-fable-5
+- deepseek-ai/DeepSeek-R1-0528
+- deepseek-ai/DeepSeek-V3
+- deepseek-ai/DeepSeek-V3.1
+- deepseek-ai/DeepSeek-V3.2
+- deepseek-ai/DeepSeek-V4-Flash
+- deepseek-ai/DeepSeek-V4-Flash-0731
+- deepseek-ai/DeepSeek-V4-Flash-Vision-Exp
+- deepseek-ai/DeepSeek-V4-Pro
+- deepseek-ai/DeepSeek-V4-Pro-0813
+- deepseek-ai/DeepSeek-V4.1-Flash
+- deepseek-ai/DeepSeek-V4.1-Flash-1017
+- google/gemma-3-12b-it
+- google/gemma-3-27b-it
+- google/gemma-3-4b-it
+- google/gemma-4-26B-A4B-it
+- google/gemma-4-31B-it
+- meta-llama/Llama-3.3-70B-Instruct-Turbo
+- meta-llama/Llama-4-Scout-17B-16E-Instruct
+- meta-llama/Llama-Guard-4-12B
+- mistralai/Mistral-Small-24B-Instruct-2501
+- moonshotai/Kimi-K2.6
+- moonshotai/Kimi-K3
 - openai/gpt-oss-120b
 - openai/gpt-oss-20b
+- stepfun-ai/Step-5-Preview
+- tencent/Hy4-preview
+- thinkingmachines/Inkling-Small
+- zai-org/GLM-4.6
 - zai-org/GLM-4.7
+- zai-org/GLM-5.2
+- zai-org/GLM-5.3
+- zai-org/GLM-5.3-Flash
 
 </details>

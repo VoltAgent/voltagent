@@ -41,11 +41,9 @@ You can override the base URL by setting `CEREBRAS_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (4)</summary>
+  <summary>Show models (2)</summary>
 
 - gpt-oss-120b
-- qwen-3-235b-a22b-instruct-2507
-- zai-glm-4.6
-- zai-glm-4.7
+- qwen-3.8-27b
 
 </details>

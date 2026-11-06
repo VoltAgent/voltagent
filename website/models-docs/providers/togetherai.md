@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "togetherai-agent",
   instructions: "You are a helpful assistant",
-  model: "togetherai/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
+  model: "togetherai/MiniMaxAI/MiniMax-M3",
 });
 ```
 
@@ -41,17 +41,22 @@ You can override the base URL by setting `TOGETHERAI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (10)</summary>
+  <summary>Show models (15)</summary>
 
-- Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8
-- deepseek-ai/DeepSeek-R1
-- deepseek-ai/DeepSeek-V3
-- deepseek-ai/DeepSeek-V3-1
-- essentialai/Rnj-1-Instruct
-- meta-llama/Llama-3.3-70B-Instruct-Turbo
-- moonshotai/Kimi-K2-Instruct
-- moonshotai/Kimi-K2-Thinking
+- MiniMaxAI/MiniMax-M3
+- Qwen/Qwen3.5-9B
+- Qwen/Qwen3.6-Plus
+- Qwen/Qwen3.7-Max
+- deepseek-ai/DeepSeek-V4-Pro-0813
+- deepseek-ai/DeepSeek-V4.1-Flash
+- meta-models/Muse-Spark-Open-816B-A42B
+- moonshotai/Kimi-K3
+- nvidia/NVIDIA-Nemotron-3.5-Super-VL
 - openai/gpt-oss-120b
-- zai-org/GLM-4.6
+- reflection/Beam-1.0-501B-A23B
+- thinkingmachines/Inkling
+- zai-org/GLM-5.2
+- zai-org/GLM-5.3
+- zai-org/GLM-5.3-Flash
 
 </details>

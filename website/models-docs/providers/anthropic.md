@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "anthropic-agent",
   instructions: "You are a helpful assistant",
-  model: "anthropic/claude-3-5-haiku-20241022",
+  model: "anthropic/claude-fable-5",
 });
 ```
 
@@ -41,28 +41,24 @@ You can override the base URL by setting `ANTHROPIC_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (21)</summary>
+  <summary>Show models (17)</summary>
 
-- claude-3-5-haiku-20241022
-- claude-3-5-haiku-latest
-- claude-3-5-sonnet-20240620
-- claude-3-5-sonnet-20241022
-- claude-3-7-sonnet-20250219
-- claude-3-7-sonnet-latest
-- claude-3-haiku-20240307
-- claude-3-opus-20240229
-- claude-3-sonnet-20240229
+- claude-fable-5
+- claude-fable-5-1
 - claude-haiku-4-5
 - claude-haiku-4-5-20251001
-- claude-opus-4-0
-- claude-opus-4-1
-- claude-opus-4-1-20250805
-- claude-opus-4-20250514
+- claude-haiku-5-5
 - claude-opus-4-5
 - claude-opus-4-5-20251101
-- claude-sonnet-4-0
-- claude-sonnet-4-20250514
+- claude-opus-4-6
+- claude-opus-4-7
+- claude-opus-4-8
+- claude-opus-5
+- claude-opus-5-5
 - claude-sonnet-4-5
 - claude-sonnet-4-5-20250929
+- claude-sonnet-4-6
+- claude-sonnet-5
+- claude-sonnet-5-5
 
 </details>

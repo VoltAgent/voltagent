@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "venice-agent",
   instructions: "You are a helpful assistant",
-  model: "venice/claude-opus-45",
+  model: "venice/abliteration-abliterated-model-large-flash",
 });
 ```
 
@@ -43,32 +43,132 @@ You can override the base URL by setting `VENICE_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (25)</summary>
+  <summary>Show models (125)</summary>
 
-- claude-opus-45
-- claude-sonnet-45
-- deepseek-v3.2
+- abliteration-abliterated-model-large-flash
+- abliteration-abliterated-model-large-v2
+- aion-labs-aion-3-0
+- aion-labs-aion-3-0-mini
+- aion-labs-aion-3-5
+- aion-labs-aion-3-5-mini
+- claude-fable-5
+- claude-fable-5-1
+- claude-haiku-5-5
+- claude-opus-4-5
+- claude-opus-4-6
+- claude-opus-4-7
+- claude-opus-4-8
+- claude-opus-4-8-fast
+- claude-opus-5
+- claude-opus-5-5
+- claude-opus-5-5-fast
+- claude-opus-5-fast
+- claude-sonnet-4-6
+- claude-sonnet-5
+- claude-sonnet-5-5
+- deepseek-v4-1-flash
+- deepseek-v4-1-flash-1017
+- deepseek-v4-1-flash-uncensored
+- deepseek-v4-flash
+- deepseek-v4-flash-0731
+- deepseek-v4-flash-0731-fast
+- deepseek-v4-pro
+- deepseek-v4-pro-0813
+- gemini-3-1-pro-preview
+- gemini-3-5-flash
+- gemini-3-5-flash-lite
+- gemini-3-6-flash
+- gemini-3-7-flash
+- gemini-3-8-flash
 - gemini-3-flash-preview
-- gemini-3-pro-preview
+- gemini-4-argon
+- gemma-4-uncensored
 - google-gemma-3-27b-it
-- grok-41-fast
-- grok-code-fast-1
+- google-gemma-4-26b-a4b-it
+- google-gemma-4-31b-it
+- grok-4-20
+- grok-4-20-multi-agent
+- grok-4-3
+- grok-4-5
+- grok-4-6
+- grok-4-7
+- grok-build-0-1
 - hermes-3-llama-3.1-405b
-- kimi-k2-thinking
+- hy4-preview
+- kimi-k2-5
+- kimi-k2-6
+- kimi-k2-7-code
+- kimi-k3
+- kimi-k3-1-pro
+- kimi-k3-1-pro-highspeed
+- kimi-k3-fast-api
 - llama-3.2-3b
 - llama-3.3-70b
-- minimax-m21
-- mistral-31-24b
+- mercury-2
+- mercury-2-5
+- mercury-3
+- minimax-m25
+- minimax-m27
+- minimax-m3-1-flash
+- minimax-m3-preview
+- mistral-small-3-2-24b-instruct
+- muse-spark-open
+- muse-wonder
+- nvidia-nemotron-3-5-super-vl-120b-a12b
+- nvidia-nemotron-3-nano-30b-a3b
+- nvidia-nemotron-3-ultra-550b-a55b
+- olafangensan-glm-4.7-flash-heretic
+- openai-gpt-4o-2024-11-20
+- openai-gpt-4o-mini-2024-07-18
 - openai-gpt-52
-- openai-gpt-52-codex
+- openai-gpt-53-codex
+- openai-gpt-54
+- openai-gpt-54-mini
+- openai-gpt-54-pro
+- openai-gpt-55
+- openai-gpt-55-pro
+- openai-gpt-56-luna
+- openai-gpt-56-luna-pro
+- openai-gpt-56-sol
+- openai-gpt-56-sol-pro
+- openai-gpt-56-terra
+- openai-gpt-56-terra-pro
+- openai-gpt-6-astra
+- openai-gpt-6-astra-pro
+- openai-gpt-6-luna
+- openai-gpt-6-sol
+- openai-gpt-61-sol
+- openai-gpt-61-sol-ultrafast
 - openai-gpt-oss-120b
+- qwen-3-6-plus
+- qwen-3-7-max
+- qwen-3-7-plus
+- qwen-3-8-2-4t-a95b
+- qwen-3-8-27b
+- qwen-3-8-flash
+- qwen-3-8-max
 - qwen3-235b-a22b-instruct-2507
 - qwen3-235b-a22b-thinking-2507
-- qwen3-4b
-- qwen3-coder-480b-a35b-instruct
+- qwen3-5-35b-a3b
+- qwen3-5-397b-a17b
+- qwen3-6-27b
+- qwen3-6-35b-a3b
+- qwen3-coder-480b-a35b-instruct-turbo
 - qwen3-next-80b
-- venice-uncensored
-- zai-org-glm-4.6v
+- qwen3-vl-235b-a22b
+- seed-2-1-turbo
+- venice-uncensored-1-2
+- venice-uncensored-role-play
+- xiaomi-mimo-v2-5
+- xiaomi-mimo-v2-6-flash
+- z-ai-glm-5-3
+- z-ai-glm-5-3-flash
+- z-ai-glm-5-turbo
+- z-ai-glm-5v-turbo
+- zai-org-glm-4.6
 - zai-org-glm-4.7
+- zai-org-glm-5
+- zai-org-glm-5-1
+- zai-org-glm-5-2
 
 </details>

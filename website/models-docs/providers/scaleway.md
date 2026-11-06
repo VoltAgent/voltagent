@@ -43,21 +43,24 @@ You can override the base URL by setting `SCALEWAY_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (14)</summary>
+  <summary>Show models (17)</summary>
 
 - bge-multilingual-gemma2
-- deepseek-r1-distill-llama-70b
-- devstral-2-123b-instruct-2512
-- gemma-3-27b-it
+- deepseek-v4-flash-0731
+- deepseek-v4.1-flash
+- gemma-4-26b-a4b-it
+- glm-5.2
+- glm-5.3
 - gpt-oss-120b
-- llama-3.1-8b-instruct
+- lightonocr-3-0.8b
 - llama-3.3-70b-instruct
-- mistral-nemo-instruct-2407
+- mistral-medium-3.5-128b
 - mistral-small-3.2-24b-instruct-2506
-- pixtral-12b-2409
 - qwen3-235b-a22b-instruct-2507
-- qwen3-coder-30b-a3b-instruct
-- voxtral-small-24b-2507
+- qwen3-embedding-8b
+- qwen3.5-397b-a17b
+- qwen3.6-35b-a3b
+- qwen3.8-27b
 - whisper-large-v3
 
 </details>

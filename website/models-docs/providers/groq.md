@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "groq-agent",
   instructions: "You are a helpful assistant",
-  model: "groq/llama-3.1-8b-instant",
+  model: "groq/allam-2-7b",
 });
 ```
 
@@ -41,16 +41,18 @@ You can override the base URL by setting `GROQ_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (9)</summary>
+  <summary>Show models (11)</summary>
 
-- llama-3.1-8b-instant
-- llama-3.3-70b-versatile
-- meta-llama/llama-4-maverick-17b-128e-instruct
-- meta-llama/llama-4-scout-17b-16e-instruct
-- meta-llama/llama-guard-4-12b
-- moonshotai/kimi-k2-instruct-0905
+- allam-2-7b
+- canopylabs/orpheus-arabic-saudi
+- canopylabs/orpheus-v1-english
+- meta-llama/llama-prompt-guard-2-22m
+- meta-llama/llama-prompt-guard-2-86m
 - openai/gpt-oss-120b
 - openai/gpt-oss-20b
-- qwen/qwen3-32b
+- openai/gpt-oss-safeguard-20b
+- qwen/qwen3.8-27b
+- whisper-large-v3
+- whisper-large-v3-turbo
 
 </details>

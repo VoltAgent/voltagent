@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "xiaomi-agent",
   instructions: "You are a helpful assistant",
-  model: "xiaomi/mimo-v2-flash",
+  model: "xiaomi/mimo-v2.6-flash",
 });
 ```
 
@@ -43,8 +43,10 @@ You can override the base URL by setting `XIAOMI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (1)</summary>
+  <summary>Show models (3)</summary>
 
-- mimo-v2-flash
+- mimo-v2.6-flash
+- mimo-v2.6-pro
+- mimo-v2.6-pro-ultraspeed
 
 </details>

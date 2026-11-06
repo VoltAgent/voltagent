@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "nebius-agent",
   instructions: "You are a helpful assistant",
-  model: "nebius/NousResearch/hermes-4-405b",
+  model: "nebius/MiniMaxAI/MiniMax-M3",
 });
 ```
 
@@ -43,22 +43,31 @@ You can override the base URL by setting `NEBIUS_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (15)</summary>
+  <summary>Show models (24)</summary>
 
-- NousResearch/hermes-4-405b
-- NousResearch/hermes-4-70b
-- deepseek-ai/deepseek-v3
-- meta-llama/llama-3.3-70b-instruct-base
-- meta-llama/llama-3.3-70b-instruct-fast
-- meta-llama/llama-3_1-405b-instruct
-- moonshotai/kimi-k2-instruct
-- nvidia/llama-3_1-nemotron-ultra-253b-v1
+- MiniMaxAI/MiniMax-M3
+- NousResearch/Hermes-4-405B
+- Qwen/Qwen3-235B-A22B-Instruct-2507
+- Qwen/Qwen3-30B-A3B-Instruct-2507
+- Qwen/Qwen3-Embedding-8B
+- Qwen/Qwen3.5-397B-A17B
+- Qwen/Qwen3.8-27B
+- deepseek-ai/DeepSeek-V4-Flash-0731
+- deepseek-ai/DeepSeek-V4-Pro
+- deepseek-ai/DeepSeek-V4-Pro-0813
+- deepseek-ai/DeepSeek-V4.1-Flash
+- google/gemma-3-27b-it
+- meta-models/muse-spark-open
+- moonshotai/Kimi-K2.7-Code
+- moonshotai/Kimi-K3
+- nvidia/Nemotron-3-Ultra-550b-a55b
+- nvidia/Nemotron-3.5-Super-VL
+- nvidia/Nemotron-3_5-Lightning
+- nvidia/nemotron-3-super-120b-a12b
 - openai/gpt-oss-120b
-- openai/gpt-oss-20b
-- qwen/qwen3-235b-a22b-instruct-2507
-- qwen/qwen3-235b-a22b-thinking-2507
-- qwen/qwen3-coder-480b-a35b-instruct
-- zai-org/glm-4.5
-- zai-org/glm-4.5-air
+- reflection/beam
+- zai-org/GLM-5.2
+- zai-org/GLM-5.3
+- zai-org/GLM-5.3-Flash
 
 </details>

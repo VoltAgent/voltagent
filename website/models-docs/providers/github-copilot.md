@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "github-copilot-agent",
   instructions: "You are a helpful assistant",
-  model: "github-copilot/claude-haiku-4.5",
+  model: "github-copilot/claude-fable-5",
 });
 ```
 
@@ -43,27 +43,33 @@ You can override the base URL by setting `GITHUB_COPILOT_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (20)</summary>
+  <summary>Show models (26)</summary>
 
+- claude-fable-5
+- claude-fable-5.1
 - claude-haiku-4.5
-- claude-opus-4.5
-- claude-opus-41
-- claude-sonnet-4
-- claude-sonnet-4.5
-- gemini-2.5-pro
-- gemini-3-flash-preview
-- gemini-3-pro-preview
-- gpt-4.1
-- gpt-4o
-- gpt-5
-- gpt-5-codex
-- gpt-5-mini
-- gpt-5.1
-- gpt-5.1-codex
-- gpt-5.1-codex-max
-- gpt-5.1-codex-mini
-- gpt-5.2
-- gpt-5.2-codex
-- grok-code-fast-1
+- claude-haiku-5.5
+- claude-opus-4.8
+- claude-opus-5
+- claude-opus-5.5
+- claude-sonnet-4.6
+- claude-sonnet-5
+- claude-sonnet-5.5
+- gemini-3.8-flash
+- gemini-4-argon
+- gpt-5.3-codex
+- gpt-5.4-nano
+- gpt-5.6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-6-astra
+- gpt-6-luna
+- gpt-6-sol
+- gpt-6.1-sol
+- grok-4.5
+- grok-4.6
+- grok-4.7
+- kimi-k3
+- mai-code-1.1-flash
 
 </details>
