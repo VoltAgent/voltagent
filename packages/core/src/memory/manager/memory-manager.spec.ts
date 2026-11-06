@@ -186,7 +186,7 @@ describe("MemoryManager", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("should propagate storage errors when the caller needs to retry", async () => {
       // Create manager with mocked memory that throws error
       const errorMemory = new Memory({
         storage: new InMemoryStorageAdapter(),
@@ -204,10 +204,13 @@ describe("MemoryManager", () => {
 
       const message = createTestUIMessage();
 
-      // Should not throw even if save fails
+      await expect(
+        errorManager.saveMessage(context, message, "user-1", "conv-1", { throwOnError: true }),
+      ).rejects.toThrow("Save failed");
+
       await expect(
         errorManager.saveMessage(context, message, "user-1", "conv-1"),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
   });
 

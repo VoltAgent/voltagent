@@ -1485,7 +1485,7 @@ export class Agent {
             void this.recordStepResults(result.steps, oc);
 
             if (!shouldDeferPersist && shouldPersistMemory) {
-              await persistQueue.flush(buffer, oc);
+              await this.flushConversationMessagesBestEffort(persistQueue, buffer, oc);
             }
 
             const finalText = await executeOutputGuardrails({
@@ -1585,7 +1585,7 @@ export class Agent {
             }
 
             if (shouldDeferPersist && shouldPersistMemory) {
-              await persistQueue.flush(buffer, oc);
+              await this.flushConversationMessagesBestEffort(persistQueue, buffer, oc);
             }
 
             const feedbackValue = (() => {
@@ -2217,7 +2217,7 @@ export class Agent {
                 });
 
                 if (!shouldDeferPersist && shouldPersistMemory) {
-                  await persistQueue.flush(buffer, oc);
+                  await this.flushConversationMessagesBestEffort(persistQueue, buffer, oc);
                 }
 
                 // History update removed - using OpenTelemetry only
@@ -4424,6 +4424,22 @@ export class Agent {
         userId: oc.userId,
       });
       throw error;
+    }
+  }
+
+  private async flushConversationMessagesBestEffort(
+    queue: MemoryPersistQueue,
+    buffer: ConversationBuffer,
+    oc: OperationContext,
+  ): Promise<void> {
+    try {
+      await queue.flush(buffer, oc);
+    } catch (error) {
+      oc.logger.debug("Failed to persist conversation messages", {
+        error,
+        conversationId: oc.conversationId,
+        userId: oc.userId,
+      });
     }
   }
 
