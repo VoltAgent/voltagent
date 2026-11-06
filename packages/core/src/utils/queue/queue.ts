@@ -88,15 +88,16 @@ export class BackgroundQueue {
           }, task.timeout);
         });
 
-        const result = await Promise.race([task.operation(), timeoutPromise]);
+        try {
+          const result = await Promise.race([task.operation(), timeoutPromise]);
 
-        // Clear timeout if task completed
-        if (timeoutId) {
+          this.logger.trace(`Task ${task.id} completed (attempt ${attempt}/${maxAttempts}`);
+          return result;
+        } finally {
+          // The timer outlives the attempt it belongs to unless cleared, and an
+          // uncleared one keeps the event loop alive for its full duration.
           clearTimeout(timeoutId);
         }
-
-        this.logger.trace(`Task ${task.id} completed (attempt ${attempt}/${maxAttempts}`);
-        return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
