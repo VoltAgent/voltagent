@@ -95,9 +95,23 @@ const voiceProvider = new ElevenLabsVoiceProvider({
 });
 ```
 
+## Speechify Provider
+
+```typescript
+import { SpeechifyVoiceProvider } from "@voltagent/voice";
+
+const voiceProvider = new SpeechifyVoiceProvider({
+  apiKey: process.env.SPEECHIFY_API_KEY,
+  voice: "geffen_32",
+});
+```
+
+> **Note:** Speechify supports text-to-speech only. Calling `listen()` throws because Speechify does not provide speech-to-text.
+
 ## Full Example
 
 See the complete examples:
 
 - [with-voice-openai on GitHub](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-openai)
 - [with-voice-elevenlabs on GitHub](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-elevenlabs)
+- [with-voice-speechify on GitHub](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-speechify)

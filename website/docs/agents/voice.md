@@ -43,6 +43,7 @@ pnpm add @voltagent/voice
 - **OpenAI**: High-quality voices and transcription.
 - **ElevenLabs**: Realistic, customizable voices.
 - **xsAI**: Lightweight OpenAI-compatible voice API.
+- **Speechify**: Low-latency streaming text-to-speech with a large voice library (text-to-speech only).
 
 ## Basic Usage
 
@@ -78,7 +79,21 @@ const xsAIVoice = new XsAIVoiceProvider({
   voice: "alloy",
   // If you are not using OpenAI, simply specify the `baseURL`
 });
+
+// Or initialize with Speechify
+import { SpeechifyVoiceProvider } from "@voltagent/voice";
+
+const speechifyVoice = new SpeechifyVoiceProvider({
+  apiKey: process.env.SPEECHIFY_API_KEY!,
+  ttsModel: "simba-3.5", // Default. 48 languages, every voice
+  voice: "geffen_32", // Call getVoices() to list all voices
+  options: {
+    language: "de-DE", // Set for non-English text
+  },
+});
 ```
+
+**Note:** Speechify supports text-to-speech only, so `listen()` throws. Audio is streamed back as it is generated. You can pick the output with the `format` option (for example `"mp3_24000_128"`, `"pcm_16000"` or `"ulaw_8000"` for telephony).
 
 **Note:** It's recommended to manage API keys securely, for example, using environment variables.
 

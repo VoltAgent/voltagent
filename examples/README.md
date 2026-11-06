@@ -148,6 +148,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [ViteVal](./with-viteval) — Integrate ViteVal to evaluate agents and prompts.
 - [Voice (ElevenLabs)](./with-voice-elevenlabs) — Convert agent replies to speech using ElevenLabs TTS.
 - [Voice (OpenAI)](./with-voice-openai) — Speak responses with OpenAI’s TTS voices.
+- [Voice (Speechify)](./with-voice-speechify) - Speak agent replies with Speechify's streaming TTS voices.
 - [Voice (xAI)](./with-voice-xsai) — Use xAI audio models for voice output.
 - [VoltAgent Exporter](./with-voltagent-exporter) — Export traces/events to external observability targets.
 - [Managed Memory](./with-voltagent-managed-memory) — Production‑grade memory via VoltOps Managed Memory REST adapter.

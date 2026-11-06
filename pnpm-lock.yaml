@@ -3183,6 +3183,43 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-voice-speechify:
+    dependencies:
+      '@voltagent/cli':
+        specifier: ^0.1.21
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^2.11.0
+        version: link:../../packages/core
+      '@voltagent/libsql':
+        specifier: ^2.1.2
+        version: link:../../packages/libsql
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^2.0.14
+        version: link:../../packages/server-hono
+      '@voltagent/voice':
+        specifier: ^2.1.0
+        version: link:../../packages/voice
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.2.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-voice-xsai:
     dependencies:
       '@voltagent/cli':
@@ -4536,6 +4573,9 @@ importers:
 
   packages/voice:
     dependencies:
+      '@speechify/api':
+        specifier: ^4.0.1
+        version: 4.0.1
       '@xsai/generate-speech':
         specifier: 0.4.0-beta.1
         version: 0.4.0-beta.1
@@ -18955,6 +18995,11 @@ packages:
 
   /@socket.io/component-emitter@3.1.2:
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
+    dev: false
+
+  /@speechify/api@4.0.1:
+    resolution: {integrity: sha512-OsfZbx4o47kIZ29OmntUj/9J2LYrlntRHfAwZ8uRLCw2gsu5zgQf46yasDgGe9fNgC5XI1+JfJwCweYVs5w+4w==}
+    engines: {node: '>=18.0.0'}
     dev: false
 
   /@speed-highlight/core@1.2.7:
