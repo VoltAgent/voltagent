@@ -135,4 +135,37 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
       5,
     ]);
   });
+
+  it("should cap the limit with LIMIT -1 when queryConversations gets an offset without a limit", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+
+    await adapter.queryConversations({ offset: 2 });
+
+    const { sql, args } = mockExecute.mock.calls[0][0];
+    expect(sql).toContain("ORDER BY updated_at DESC");
+    expect(sql).toContain("LIMIT -1 OFFSET ?");
+    expect(args).toEqual([2]);
+  });
+
+  it("should keep an explicit limit bound and inject no LIMIT -1 (queryConversations)", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+
+    await adapter.queryConversations({ limit: 5, offset: 2 });
+
+    const { sql, args } = mockExecute.mock.calls[0][0];
+    expect(sql).toContain("LIMIT ? OFFSET ?");
+    expect(sql).not.toContain("LIMIT -1");
+    expect(args).toEqual([5, 2]);
+  });
+
+  it("should cap the limit with LIMIT -1 when queryWorkflowRuns gets an offset without a limit", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+
+    await adapter.queryWorkflowRuns({ offset: 2 });
+
+    const { sql, args } = mockExecute.mock.calls[0][0];
+    expect(sql).toContain("ORDER BY created_at DESC");
+    expect(sql).toContain("LIMIT -1 OFFSET ?");
+    expect(args).toEqual([2]);
+  });
 });
