@@ -47,7 +47,6 @@ const agent = new Agent({
 
 - 📚 **[Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)** - Complete migration documentation
 - 📖 **[Providers & Models Documentation](https://voltagent.dev/docs/getting-started/providers-models)** - Learn about the new provider system
-- 📦 **[Archived Code](../../archive/deprecated-providers/groq-ai/)** - Original source code (read-only)
 - 🔗 **[ai-sdk Groq Provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq)** - Official documentation
 
 ## Why This Change?

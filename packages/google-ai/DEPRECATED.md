@@ -58,7 +58,6 @@ const agent = new Agent({
 
 - 📚 **[Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)** - Complete migration documentation
 - 📖 **[Providers & Models Documentation](https://voltagent.dev/docs/getting-started/providers-models)** - Learn about the new provider system
-- 📦 **[Archived Code](../../archive/deprecated-providers/google-ai/)** - Original source code (read-only)
 - 🔗 **[ai-sdk Google Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)** - Google AI documentation
 - 🔗 **[ai-sdk Vertex Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex)** - Vertex AI documentation
 

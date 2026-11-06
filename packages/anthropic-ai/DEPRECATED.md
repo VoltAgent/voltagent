@@ -51,7 +51,6 @@ const agent = new Agent({
 
 - 📚 **[Migration Guide](https://voltagent.dev/docs/providers/anthropic-ai/)** - Complete migration documentation
 - 📖 **[Providers & Models Documentation](https://voltagent.dev/docs/getting-started/providers-models)** - Learn about the new provider system
-- 📦 **[Archived Code](../../archive/deprecated-providers/anthropic-ai/)** - Original source code (read-only)
 - 🔗 **[Vercel AI SDK Anthropic Provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic)** - Official documentation
 
 ## Why This Change?
