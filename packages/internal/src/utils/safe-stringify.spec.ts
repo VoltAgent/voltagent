@@ -256,6 +256,48 @@ describe("safe-stringify", () => {
     expect(safeStringify(fixture, options)).toBe(JSON.stringify(fixture, undefined, "\t"));
   });
 
+  it("calls a self-returning toJSON only once per property with its key", () => {
+    const keys: string[] = [];
+    const fixture = {
+      value: 1,
+      toJSON(key: string) {
+        keys.push(key);
+        if (keys.length > 1) throw new Error("toJSON called twice");
+        return this;
+      },
+    };
+
+    expect(safeStringify({ nested: fixture })).toBe('{"nested":{"value":1}}');
+    expect(keys).toEqual(["nested"]);
+  });
+
+  it("does not call toJSON on an object returned by toJSON", () => {
+    const fixture = {
+      toJSON() {
+        return {
+          value: 1,
+          toJSON() {
+            throw new Error("returned object's toJSON must not be called");
+          },
+        };
+      },
+    };
+
+    expect(safeStringify(fixture)).toBe('{"value":1}');
+  });
+
+  it("still catches errors thrown by toJSON", () => {
+    const fixture = {
+      toJSON() {
+        throw new Error("serialization failed");
+      },
+    };
+
+    expect(safeStringify(fixture)).toBe(
+      "SAFE_STRINGIFY_ERROR: Error stringifying object: serialization failed",
+    );
+  });
+
   it("complex object with Date and toJSON", () => {
     const fixture = {
       date: new Date("2024-06-12T16:06:46.442Z"),

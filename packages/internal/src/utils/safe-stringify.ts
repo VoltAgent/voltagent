@@ -43,22 +43,14 @@ function safeStringifyReplacer(seen: WeakSet<DangerouslyAllowAny>) {
       }
     }
 
+    // JSON.stringify invokes toJSON before passing the value to the replacer.
     if (value && typeof value === "object") {
-      if (typeof value.toJSON === "function") {
-        // biome-ignore lint/style/noParameterAssign: needed to handle circular references
-        value = value.toJSON();
+      if (stack.includes(value)) {
+        return "[Circular]";
       }
 
-      if (value && typeof value === "object") {
-        if (stack.includes(value)) {
-          return "[Circular]";
-        }
-
-        if (!seen.has(value)) {
-          seen.add(value);
-        }
-      } else {
-        return value;
+      if (!seen.has(value)) {
+        seen.add(value);
       }
     }
 
