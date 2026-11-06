@@ -574,6 +574,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         id: crypto.randomUUID(),
         role: "user",
         parts: [{ type: "text", text: task }],
+        metadata: {
+          subAgentId: targetAgent.id,
+          subAgentName: targetAgent.name,
+          parentAgentId: sourceAgent?.id || parentAgentId,
+        },
       };
 
       return {
