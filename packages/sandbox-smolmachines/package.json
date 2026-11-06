@@ -1,0 +1,48 @@
+{
+  "name": "@voltagent/sandbox-smolmachines",
+  "description": "VoltAgent smol machines sandbox provider",
+  "version": "2.0.0",
+  "dependencies": {
+    "smolmachines": "^1.32.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "@voltagent/core": "^2.8.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^2.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/sandbox-smolmachines"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "dist/index.d.ts"
+}
