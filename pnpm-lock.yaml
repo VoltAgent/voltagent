@@ -4536,6 +4536,9 @@ importers:
 
   packages/voice:
     dependencies:
+      '@deepgram/sdk':
+        specifier: ^5.17.0
+        version: 5.17.0
       '@xsai/generate-speech':
         specifier: 0.4.0-beta.1
         version: 0.4.0-beta.1
@@ -9238,6 +9241,16 @@ packages:
       axios: 1.13.2
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /@deepgram/sdk@5.17.0:
+    resolution: {integrity: sha512-+sWSLr2sAZNUBceaenYrY94cjpN5BleCKcAJ9uy/j8ixJ22P1aSvl9agySrDr34sxpasQe0T7Xzjnec2KSMG2g==}
+    engines: {node: '>=18.0.0'}
+    dependencies:
+      ws: 8.22.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: false
 
   /@dependents/detective-less@5.0.1:
@@ -42487,6 +42500,19 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  /ws@8.22.1:
+    resolution: {integrity: sha512-oyL6OPYme/CmiFvNuGzeoxCJ4nOrZE2O1FwM9MWM1AsGri6nLXB2pg+lNA8aLeXMSav0J6eIVS1j6vUPzUtK9g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
 
   /wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
