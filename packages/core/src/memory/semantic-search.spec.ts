@@ -68,6 +68,46 @@ describe("Memory V2 - Semantic Search", () => {
     });
   });
 
+  it.each(["single", "batch"])(
+    "keeps distinct embeddings for colliding texts when saving a %s message",
+    async (mode) => {
+      vi.spyOn(embedding, "embed").mockImplementation(async (text) =>
+        text === "Aa" ? [1, 0, 0] : [0, 1, 0],
+      );
+      const userId = "cache-user";
+      const conversationId = "cache-conversation";
+      await memory.createConversation({
+        id: conversationId,
+        userId,
+        resourceId: "agent1",
+        title: "Embedding cache",
+      });
+      await memory.addMessage(
+        { id: "first", role: "user", parts: [{ type: "text", text: "Aa" }] },
+        userId,
+        conversationId,
+      );
+      const message: UIMessage = {
+        id: "second",
+        role: "user",
+        parts: [{ type: "text", text: "BB" }],
+      };
+      if (mode === "batch") {
+        await memory.addMessages([message], userId, conversationId);
+      } else {
+        await memory.addMessage(message, userId, conversationId);
+      }
+
+      const results = await memory.searchSimilar("BB", {
+        threshold: 1,
+        filter: { userId, conversationId },
+      });
+      expect(results.map((result) => result.metadata?.messageId)).toEqual(["second"]);
+      expect((await vector.get(`msg_${conversationId}_first`))?.vector).toEqual([1, 0, 0]);
+      expect((await vector.get(`msg_${conversationId}_second`))?.vector).toEqual([0, 1, 0]);
+    },
+  );
+
   describe("Auto-embedding on message save", () => {
     it("should automatically embed and store message when saved", async () => {
       const userId = "user123";

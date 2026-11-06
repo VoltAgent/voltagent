@@ -17,8 +17,7 @@ export class EmbeddingCache {
    * Get embedding from cache
    */
   get(text: string): number[] | null {
-    const key = this.hash(text);
-    const entry = this.cache.get(key);
+    const entry = this.cache.get(text);
 
     if (!entry) {
       return null;
@@ -26,13 +25,13 @@ export class EmbeddingCache {
 
     // Check if entry has expired
     if (Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
+      this.cache.delete(text);
       return null;
     }
 
     // Move to end (most recently used)
-    this.cache.delete(key);
-    this.cache.set(key, entry);
+    this.cache.delete(text);
+    this.cache.set(text, entry);
 
     return entry.embedding;
   }
@@ -41,17 +40,15 @@ export class EmbeddingCache {
    * Store embedding in cache
    */
   set(text: string, embedding: number[]): void {
-    const key = this.hash(text);
-
     // Remove oldest entry if at capacity
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+    if (this.cache.size >= this.maxSize && !this.cache.has(text)) {
       const firstKey = this.cache.keys().next().value;
-      if (firstKey) {
+      if (firstKey !== undefined) {
         this.cache.delete(firstKey);
       }
     }
 
-    this.cache.set(key, {
+    this.cache.set(text, {
       embedding: [...embedding], // Clone to prevent external modifications
       timestamp: Date.now(),
       text: text.substring(0, 100), // Store first 100 chars for debugging
@@ -92,21 +89,6 @@ export class EmbeddingCache {
       maxSize: this.maxSize,
       ttl: this.ttl,
     };
-  }
-
-  /**
-   * Simple hash function for cache keys
-   */
-  private hash(text: string): string {
-    // Use a simple hash for the cache key
-    // In production, consider using a proper hash function
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return `${hash}_${text.length}`;
   }
 
   /**
