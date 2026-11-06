@@ -19,7 +19,10 @@ export function detectFormat(input: string): DetectedFormat {
   if (!text) return "text";
 
   // JSON: quick check + parse
-  if ((text.startsWith("{") || text.startsWith("[")) && text.endsWith("}")) {
+  if (
+    (text.startsWith("{") && text.endsWith("}")) ||
+    (text.startsWith("[") && text.endsWith("]"))
+  ) {
     try {
       JSON.parse(text);
       return "json";

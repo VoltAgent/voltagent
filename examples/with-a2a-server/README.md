@@ -48,7 +48,7 @@ npm create voltagent-app@latest -- --example with-a2a-server
 ## What you get
 
 - A minimal VoltAgent project with a `Support` agent and a `status` tool.
-- An `A2AServer` exposing the agent’s card and message/taks endpoints.
+- An `A2AServer` exposing the agent’s card and message/task endpoints.
 - Hono routes (from `@voltagent/server-hono`) that proxy JSON-RPC requests to the server.
 
 ## Structure

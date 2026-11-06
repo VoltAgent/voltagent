@@ -279,7 +279,7 @@ VoltOpsコンソールは、VoltAgentのプラットフォーム側であり、�
 
 すべてのエージェント、ワークフロー、システムパフォーマンスメトリクスの包括的な概要を取得します。
 
-<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
+<img alt="dashboard" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### ログ
 

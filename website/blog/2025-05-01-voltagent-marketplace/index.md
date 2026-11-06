@@ -27,7 +27,7 @@ Yet, there appears to be a gap. Many emerging platforms might be closed gardens.
 
 :::note Bridging the Gaps
 
-- **Accesible Solutions:** Many users and businesses need reliable, ready-to-use agents. The marketplace connects them with community-built VoltAgent solutions, making adoption easier.
+- **Accessible Solutions:** Many users and businesses need reliable, ready-to-use agents. The marketplace connects them with community-built VoltAgent solutions, making adoption easier.
 - **Making it Worthwhile:** The marketplace provides a path for developers to earn revenue from VoltAgent agents, supporting sustainable development.
 - **Growing the Ecosystem:** A marketplace helps create specialized VoltAgent tools and components, making the whole framework better for everyone.
 - **Spotlight on Builders:** Let's give talented VoltAgent developers a place to show off their amazing agents and get noticed.

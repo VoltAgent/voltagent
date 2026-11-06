@@ -20,7 +20,7 @@ This example includes a WhatsApp AI agent that:
 ## Setup
 
 <Info title="Before you begin, line up these accounts and keys:">
-- Sign in to [VoltOps LLM Observability platfrom](https://console.voltagent.dev/login)
+- Sign in to [VoltOps LLM Observability platform](https://console.voltagent.dev/login)
 - A [Supabase account](https://supabase.com) (free tier works)
 - WhatsApp Business API access via [Meta for Developers](https://developers.facebook.com)
 - An OpenAI API key from [platform.openai.com](https://platform.openai.com/api-keys)
