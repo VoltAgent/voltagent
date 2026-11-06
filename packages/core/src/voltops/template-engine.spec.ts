@@ -123,5 +123,36 @@ describe("Template Engine", () => {
       expect(result).toBe("value-1/value-1");
       expect(conversions).toBe(1);
     });
+
+    it("should substitute variable names that contain regex metacharacters", () => {
+      const content = "Cart: {{items[0]}} for {{user.name}} ({{a|b}})";
+      const variables = {
+        "items[0]": "Apple",
+        "user.name": "John",
+        "a|b": "X",
+      };
+      const result = engine.process(content, variables);
+
+      expect(result).toBe("Cart: Apple for John (X)");
+    });
+
+    it("should not match unrelated placeholders when names contain metacharacters", () => {
+      const content = "Hello {{a?b}}, welcome to {{b}}!";
+      const variables = {
+        "a?b": "John",
+        b: "Acme Corp",
+      };
+      const result = engine.process(content, variables);
+
+      expect(result).toBe("Hello John, welcome to Acme Corp!");
+    });
+
+    it("should not throw on variable names that are invalid regex sources", () => {
+      const content = "Totals: {{total)}} and {{name}}";
+      const variables = { "total)": "$5", name: "John" };
+
+      expect(() => engine.process(content, variables)).not.toThrow();
+      expect(engine.process(content, variables)).toBe("Totals: $5 and John");
+    });
   });
 });
