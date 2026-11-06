@@ -374,6 +374,64 @@ describe("A2AServer", () => {
     expect(stored?.status.state).toBe("canceled");
   });
 
+  it("propagates a save failure after a successful generation without recording the task as failed", async () => {
+    const generateText = vi.fn().mockResolvedValue({
+      text: "Hello back",
+      finishReason: "stop",
+      usage: undefined,
+    });
+    const agent: StubAgent = {
+      id: "support-agent",
+      purpose: "Answer support questions",
+      generateText,
+      streamText: vi.fn(),
+    };
+
+    const taskStore = new InMemoryTaskStore();
+    const originalSave = taskStore.save.bind(taskStore);
+    const saveSpy = vi
+      .spyOn(taskStore, "save")
+      .mockImplementationOnce(originalSave) // initial "working" save
+      .mockImplementationOnce(async () => {
+        throw new Error("write timeout");
+      }); // final "completed" save
+
+    const server = createServer(agent, taskStore);
+    const request = createSendRequest();
+
+    const response = (await server.handleRequest(
+      "support-agent",
+      request,
+    )) as JsonRpcResponse<TaskRecord>;
+
+    expect(response.error?.message).toBe("write timeout");
+    expect(saveSpy).toHaveBeenCalledTimes(2);
+    const taskId = (saveSpy.mock.calls[0][0] as { data: TaskRecord }).data.id;
+    const loaded = await taskStore.load({ agentId: "support-agent", taskId });
+    // The only persisted record is the pre-generation "working" snapshot;
+    // the failed completed-save must not overwrite it with a "failed" status.
+    expect(loaded?.status.state).toBe("working");
+  });
+
+  it("returns a readable message for an invalid message/send payload instead of raw Zod issues", async () => {
+    const agent: StubAgent = {
+      id: "support-agent",
+      purpose: "Answer support questions",
+      generateText: vi.fn(),
+      streamText: vi.fn(),
+    };
+
+    const server = createServer(agent, new InMemoryTaskStore());
+    const response = (await server.handleRequest(
+      "support-agent",
+      createSendRequest({ parts: [] }),
+    )) as JsonRpcResponse<TaskRecord>;
+
+    expect(response.error?.code).toBe(-32602);
+    expect(response.error?.message).not.toMatch(/^\[/);
+    expect(response.error?.message).not.toContain('"code"');
+  });
+
   it("returns method not found for unknown requests", async () => {
     const agent: StubAgent = {
       id: "support-agent",
