@@ -26,14 +26,11 @@ cd {{projectName}}
 
 # Install dependencies
 {{packageManagerInstall}}
-
-# Copy environment variables
-cp .env.example .env
 ```
 
 ### Configuration
 
-Edit `.env` file with your API keys:
+The generator creates `.env`. Add your API key there if you skipped that prompt:
 
 ```env
 {{envConfig}}
