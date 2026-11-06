@@ -235,6 +235,61 @@
   - @voltagent/internal@2.0.0-next.0
   - @voltagent/logger@3.0.0-next.0
 
+## 2.11.1
+
+### Patch Changes
+
+- [#1481](https://github.com/VoltAgent/voltagent/pull/1481) [`e481624`](https://github.com/VoltAgent/voltagent/commit/e4816249bf0843680ad4200cc33ea077ffcbd116) Thanks [@Arnavkar](https://github.com/Arnavkar)! - fix(core): upgrade the Amazon Bedrock and Google Vertex providers to their AI SDK v6 releases
+
+  `@ai-sdk/amazon-bedrock` and `@ai-sdk/google-vertex` move from `3.x` to `^4.0.0`. These upgrades move both providers from `@ai-sdk/provider-utils@3` to `@ai-sdk/provider-utils@4`, aligning them with core's AI SDK v6 dependencies.
+
+  Downstream impact, only for `amazon-bedrock/*` and `google-vertex/*` models:
+  - For Gemini models, if `GOOGLE_VERTEX_API_KEY` is set, Vertex now uses express mode and ignores `GOOGLE_VERTEX_PROJECT`, `GOOGLE_VERTEX_LOCATION` and `GOOGLE_APPLICATION_CREDENTIALS`. Unset it if you rely on project credentials.
+  - Bedrock clamps a `temperature` below `0` to `0` and above `1` to `1`, returning a warning in either case.
+
+  Known issue: Ollama remains on `ollama-ai-provider-v2@1.x`. Its upgrade is deferred until the upstream streamed-error-handling bug is fixed. We plan to bump it in a follow-up PR.
+
+## 2.11.0
+
+### Minor Changes
+
+- [#1423](https://github.com/VoltAgent/voltagent/pull/1423) [`316538a`](https://github.com/VoltAgent/voltagent/commit/316538a96860ee675931bbbf4f9dd1f6dec3937e) Thanks [@jiangjiang248](https://github.com/jiangjiang248)! - Allow custom workspace sandboxes to receive the original execute_command command and args by disabling toolkit command normalization. Fixes #1422.
+
+## 2.10.0
+
+### Minor Changes
+
+- [`9aedd49`](https://github.com/VoltAgent/voltagent/commit/9aedd4917795023a1ee17a29691f7a87865bdf2a) Thanks [@omeraplak](https://github.com/omeraplak)! - Add type-safe MCP annotations and metadata to tools and forward them through the MCP server adapter.
+
+### Patch Changes
+
+- [#1402](https://github.com/VoltAgent/voltagent/pull/1402) [`844939c`](https://github.com/VoltAgent/voltagent/commit/844939cd225ec21c9ba098ebdba748da24de97ec) Thanks [@Iams4kura](https://github.com/Iams4kura)! - Preserve JavaScript replacement tokens in simple template variable values.
+
+## 2.9.2
+
+### Patch Changes
+
+- [`d1dd2d9`](https://github.com/VoltAgent/voltagent/commit/d1dd2d9c4566beee0429d70e3fbb032c0351ceb6) Thanks [@omeraplak](https://github.com/omeraplak)! - Upgrade the official Model Context Protocol SDK to 1.30.0 and add stateless Streamable HTTP handling with `startHTTP`, `serverless`, and request-scoped streaming options.
+
+## 2.9.1
+
+### Patch Changes
+
+- [#1037](https://github.com/VoltAgent/voltagent/pull/1037) [`2067075`](https://github.com/VoltAgent/voltagent/commit/20670754e6822786848cf05cfa81c3ab28dd03d4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent delegated sub-agent messages from polluting supervisor memory context
+
+  When a supervisor delegated work via `delegate_task`, the sub-agent used the same `conversationId` and persisted its own delegated input/output into that shared thread. On later turns, supervisor memory reads could include those delegated sub-agent messages, which could lead to duplicate/phantom prompts in the parent conversation context.
+
+  ### Previous behavior
+  - Sub-agent delegated messages were persisted into the same conversation thread as the supervisor.
+  - Supervisor memory reads could load those delegated messages back into the parent prompt context.
+
+  ### New behavior
+  - Delegated sub-agent messages are tagged with sub-agent metadata (`subAgentId`, `subAgentName`, `parentAgentId`).
+  - Parent memory reads now filter delegated sub-agent records from supervisor conversation context.
+  - `conversationId` behavior remains shared (no child/derived conversation IDs introduced).
+
+  This keeps supervisor context clean in multi-turn handoff flows while preserving delegated records with metadata for observability/debugging.
+
 ## 2.9.0
 
 ### Minor Changes

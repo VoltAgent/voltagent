@@ -100,6 +100,23 @@ new VoltAgent({
 });
 ```
 
+### Stateless HTTP deployments
+
+The default Streamable HTTP mode stores MCP sessions in memory. When the server runs across multiple instances without session affinity, or on a serverless platform, use stateless mode:
+
+```typescript
+const mcpServer = new MCPServer({
+  name: "my-agent-mcp",
+  version: "1.0.0",
+  protocols: { stdio: false, http: true, sse: false },
+  httpTransportOptions: {
+    serverless: true,
+  },
+});
+```
+
+Stateless mode creates a fresh server and transport for each request and does not return an `mcp-session-id`, so subsequent requests can reach any instance. JSON responses are used by default. Add `serverlessStreaming: true` for request-scoped SSE; session resumability and out-of-request notifications require stateful mode.
+
 ## Full Examples
 
 See the complete examples:

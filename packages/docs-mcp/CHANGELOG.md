@@ -219,6 +219,14 @@
   8. Prefer `output` over `experimental_output`.
   9. Prefer object-style agent calls for new code, with VoltAgent runtime options under `voltagent`.
 
+## 2.0.3
+
+### Patch Changes
+
+- [`d1dd2d9`](https://github.com/VoltAgent/voltagent/commit/d1dd2d9c4566beee0429d70e3fbb032c0351ceb6) Thanks [@omeraplak](https://github.com/omeraplak)! - Upgrade the official Model Context Protocol SDK to 1.30.0 and add stateless Streamable HTTP handling with `startHTTP`, `serverless`, and request-scoped streaming options.
+
+## 2.0.2
+
 ### Patch Changes
 
 - [`f6ffb8a`](https://github.com/VoltAgent/voltagent/commit/f6ffb8ae0fd95fbe920058e707d492d8c21b2505) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: VoltAgent 2.x (AI SDK v6)

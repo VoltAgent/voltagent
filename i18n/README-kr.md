@@ -279,7 +279,7 @@ VoltOps 콘솔은 VoltAgent의 플랫폼 측면으로, 관찰 가능성, 자동�
 
 모든 에이전트, 워크플로 및 시스템 성능 메트릭에 대한 포괄적인 개요를 얻으세요.
 
-<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
+<img alt="dashboard" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### 로그
 

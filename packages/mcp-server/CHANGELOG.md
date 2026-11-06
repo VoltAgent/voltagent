@@ -225,6 +225,18 @@
   - @voltagent/core@3.0.0-next.0
   - @voltagent/internal@2.0.0-next.0
 
+## 2.2.0
+
+### Minor Changes
+
+- [`9aedd49`](https://github.com/VoltAgent/voltagent/commit/9aedd4917795023a1ee17a29691f7a87865bdf2a) Thanks [@omeraplak](https://github.com/omeraplak)! - Add type-safe MCP annotations and metadata to tools and forward them through the MCP server adapter.
+
+## 2.1.0
+
+### Minor Changes
+
+- [`d1dd2d9`](https://github.com/VoltAgent/voltagent/commit/d1dd2d9c4566beee0429d70e3fbb032c0351ceb6) Thanks [@omeraplak](https://github.com/omeraplak)! - Upgrade the official Model Context Protocol SDK to 1.30.0 and add stateless Streamable HTTP handling with `startHTTP`, `serverless`, and request-scoped streaming options.
+
 ## 2.0.2
 
 ### Patch Changes

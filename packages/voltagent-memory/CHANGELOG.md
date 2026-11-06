@@ -225,6 +225,12 @@
   - @voltagent/core@3.0.0-next.0
   - @voltagent/internal@2.0.0-next.0
 
+## 1.0.5
+
+### Patch Changes
+
+- [#1350](https://github.com/VoltAgent/voltagent/pull/1350) [`80827c3`](https://github.com/VoltAgent/voltagent/commit/80827c3f0550fdc3bb608aaef53d71b45551e585) Thanks [@nuthalapativarun](https://github.com/nuthalapativarun)! - Add README documentation
+
 ## 1.0.4
 
 ### Patch Changes
