@@ -2,6 +2,75 @@ import { describe, expect, it } from "vitest";
 import { WorkspaceFilesystem } from "./index";
 
 describe("WorkspaceFilesystem", () => {
+  it("creates parent directories when mkdir is recursive", async () => {
+    const filesystem = new WorkspaceFilesystem();
+
+    expect((await filesystem.mkdir("/tasks/research/results")).error).toBeUndefined();
+
+    for (const path of ["/tasks", "/tasks/research", "/tasks/research/results"]) {
+      expect(await filesystem.exists(path)).toBe(true);
+      expect(await filesystem.stat(path)).toMatchObject({ path: `${path}/`, is_dir: true });
+    }
+
+    expect((await filesystem.mkdir("/tasks/summary", false)).error).toBeUndefined();
+    expect((await filesystem.rmdir("/tasks", true)).error).toBeUndefined();
+    expect(await filesystem.exists("/tasks")).toBe(false);
+    expect(await filesystem.exists("/tasks/research/results")).toBe(false);
+  });
+
+  it("keeps recursively created parents after removing their last child", async () => {
+    const filesystem = new WorkspaceFilesystem();
+
+    await filesystem.mkdir("/tasks/research");
+    expect((await filesystem.rmdir("/tasks/research")).error).toBeUndefined();
+    expect(await filesystem.exists("/tasks")).toBe(true);
+    expect(await filesystem.lsInfo("/tasks")).toEqual([]);
+    expect((await filesystem.rmdir("/tasks")).error).toBeUndefined();
+  });
+
+  it("preserves directories inferred from files after recursive mkdir", async () => {
+    const filesystem = new WorkspaceFilesystem();
+
+    expect(
+      (await filesystem.write("/tasks/research/input.txt", "source", { ensureDirs: false })).error,
+    ).toBeUndefined();
+    expect((await filesystem.mkdir("/tasks/research")).error).toBeUndefined();
+    expect((await filesystem.delete("/tasks/research/input.txt")).error).toBeUndefined();
+
+    for (const path of ["/tasks", "/tasks/research"]) {
+      expect(await filesystem.exists(path)).toBe(true);
+      expect(await filesystem.stat(path)).toMatchObject({ path: `${path}/`, is_dir: true });
+    }
+  });
+
+  it.each(["/tasks/cache", "/tasks/cache/results"])(
+    "rejects mkdir %s when an ancestor is a file without creating directories",
+    async (path) => {
+      const filesystem = new WorkspaceFilesystem();
+      expect((await filesystem.write("/tasks", "source")).error).toBeUndefined();
+
+      expect((await filesystem.mkdir(path)).error).toContain("a file exists at '/tasks'");
+      expect((await filesystem.stat("/tasks"))?.is_dir).toBe(false);
+      expect((await filesystem.lsInfo("/")).map((entry) => entry.path)).toEqual(["/tasks"]);
+      expect(await filesystem.exists("/tasks/cache")).toBe(false);
+      expect(await filesystem.exists("/tasks/cache/results")).toBe(false);
+
+      expect((await filesystem.delete("/tasks")).error).toBeUndefined();
+      expect(await filesystem.exists("/tasks")).toBe(false);
+      expect(await filesystem.lsInfo("/")).toEqual([]);
+    },
+  );
+
+  it("requires an existing parent when mkdir is not recursive", async () => {
+    const filesystem = new WorkspaceFilesystem();
+
+    expect((await filesystem.mkdir("/tasks/research", false)).error).toContain(
+      "Parent directory '/tasks/' does not exist",
+    );
+    expect(await filesystem.exists("/tasks")).toBe(false);
+    expect(await filesystem.exists("/tasks/research")).toBe(false);
+  });
+
   it("writes, reads, edits, and deletes files", async () => {
     const filesystem = new WorkspaceFilesystem();
 
