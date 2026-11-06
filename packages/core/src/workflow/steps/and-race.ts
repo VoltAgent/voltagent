@@ -107,125 +107,58 @@ export function andRace<
           });
         }
 
-        // Track which step wins the race with execution times
         const stepPromises = steps.map(async (step, index) => {
-          const startTime = new Date();
           const childSpan = childSpans[index];
-
-          // Step events removed - now handled by OpenTelemetry spans
-
           const subState = {
             ...state,
-            workflowContext: undefined, // ❌ Remove workflow context to prevent individual event publishing
+            workflowContext: undefined,
           };
+          const executeStep = async () => matchStep(step).execute({ ...context, state: subState });
 
-          // Execute within span context if available
-          const executeStep = async () => {
-            return matchStep(step).execute({ ...context, state: subState });
-          };
-
-          // Return promise with index and timing to track winner and execution times
+          // Observe every rejection, including losing steps that settle after the race.
           return (
             childSpan && traceContext
               ? traceContext.withSpan(childSpan, executeStep)
               : executeStep()
-          )
-            .then((result) => ({
-              result,
-              index,
-              success: true,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-              childSpan, // Keep reference to span for later ending
-            }))
-            .catch((error) => ({
-              error,
-              index,
-              success: false,
-              startTime: startTime.toISOString(),
-              endTime: new Date().toISOString(),
-              childSpan, // Keep reference to span for later ending
-            }));
+          ).then(
+            (result) => ({ result, index, success: true as const }),
+            (error: unknown) => ({ error, index, success: false as const }),
+          );
         });
 
-        // Wait for the first step to complete (winner)
         const winner = await Promise.race(stepPromises);
 
-        // 🕐 Collect execution results from all steps for duration tracking
-        const allStepResults = await Promise.allSettled(stepPromises);
-        const stepTimings = allStepResults.map((result, index) => {
-          if (result.status === "fulfilled") {
-            return result.value;
-          }
-          // For rejected promises, create a timing entry with error info
-          return {
-            error: result.reason,
-            index,
-            success: false,
-            startTime: new Date().toISOString(), // Fallback timing
-            endTime: new Date().toISOString(),
-          };
-        });
-
-        // Handle winner result with proper type discrimination
-        let finalResult: INFERRED_RESULT;
-        if (winner.success) {
-          finalResult = (
-            winner as {
-              result: RESULT;
-              index: number;
-              success: boolean;
-              startTime: string;
-              endTime: string;
-            }
-          ).result as unknown as INFERRED_RESULT;
-        } else {
-          throw (
-            winner as {
-              error: any;
-              index: number;
-              success: boolean;
-              startTime: string;
-              endTime: string;
-            }
-          ).error;
-        }
-
-        // End child spans with appropriate status
+        // Close all race spans now, even if a losing step never settles. Skipping a
+        // losing result does not cancel the underlying operation.
         if (traceContext) {
-          for (let i = 0; i < stepTimings.length; i++) {
-            const stepResult = stepTimings[i] as any;
-            const childSpan = stepResult?.childSpan;
-
-            if (childSpan) {
-              const isWinner = i === winner.index;
-
-              if (stepResult.success) {
-                if (isWinner) {
-                  // Winner span - mark as completed
-                  traceContext.endStepSpan(childSpan, "completed", {
-                    output: stepResult.result,
-                  });
-                } else {
-                  // Non-winner spans - mark as skipped
-                  traceContext.endStepSpan(childSpan, "skipped", {
-                    output: stepResult.result,
-                    skippedReason: "Another step won the race",
-                  });
-                }
-              } else {
-                // Error span
-                traceContext.endStepSpan(childSpan, "error", {
-                  error: stepResult.error,
-                });
-              }
+          childSpans.forEach((childSpan, index) => {
+            if (index !== winner.index) {
+              traceContext.endStepSpan(childSpan, "skipped", {
+                skippedReason: "Another step won the race",
+              });
+            } else if (winner.success) {
+              traceContext.endStepSpan(childSpan, "completed", { output: winner.result });
+            } else if (
+              winner.error instanceof Error &&
+              winner.error.message === "WORKFLOW_SUSPENDED"
+            ) {
+              traceContext.endStepSpan(childSpan, "suspended");
+            } else if (
+              winner.error instanceof Error &&
+              winner.error.message === "WORKFLOW_CANCELLED"
+            ) {
+              traceContext.endStepSpan(childSpan, "cancelled");
+            } else {
+              traceContext.endStepSpan(childSpan, "error", { error: winner.error });
             }
-          }
+          });
         }
 
-        // Step events removed - now handled by OpenTelemetry spans
+        if (!winner.success) {
+          throw winner.error;
+        }
 
-        return finalResult;
+        return winner.result as INFERRED_RESULT;
       } catch (error) {
         // Check if this is a suspension, not an error
         if (
