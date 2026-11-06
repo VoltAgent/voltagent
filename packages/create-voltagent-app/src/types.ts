@@ -32,15 +32,15 @@ export const AI_PROVIDER_CONFIG = {
   anthropic: {
     name: "Anthropic",
     envVar: "ANTHROPIC_API_KEY",
-    model: "anthropic/claude-3-5-sonnet",
-    modelName: "Claude 3.5 Sonnet",
+    model: "anthropic/claude-sonnet-5-5",
+    modelName: "Claude Sonnet 5.5",
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
   },
   google: {
     name: "Google",
     envVar: "GOOGLE_GENERATIVE_AI_API_KEY",
-    model: "google/gemini-2.0-flash",
-    modelName: "Gemini 2.0 Flash",
+    model: "google/gemini-3.6-flash",
+    modelName: "Gemini 3.6 Flash",
     apiKeyUrl: "https://aistudio.google.com/app/apikey",
   },
   groq: {
