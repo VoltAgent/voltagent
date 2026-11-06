@@ -1,5 +1,11 @@
 # @voltagent/rag
 
+## 1.0.3
+
+### Patch Changes
+
+- [#1459](https://github.com/VoltAgent/voltagent/pull/1459) [`249191c`](https://github.com/VoltAgent/voltagent/commit/249191c67a4fd5237685bb99b9c6c2e919428671) Thanks [@Theater-ahyeon](https://github.com/Theater-ahyeon)! - fix(rag): detect top-level JSON arrays in `detectFormat` so the `auto` chunking strategy routes them to the JSON chunker instead of the recursive one
+
 ## 1.0.2
 
 ### Patch Changes
