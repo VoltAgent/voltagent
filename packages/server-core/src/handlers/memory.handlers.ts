@@ -106,6 +106,13 @@ function buildErrorResponse(error: unknown): ApiResponse {
   };
 }
 
+function ownershipConflict(
+  authenticatedUserId: string | undefined,
+  conversation: Pick<Conversation, "userId">,
+): boolean {
+  return authenticatedUserId !== undefined && authenticatedUserId !== conversation.userId;
+}
+
 export async function handleListMemoryConversations(
   deps: ServerProviderDeps,
   query: {
@@ -116,6 +123,7 @@ export async function handleListMemoryConversations(
     offset?: number;
     orderBy?: "created_at" | "updated_at" | "title";
     orderDirection?: "ASC" | "DESC";
+    authenticatedUserId?: string;
   },
 ): Promise<
   ApiResponse<{ conversations: Conversation[]; total: number; limit: number; offset: number }>
@@ -130,10 +138,17 @@ export async function handleListMemoryConversations(
       };
     }
 
+    // The verified token's identity decides the scope: a client-supplied
+    // userId for another user must not widen the listing to their data (#1371).
+    const effectiveUserId =
+      query.authenticatedUserId !== undefined && query.userId !== query.authenticatedUserId
+        ? query.authenticatedUserId
+        : query.userId;
+
     const resourceId = query.resourceId ?? resolved.resourceId;
     const [conversations, total] = await Promise.all([
       resolved.memory.queryConversations({
-        userId: query.userId,
+        userId: effectiveUserId,
         resourceId,
         limit: query.limit,
         offset: query.offset,
@@ -141,7 +156,7 @@ export async function handleListMemoryConversations(
         orderDirection: query.orderDirection,
       }),
       resolved.memory.countConversations({
-        userId: query.userId,
+        userId: effectiveUserId,
         resourceId,
       }),
     ]);
@@ -163,7 +178,7 @@ export async function handleListMemoryConversations(
 export async function handleGetMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string; authenticatedUserId?: string },
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -177,6 +192,13 @@ export async function handleGetMemoryConversation(
 
     const conversation = await resolved.memory.getConversation(conversationId);
     if (!conversation) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+    if (ownershipConflict(query.authenticatedUserId, conversation)) {
       return {
         success: false,
         error: "Conversation not found",
@@ -203,6 +225,7 @@ export async function handleListMemoryConversationMessages(
     after?: Date;
     roles?: string[];
     userId?: string;
+    authenticatedUserId?: string;
   },
 ): Promise<ApiResponse<{ conversation: Conversation; messages: UIMessage[] }>> {
   try {
@@ -223,9 +246,21 @@ export async function handleListMemoryConversationMessages(
         httpStatus: 404,
       };
     }
+    if (ownershipConflict(query.authenticatedUserId, conversation)) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
 
-    const userId = query.userId ?? conversation.userId;
-    const messages = await resolved.memory.getMessages(userId, conversationId, {
+    const effectiveUserId =
+      query.authenticatedUserId !== undefined &&
+      query.userId !== undefined &&
+      query.userId !== query.authenticatedUserId
+        ? query.authenticatedUserId
+        : (query.userId ?? conversation.userId);
+    const messages = await resolved.memory.getMessages(effectiveUserId, conversationId, {
       limit: query.limit,
       before: query.before,
       after: query.after,
@@ -500,6 +535,7 @@ export async function handleUpdateMemoryConversation(
     userId?: string;
     title?: string;
     metadata?: Record<string, unknown>;
+    authenticatedUserId?: string;
   },
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
@@ -509,6 +545,22 @@ export async function handleUpdateMemoryConversation(
         success: false,
         error: resolved.error,
         httpStatus: resolved.httpStatus,
+      };
+    }
+
+    const existing = await resolved.memory.getConversation(conversationId);
+    if (!existing) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+    if (ownershipConflict(body.authenticatedUserId, existing)) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
       };
     }
 
@@ -554,7 +606,7 @@ export async function handleUpdateMemoryConversation(
 export async function handleDeleteMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string; authenticatedUserId?: string },
 ): Promise<ApiResponse<{ deleted: boolean }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -563,6 +615,22 @@ export async function handleDeleteMemoryConversation(
         success: false,
         error: resolved.error,
         httpStatus: resolved.httpStatus,
+      };
+    }
+
+    const conversation = await resolved.memory.getConversation(conversationId);
+    if (!conversation) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+    if (ownershipConflict(query.authenticatedUserId, conversation)) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
       };
     }
 
