@@ -127,14 +127,33 @@ export function createGuardrailPipeline(
   const sanitizedReadable = createAsyncIterableReadable<VoltAgentTextStreamPart>(
     async (controller) => {
       let finishPart: VoltAgentTextStreamPart | undefined;
+      let finalized = false;
+
+      const finalizeGuardrails = async () => {
+        if (finalized) {
+          return;
+        }
+
+        const metadata: OutputGuardrailMetadata = finishPart
+          ? extractMetadataFromFinishPart(finishPart)
+          : {};
+        await runner.finalize(metadata);
+        finalized = true;
+        finalizeResolve();
+      };
 
       try {
         for await (const part of baseFullStream) {
+          if (finishPart) {
+            continue;
+          }
+
           const processedPart = await runner.processPart(part);
 
           if ((part as VoltAgentTextStreamPart).type === "finish") {
             finishPart = (processedPart ?? part) as VoltAgentTextStreamPart;
-            break;
+            await finalizeGuardrails();
+            continue;
           }
 
           if (!processedPart) {
@@ -144,11 +163,7 @@ export function createGuardrailPipeline(
           controller.enqueue(processedPart);
         }
 
-        const finalizeMetadata: OutputGuardrailMetadata = finishPart
-          ? extractMetadataFromFinishPart(finishPart)
-          : {};
-
-        await runner.finalize(finalizeMetadata);
+        await finalizeGuardrails();
 
         if (finishPart) {
           const sanitizedFinish =
@@ -157,7 +172,6 @@ export function createGuardrailPipeline(
         }
 
         controller.close();
-        finalizeResolve();
       } catch (error) {
         finalizeReject(error);
         controller.error(error);
