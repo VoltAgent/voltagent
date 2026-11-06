@@ -9,7 +9,7 @@ export const weatherTool = createTool({
     location: z.string().describe("City or location to look up"),
   }),
   execute: async ({ location }, context) => {
-    context?.logger.info(`Fetching weather for ${location}`);
+    context?.logger?.info(`Fetching weather for ${location}`);
 
     const mockWeatherData = {
       location,
