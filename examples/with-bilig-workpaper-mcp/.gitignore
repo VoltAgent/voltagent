@@ -1,0 +1,6 @@
+.env
+.voltagent/
+dist/
+node_modules/
+pricing.workpaper.json
+
