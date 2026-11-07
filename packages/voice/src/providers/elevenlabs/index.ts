@@ -11,6 +11,7 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
   private readonly ttsModel: ElevenLabsModel;
   private readonly voice: string;
   private readonly voiceSettings: NonNullable<ElevenLabsVoiceOptions["options"]>;
+  private readonly requestOptions: { timeoutInSeconds?: number; maxRetries?: number };
 
   constructor(options: ElevenLabsVoiceOptions) {
     super(options);
@@ -22,6 +23,12 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
       similarityBoost: options.options?.similarityBoost ?? 0.75,
       style: options.options?.style ?? 0,
       useSpeakerBoost: options.options?.useSpeakerBoost ?? true,
+    };
+
+    this.requestOptions = {
+      timeoutInSeconds:
+        options.options?.timeout !== undefined ? options.options.timeout / 1000 : undefined,
+      maxRetries: options.options?.maxRetries,
     };
 
     this.client = new ElevenLabsClient({
@@ -69,18 +76,21 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
         throw new Error("Voice is required");
       }
 
-      const audioStream = await this.client.generate({
-        text,
-        voice: voice,
-        model_id: this.ttsModel,
-        voice_settings: {
-          stability: options?.stability ?? this.voiceSettings.stability,
-          similarity_boost: options?.similarityBoost ?? this.voiceSettings.similarityBoost,
-          style: options?.style ?? this.voiceSettings.style,
-          use_speaker_boost: options?.useSpeakerBoost ?? this.voiceSettings.useSpeakerBoost,
+      const audioStream = await this.client.generate(
+        {
+          text,
+          voice: voice,
+          model_id: this.ttsModel,
+          voice_settings: {
+            stability: options?.stability ?? this.voiceSettings.stability,
+            similarity_boost: options?.similarityBoost ?? this.voiceSettings.similarityBoost,
+            style: options?.style ?? this.voiceSettings.style,
+            use_speaker_boost: options?.useSpeakerBoost ?? this.voiceSettings.useSpeakerBoost,
+          },
+          stream: true,
         },
-        stream: true,
-      });
+        this.requestOptions,
+      );
 
       // Convert the AsyncIterable stream to a readable stream
       const response = Readable.from(audioStream);
@@ -125,13 +135,16 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
       const file = new File([audioBuffer], `audio.${options?.fileType || "mp3"}`);
 
       // Transcribe audio
-      const response = await this.client.speechToText.convert({
-        file,
-        model_id: options?.model || this.speechModel,
-        language_code: options?.language,
-        tag_audio_events: options?.tagAudioEvents,
-        num_speakers: options?.numSpeakers,
-      });
+      const response = await this.client.speechToText.convert(
+        {
+          file,
+          model_id: options?.model || this.speechModel,
+          language_code: options?.language,
+          tag_audio_events: options?.tagAudioEvents,
+          num_speakers: options?.numSpeakers,
+        },
+        this.requestOptions,
+      );
 
       return response.text;
     } catch (error) {
@@ -159,7 +172,7 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
   }
 
   async getVoices(): Promise<VoiceMetadata[]> {
-    const voices = await this.client.voices.getAll();
+    const voices = await this.client.voices.getAll(undefined, this.requestOptions);
     return voices.voices.map((voice: ElevenLabsVoice) => ({
       id: voice.voice_id,
       name: voice.name || "Unknown Voice",
