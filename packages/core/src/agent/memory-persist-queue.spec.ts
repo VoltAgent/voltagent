@@ -150,4 +150,61 @@ describe("MemoryPersistQueue", () => {
       subAgentName: "Formatter",
     });
   });
+
+  it("keeps the whole failed batch pending so a later flush recovers it", async () => {
+    const memoryManager = {
+      saveMessage: vi.fn().mockRejectedValueOnce(new Error("storage unavailable")),
+    } as any;
+    const buffer = new ConversationBuffer();
+    const messages = [createMessage("one"), createMessage("two"), createMessage("three")];
+    buffer.ingestUIMessages(messages, false);
+
+    const oc = createOperationContext();
+    const queue = new MemoryPersistQueue(memoryManager, { debounceMs: 0, logger: oc.logger });
+
+    await expect(queue.flush(buffer, oc as any)).rejects.toThrow("storage unavailable");
+    // The first failure stops the batch — messages two and three are unattempted.
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(1);
+
+    // Nothing was acknowledged: the next flush retries all three messages.
+    await queue.flush(buffer, oc as any);
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(4);
+    const retried = memoryManager.saveMessage.mock.calls
+      .slice(1)
+      .map((call) => (call[1] as UIMessage).parts[0]);
+    expect(retried).toEqual([
+      { type: "text", text: "one" },
+      { type: "text", text: "two" },
+      { type: "text", text: "three" },
+    ]);
+  });
+
+  it("acknowledges earlier writes and retries only the failed suffix", async () => {
+    const memoryManager = {
+      saveMessage: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error("storage unavailable")),
+    } as any;
+    const buffer = new ConversationBuffer();
+    const messages = [createMessage("one"), createMessage("two"), createMessage("three")];
+    buffer.ingestUIMessages(messages, false);
+
+    const oc = createOperationContext();
+    const queue = new MemoryPersistQueue(memoryManager, { debounceMs: 0, logger: oc.logger });
+
+    await expect(queue.flush(buffer, oc as any)).rejects.toThrow("storage unavailable");
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(2);
+
+    await queue.flush(buffer, oc as any);
+    // Only the failed message and the unattempted one are re-sent.
+    expect(memoryManager.saveMessage).toHaveBeenCalledTimes(4);
+    const retried = memoryManager.saveMessage.mock.calls
+      .slice(2)
+      .map((call) => (call[1] as UIMessage).parts[0]);
+    expect(retried).toEqual([
+      { type: "text", text: "two" },
+      { type: "text", text: "three" },
+    ]);
+  });
 });

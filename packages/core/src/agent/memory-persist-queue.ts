@@ -90,7 +90,7 @@ export class MemoryPersistQueue {
       return;
     }
 
-    const pending = buffer.drainPendingMessages();
+    const pending = buffer.peekPendingMessages();
     if (pending.length === 0) {
       const payload = {
         conversationId: oc.conversationId,
@@ -116,6 +116,16 @@ export class MemoryPersistQueue {
       | Map<string, AgentMetadataContextValue>
       | undefined;
 
+    // Messages stay pending until their write succeeds: acknowledge only what
+    // reached storage, and leave the failed message plus everything after it
+    // pending so a later flush retries them (#1425).
+    const saved: UIMessage[] = [];
+    const acknowledgeSaved = () => {
+      for (const savedMessage of saved) {
+        buffer.acknowledgeSavedMessage(savedMessage);
+      }
+    };
+
     for (const message of pending) {
       try {
         const messageWithMetadata = this.applySubAgentMetadata(message, {
@@ -123,15 +133,19 @@ export class MemoryPersistQueue {
           toolCallMetadata,
         });
         await this.memoryManager.saveMessage(oc, messageWithMetadata, oc.userId, oc.conversationId);
+        saved.push(message);
       } catch (error) {
         this.logger?.error?.("Failed to save message", {
           conversationId: oc.conversationId,
           userId: oc.userId,
           error,
         });
+        acknowledgeSaved();
         throw error;
       }
     }
+
+    acknowledgeSaved();
   }
 
   private enqueuePersist(key: string, task: () => Promise<void>): Promise<void> {

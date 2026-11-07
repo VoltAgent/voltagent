@@ -202,6 +202,10 @@ export class MemoryManager {
           error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         },
       );
+
+      // Surface the failure so the persistence queue keeps the message pending
+      // and retries it; best-effort callers keep their own catch.
+      throw error;
     }
   }
 
