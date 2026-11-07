@@ -94,6 +94,26 @@ const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const PHONE_REGEX = /(?<!\w)(?:\+?\d[\d\s\-()]{6,}\d)/g;
 
 /**
+ * Truncate a string to at most `maxCodeUnits` UTF-16 code units without ever cutting a
+ * character in half.
+ *
+ * Characters outside the Basic Multilingual Plane (emoji such as U+1F44D, most CJK
+ * extension ideographs) are stored as surrogate pairs. A plain `slice` can end on the
+ * high surrogate of such a pair, and a lone surrogate is not valid text: encoding it as
+ * UTF-8 replaces it with U+FFFD ("?"), so the truncated output is silently corrupted.
+ */
+function truncateToCharacterLimit(value: string, maxCodeUnits: number): string {
+  if (value.length <= maxCodeUnits) {
+    return value;
+  }
+
+  const lastCode = value.charCodeAt(maxCodeUnits - 1);
+  const endsWithHighSurrogate = lastCode >= 0xd800 && lastCode <= 0xdbff;
+
+  return value.slice(0, endsWithHighSurrogate ? maxCodeUnits - 1 : maxCodeUnits);
+}
+
+/**
  * Creates a guardrail that redacts long numeric sequences such as account or card numbers.
  */
 export function createSensitiveNumberGuardrail(
@@ -445,9 +465,10 @@ export function createMaxLengthGuardrail(
       }
 
       const latestOutput =
-        typeof output === "string" ? output : originalOutput.slice(0, maxCharacters);
-      const sanitizedOutput =
-        latestOutput.length <= maxCharacters ? latestOutput : latestOutput.slice(0, maxCharacters);
+        typeof output === "string"
+          ? output
+          : truncateToCharacterLimit(originalOutput, maxCharacters);
+      const sanitizedOutput = truncateToCharacterLimit(latestOutput, maxCharacters);
 
       return {
         pass: true,
@@ -484,8 +505,16 @@ export function createMaxLengthGuardrail(
       }
 
       const remaining = maxCharacters - guardState.emitted;
-      const emitText = chunk.length <= remaining ? chunk : chunk.slice(0, remaining);
-      guardState.emitted += emitText.length;
+      const emitText =
+        chunk.length <= remaining ? chunk : truncateToCharacterLimit(chunk, remaining);
+      // Pin the counter to the limit whenever we trimmed the chunk: dropping a trailing
+      // high surrogate would otherwise leave room for the next chunk to emit its now
+      // orphaned low surrogate.
+      if (emitText.length === chunk.length) {
+        guardState.emitted += emitText.length;
+      } else {
+        guardState.emitted = maxCharacters;
+      }
       guardState.truncated = guardState.truncated || emitText.length !== chunk.length;
 
       if (chunk.length > remaining && mode === "block") {
@@ -711,7 +740,7 @@ export function createInputLengthGuardrail(options: InputLengthGuardrailOptions)
         return {
           pass: true,
           action: "modify",
-          modifiedInput: input.slice(0, maxCharacters),
+          modifiedInput: truncateToCharacterLimit(input, maxCharacters),
           message,
         };
       }
