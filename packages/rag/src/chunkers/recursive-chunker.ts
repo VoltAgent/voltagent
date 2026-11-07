@@ -1,5 +1,6 @@
 import type { Chunk, ChunkMetadataInput, Chunker, Tokenizer } from "../types";
 import { buildMetadata } from "../utils/metadata";
+import { buildLineMap, positionForRange } from "../utils/position";
 import { splitIntoParagraphs } from "../utils/text";
 import { defaultTokenizer } from "../utils/tokenizer";
 import { SentenceChunker } from "./sentence-chunker";
@@ -23,11 +24,21 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
     this.tokenChunker = new TokenChunker(tokenizer);
   }
 
+  /**
+   * Split paragraphs, then sentence groups, falling back to token chunks for
+   * oversized groups. Child start/end offsets are rebased to the supplied text.
+   * Token-fallback offsets retain the selected tokenizer's limitations.
+   *
+   * @param text Source text to split.
+   * @param options Token budget, optional overlap and metadata overrides.
+   * @returns Paragraph, sentence or token chunks, with optional overlap snippets.
+   */
   chunk(text: string, options?: RecursiveChunkerOptions): Chunk[] {
     const tokenizer = options?.tokenizer ?? this.tokenizer;
     const maxTokens = Math.max(1, options?.maxTokens ?? 300);
     const overlapTokens = Math.max(0, options?.overlapTokens ?? 0);
     const label = options?.label ?? "recursive";
+    let lineMap: number[] | undefined;
 
     const paragraphs = splitIntoParagraphs(text, tokenizer);
     if (paragraphs.length === 0) return [];
@@ -88,8 +99,10 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
         }
 
         // Fallback to token chunking for oversized sentence group
+        lineMap ??= buildLineMap(text);
+        const positions = lineMap;
         return this.tokenChunker
-          .chunk(chunk.content, {
+          .chunk(paragraph.text.slice(chunk.start, chunk.end), {
             maxTokens,
             overlap: overlapTokens,
             tokenizer,
@@ -101,15 +114,22 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
           .map((tokenChunk, idx) => ({
             ...tokenChunk,
             id: `recursive-${chunks.length + idx}`,
-            start: paragraph.start + (tokenChunk.start ?? 0),
-            end: paragraph.start + (tokenChunk.end ?? 0),
+            start: paragraph.start + chunk.start + tokenChunk.start,
+            end: paragraph.start + chunk.start + tokenChunk.end,
             metadata: {
               ...tokenChunk.metadata,
               ...buildMetadata({
                 format: "text",
                 sourceType: "sentence-token",
                 base: options,
-                extra: { paragraphIndex },
+                extra: {
+                  paragraphIndex,
+                  ...positionForRange(
+                    paragraph.start + chunk.start + tokenChunk.start,
+                    paragraph.start + chunk.start + tokenChunk.end,
+                    positions,
+                  ),
+                },
               }),
             },
           }));
