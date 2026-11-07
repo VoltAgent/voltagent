@@ -1,0 +1,1 @@
+export { resolveConfig } from "./config";

@@ -22,6 +22,7 @@ if (isObject(data)) {
 You can also import specific subsets of the package:
 
 ```typescript
+import { resolveConfig } from "@voltagent/internal/config";
 import { convertArrayToAsyncIterable } from "@voltagent/internal/test";
 import { deepClone, hasKey } from "@voltagent/internal/utils";
 ```

@@ -18,9 +18,11 @@ import type {
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
+import { resolveConfig } from "@voltagent/internal/config";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
 import type { UIMessage } from "ai";
 import { P, match } from "ts-pattern";
+import { SUPABASE_MEMORY_DEFAULTS } from "./config";
 
 /**
  * Supabase configuration options for Memory
@@ -115,12 +117,16 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         throw new Error("Invalid configuration");
       });
 
-    this.baseTableName = options.tableName ?? "voltagent_memory";
-    this.debug = options.debug ?? false;
+    const { tableName, debug } = resolveConfig(SUPABASE_MEMORY_DEFAULTS, {
+      tableName: options.tableName,
+      debug: options.debug,
+    });
+    this.baseTableName = tableName;
+    this.debug = debug;
 
     // Initialize the logger
     this.logger = match(options.logger)
-      .with(P.nullish, () => createPinoLogger({ name: "supabase-memory-v2" }))
+      .with(P.nullish, () => createPinoLogger({ name: SUPABASE_MEMORY_DEFAULTS.loggerName }))
       .otherwise((logger) => logger);
 
     this.log("Supabase Memory V2 adapter initialized");

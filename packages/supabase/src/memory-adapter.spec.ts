@@ -101,6 +101,52 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         "Either provide a 'client' or both 'supabaseUrl' and 'supabaseKey'",
       );
     });
+
+    it("should use the default table name when none is provided", () => {
+      expect((adapter as any).baseTableName).toBe("voltagent_memory");
+    });
+
+    it("should honor a custom table name", () => {
+      const customAdapter = new SupabaseMemoryAdapter({
+        client: mockClient,
+        tableName: "my_app_memory",
+      });
+      expect((customAdapter as any).baseTableName).toBe("my_app_memory");
+    });
+
+    it("should default debug to false and allow enabling it", () => {
+      const defaultAdapter = new SupabaseMemoryAdapter({ client: mockClient });
+      expect((defaultAdapter as any).debug).toBe(false);
+
+      const debugAdapter = new SupabaseMemoryAdapter({ client: mockClient, debug: true });
+      expect((debugAdapter as any).debug).toBe(true);
+    });
+
+    it("should create a default logger when none is provided", async () => {
+      const { createPinoLogger } = await import("@voltagent/logger");
+      vi.mocked(createPinoLogger).mockClear();
+
+      new SupabaseMemoryAdapter({ client: mockClient });
+
+      expect(createPinoLogger).toHaveBeenCalledTimes(1);
+      expect(createPinoLogger).toHaveBeenCalledWith({ name: "supabase-memory-v2" });
+    });
+
+    it("should not create a logger when one is provided", async () => {
+      const { createPinoLogger } = await import("@voltagent/logger");
+      vi.mocked(createPinoLogger).mockClear();
+
+      const logger = {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      } as any;
+      const customAdapter = new SupabaseMemoryAdapter({ client: mockClient, logger });
+
+      expect(createPinoLogger).not.toHaveBeenCalled();
+      expect((customAdapter as any).logger).toBe(logger);
+    });
   });
 
   // ============================================================================
