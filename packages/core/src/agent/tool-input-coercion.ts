@@ -123,7 +123,6 @@ export const coerceStringifiedJsonToolArgs = (
   for (const issue of issues) {
     if (
       issue.code !== "invalid_type" ||
-      issue.received !== "string" ||
       (issue.expected !== "array" && issue.expected !== "object")
     ) {
       continue;
@@ -135,6 +134,7 @@ export const coerceStringifiedJsonToolArgs = (
 
     const path = issue.path as PathSegment[];
     const current = getValueAtPath(cloned, path);
+    // Zod 4 omits `received`, so check the value rather than the issue metadata.
     if (typeof current !== "string") {
       continue;
     }
