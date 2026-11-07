@@ -132,14 +132,14 @@ Store vector embeddings directly in PostgreSQL for semantic search (no extension
 
 ```ts
 import { Memory } from "@voltagent/core";
-import { PostgreSQLMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
+import { PostgreSQLMemoryAdapter, PostgreSQLVectorAdapter } from "@voltagent/postgres";
 
 const memory = new Memory({
   storage: new PostgreSQLMemoryAdapter({
     connection: process.env.DATABASE_URL!,
   }),
   embedding: "openai/text-embedding-3-small",
-  vector: new PostgresVectorAdapter({
+  vector: new PostgreSQLVectorAdapter({
     connection: process.env.DATABASE_URL!,
   }),
 });
@@ -155,7 +155,7 @@ const memory = new Memory({
 **Configuration Options:**
 
 ```ts
-const vectorAdapter = new PostgresVectorAdapter({
+const vectorAdapter = new PostgreSQLVectorAdapter({
   connection: process.env.DATABASE_URL!,
 
   // Optional: customize table name (default: "voltagent_vector")
