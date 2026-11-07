@@ -145,6 +145,14 @@ const EXTRA_PROVIDER_REGISTRY: ModelProviderRegistryEntry[] = [
     doc: "https://ollama.com",
   },
   {
+    id: "atlascloud",
+    name: "Atlas Cloud",
+    npm: "@ai-sdk/openai-compatible",
+    api: "https://api.atlascloud.ai/v1",
+    env: ["ATLASCLOUD_API_KEY"],
+    doc: "https://docs.atlascloud.ai",
+  },
+  {
     id: "minimax",
     name: "MiniMax",
     npm: "@ai-sdk/openai-compatible",
