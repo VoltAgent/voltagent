@@ -22,6 +22,7 @@ import {
   getExperimentDatasetRegistry,
   resolveExperimentDataset,
 } from "./dataset.js";
+import { normalizeMetadata, normalizeRunnerResult } from "./runner-result.js";
 import { type ExperimentRuntimeScorerBundle, resolveExperimentScorers } from "./scorers.js";
 import {
   EXPERIMENT_DEFINITION_KIND,
@@ -33,7 +34,6 @@ import {
   type ExperimentResult,
   type ExperimentRunner,
   type ExperimentRunnerContext,
-  type ExperimentRunnerReturn,
   type ExperimentRunnerSnapshot,
   type ExperimentRuntimeMetadata,
   type ExperimentRuntimePayload,
@@ -257,6 +257,7 @@ async function processExperimentItem<Item extends ExperimentDatasetItem, Output,
 
   let runnerOutput: Output | undefined;
   let runnerError: unknown;
+  let runnerFailed = false;
 
   try {
     const runnerResult = await executeRunner(config.runner, {
@@ -274,6 +275,7 @@ async function processExperimentItem<Item extends ExperimentDatasetItem, Output,
     runnerSnapshot.traceIds = runnerResult.traceIds;
   } catch (error) {
     runnerError = error;
+    runnerFailed = true;
     runnerSnapshot.error = error;
   } finally {
     const completedAt = Date.now();
@@ -283,8 +285,9 @@ async function processExperimentItem<Item extends ExperimentDatasetItem, Output,
 
   const scores: Record<string, ExperimentScore> = {};
   let scoringError: unknown;
+  let scoringFailed = false;
 
-  if (!runnerError && scorerDefinitions.length > 0) {
+  if (!runnerFailed && scorerDefinitions.length > 0) {
     try {
       const payload = createRuntimePayload(item, runnerOutput);
       const execution = await runLocalScorers({
@@ -307,10 +310,17 @@ async function processExperimentItem<Item extends ExperimentDatasetItem, Output,
       }
     } catch (error) {
       scoringError = error;
+      scoringFailed = true;
     }
   }
 
-  const statusEvaluation = evaluateItemStatus(scores, runnerError, scoringError);
+  const statusEvaluation = evaluateItemStatus(
+    scores,
+    runnerError,
+    scoringError,
+    runnerFailed,
+    scoringFailed,
+  );
   const itemCompletedAt = Date.now();
 
   const itemResult: ExperimentItemResult<Item, Output> = {
@@ -350,30 +360,6 @@ async function executeRunner<Item extends ExperimentDatasetItem, Output, TVoltOp
   ensureNotAborted(context.signal);
   const runnerResult = await runner(context);
   return normalizeRunnerResult(runnerResult);
-}
-
-function normalizeRunnerResult<Output>(value: ExperimentRunnerReturn<Output>): {
-  output: Output | undefined;
-  metadata?: Record<string, unknown> | null;
-  traceIds?: string[];
-} {
-  if (isRunnerResultObject(value)) {
-    return {
-      output: (value as { output: Output }).output,
-      metadata: normalizeMetadata(
-        (value as { metadata?: Record<string, unknown> | null }).metadata,
-      ),
-      traceIds: Array.isArray((value as { traceIds?: string[] }).traceIds)
-        ? (value as { traceIds?: string[] }).traceIds
-        : undefined,
-    };
-  }
-
-  return {
-    output: value as Output,
-    metadata: null,
-    traceIds: undefined,
-  };
 }
 
 function createRuntimePayload<Item extends ExperimentDatasetItem, Output>(
@@ -457,8 +443,10 @@ function evaluateItemStatus(
   scores: Record<string, ExperimentScore>,
   runnerError: unknown,
   scoringError: unknown,
+  runnerFailed: boolean,
+  scoringFailed: boolean,
 ): { status: ExperimentItemResult["status"]; thresholdPassed?: boolean | null; error?: unknown } {
-  if (runnerError) {
+  if (runnerFailed) {
     return {
       status: "error",
       thresholdPassed: undefined,
@@ -466,7 +454,7 @@ function evaluateItemStatus(
     };
   }
 
-  if (scoringError) {
+  if (scoringFailed) {
     return {
       status: "error",
       thresholdPassed: undefined,
@@ -476,7 +464,7 @@ function evaluateItemStatus(
 
   const scoreList = Object.values(scores);
   if (scoreList.some((score) => score.status === "error")) {
-    const firstError = scoreList.find((score) => score.error !== undefined)?.error;
+    const firstError = scoreList.find((score) => score.status === "error")?.error;
     return {
       status: "error",
       thresholdPassed: undefined,
@@ -541,26 +529,6 @@ function maybeCall<T>(fn: ((arg: T) => void | Promise<void>) | undefined, arg: T
     return Promise.resolve();
   }
   return Promise.resolve(fn(arg));
-}
-
-function isRunnerResultObject<Output>(
-  value: ExperimentRunnerReturn<Output>,
-): value is { output: Output; metadata?: Record<string, unknown> | null; traceIds?: string[] } {
-  return (
-    Boolean(value) && typeof value === "object" && "output" in (value as Record<string, unknown>)
-  );
-}
-
-function normalizeMetadata(
-  metadata: Record<string, unknown> | null | undefined,
-): Record<string, unknown> | null {
-  if (!metadata) {
-    return null;
-  }
-  if (typeof metadata !== "object") {
-    return null;
-  }
-  return { ...metadata };
 }
 
 function extractVoltAgentMetadata(
