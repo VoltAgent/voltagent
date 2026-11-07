@@ -30,8 +30,24 @@ const isEmbeddingModel = (modelId, modelInfo) => {
   return id.includes("embed") || id.includes("embedding") || family.includes("embed");
 };
 
+// Filter suggestions only; explicit model IDs remain valid in the router.
+const isRetiredGatewayTextModel = (providerId, modelId, modelInfo) => {
+  if (providerId !== "openrouter" && providerId !== "opencode") return false;
+  if (!/^(?:minimax\/)?minimax-(?:m\d|01)/i.test(modelId)) return false;
+  const output = modelInfo?.modalities?.output;
+  if (isEmbeddingModel(modelId, modelInfo) || (Array.isArray(output) && !output.includes("text"))) {
+    return false;
+  }
+  return !/^(?:minimax\/)?minimax-(?:m3\.1-flash|m3)(?::free|-free)?$/i.test(modelId);
+};
+
 const formatStringLiteral = (value) =>
   `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
+const PROVIDER_MODEL_OVERRIDES = {
+  minimax: ["MiniMax-M3.1-Flash", "MiniMax-M3"],
+  "minimax-cn": ["MiniMax-M3.1-Flash", "MiniMax-M3"],
+};
 
 async function fetchProviders() {
   const response = await fetch(API_URL);
@@ -64,7 +80,11 @@ async function run() {
     };
 
     const models = Object.entries(info.models)
-      .filter(([, modelInfo]) => !isDeprecatedModel(modelInfo))
+      .filter(
+        ([modelId, modelInfo]) =>
+          !isDeprecatedModel(modelInfo) &&
+          !isRetiredGatewayTextModel(normalizedId, normalizeModelId(modelId), modelInfo),
+      )
       .map(([modelId]) => normalizeModelId(modelId))
       .sort();
 
@@ -81,6 +101,14 @@ async function run() {
     if (embeddingModels.length) {
       providerEmbeddingModels[normalizedId] = embeddingModels;
     }
+  }
+
+  for (const [providerId, models] of Object.entries(PROVIDER_MODEL_OVERRIDES)) {
+    // Replace native text suggestions while retaining nontext catalog entries.
+    providerModels[providerId] = [
+      ...models,
+      ...(providerModels[providerId] || []).filter((modelId) => !/^MiniMax-M\d/i.test(modelId)),
+    ];
   }
 
   const registryContent = `${HEADER}

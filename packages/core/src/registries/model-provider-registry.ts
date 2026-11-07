@@ -115,7 +115,14 @@ const buildTypesContent = (providerModels: Record<string, string[]>): string => 
   const providerLines = Object.entries(providerModels)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([providerId, models]) => {
-      const sorted = [...models].sort();
+      const sorted =
+        providerId === "minimax" || providerId === "minimax-cn"
+          ? [
+              "MiniMax-M3.1-Flash",
+              "MiniMax-M3",
+              ...models.filter((modelId) => !/^MiniMax-M\d/i.test(modelId)).sort(),
+            ]
+          : [...models].sort();
       const modelLines = sorted.map((modelId) => `    ${formatStringLiteral(modelId)},`);
       return `  readonly ${formatStringLiteral(providerId)}: readonly [\n${modelLines.join("\n")}\n  ];`;
     });
@@ -261,6 +268,22 @@ const buildRegistryEntryFromModelsDev = (
   };
 };
 
+// Filter suggestions only; explicit model IDs remain valid in the router.
+const isRetiredGatewayTextModel = (
+  providerId: string,
+  modelId: string,
+  modelInfo: unknown,
+): boolean => {
+  if (providerId !== "openrouter" && providerId !== "opencode") return false;
+  if (!/^(?:minimax\/)?minimax-(?:m\d|01)/i.test(modelId)) return false;
+  const info = isRecord(modelInfo) ? modelInfo : {};
+  const output = isRecord(info.modalities) ? info.modalities.output : undefined;
+  const family = typeof info.family === "string" ? info.family : "";
+  if (/embed/i.test(modelId) || /embed/i.test(family)) return false;
+  if (Array.isArray(output) && !output.includes("text")) return false;
+  return !/^(?:minimax\/)?minimax-(?:m3\.1-flash|m3)(?::free|-free)?$/i.test(modelId);
+};
+
 const fetchModelsDevRegistry = async (): Promise<{
   entries: ModelProviderRegistryEntry[];
   providerModels: Record<string, string[]>;
@@ -300,7 +323,11 @@ const fetchModelsDevRegistry = async (): Promise<{
     const modelsValue = value.models;
     const modelsObject = isRecord(modelsValue) ? modelsValue : {};
     const models = Object.entries(modelsObject)
-      .filter(([, modelInfo]) => !isDeprecatedModel(modelInfo))
+      .filter(
+        ([modelId, modelInfo]) =>
+          !isDeprecatedModel(modelInfo) &&
+          !isRetiredGatewayTextModel(entry.id, normalizeModelId(modelId), modelInfo),
+      )
       .map(([modelId]) => normalizeModelId(modelId))
       .filter((modelId) => modelId.length > 0)
       .sort();
