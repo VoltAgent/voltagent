@@ -9,6 +9,7 @@ export type HtmlChunkerOptions = {
   label?: string;
 } & ChunkMetadataInput;
 
+/** Decode a numeric HTML reference, replacing invalid Unicode scalar values with U+FFFD. */
 function decodeNumericEntity(codePoint: number): string {
   if (codePoint === 0 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
     return "\ufffd";
