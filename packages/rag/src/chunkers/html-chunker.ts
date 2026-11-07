@@ -9,6 +9,13 @@ export type HtmlChunkerOptions = {
   label?: string;
 } & ChunkMetadataInput;
 
+function decodeNumericEntity(codePoint: number): string {
+  if (codePoint === 0 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
+    return "\ufffd";
+  }
+  return String.fromCodePoint(codePoint);
+}
+
 function normalizeHtml(html: string): string {
   // Replace block-level tags with newlines to preserve rough structure
   const blockTags = [
@@ -54,9 +61,9 @@ function normalizeHtml(html: string): string {
     text = text.replace(new RegExp(k, "g"), v);
   });
   // Decode numeric entities
-  text = text.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+  text = text.replace(/&#(\d+);/g, (_, code) => decodeNumericEntity(Number(code)));
   text = text.replace(/&#x([0-9a-fA-F]+);/g, (_, code) =>
-    String.fromCharCode(Number.parseInt(code, 16)),
+    decodeNumericEntity(Number.parseInt(code, 16)),
   );
   text = text.replace(/\s+\n/g, "\n").replace(/\n\s+/g, "\n");
   return text.trim();
