@@ -8,11 +8,16 @@ describe("JsonChunker", () => {
     const chunks = chunker.chunk(json, { maxTokens: 10 });
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks[0]?.metadata?.fields).toBeGreaterThan(0);
+    expect(chunks[0]?.metadata?.format).toBe("json");
+    expect(chunks[0]?.metadata?.sourceType).toBe("json");
+    expect(chunks[0]?.metadata?.tokenStart).toBe(0);
   });
 
   it("falls back to text chunking on invalid JSON", () => {
     const chunker = new JsonChunker();
     const chunks = chunker.chunk("{invalid json", { maxTokens: 2 });
     expect(chunks.length).toBeGreaterThan(0);
+    expect(chunks[0]?.metadata?.format).toBe("text");
+    expect(chunks[0]?.metadata?.sourceType).toBe("token");
   });
 });

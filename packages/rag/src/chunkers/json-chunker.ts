@@ -86,7 +86,11 @@ export class JsonChunker implements Chunker<JsonChunkerOptions> {
     });
 
     return baseChunks.map((chunk, idx) => {
-      const { sourceType: _ignored, ...chunkExtra } = (chunk.metadata ?? {}) as Record<
+      const {
+        format: _ignoredFormat,
+        sourceType: _ignoredSourceType,
+        ...chunkExtra
+      } = (chunk.metadata ?? {}) as Record<
         string,
         unknown
       >;
