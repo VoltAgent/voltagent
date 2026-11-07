@@ -143,3 +143,31 @@ describe("runExperiment integration", () => {
     expect(result.summary.scorers).not.toHaveProperty("original-id");
   });
 });
+
+it.each([undefined, null, false, 0, ""])(
+  "marks a thrown falsy runner value %s as error",
+  async (failure) => {
+    let scored = false;
+    const result = await runExperiment(
+      createExperiment({
+        id: "falsy-runner-error",
+        dataset: { items: [{ id: "a", input: "x" }] },
+        runner: () => {
+          throw failure;
+        },
+        scorers: [
+          {
+            id: "must-not-run",
+            name: "must-not-run",
+            scorer: () => {
+              scored = true;
+              return { status: "success", score: 1 };
+            },
+          },
+        ],
+      }),
+    );
+    expect(result.items[0].status).toBe("error");
+    expect(scored).toBe(false);
+  },
+);

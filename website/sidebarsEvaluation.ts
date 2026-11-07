@@ -7,6 +7,7 @@ const sidebars: SidebarsConfig = {
     "live-evaluations",
     "datasets",
     "experiments",
+    "runner-tapes",
     {
       type: "category",
       label: "Scorers",
