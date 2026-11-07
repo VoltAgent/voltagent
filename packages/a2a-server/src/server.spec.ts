@@ -263,115 +263,212 @@ describe("A2AServer", () => {
     });
   });
 
-  it("propagates cancellation to streaming agents and returns a canceled task", async () => {
-    const cancellationObserver = vi.fn();
+  it.each(["error", "end", "late-chunk"])(
+    "preserves cancellation when the agent stream exits with %s",
+    async (exitMode) => {
+      const cancellationObserver = vi.fn();
 
-    const streamText = vi
-      .fn()
-      .mockImplementation(async (_input: string, options?: { abortSignal?: AbortSignal }) => {
-        const abortSignal = options?.abortSignal;
+      const streamText = vi
+        .fn()
+        .mockImplementation(async (_input: string, options?: { abortSignal?: AbortSignal }) => {
+          const abortSignal = options?.abortSignal;
 
-        const textPromise = new Promise<string>((resolve) => {
-          if (!abortSignal) {
-            resolve("final");
-            return;
+          const textPromise = new Promise<string>((resolve) => {
+            if (!abortSignal) {
+              resolve("final");
+              return;
+            }
+            abortSignal.addEventListener(
+              "abort",
+              () => {
+                cancellationObserver();
+                resolve("");
+              },
+              { once: true },
+            );
+          });
+
+          async function* textStream() {
+            yield "Chunk";
+            await new Promise<void>((resolve, reject) => {
+              const onAbort = () => {
+                cancellationObserver();
+                if (exitMode === "error") reject(new Error("aborted"));
+                else resolve();
+              };
+              if (!abortSignal) {
+                reject(new Error("unexpected"));
+                return;
+              }
+              if (abortSignal.aborted) {
+                onAbort();
+                return;
+              }
+              const handler = () => {
+                abortSignal.removeEventListener("abort", handler);
+                onAbort();
+              };
+              abortSignal.addEventListener("abort", handler, { once: true });
+            });
+            if (exitMode === "end") return;
+            yield "Should not reach";
           }
-          abortSignal.addEventListener(
-            "abort",
-            () => {
-              cancellationObserver();
-              resolve("");
-            },
-            { once: true },
-          );
+
+          return {
+            text: textPromise,
+            finishReason: "stop",
+            usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+            textStream: textStream(),
+          };
         });
 
-        async function* textStream() {
-          yield "Chunk";
-          await new Promise((_, reject) => {
-            if (!abortSignal) {
-              reject(new Error("unexpected"));
-              return;
-            }
-            if (abortSignal.aborted) {
-              cancellationObserver();
-              reject(new Error("aborted"));
-              return;
-            }
-            const handler = () => {
-              abortSignal.removeEventListener("abort", handler);
-              cancellationObserver();
-              reject(new Error("aborted"));
-            };
-            abortSignal.addEventListener("abort", handler, { once: true });
-          });
-          yield "Should not reach";
+      const agent: StubAgent = {
+        id: "support-agent",
+        purpose: "Handle streamed cancellations",
+        generateText: vi.fn(),
+        streamText,
+      };
+
+      const taskStore = new InMemoryTaskStore();
+      const server = createServer(agent, taskStore);
+
+      const streamRequest = {
+        jsonrpc: "2.0" as const,
+        id: "stream-cancel",
+        method: "message/stream",
+        params: {
+          message: createMessage({ messageId: "msg-cancel-1" }),
+        },
+      } satisfies JsonRpcRequest<MessageSendParams>;
+
+      const streamResponse = await server.handleRequest("support-agent", streamRequest);
+      expect("kind" in streamResponse && streamResponse.kind === "stream").toBe(true);
+
+      const collected: JsonRpcResponse<TaskRecord>[] = [];
+      let cancelled = false;
+
+      for await (const event of streamResponse.stream) {
+        const snapshot = clone(event);
+        collected.push(snapshot);
+
+        if (!cancelled && snapshot.result?.status.message?.parts[0]?.text === "Chunk") {
+          const taskId = snapshot.result?.id;
+          expect(taskId).toBeDefined();
+          expect(snapshot.result?.status.state).toBe("working");
+
+          const cancelResponse = (await server.handleRequest("support-agent", {
+            jsonrpc: "2.0",
+            id: "cancel-1",
+            method: "tasks/cancel",
+            params: { id: taskId },
+          })) as JsonRpcResponse<TaskRecord>;
+
+          expect(cancelResponse.error).toBeUndefined();
+          expect(cancelResponse.result?.status.state).toBe("canceled");
+          cancelled = true;
         }
+        if (cancelled) {
+          expect(snapshot.result?.status.state).not.toBe("completed");
+          expect(snapshot.result?.status.message?.parts[0]?.text).not.toBe("ChunkShould not reach");
+        }
+      }
 
-        return {
-          text: textPromise,
-          finishReason: "stop",
-          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-          textStream: textStream(),
-        };
-      });
+      expect(cancellationObserver).toHaveBeenCalled();
+      const finalSnapshot = collected.at(-1);
+      expect(finalSnapshot?.result?.status.state).toBe("canceled");
 
+      const lastTaskId = finalSnapshot?.result?.id;
+      const stored = lastTaskId
+        ? await taskStore.load({ agentId: "support-agent", taskId: lastTaskId })
+        : null;
+      expect(stored?.status.state).toBe("canceled");
+    },
+  );
+
+  it("does not start the agent when the task is canceled before stream consumption", async () => {
     const agent: StubAgent = {
       id: "support-agent",
       purpose: "Handle streamed cancellations",
       generateText: vi.fn(),
-      streamText,
+      streamText: vi.fn(),
     };
-
     const taskStore = new InMemoryTaskStore();
     const server = createServer(agent, taskStore);
-
-    const streamRequest = {
-      jsonrpc: "2.0" as const,
-      id: "stream-cancel",
+    const response = await server.handleRequest("support-agent", {
+      ...createSendRequest(),
       method: "message/stream",
-      params: {
-        message: createMessage({ messageId: "msg-cancel-1" }),
-      },
-    } satisfies JsonRpcRequest<MessageSendParams>;
+    });
+    if (!("stream" in response)) throw new Error("Expected a stream");
+    const first = await response.stream.next();
+    const taskId = first.value.result.id;
+    await server.handleRequest("support-agent", {
+      jsonrpc: "2.0",
+      id: "cancel-before-start",
+      method: "tasks/cancel",
+      params: { id: taskId },
+    });
 
-    const streamResponse = await server.handleRequest("support-agent", streamRequest);
-    expect("kind" in streamResponse && streamResponse.kind === "stream").toBe(true);
+    const events = [];
+    for await (const event of response.stream) events.push(event);
 
-    const collected: JsonRpcResponse<TaskRecord>[] = [];
-    let cancelled = false;
+    expect(agent.streamText).not.toHaveBeenCalled();
+    expect(events.at(-1)?.result?.status.state).toBe("canceled");
+    expect((await taskStore.load({ agentId: "support-agent", taskId }))?.status.state).toBe(
+      "canceled",
+    );
+  });
 
-    for await (const event of streamResponse.stream) {
-      const snapshot = clone(event);
-      collected.push(snapshot);
+  it("preserves cancellation while awaiting stream completion metadata", async () => {
+    let signalMetadataWait!: () => void;
+    const metadataWait = new Promise<void>((resolve) => {
+      signalMetadataWait = resolve;
+    });
+    let finish!: (value: string) => void;
+    const finishReason = new Promise<string>((resolve) => {
+      finish = resolve;
+    });
+    const agent: StubAgent = {
+      id: "support-agent",
+      purpose: "Handle streamed cancellations",
+      generateText: vi.fn(),
+      streamText: vi.fn().mockResolvedValue({
+        text: Promise.resolve("Chunk"),
+        get finishReason() {
+          signalMetadataWait();
+          return finishReason;
+        },
+        textStream: (async function* () {
+          yield "Chunk";
+        })(),
+      }),
+    };
+    const taskStore = new InMemoryTaskStore();
+    const server = createServer(agent, taskStore);
+    const response = await server.handleRequest("support-agent", {
+      ...createSendRequest(),
+      method: "message/stream",
+    });
+    if (!("stream" in response)) throw new Error("Expected a stream");
+    const first = await response.stream.next();
+    const taskId = first.value.result.id;
+    const events: JsonRpcResponse<TaskRecord>[] = [];
+    const consume = (async () => {
+      for await (const event of response.stream) events.push(event);
+    })();
+    await metadataWait;
+    await server.handleRequest("support-agent", {
+      jsonrpc: "2.0",
+      id: "cancel-during-metadata",
+      method: "tasks/cancel",
+      params: { id: taskId },
+    });
+    finish("stop");
+    await consume;
 
-      if (!cancelled) {
-        const taskId = snapshot.result?.id;
-        expect(taskId).toBeDefined();
-        expect(snapshot.result?.status.state).toBe("working");
-
-        const cancelResponse = (await server.handleRequest("support-agent", {
-          jsonrpc: "2.0",
-          id: "cancel-1",
-          method: "tasks/cancel",
-          params: { id: taskId },
-        })) as JsonRpcResponse<TaskRecord>;
-
-        expect(cancelResponse.error).toBeUndefined();
-        expect(cancelResponse.result?.status.state).toBe("canceled");
-        cancelled = true;
-      }
-    }
-
-    expect(cancellationObserver).toHaveBeenCalled();
-    const finalSnapshot = collected.at(-1);
-    expect(finalSnapshot?.result?.status.state).toBe("canceled");
-
-    const lastTaskId = finalSnapshot?.result?.id;
-    const stored = lastTaskId
-      ? await taskStore.load({ agentId: "support-agent", taskId: lastTaskId })
-      : null;
-    expect(stored?.status.state).toBe("canceled");
+    expect(events.at(-1)?.result?.status.state).toBe("canceled");
+    expect((await taskStore.load({ agentId: "support-agent", taskId }))?.status.state).toBe(
+      "canceled",
+    );
   });
 
   it("returns method not found for unknown requests", async () => {

@@ -402,6 +402,7 @@ export class A2AServer {
       let aggregatedText = "";
 
       try {
+        abortController.signal.throwIfAborted();
         const voltMessage = toVoltAgentMessage(normalizedMessage);
         const agentOptions = server.buildAgentCallOptions({
           record,
@@ -412,6 +413,7 @@ export class A2AServer {
         });
 
         const streamResult = await agent.streamText(voltMessage.content, agentOptions);
+        abortController.signal.throwIfAborted();
 
         responseMessage = fromVoltAgentMessage({
           role: "assistant",
@@ -426,6 +428,7 @@ export class A2AServer {
         yield createSuccessResponse(requestId, record);
 
         for await (const chunk of streamResult.textStream) {
+          abortController.signal.throwIfAborted();
           if (!chunk) {
             continue;
           }
@@ -441,6 +444,7 @@ export class A2AServer {
           yield createSuccessResponse(requestId, record);
         }
 
+        abortController.signal.throwIfAborted();
         let finalText = aggregatedText;
         if (!finalText) {
           try {
@@ -485,6 +489,7 @@ export class A2AServer {
           };
         }
 
+        abortController.signal.throwIfAborted();
         await taskStore.save({ agentId, data: record });
         yield createSuccessResponse(requestId, record);
       } catch (error) {
