@@ -34,7 +34,19 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
     if (this.toolkits.has(toolkit.name)) {
       this.logger.warn(`Toolkit with name '${toolkit.name}' already exists. Replacing it.`);
     }
-    if (newToolkit.getAllToolNames().some((toolName) => this.hasToolInAny(toolName))) {
+    if (
+      newToolkit
+        .getAllToolNames()
+        .some(
+          (toolName) =>
+            this.baseTools.has(toolName) ||
+            this.providerTools.has(toolName) ||
+            [...this.toolkits.entries()].some(
+              ([toolkitName, manager]) =>
+                toolkitName !== toolkit.name && manager.hasToolInAny(toolName),
+            ),
+        )
+    ) {
       this.logger.warn(
         `Toolkit '${toolkit.name}' contains tools that conflict with existing tools. Skipping addition.`,
       );
