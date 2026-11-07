@@ -459,7 +459,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           targetAgentConfig.schema,
           options,
         );
-        finalResult = safeStringify(response);
+        finalResult = safeStringify(response.object);
         usage = (response as any).usage;
         finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else {
