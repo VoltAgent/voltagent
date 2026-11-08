@@ -201,10 +201,28 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
 
   /**
    * Generate cache key for prompt reference
+   *
+   * Version and label select different prompt versions, so they must not share
+   * a cache entry with each other or with the default latest lookup.
+   *
+   * The namespace and selector are escaped before joining: a prompt name may
+   * itself contain the `:` separator, and an unescaped join would let
+   * `promptName: "x:label:y"` collide with `{ promptName: "x", label: "y:latest" }`.
+   *
+   * When both `version` and `label` are supplied the version selector wins, which
+   * matches the precedence documented on `PromptReference.version`.
    */
   private getCacheKey = (reference: PromptReference): string => {
-    const { promptName, version = "latest" } = reference;
-    return `${promptName}:${version}`;
+    const escapePart = (part: string): string => part.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+    const { promptName, version, label } = reference;
+    const escapedName = escapePart(promptName);
+    if (version !== undefined) {
+      return `${escapedName}:version:${escapePart(String(version))}`;
+    }
+    if (label) {
+      return `${escapedName}:label:${escapePart(String(label))}`;
+    }
+    return `${escapedName}:latest`;
   };
 
   /**
