@@ -61,6 +61,25 @@ function parseOrderDirection(value?: string): "ASC" | "DESC" | undefined {
   return undefined;
 }
 
+/**
+ * The verified caller's identity from the auth middleware, when auth is
+ * configured (`id`, falling back to JWT `sub`). Undefined on unauthenticated
+ * deployments so every check degenerates to the historical behavior (#1371).
+ */
+function getAuthenticatedUserId(c: { get: (key: string) => unknown }): string | undefined {
+  const user = c.get("authenticatedUser") as { id?: unknown; sub?: unknown } | undefined;
+  if (!user || typeof user !== "object") {
+    return undefined;
+  }
+  if (typeof user.id === "string" && user.id.trim()) {
+    return user.id;
+  }
+  if (typeof user.sub === "string" && user.sub.trim()) {
+    return user.sub;
+  }
+  return undefined;
+}
+
 type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
   getWorkingMemory?: { path: string };
 };
@@ -85,6 +104,7 @@ export function registerMemoryRoutes(
       agentId: query.agentId,
       resourceId: query.resourceId,
       userId: query.userId,
+      authenticatedUserId: getAuthenticatedUserId(c),
       limit: parseNumber(query.limit),
       offset: parseNumber(query.offset),
       orderBy: parseOrderBy(query.orderBy),
@@ -100,6 +120,7 @@ export function registerMemoryRoutes(
     logger.trace(`GET /api/memory/conversations/${conversationId} - fetching conversation`);
     const response = await handleGetMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      authenticatedUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -117,6 +138,7 @@ export function registerMemoryRoutes(
       after: parseDate(query.after),
       roles: query.roles ? query.roles.split(",") : undefined,
       userId: query.userId,
+      authenticatedUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -186,6 +208,7 @@ export function registerMemoryRoutes(
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...body,
       agentId: body?.agentId ?? query.agentId,
+      authenticatedUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
@@ -196,6 +219,7 @@ export function registerMemoryRoutes(
     logger.trace(`DELETE /api/memory/conversations/${conversationId} - deleting conversation`);
     const response = await handleDeleteMemoryConversation(deps, conversationId, {
       agentId: query.agentId,
+      authenticatedUserId: getAuthenticatedUserId(c),
     });
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
