@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "synthetic-agent",
   instructions: "You are a helpful assistant",
-  model: "synthetic/hf:MiniMaxAI/MiniMax-M2",
+  model: "synthetic/hf:deepseek-ai/DeepSeek-V4.1-Flash",
 });
 ```
 
@@ -32,7 +32,7 @@ This provider uses the OpenAI-compatible adapter.
 
 ## Default base URL
 
-`https://api.synthetic.new/v1`
+`https://api.synthetic.new/openai/v1`
 
 You can override the base URL by setting `SYNTHETIC_BASE_URL`.
 
@@ -43,32 +43,15 @@ You can override the base URL by setting `SYNTHETIC_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (25)</summary>
+  <summary>Show models (8)</summary>
 
-- hf:MiniMaxAI/MiniMax-M2
-- hf:MiniMaxAI/MiniMax-M2.1
-- hf:Qwen/Qwen2.5-Coder-32B-Instruct
-- hf:Qwen/Qwen3-235B-A22B-Instruct-2507
-- hf:Qwen/Qwen3-235B-A22B-Thinking-2507
-- hf:Qwen/Qwen3-Coder-480B-A35B-Instruct
-- hf:deepseek-ai/DeepSeek-R1
-- hf:deepseek-ai/DeepSeek-R1-0528
-- hf:deepseek-ai/DeepSeek-V3
-- hf:deepseek-ai/DeepSeek-V3-0324
-- hf:deepseek-ai/DeepSeek-V3.1
-- hf:deepseek-ai/DeepSeek-V3.1-Terminus
-- hf:deepseek-ai/DeepSeek-V3.2
-- hf:meta-llama/Llama-3.1-405B-Instruct
-- hf:meta-llama/Llama-3.1-70B-Instruct
-- hf:meta-llama/Llama-3.1-8B-Instruct
-- hf:meta-llama/Llama-3.3-70B-Instruct
-- hf:meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
-- hf:meta-llama/Llama-4-Scout-17B-16E-Instruct
-- hf:moonshotai/Kimi-K2-Instruct-0905
-- hf:moonshotai/Kimi-K2-Thinking
+- hf:deepseek-ai/DeepSeek-V4.1-Flash
+- hf:deepseek-ai/DeepSeek-V4.1-Flash-1017
+- hf:moonshotai/Kimi-K3
+- hf:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4
 - hf:openai/gpt-oss-120b
-- hf:zai-org/GLM-4.5
-- hf:zai-org/GLM-4.6
-- hf:zai-org/GLM-4.7
+- hf:zai-org/GLM-4.7-Flash
+- hf:zai-org/GLM-5.3
+- hf:zai-org/GLM-5.3-Flash
 
 </details>

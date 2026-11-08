@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "cloudflare-workers-ai-agent",
   instructions: "You are a helpful assistant",
-  model: "cloudflare-workers-ai/aura-1",
+  model: "cloudflare-workers-ai/@cf/aisingapore/gemma-sea-lion-v4-27b-it",
 });
 ```
 
@@ -27,11 +27,13 @@ const agent = new Agent({
 
 ## Provider package
 
-`workers-ai-provider`
+`@ai-sdk/openai-compatible`
+
+This provider uses the OpenAI-compatible adapter.
 
 ## Default base URL
 
-Not listed.
+`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1`
 
 You can override the base URL by setting `CLOUDFLARE_WORKERS_AI_BASE_URL`.
 
@@ -42,61 +44,35 @@ You can override the base URL by setting `CLOUDFLARE_WORKERS_AI_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (54)</summary>
+  <summary>Show models (28)</summary>
 
-- aura-1
-- bart-large-cnn
-- deepseek-r1-distill-qwen-32b
-- dreamshaper-8-lcm
-- flux-1-schnell
-- gemma-2b-it-lora
-- gemma-3-12b-it
-- gemma-7b-it
-- gemma-7b-it-lora
-- gemma-sea-lion-v4-27b-it
-- gpt-oss-120b
-- gpt-oss-20b
-- granite-4.0-h-micro
-- hermes-2-pro-mistral-7b
-- llama-2-7b-chat-fp16
-- llama-2-7b-chat-hf-lora
-- llama-2-7b-chat-int8
-- llama-3-8b-instruct
-- llama-3-8b-instruct-awq
-- llama-3.1-70b-instruct
-- llama-3.1-8b-instruct
-- llama-3.1-8b-instruct-awq
-- llama-3.1-8b-instruct-fast
-- llama-3.1-8b-instruct-fp8
-- llama-3.2-11b-vision-instruct
-- llama-3.2-1b-instruct
-- llama-3.2-3b-instruct
-- llama-3.3-70b-instruct-fp8-fast
-- llama-4-scout-17b-16e-instruct
-- llama-guard-3-8b
-- llava-1.5-7b-hf
-- lucid-origin
-- m2m100-1.2b
-- melotts
-- mistral-7b-instruct-v0.1
-- mistral-7b-instruct-v0.2
-- mistral-7b-instruct-v0.2-lora
-- mistral-small-3.1-24b-instruct
-- nova-3
-- phi-2
-- phoenix-1.0
-- qwen2.5-coder-32b-instruct
-- qwen3-30b-a3b-fp8
-- qwq-32b
-- resnet-50
-- sqlcoder-7b-2
-- stable-diffusion-v1-5-img2img
-- stable-diffusion-v1-5-inpainting
-- stable-diffusion-xl-base-1.0
-- stable-diffusion-xl-lightning
-- uform-gen2-qwen-500m
-- whisper
-- whisper-large-v3-turbo
-- whisper-tiny-en
+- @cf/aisingapore/gemma-sea-lion-v4-27b-it
+- @cf/deepseek-ai/deepseek-r1-distill-qwen-32b
+- @cf/deepseek-ai/deepseek-v4-flash-0731
+- @cf/deepseek-ai/deepseek-v4-pro-0813
+- @cf/deepseek-ai/deepseek-v4.1-flash-1017
+- @cf/google/gemma-4-26b-a4b-it
+- @cf/ibm-granite/granite-4.0-h-micro
+- @cf/meta/llama-3.1-8b-instruct-fp8
+- @cf/meta/llama-3.2-11b-vision-instruct
+- @cf/meta/llama-3.2-1b-instruct
+- @cf/meta/llama-3.2-3b-instruct
+- @cf/meta/llama-3.3-70b-instruct-fp8-fast
+- @cf/meta/llama-4-scout-17b-16e-instruct
+- @cf/meta/llama-guard-3-8b
+- @cf/mistralai/mistral-small-3.1-24b-instruct
+- @cf/moonshotai/kimi-k2.6
+- @cf/moonshotai/kimi-k2.7-code
+- @cf/nvidia/nemotron-3-120b-a12b
+- @cf/openai/gpt-oss-120b
+- @cf/openai/gpt-oss-20b
+- @cf/qwen/qwen2.5-coder-32b-instruct
+- @cf/qwen/qwen3-30b-a3b-fp8
+- @cf/qwen/qwen3.8-27b
+- @cf/qwen/qwq-32b
+- @cf/zai-org/glm-4.7-flash
+- @cf/zai-org/glm-5.2
+- @cf/zai-org/glm-5.3
+- @cf/zai-org/glm-5.3-flash
 
 </details>

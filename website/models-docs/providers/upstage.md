@@ -43,10 +43,12 @@ You can override the base URL by setting `UPSTAGE_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (3)</summary>
+  <summary>Show models (5)</summary>
 
 - solar-mini
+- solar-mini4
 - solar-pro2
 - solar-pro3
+- solar-pro4
 
 </details>

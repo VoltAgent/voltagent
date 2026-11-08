@@ -13,622 +13,2348 @@ export type ModelProviderRegistryEntry = {
 };
 
 export const MODEL_PROVIDER_REGISTRY: Record<string, ModelProviderRegistryEntry> = {
-  abacus: {
-    id: "abacus",
-    name: "Abacus",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://routellm.abacus.ai/v1",
-    env: ["ABACUS_API_KEY"],
-    doc: "https://abacus.ai/help/api",
+  "302ai": {
+    "id": "302ai",
+    "name": "302.AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.302.ai/v1",
+    "env": [
+      "302AI_API_KEY"
+    ],
+    "doc": "https://doc.302.ai"
   },
-  aihubmix: {
-    id: "aihubmix",
-    name: "AIHubMix",
-    npm: "@aihubmix/ai-sdk-provider",
-    env: ["AIHUBMIX_API_KEY"],
-    doc: "https://docs.aihubmix.com",
+  "abacus": {
+    "id": "abacus",
+    "name": "Abacus",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://routellm.abacus.ai/v1",
+    "env": [
+      "ABACUS_API_KEY"
+    ],
+    "doc": "https://abacus.ai/help/api"
   },
-  alibaba: {
-    id: "alibaba",
-    name: "Alibaba",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    env: ["DASHSCOPE_API_KEY"],
-    doc: "https://www.alibabacloud.com/help/en/model-studio/models",
+  "abliteration-ai": {
+    "id": "abliteration-ai",
+    "name": "abliteration.ai",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.abliteration.ai/v1",
+    "env": [
+      "ABLIT_KEY"
+    ],
+    "doc": "https://docs.abliteration.ai/models"
+  },
+  "above": {
+    "id": "above",
+    "name": "above.dev",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.above.dev/v1",
+    "env": [
+      "ABOVE_API_KEY"
+    ],
+    "doc": "https://above.dev/docs"
+  },
+  "agentrouter": {
+    "id": "agentrouter",
+    "name": "AgentRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://agentrouter.org/v1",
+    "env": [
+      "AGENTROUTER_API_KEY"
+    ],
+    "doc": "https://agentrouter.org/docs/opencode.html"
+  },
+  "agnes": {
+    "id": "agnes",
+    "name": "Agnes AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://apihub.agnes-ai.com/v1",
+    "env": [
+      "AGNES_API_KEY"
+    ],
+    "doc": "https://agnes-ai.com/doc"
+  },
+  "ai-router": {
+    "id": "ai-router",
+    "name": "AI-ROUTER",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.ai-router.dev/v1",
+    "env": [
+      "AI_ROUTER_API_KEY"
+    ],
+    "doc": "https://ai-router.dev/openai-compatible-api-gateway/"
+  },
+  "ai21": {
+    "id": "ai21",
+    "name": "AI21 Labs",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.ai21.com/studio/v1",
+    "env": [
+      "AI21_API_KEY"
+    ],
+    "doc": "https://docs.ai21.com/docs/jamba-foundation-models"
+  },
+  "aiand": {
+    "id": "aiand",
+    "name": "ai&",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.aiand.com/v1",
+    "env": [
+      "AIAND_API_KEY"
+    ],
+    "doc": "https://docs.aiand.com/"
+  },
+  "aihubmix": {
+    "id": "aihubmix",
+    "name": "AIHubMix",
+    "npm": "@aihubmix/ai-sdk-provider",
+    "env": [
+      "AIHUBMIX_API_KEY"
+    ],
+    "doc": "https://docs.aihubmix.com"
+  },
+  "aimlapi": {
+    "id": "aimlapi",
+    "name": "AI/ML API",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.aimlapi.com/v1",
+    "env": [
+      "AIMLAPI_API_KEY"
+    ],
+    "doc": "https://docs.aimlapi.com"
+  },
+  "ainetcafe": {
+    "id": "ainetcafe",
+    "name": "ainetcafe",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://microquickjs.com/v1",
+    "env": [
+      "AINETCAFE_API_KEY"
+    ],
+    "doc": "https://ainetcafe.com/k3/guides/"
+  },
+  "aixy": {
+    "id": "aixy",
+    "name": "Aixy",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.aixy-gateway.com/v1",
+    "env": [
+      "AIXY_API_KEY"
+    ],
+    "doc": "https://docs.aixy-gateway.com/integrations/overview"
+  },
+  "aki-io": {
+    "id": "aki-io",
+    "name": "AKI.IO",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://aki.io/v1",
+    "env": [
+      "AKI_IO_API_KEY"
+    ],
+    "doc": "https://aki.io/docs/"
+  },
+  "alibaba": {
+    "id": "alibaba",
+    "name": "Alibaba",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "env": [
+      "DASHSCOPE_API_KEY"
+    ],
+    "doc": "https://www.alibabacloud.com/help/en/model-studio/models"
   },
   "alibaba-cn": {
-    id: "alibaba-cn",
-    name: "Alibaba (China)",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    env: ["DASHSCOPE_API_KEY"],
-    doc: "https://www.alibabacloud.com/help/en/model-studio/models",
+    "id": "alibaba-cn",
+    "name": "Alibaba (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "env": [
+      "DASHSCOPE_API_KEY"
+    ],
+    "doc": "https://www.alibabacloud.com/help/en/model-studio/models"
+  },
+  "alibaba-coding-plan": {
+    "id": "alibaba-coding-plan",
+    "name": "Alibaba Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://coding-intl.dashscope.aliyuncs.com/v1",
+    "env": [
+      "ALIBABA_CODING_PLAN_API_KEY"
+    ],
+    "doc": "https://www.alibabacloud.com/help/en/model-studio/coding-plan"
+  },
+  "alibaba-coding-plan-cn": {
+    "id": "alibaba-coding-plan-cn",
+    "name": "Alibaba Coding Plan (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://coding.dashscope.aliyuncs.com/v1",
+    "env": [
+      "ALIBABA_CODING_PLAN_API_KEY"
+    ],
+    "doc": "https://help.aliyun.com/zh/model-studio/coding-plan"
+  },
+  "alibaba-token-plan": {
+    "id": "alibaba-token-plan",
+    "name": "Alibaba Token Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+    "env": [
+      "ALIBABA_TOKEN_PLAN_API_KEY"
+    ],
+    "doc": "https://www.alibabacloud.com/help/en/model-studio/token-plan-overview"
+  },
+  "alibaba-token-plan-cn": {
+    "id": "alibaba-token-plan-cn",
+    "name": "Alibaba Token Plan (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+    "env": [
+      "ALIBABA_TOKEN_PLAN_API_KEY"
+    ],
+    "doc": "https://www.alibabacloud.com/help/zh/model-studio/token-plan-overview"
   },
   "amazon-bedrock": {
-    id: "amazon-bedrock",
-    name: "Amazon Bedrock",
-    npm: "@ai-sdk/amazon-bedrock",
-    env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"],
-    doc: "https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html",
+    "id": "amazon-bedrock",
+    "name": "Amazon Bedrock",
+    "npm": "@ai-sdk/amazon-bedrock",
+    "env": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "AWS_REGION",
+      "AWS_BEARER_TOKEN_BEDROCK"
+    ],
+    "doc": "https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html"
   },
-  anthropic: {
-    id: "anthropic",
-    name: "Anthropic",
-    npm: "@ai-sdk/anthropic",
-    env: ["ANTHROPIC_API_KEY"],
-    doc: "https://docs.anthropic.com/en/docs/about-claude/models",
+  "ambient": {
+    "id": "ambient",
+    "name": "Ambient",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.ambient.xyz/v1",
+    "env": [
+      "AMBIENT_API_KEY"
+    ],
+    "doc": "https://ambient.xyz"
   },
-  azure: {
-    id: "azure",
-    name: "Azure",
-    npm: "@ai-sdk/azure",
-    env: ["AZURE_RESOURCE_NAME", "AZURE_API_KEY"],
-    doc: "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models",
+  "amd": {
+    "id": "amd",
+    "name": "AMD",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://developer.amd.com.cn/radeon/api/v1",
+    "env": [
+      "AMD_API_KEY"
+    ],
+    "doc": "https://developer.amd.com.cn/radeon/tokenfactory"
+  },
+  "anthropic": {
+    "id": "anthropic",
+    "name": "Anthropic",
+    "npm": "@ai-sdk/anthropic",
+    "env": [
+      "ANTHROPIC_API_KEY"
+    ],
+    "doc": "https://docs.anthropic.com/en/docs/about-claude/models"
+  },
+  "anyapi": {
+    "id": "anyapi",
+    "name": "AnyAPI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.anyapi.ai/v1",
+    "env": [
+      "ANYAPI_API_KEY"
+    ],
+    "doc": "https://docs.anyapi.ai"
+  },
+  "arcee": {
+    "id": "arcee",
+    "name": "Arcee",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.arcee.ai/api/v1",
+    "env": [
+      "ARCEE_API_KEY"
+    ],
+    "doc": "https://docs.arcee.ai"
+  },
+  "atomic-chat": {
+    "id": "atomic-chat",
+    "name": "Atomic Chat",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "http://127.0.0.1:1337/v1",
+    "env": [
+      "ATOMIC_CHAT_API_KEY"
+    ],
+    "doc": "https://atomic.chat"
+  },
+  "auriko": {
+    "id": "auriko",
+    "name": "Auriko",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.auriko.ai/v1",
+    "env": [
+      "AURIKO_API_KEY"
+    ],
+    "doc": "https://docs.auriko.ai"
+  },
+  "azure": {
+    "id": "azure",
+    "name": "Azure",
+    "npm": "@ai-sdk/azure",
+    "env": [
+      "AZURE_RESOURCE_NAME",
+      "AZURE_API_KEY"
+    ],
+    "doc": "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models"
   },
   "azure-cognitive-services": {
-    id: "azure-cognitive-services",
-    name: "Azure Cognitive Services",
-    npm: "@ai-sdk/azure",
-    env: ["AZURE_COGNITIVE_SERVICES_RESOURCE_NAME", "AZURE_COGNITIVE_SERVICES_API_KEY"],
-    doc: "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models",
+    "id": "azure-cognitive-services",
+    "name": "Azure Cognitive Services",
+    "npm": "@ai-sdk/azure",
+    "env": [
+      "AZURE_COGNITIVE_SERVICES_RESOURCE_NAME",
+      "AZURE_COGNITIVE_SERVICES_API_KEY"
+    ],
+    "doc": "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models"
   },
-  bailing: {
-    id: "bailing",
-    name: "Bailing",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.tbox.cn/api/llm/v1/chat/completions",
-    env: ["BAILING_API_TOKEN"],
-    doc: "https://alipaytbox.yuque.com/sxs0ba/ling/intro",
+  "bailing": {
+    "id": "bailing",
+    "name": "Bailing",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.tbox.cn/api/llm/v1",
+    "env": [
+      "BAILING_API_TOKEN"
+    ],
+    "doc": "https://alipaytbox.yuque.com/sxs0ba/ling/intro"
   },
-  baseten: {
-    id: "baseten",
-    name: "Baseten",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://inference.baseten.co/v1",
-    env: ["BASETEN_API_KEY"],
-    doc: "https://docs.baseten.co/development/model-apis/overview",
+  "baseten": {
+    "id": "baseten",
+    "name": "Baseten",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.baseten.co/v1",
+    "env": [
+      "BASETEN_API_KEY"
+    ],
+    "doc": "https://docs.baseten.co/inference/model-apis/overview"
   },
-  cerebras: {
-    id: "cerebras",
-    name: "Cerebras",
-    npm: "@ai-sdk/cerebras",
-    env: ["CEREBRAS_API_KEY"],
-    doc: "https://inference-docs.cerebras.ai/models/overview",
+  "bee": {
+    "id": "bee",
+    "name": "Bee by HEOSSI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.bee.heossi.com/bee",
+    "env": [
+      "BEE_API_KEY"
+    ],
+    "doc": "https://bee.heossi.com/docs/sdks"
   },
-  chutes: {
-    id: "chutes",
-    name: "Chutes",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://llm.chutes.ai/v1",
-    env: ["CHUTES_API_KEY"],
-    doc: "https://llm.chutes.ai/v1/models",
+  "berget": {
+    "id": "berget",
+    "name": "Berget.AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.berget.ai/v1",
+    "env": [
+      "BERGET_API_KEY"
+    ],
+    "doc": "https://api.berget.ai"
+  },
+  "blueclaw": {
+    "id": "blueclaw",
+    "name": "Blue Claw",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://openai.blueclaw.network/v1",
+    "env": [
+      "BLUECLAW_API_KEY"
+    ],
+    "doc": "https://blueclaw.network"
+  },
+  "bothub": {
+    "id": "bothub",
+    "name": "Bothub",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://openai.bothub.ru/v1",
+    "env": [
+      "BOTHUB_API_KEY"
+    ],
+    "doc": "https://bothub.ru/models"
+  },
+  "boundless": {
+    "id": "boundless",
+    "name": "Boundless",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inference.boundless.network/v1",
+    "env": [
+      "BOUNDLESS_API_KEY"
+    ],
+    "doc": "https://inference.boundless.network/models"
+  },
+  "cerebras": {
+    "id": "cerebras",
+    "name": "Cerebras",
+    "npm": "@ai-sdk/cerebras",
+    "env": [
+      "CEREBRAS_API_KEY"
+    ],
+    "doc": "https://inference-docs.cerebras.ai/models/overview"
+  },
+  "chutes": {
+    "id": "chutes",
+    "name": "Chutes",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://llm.chutes.ai/v1",
+    "env": [
+      "CHUTES_API_KEY"
+    ],
+    "doc": "https://llm.chutes.ai/v1/models"
+  },
+  "clarifai": {
+    "id": "clarifai",
+    "name": "Clarifai",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.clarifai.com/v2/ext/openai/v1",
+    "env": [
+      "CLARIFAI_PAT"
+    ],
+    "doc": "https://docs.clarifai.com/compute/inference/"
+  },
+  "claudinio": {
+    "id": "claudinio",
+    "name": "Claudinio",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.claudin.io/v1",
+    "env": [
+      "CLAUDINIO_API_KEY"
+    ],
+    "doc": "https://claudin.io"
+  },
+  "cline-pass": {
+    "id": "cline-pass",
+    "name": "ClinePass",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.cline.bot/api/v1",
+    "env": [
+      "CLINE_API_KEY"
+    ],
+    "doc": "https://docs.cline.bot/getting-started/clinepass"
+  },
+  "cloudferro-sherlock": {
+    "id": "cloudferro-sherlock",
+    "name": "CloudFerro Sherlock",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api-sherlock.cloudferro.com/openai/v1/",
+    "env": [
+      "CLOUDFERRO_SHERLOCK_API_KEY"
+    ],
+    "doc": "https://docs.sherlock.cloudferro.com/"
   },
   "cloudflare-ai-gateway": {
-    id: "cloudflare-ai-gateway",
-    name: "Cloudflare AI Gateway",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://gateway.ai.cloudflare.com/v1/${CLOUDFLARE_ACCOUNT_ID}/${CLOUDFLARE_GATEWAY_ID}/compat/",
-    env: ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_GATEWAY_ID"],
-    doc: "https://developers.cloudflare.com/ai-gateway/",
+    "id": "cloudflare-ai-gateway",
+    "name": "Cloudflare AI Gateway",
+    "npm": "ai-gateway-provider",
+    "env": [
+      "CLOUDFLARE_API_TOKEN",
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_GATEWAY_ID"
+    ],
+    "doc": "https://developers.cloudflare.com/ai-gateway/"
   },
   "cloudflare-workers-ai": {
-    id: "cloudflare-workers-ai",
-    name: "Cloudflare Workers AI",
-    npm: "workers-ai-provider",
-    env: ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_KEY"],
-    doc: "https://developers.cloudflare.com/workers-ai/models/",
+    "id": "cloudflare-workers-ai",
+    "name": "Cloudflare Workers AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1",
+    "env": [
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_KEY"
+    ],
+    "doc": "https://developers.cloudflare.com/workers-ai/models/"
   },
-  cohere: {
-    id: "cohere",
-    name: "Cohere",
-    npm: "@ai-sdk/cohere",
-    env: ["COHERE_API_KEY"],
-    doc: "https://docs.cohere.com/docs/models",
+  "cohere": {
+    "id": "cohere",
+    "name": "Cohere",
+    "npm": "@ai-sdk/cohere",
+    "env": [
+      "COHERE_API_KEY"
+    ],
+    "doc": "https://docs.cohere.com/docs/models"
   },
-  cortecs: {
-    id: "cortecs",
-    name: "Cortecs",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.cortecs.ai/v1",
-    env: ["CORTECS_API_KEY"],
-    doc: "https://api.cortecs.ai/v1/models",
+  "commandcode": {
+    "id": "commandcode",
+    "name": "CommandCode",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.commandcode.ai/provider/v1",
+    "env": [
+      "CMD_API_KEY"
+    ],
+    "doc": "https://commandcode.ai/docs/provider"
   },
-  deepinfra: {
-    id: "deepinfra",
-    name: "Deep Infra",
-    npm: "@ai-sdk/deepinfra",
-    env: ["DEEPINFRA_API_KEY"],
-    doc: "https://deepinfra.com/models",
+  "coralbricks": {
+    "id": "coralbricks",
+    "name": "CoralBricks",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.coralbricks.ai/v1",
+    "env": [
+      "CORAL_API_KEY"
+    ],
+    "doc": "https://www.coralbricks.ai/docs"
   },
-  deepseek: {
-    id: "deepseek",
-    name: "DeepSeek",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.deepseek.com",
-    env: ["DEEPSEEK_API_KEY"],
-    doc: "https://platform.deepseek.com/api-docs/pricing",
+  "cortecs": {
+    "id": "cortecs",
+    "name": "Cortecs",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.cortecs.ai/v1",
+    "env": [
+      "CORTECS_API_KEY"
+    ],
+    "doc": "https://api.cortecs.ai/v1/models"
   },
-  fastrouter: {
-    id: "fastrouter",
-    name: "FastRouter",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://go.fastrouter.ai/api/v1",
-    env: ["FASTROUTER_API_KEY"],
-    doc: "https://fastrouter.ai/models",
+  "crossmodel": {
+    "id": "crossmodel",
+    "name": "CrossModel",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.crossmodel.ai/v1",
+    "env": [
+      "CROSSMODEL_API_KEY"
+    ],
+    "doc": "https://www.crossmodel.ai/docs"
+  },
+  "crusoe": {
+    "id": "crusoe",
+    "name": "Crusoe",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inference.crusoecloud.com/v1",
+    "env": [
+      "CRUSOE_API_KEY"
+    ],
+    "doc": "https://docs.crusoecloud.com/managed-inference/overview"
+  },
+  "daoxe": {
+    "id": "daoxe",
+    "name": "DaoXE",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://daoxe.com/v1",
+    "env": [
+      "DAOXE_API_KEY"
+    ],
+    "doc": "https://daoxe.com/pricing"
+  },
+  "databricks": {
+    "id": "databricks",
+    "name": "Databricks",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://${DATABRICKS_HOST}/ai-gateway/mlflow/v1",
+    "env": [
+      "DATABRICKS_HOST",
+      "DATABRICKS_TOKEN"
+    ],
+    "doc": "https://docs.databricks.com/aws/en/machine-learning/foundation-models/"
+  },
+  "deepinfra": {
+    "id": "deepinfra",
+    "name": "Deep Infra",
+    "npm": "@ai-sdk/deepinfra",
+    "env": [
+      "DEEPINFRA_API_KEY"
+    ],
+    "doc": "https://deepinfra.com/models"
+  },
+  "deepseek": {
+    "id": "deepseek",
+    "name": "DeepSeek",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.deepseek.com",
+    "env": [
+      "DEEPSEEK_API_KEY"
+    ],
+    "doc": "https://api-docs.deepseek.com/quick_start/pricing"
+  },
+  "digitalocean": {
+    "id": "digitalocean",
+    "name": "DigitalOcean",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.do-ai.run/v1",
+    "env": [
+      "DIGITALOCEAN_ACCESS_TOKEN"
+    ],
+    "doc": "https://docs.digitalocean.com/products/gradient-ai-platform/details/models/"
+  },
+  "dinference": {
+    "id": "dinference",
+    "name": "DInference",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.dinference.com/v1",
+    "env": [
+      "DINFERENCE_API_KEY"
+    ],
+    "doc": "https://dinference.com"
+  },
+  "drun": {
+    "id": "drun",
+    "name": "D.Run (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://chat.d.run/v1",
+    "env": [
+      "DRUN_API_KEY"
+    ],
+    "doc": "https://www.d.run"
+  },
+  "ebcloud": {
+    "id": "ebcloud",
+    "name": "EBCloud",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://maas-api.ebcloud.com/v1",
+    "env": [
+      "EBCLOUD_API_KEY"
+    ],
+    "doc": "https://docs.ebtech.com/ai/model-api.html"
+  },
+  "echo": {
+    "id": "echo",
+    "name": "Echo",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://echo.tracerml.ai/v1",
+    "env": [
+      "ECHO_API_KEY"
+    ],
+    "doc": "https://echo.tracerml.ai/docs/api"
+  },
+  "edenai": {
+    "id": "edenai",
+    "name": "Eden AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.edenai.run/v3",
+    "env": [
+      "EDENAI_API_KEY"
+    ],
+    "doc": "https://docs.edenai.co"
+  },
+  "empiriolabs": {
+    "id": "empiriolabs",
+    "name": "EmpirioLabs AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.empiriolabs.ai/v1",
+    "env": [
+      "EMPIRIOLABS_API_KEY"
+    ],
+    "doc": "https://docs.empiriolabs.ai"
+  },
+  "engy": {
+    "id": "engy",
+    "name": "engy",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.engy.ai/v1",
+    "env": [
+      "ENGY_API_KEY"
+    ],
+    "doc": "https://engy.ai/pricing"
+  },
+  "evroc": {
+    "id": "evroc",
+    "name": "evroc",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://models.think.evroc.com/v1",
+    "env": [
+      "EVROC_API_KEY"
+    ],
+    "doc": "https://docs.evroc.com/products/think/overview.html"
+  },
+  "fastrouter": {
+    "id": "fastrouter",
+    "name": "FastRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://go.fastrouter.ai/api/v1",
+    "env": [
+      "FASTROUTER_API_KEY"
+    ],
+    "doc": "https://fastrouter.ai/models"
   },
   "fireworks-ai": {
-    id: "fireworks-ai",
-    name: "Fireworks AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.fireworks.ai/inference/v1/",
-    env: ["FIREWORKS_API_KEY"],
-    doc: "https://fireworks.ai/docs/",
+    "id": "fireworks-ai",
+    "name": "Fireworks AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.fireworks.ai/inference/v1/",
+    "env": [
+      "FIREWORKS_API_KEY"
+    ],
+    "doc": "https://fireworks.ai/docs/"
   },
-  firmware: {
-    id: "firmware",
-    name: "Firmware",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://app.firmware.ai/api/v1",
-    env: ["FIRMWARE_API_KEY"],
-    doc: "https://firmware.ai",
+  "freemodel": {
+    "id": "freemodel",
+    "name": "FreeModel",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://cc.freemodel.dev/v1",
+    "env": [
+      "FREEMODEL_API_KEY"
+    ],
+    "doc": "https://freemodel.dev"
   },
-  friendli: {
-    id: "friendli",
-    name: "Friendli",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.friendli.ai/serverless/v1",
-    env: ["FRIENDLI_TOKEN"],
-    doc: "https://friendli.ai/docs/guides/serverless_endpoints/introduction",
+  "friendli": {
+    "id": "friendli",
+    "name": "Friendli",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.friendli.ai/serverless/v1",
+    "env": [
+      "FRIENDLI_TOKEN"
+    ],
+    "doc": "https://friendli.ai/docs/guides/serverless_endpoints/introduction"
+  },
+  "frogbot": {
+    "id": "frogbot",
+    "name": "FrogBot",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://app.frogbot.ai/api/v1",
+    "env": [
+      "FROGBOT_API_KEY"
+    ],
+    "doc": "https://docs.frogbot.ai"
   },
   "github-copilot": {
-    id: "github-copilot",
-    name: "GitHub Copilot",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.githubcopilot.com",
-    env: ["GITHUB_TOKEN"],
-    doc: "https://docs.github.com/en/copilot",
+    "id": "github-copilot",
+    "name": "GitHub Copilot",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.githubcopilot.com",
+    "env": [
+      "GITHUB_TOKEN"
+    ],
+    "doc": "https://docs.github.com/en/copilot"
   },
-  "github-models": {
-    id: "github-models",
-    name: "GitHub Models",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://models.github.ai/inference",
-    env: ["GITHUB_TOKEN"],
-    doc: "https://docs.github.com/en/github-models",
+  "gitlab": {
+    "id": "gitlab",
+    "name": "GitLab Duo",
+    "npm": "gitlab-ai-provider",
+    "env": [
+      "GITLAB_TOKEN"
+    ],
+    "doc": "https://docs.gitlab.com/user/duo_agent_platform/"
   },
-  gitlab: {
-    id: "gitlab",
-    name: "GitLab Duo",
-    npm: "@gitlab/gitlab-ai-provider",
-    env: ["GITLAB_TOKEN"],
-    doc: "https://docs.gitlab.com/user/duo_agent_platform/",
+  "gmicloud": {
+    "id": "gmicloud",
+    "name": "GMI Cloud",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.gmi-serving.com/v1",
+    "env": [
+      "GMICLOUD_API_KEY"
+    ],
+    "doc": "https://docs.gmicloud.ai/inference-engine/api-reference/llm-api-reference"
   },
-  google: {
-    id: "google",
-    name: "Google",
-    npm: "@ai-sdk/google",
-    env: ["GOOGLE_GENERATIVE_AI_API_KEY", "GEMINI_API_KEY"],
-    doc: "https://ai.google.dev/gemini-api/docs/pricing",
+  "google": {
+    "id": "google",
+    "name": "Google",
+    "npm": "@ai-sdk/google",
+    "env": [
+      "GOOGLE_API_KEY",
+      "GOOGLE_GENERATIVE_AI_API_KEY",
+      "GEMINI_API_KEY"
+    ],
+    "doc": "https://ai.google.dev/gemini-api/docs/models"
   },
   "google-vertex": {
-    id: "google-vertex",
-    name: "Vertex",
-    npm: "@ai-sdk/google-vertex",
-    env: ["GOOGLE_VERTEX_PROJECT", "GOOGLE_VERTEX_LOCATION", "GOOGLE_APPLICATION_CREDENTIALS"],
-    doc: "https://cloud.google.com/vertex-ai/generative-ai/docs/models",
+    "id": "google-vertex",
+    "name": "Vertex",
+    "npm": "@ai-sdk/google-vertex",
+    "env": [
+      "GOOGLE_VERTEX_PROJECT",
+      "GOOGLE_VERTEX_LOCATION",
+      "GOOGLE_APPLICATION_CREDENTIALS"
+    ],
+    "doc": "https://cloud.google.com/vertex-ai/generative-ai/docs/models"
   },
   "google-vertex-anthropic": {
-    id: "google-vertex-anthropic",
-    name: "Vertex (Anthropic)",
-    npm: "@ai-sdk/google-vertex",
-    env: ["GOOGLE_VERTEX_PROJECT", "GOOGLE_VERTEX_LOCATION", "GOOGLE_APPLICATION_CREDENTIALS"],
-    doc: "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude",
+    "id": "google-vertex-anthropic",
+    "name": "Vertex (Anthropic)",
+    "npm": "@ai-sdk/google-vertex/anthropic",
+    "env": [
+      "GOOGLE_VERTEX_PROJECT",
+      "GOOGLE_VERTEX_LOCATION",
+      "GOOGLE_APPLICATION_CREDENTIALS"
+    ],
+    "doc": "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude"
   },
-  groq: {
-    id: "groq",
-    name: "Groq",
-    npm: "@ai-sdk/groq",
-    env: ["GROQ_API_KEY"],
-    doc: "https://console.groq.com/docs/models",
+  "greenpt": {
+    "id": "greenpt",
+    "name": "GreenPT",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.greenpt.ai/v1",
+    "env": [
+      "GREENPT_API_KEY"
+    ],
+    "doc": "https://docs.greenpt.ai"
   },
-  helicone: {
-    id: "helicone",
-    name: "Helicone",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://ai-gateway.helicone.ai/v1",
-    env: ["HELICONE_API_KEY"],
-    doc: "https://helicone.ai/models",
+  "groq": {
+    "id": "groq",
+    "name": "Groq",
+    "npm": "@ai-sdk/groq",
+    "env": [
+      "GROQ_API_KEY"
+    ],
+    "doc": "https://console.groq.com/docs/models"
   },
-  huggingface: {
-    id: "huggingface",
-    name: "Hugging Face",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://router.huggingface.co/v1",
-    env: ["HF_TOKEN"],
-    doc: "https://huggingface.co/docs/inference-providers",
+  "helicone": {
+    "id": "helicone",
+    "name": "Helicone",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://ai-gateway.helicone.ai/v1",
+    "env": [
+      "HELICONE_API_KEY"
+    ],
+    "doc": "https://helicone.ai/models"
   },
-  iflowcn: {
-    id: "iflowcn",
-    name: "iFlow",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://apis.iflow.cn/v1",
-    env: ["IFLOW_API_KEY"],
-    doc: "https://platform.iflow.cn/en/docs",
+  "hetzner": {
+    "id": "hetzner",
+    "name": "Hetzner",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.hetzner.com/api/v1",
+    "env": [
+      "HETZNER_API_KEY"
+    ],
+    "doc": "https://experiments.hetzner.com/docs/inference"
   },
-  inception: {
-    id: "inception",
-    name: "Inception",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.inceptionlabs.ai/v1/",
-    env: ["INCEPTION_API_KEY"],
-    doc: "https://platform.inceptionlabs.ai/docs",
+  "hopper": {
+    "id": "hopper",
+    "name": "Hopper",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.withhopper.com/v1",
+    "env": [
+      "HOPPER_API_KEY"
+    ],
+    "doc": "https://withhopper.com/agents/deepseek-v4.1-flash-1017"
   },
-  inference: {
-    id: "inference",
-    name: "Inference",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://inference.net/v1",
-    env: ["INFERENCE_API_KEY"],
-    doc: "https://inference.net/models",
+  "hpc-ai": {
+    "id": "hpc-ai",
+    "name": "HPC-AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.hpc-ai.com/inference/v1",
+    "env": [
+      "HPC_AI_API_KEY"
+    ],
+    "doc": "https://www.hpc-ai.com/doc/docs/quickstart/"
+  },
+  "huggingface": {
+    "id": "huggingface",
+    "name": "Hugging Face",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://router.huggingface.co/v1",
+    "env": [
+      "HF_TOKEN"
+    ],
+    "doc": "https://huggingface.co/docs/inference-providers"
+  },
+  "hyper": {
+    "id": "hyper",
+    "name": "Charm Hyper",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://hyper.charm.land/v1",
+    "env": [
+      "HYPER_API_KEY"
+    ],
+    "doc": "https://hyper.charm.land"
+  },
+  "impossibl": {
+    "id": "impossibl",
+    "name": "Impossibl",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.impossibl.com/v1",
+    "env": [
+      "IMPOSSIBL_API_KEY"
+    ],
+    "doc": "https://impossibl.com/docs/models"
+  },
+  "inception": {
+    "id": "inception",
+    "name": "Inception",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inceptionlabs.ai/v1/",
+    "env": [
+      "INCEPTION_API_KEY"
+    ],
+    "doc": "https://docs.inceptionlabs.ai/get-started/models"
+  },
+  "inceptron": {
+    "id": "inceptron",
+    "name": "Inceptron",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inceptron.io/v1",
+    "env": [
+      "INCEPTRON_API_KEY"
+    ],
+    "doc": "https://docs.inceptron.io"
+  },
+  "inco": {
+    "id": "inco",
+    "name": "Inco",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inco.ai/v1",
+    "env": [
+      "INCO_API_KEY"
+    ],
+    "doc": "https://platform.inco.ai/docs"
+  },
+  "infer": {
+    "id": "infer",
+    "name": "Infer by Flow7",
+    "npm": "@ai-sdk/openai",
+    "api": "https://infer.flow7.org/v1",
+    "env": [
+      "INFER_API_KEY"
+    ],
+    "doc": "https://infer.flow7.org/opencode"
+  },
+  "inference": {
+    "id": "inference",
+    "name": "Inference",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.net/v1",
+    "env": [
+      "INFERENCE_API_KEY"
+    ],
+    "doc": "https://inference.net/models"
+  },
+  "inferx": {
+    "id": "inferx",
+    "name": "InferX",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://model.inferx.net/endpoints/v1",
+    "env": [
+      "INFERX_API_KEY"
+    ],
+    "doc": "https://model.inferx.net/endpoints"
+  },
+  "infomaniak": {
+    "id": "infomaniak",
+    "name": "Infomaniak",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.infomaniak.com/2/ai/${INFOMANIAK_PRODUCT_ID}/openai/v1",
+    "env": [
+      "INFOMANIAK_API_KEY",
+      "INFOMANIAK_PRODUCT_ID"
+    ],
+    "doc": "https://www.infomaniak.com/en/hosting/ai-services/open-source-models"
   },
   "io-net": {
-    id: "io-net",
-    name: "IO.NET",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.intelligence.io.solutions/api/v1",
-    env: ["IOINTELLIGENCE_API_KEY"],
-    doc: "https://io.net/docs/guides/intelligence/io-intelligence",
+    "id": "io-net",
+    "name": "IO.NET",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.intelligence.io.solutions/api/v1",
+    "env": [
+      "IOINTELLIGENCE_API_KEY"
+    ],
+    "doc": "https://io.net/docs/guides/intelligence/io-intelligence"
   },
-  "kimi-for-coding": {
-    id: "kimi-for-coding",
-    name: "Kimi For Coding",
-    npm: "@ai-sdk/anthropic",
-    api: "https://api.kimi.com/coding/v1",
-    env: ["KIMI_API_KEY"],
-    doc: "https://www.kimi.com/coding/docs/en/third-party-agents.html",
+  "iteracompute": {
+    "id": "iteracompute",
+    "name": "IteraCompute",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.iteracompute.com/v1",
+    "env": [
+      "ITERACOMPUTE_API_KEY"
+    ],
+    "doc": "https://iteracompute.com/docs.html"
   },
-  llama: {
-    id: "llama",
-    name: "Llama",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.llama.com/compat/v1/",
-    env: ["LLAMA_API_KEY"],
-    doc: "https://llama.developer.meta.com/docs/models",
+  "jalapeno": {
+    "id": "jalapeno",
+    "name": "Jalapeno Cloud",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.jalapeno-cloud.ai/v1",
+    "env": [
+      "JALAPENO_API_KEY"
+    ],
+    "doc": "https://www.jalapeno-cloud.ai/docs/"
   },
-  lmstudio: {
-    id: "lmstudio",
-    name: "LMStudio",
-    npm: "@ai-sdk/openai-compatible",
-    api: "http://127.0.0.1:1234/v1",
-    env: ["LMSTUDIO_API_KEY"],
-    doc: "https://lmstudio.ai/models",
+  "jiekou": {
+    "id": "jiekou",
+    "name": "Jiekou.AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.jiekou.ai/openai",
+    "env": [
+      "JIEKOU_API_KEY"
+    ],
+    "doc": "https://docs.jiekou.ai/docs/support/quickstart?utm_source=github_models.dev"
   },
-  lucidquery: {
-    id: "lucidquery",
-    name: "LucidQuery AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://lucidquery.com/api/v1",
-    env: ["LUCIDQUERY_API_KEY"],
-    doc: "https://lucidquery.com/api/docs",
+  "kenari": {
+    "id": "kenari",
+    "name": "Kenari",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://kenari.id/v1",
+    "env": [
+      "KENARI_API_KEY"
+    ],
+    "doc": "https://kenari.id/docs"
   },
-  minimax: {
-    id: "minimax",
-    name: "MiniMax",
-    npm: "@ai-sdk/anthropic",
-    api: "https://api.minimax.io/anthropic/v1",
-    env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimax.io/docs/api-reference/api-overview",
+  "kilo": {
+    "id": "kilo",
+    "name": "Kilo Gateway",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.kilo.ai/api/gateway",
+    "env": [
+      "KILO_API_KEY"
+    ],
+    "doc": "https://kilo.ai"
+  },
+  "kimi-code-plan-cn": {
+    "id": "kimi-code-plan-cn",
+    "name": "Kimi For Coding (kimi.com)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.kimi.com/coding/v1",
+    "env": [
+      "KIMI_API_KEY"
+    ],
+    "doc": "https://www.kimi.com/code/docs/en/kimi-code/models.html"
+  },
+  "kimi-code-plan-global": {
+    "id": "kimi-code-plan-global",
+    "name": "Kimi For Coding (kimi.ai)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.kimi.ai/coding/v1",
+    "env": [
+      "KIMI_API_KEY"
+    ],
+    "doc": "https://www.kimi.ai/code/docs/en/kimi-code/models.html"
+  },
+  "klokintegration": {
+    "id": "klokintegration",
+    "name": "klokintegration.se",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api-gw.klok.ipaas.se/proxy/kloker-key/v1",
+    "env": [
+      "KLOKINTEGRATION_API_KEY"
+    ],
+    "doc": "https://klokintegration.se/docs/ai-api"
+  },
+  "kosmik": {
+    "id": "kosmik",
+    "name": "Kosmik Compute",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.koscompute.com/v1",
+    "env": [
+      "KOSMIK_API_KEY"
+    ],
+    "doc": "https://api.koscompute.com/docs/"
+  },
+  "kuae-cloud-coding-plan": {
+    "id": "kuae-cloud-coding-plan",
+    "name": "KUAE Cloud Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://coding-plan-endpoint.kuaecloud.net/v1",
+    "env": [
+      "KUAE_API_KEY"
+    ],
+    "doc": "https://docs.mthreads.com/kuaecloud/kuaecloud-doc-online/coding_plan/"
+  },
+  "lilac": {
+    "id": "lilac",
+    "name": "Lilac",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.getlilac.com/v1",
+    "env": [
+      "LILAC_API_KEY"
+    ],
+    "doc": "https://docs.getlilac.com/inference/models"
+  },
+  "liquid": {
+    "id": "liquid",
+    "name": "Liquid Inference",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://router.inference.ai.exchange/v1",
+    "env": [
+      "LIQUID_API_KEY"
+    ],
+    "doc": "https://inference.ai.exchange/docs"
+  },
+  "llmgateway": {
+    "id": "llmgateway",
+    "name": "DevPass (LLM Gateway)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.llmgateway.io/v1",
+    "env": [
+      "LLMGATEWAY_API_KEY"
+    ],
+    "doc": "https://llmgateway.io/docs"
+  },
+  "llmgateway-providers": {
+    "id": "llmgateway-providers",
+    "name": "LLM Gateway",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.llmgateway.io/v1",
+    "env": [
+      "LLMGATEWAY_API_KEY"
+    ],
+    "doc": "https://llmgateway.io/docs"
+  },
+  "llmtech": {
+    "id": "llmtech",
+    "name": "LLM Tech",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.llmtech.eu/v1",
+    "env": [
+      "LLMTECH_API_KEY"
+    ],
+    "doc": "https://llmtech.eu/models/qwen3.8-27b"
+  },
+  "llmtr": {
+    "id": "llmtr",
+    "name": "LLMTR",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://llmtr.com/v1",
+    "env": [
+      "LLMTR_API_KEY"
+    ],
+    "doc": "https://llmtr.com/docs"
+  },
+  "lmstudio": {
+    "id": "lmstudio",
+    "name": "LMStudio",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "http://127.0.0.1:1234/v1",
+    "env": [
+      "LMSTUDIO_API_KEY"
+    ],
+    "doc": "https://lmstudio.ai/models"
+  },
+  "longcat": {
+    "id": "longcat",
+    "name": "LongCat",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.longcat.chat/openai",
+    "env": [
+      "LONGCAT_API_KEY"
+    ],
+    "doc": "https://longcat.chat/platform/docs/"
+  },
+  "lowrouter": {
+    "id": "lowrouter",
+    "name": "LowRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.lowrouter.ai/v1",
+    "env": [
+      "LOWROUTER_API_KEY"
+    ],
+    "doc": "https://lowrouter.ai/docs/models/available"
+  },
+  "lucidquery": {
+    "id": "lucidquery",
+    "name": "LucidQuery",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.lucidquery.com/v1",
+    "env": [
+      "LUCIDQUERY_API_KEY"
+    ],
+    "doc": "https://lucidquery.com/docs"
+  },
+  "lynkr": {
+    "id": "lynkr",
+    "name": "Lynkr",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "http://127.0.0.1:8081/v1",
+    "env": [
+      "LYNKR_API_KEY"
+    ],
+    "doc": "https://github.com/Fast-Editor/Lynkr"
+  },
+  "meganova": {
+    "id": "meganova",
+    "name": "Meganova",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.meganova.ai/v1",
+    "env": [
+      "MEGANOVA_API_KEY"
+    ],
+    "doc": "https://docs.meganova.ai"
+  },
+  "melious": {
+    "id": "melious",
+    "name": "Melious",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.melious.ai/v1",
+    "env": [
+      "MELIOUS_API_KEY"
+    ],
+    "doc": "https://melious.ai/docs/reference/models"
+  },
+  "merge-gateway": {
+    "id": "merge-gateway",
+    "name": "Merge Gateway",
+    "npm": "merge-gateway-ai-sdk-provider",
+    "api": "https://api-gateway.merge.dev/v1/ai-sdk",
+    "env": [
+      "MERGE_GATEWAY_API_KEY"
+    ],
+    "doc": "https://docs.merge.dev/merge-gateway"
+  },
+  "meta": {
+    "id": "meta",
+    "name": "Meta",
+    "npm": "@ai-sdk/openai",
+    "api": "https://api.meta.ai/v1",
+    "env": [
+      "META_MODEL_API_KEY"
+    ],
+    "doc": "https://dev.meta.ai/docs"
+  },
+  "minimax": {
+    "id": "minimax",
+    "name": "MiniMax (minimax.io)",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://api.minimax.io/anthropic/v1",
+    "env": [
+      "MINIMAX_API_KEY"
+    ],
+    "doc": "https://platform.minimax.io/docs/guides/quickstart"
   },
   "minimax-cn": {
-    id: "minimax-cn",
-    name: "MiniMax (China)",
-    npm: "@ai-sdk/anthropic",
-    api: "https://api.minimaxi.com/anthropic/v1",
-    env: ["MINIMAX_API_KEY"],
-    doc: "https://platform.minimaxi.com/docs/api-reference/api-overview",
+    "id": "minimax-cn",
+    "name": "MiniMax (minimax.cn)",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://api.minimax.cn/anthropic/v1",
+    "env": [
+      "MINIMAX_API_KEY"
+    ],
+    "doc": "https://platform.minimaxi.com/docs/guides/quickstart"
   },
-  mistral: {
-    id: "mistral",
-    name: "Mistral",
-    npm: "@ai-sdk/mistral",
-    env: ["MISTRAL_API_KEY"],
-    doc: "https://docs.mistral.ai/getting-started/models/",
+  "minimax-cn-coding-plan": {
+    "id": "minimax-cn-coding-plan",
+    "name": "MiniMax Token Plan (minimax.cn)",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://api.minimax.cn/anthropic/v1",
+    "env": [
+      "MINIMAX_API_KEY"
+    ],
+    "doc": "https://platform.minimaxi.com/docs/token-plan/intro"
   },
-  modelscope: {
-    id: "modelscope",
-    name: "ModelScope",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api-inference.modelscope.cn/v1",
-    env: ["MODELSCOPE_API_KEY"],
-    doc: "https://modelscope.cn/docs/model-service/API-Inference/intro",
+  "minimax-coding-plan": {
+    "id": "minimax-coding-plan",
+    "name": "MiniMax Token Plan (minimax.io)",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://api.minimax.io/anthropic/v1",
+    "env": [
+      "MINIMAX_API_KEY"
+    ],
+    "doc": "https://platform.minimax.io/docs/token-plan/intro"
   },
-  moonshotai: {
-    id: "moonshotai",
-    name: "Moonshot AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.moonshot.ai/v1",
-    env: ["MOONSHOT_API_KEY"],
-    doc: "https://platform.moonshot.ai/docs/api/chat",
+  "mistral": {
+    "id": "mistral",
+    "name": "Mistral",
+    "npm": "@ai-sdk/mistral",
+    "env": [
+      "MISTRAL_API_KEY"
+    ],
+    "doc": "https://docs.mistral.ai/getting-started/models/"
+  },
+  "mixlayer": {
+    "id": "mixlayer",
+    "name": "Mixlayer",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://models.mixlayer.ai/v1",
+    "env": [
+      "MIXLAYER_API_KEY"
+    ],
+    "doc": "https://docs.mixlayer.com"
+  },
+  "moark": {
+    "id": "moark",
+    "name": "Moark",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://moark.com/v1",
+    "env": [
+      "MOARK_API_KEY"
+    ],
+    "doc": "https://moark.com/docs/openapi/v1#tag/%E6%96%87%E6%9C%AC%E7%94%9F%E6%88%90"
+  },
+  "modal": {
+    "id": "modal",
+    "name": "Modal",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.us-west.modal.direct/v1",
+    "env": [
+      "MODAL_PROXY_TOKEN"
+    ],
+    "doc": "https://modal.com/docs/guide/endpoints"
+  },
+  "model-oracle-ai": {
+    "id": "model-oracle-ai",
+    "name": "Model Oracle AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.modeloracle.com/api/v1",
+    "env": [
+      "MODEL_ORACLE_API_KEY"
+    ],
+    "doc": "https://modeloracle.com/setup/"
+  },
+  "modelis": {
+    "id": "modelis",
+    "name": "Modelis",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://modelishub.com/v1",
+    "env": [
+      "MODELIS_API_KEY"
+    ],
+    "doc": "https://modelishub.com/pricing"
+  },
+  "modelscope": {
+    "id": "modelscope",
+    "name": "ModelScope",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api-inference.modelscope.cn/v1",
+    "env": [
+      "MODELSCOPE_API_KEY"
+    ],
+    "doc": "https://modelscope.cn/docs/model-service/API-Inference/intro"
+  },
+  "modular": {
+    "id": "modular",
+    "name": "Modular",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.modular.com/v1",
+    "env": [
+      "MODULAR_API_KEY"
+    ],
+    "doc": "https://docs.modular.com/models"
+  },
+  "moonshotai": {
+    "id": "moonshotai",
+    "name": "Moonshot AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.moonshot.ai/v1",
+    "env": [
+      "MOONSHOT_API_KEY"
+    ],
+    "doc": "https://platform.moonshot.ai/docs/api/chat"
   },
   "moonshotai-cn": {
-    id: "moonshotai-cn",
-    name: "Moonshot AI (China)",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.moonshot.cn/v1",
-    env: ["MOONSHOT_API_KEY"],
-    doc: "https://platform.moonshot.cn/docs/api/chat",
+    "id": "moonshotai-cn",
+    "name": "Moonshot AI (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.moonshot.cn/v1",
+    "env": [
+      "MOONSHOT_API_KEY"
+    ],
+    "doc": "https://platform.moonshot.cn/docs/api/chat"
   },
-  morph: {
-    id: "morph",
-    name: "Morph",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.morphllm.com/v1",
-    env: ["MORPH_API_KEY"],
-    doc: "https://docs.morphllm.com/api-reference/introduction",
+  "morph": {
+    "id": "morph",
+    "name": "Morph",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.morphllm.com/v1",
+    "env": [
+      "MORPH_API_KEY"
+    ],
+    "doc": "https://docs.morphllm.com/api-reference/introduction"
+  },
+  "munito": {
+    "id": "munito",
+    "name": "Munito AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.munito.ai/inference/v1",
+    "env": [
+      "MUNITO_API_KEY"
+    ],
+    "doc": "https://docs.munito.ai/models"
+  },
+  "munito-eu": {
+    "id": "munito-eu",
+    "name": "Munito AI (EU)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.eu.munito.ai/inference/v1",
+    "env": [
+      "MUNITO_API_KEY"
+    ],
+    "doc": "https://docs.munito.ai/regions"
+  },
+  "nan": {
+    "id": "nan",
+    "name": "NaN",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.nan.builders/v1",
+    "env": [
+      "NAN_API_KEY"
+    ],
+    "doc": "https://nan.builders/docs/models"
   },
   "nano-gpt": {
-    id: "nano-gpt",
-    name: "NanoGPT",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://nano-gpt.com/api/v1",
-    env: ["NANO_GPT_API_KEY"],
-    doc: "https://docs.nano-gpt.com",
+    "id": "nano-gpt",
+    "name": "NanoGPT",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://nano-gpt.com/api/v1",
+    "env": [
+      "NANO_GPT_API_KEY"
+    ],
+    "doc": "https://docs.nano-gpt.com"
   },
-  nebius: {
-    id: "nebius",
-    name: "Nebius Token Factory",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.tokenfactory.nebius.com/v1",
-    env: ["NEBIUS_API_KEY"],
-    doc: "https://docs.tokenfactory.nebius.com/",
+  "nearai": {
+    "id": "nearai",
+    "name": "NEAR AI Cloud",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://cloud-api.near.ai/v1",
+    "env": [
+      "NEARAI_API_KEY"
+    ],
+    "doc": "https://docs.near.ai/"
+  },
+  "nebius": {
+    "id": "nebius",
+    "name": "Nebius Token Factory",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.tokenfactory.nebius.com/v1",
+    "env": [
+      "NEBIUS_API_KEY"
+    ],
+    "doc": "https://docs.tokenfactory.nebius.com/"
+  },
+  "neon": {
+    "id": "neon",
+    "name": "Neon",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "${NEON_AI_GATEWAY_BASE_URL}/v1",
+    "env": [
+      "NEON_AI_GATEWAY_BASE_URL",
+      "NEON_AI_GATEWAY_TOKEN"
+    ],
+    "doc": "https://neon.com/docs"
+  },
+  "neosmith": {
+    "id": "neosmith",
+    "name": "NeoSmith",
+    "npm": "@ai-sdk/openai",
+    "api": "https://router.neosmith.ai/v1",
+    "env": [
+      "NEOSMITH_API_KEY"
+    ],
+    "doc": "https://neosmith.ai/docs"
+  },
+  "neuralwatt": {
+    "id": "neuralwatt",
+    "name": "Neuralwatt",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.neuralwatt.com/v1",
+    "env": [
+      "NEURALWATT_API_KEY"
+    ],
+    "doc": "https://portal.neuralwatt.com/docs"
+  },
+  "nova": {
+    "id": "nova",
+    "name": "Nova",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.nova.amazon.com/v1",
+    "env": [
+      "NOVA_API_KEY"
+    ],
+    "doc": "https://nova.amazon.com/dev/documentation"
   },
   "novita-ai": {
-    id: "novita-ai",
-    name: "NovitaAI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.novita.ai/openai",
-    env: ["NOVITA_API_KEY"],
-    doc: "https://novita.ai/docs/guides/introduction",
+    "id": "novita-ai",
+    "name": "Novita AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.novita.ai/openai",
+    "env": [
+      "NOVITA_API_KEY"
+    ],
+    "doc": "https://novita.ai/docs/guides/introduction"
   },
-  nvidia: {
-    id: "nvidia",
-    name: "Nvidia",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://integrate.api.nvidia.com/v1",
-    env: ["NVIDIA_API_KEY"],
-    doc: "https://docs.api.nvidia.com/nim/",
+  "nvidia": {
+    "id": "nvidia",
+    "name": "Nvidia",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://integrate.api.nvidia.com/v1",
+    "env": [
+      "NVIDIA_API_KEY"
+    ],
+    "doc": "https://docs.api.nvidia.com/nim/"
+  },
+  "oci": {
+    "id": "oci",
+    "name": "OCI Generative AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/openai/v1",
+    "env": [
+      "OCI_GENAI_API_KEY"
+    ],
+    "doc": "https://docs.oracle.com/en-us/iaas/Content/generative-ai/pretrained-models.htm"
+  },
+  "ofox": {
+    "id": "ofox",
+    "name": "Ofox",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.ofox.ai/v1",
+    "env": [
+      "OFOX_API_KEY"
+    ],
+    "doc": "https://ofox.ai/docs"
   },
   "ollama-cloud": {
-    id: "ollama-cloud",
-    name: "Ollama Cloud",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://ollama.com/v1",
-    env: ["OLLAMA_API_KEY"],
-    doc: "https://docs.ollama.com/cloud",
+    "id": "ollama-cloud",
+    "name": "Ollama Cloud",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://ollama.com/v1",
+    "env": [
+      "OLLAMA_API_KEY"
+    ],
+    "doc": "https://docs.ollama.com/cloud"
   },
-  openai: {
-    id: "openai",
-    name: "OpenAI",
-    npm: "@ai-sdk/openai",
-    env: ["OPENAI_API_KEY"],
-    doc: "https://platform.openai.com/docs/models",
+  "openai": {
+    "id": "openai",
+    "name": "OpenAI",
+    "npm": "@ai-sdk/openai",
+    "env": [
+      "OPENAI_API_KEY"
+    ],
+    "doc": "https://platform.openai.com/docs/models"
   },
-  opencode: {
-    id: "opencode",
-    name: "OpenCode Zen",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://opencode.ai/zen/v1",
-    env: ["OPENCODE_API_KEY"],
-    doc: "https://opencode.ai/docs/zen",
+  "opencode": {
+    "id": "opencode",
+    "name": "OpenCode",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://opencode.ai/inference/openai/v1",
+    "env": [
+      "OPENCODE_API_KEY"
+    ],
+    "doc": "https://opencode.ai/v2/docs/console/models/"
   },
-  openrouter: {
-    id: "openrouter",
-    name: "OpenRouter",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://openrouter.ai/api/v1",
-    env: ["OPENROUTER_API_KEY"],
-    doc: "https://openrouter.ai/models",
+  "opencode-go": {
+    "id": "opencode-go",
+    "name": "OpenCode Go",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://opencode.ai/inference/go/openai/v1",
+    "env": [
+      "OPENCODE_API_KEY"
+    ],
+    "doc": "https://opencode.ai/v2/docs/console/go/"
   },
-  ovhcloud: {
-    id: "ovhcloud",
-    name: "OVHcloud AI Endpoints",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
-    env: ["OVHCLOUD_API_KEY"],
-    doc: "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog//",
+  "openreason": {
+    "id": "openreason",
+    "name": "OpenReason",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.openreason.app/v1",
+    "env": [
+      "OPENREASON_API_KEY"
+    ],
+    "doc": "https://openreason.app/docs"
   },
-  perplexity: {
-    id: "perplexity",
-    name: "Perplexity",
-    npm: "@ai-sdk/perplexity",
-    env: ["PERPLEXITY_API_KEY"],
-    doc: "https://docs.perplexity.ai",
+  "openrouter": {
+    "id": "openrouter",
+    "name": "OpenRouter",
+    "npm": "@openrouter/ai-sdk-provider",
+    "api": "https://openrouter.ai/api/v1",
+    "env": [
+      "OPENROUTER_API_KEY"
+    ],
+    "doc": "https://openrouter.ai/models"
   },
-  poe: {
-    id: "poe",
-    name: "Poe",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.poe.com/v1",
-    env: ["POE_API_KEY"],
-    doc: "https://creator.poe.com/docs/external-applications/openai-compatible-api",
+  "opper": {
+    "id": "opper",
+    "name": "Opper",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.opper.ai/v3/compat",
+    "env": [
+      "OPPER_API_KEY"
+    ],
+    "doc": "https://opper.ai/models"
+  },
+  "orcarouter": {
+    "id": "orcarouter",
+    "name": "OrcaRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.orcarouter.ai/v1",
+    "env": [
+      "ORCAROUTER_API_KEY"
+    ],
+    "doc": "https://docs.orcarouter.ai"
+  },
+  "ovhcloud": {
+    "id": "ovhcloud",
+    "name": "OVHcloud AI Endpoints",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+    "env": [
+      "OVHCLOUD_API_KEY"
+    ],
+    "doc": "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog//"
+  },
+  "pareto": {
+    "id": "pareto",
+    "name": "Pareto Inference",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.paretoinference.com/v1",
+    "env": [
+      "PARETO_API_KEY"
+    ],
+    "doc": "https://docs.paretoinference.com/"
+  },
+  "pendra": {
+    "id": "pendra",
+    "name": "Pendra",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.pendra.ai/api/v1",
+    "env": [
+      "PENDRA_API_KEY"
+    ],
+    "doc": "https://pendra.ai/docs/integrations/opencode"
+  },
+  "perplexity": {
+    "id": "perplexity",
+    "name": "Perplexity",
+    "npm": "@ai-sdk/perplexity",
+    "env": [
+      "PERPLEXITY_API_KEY"
+    ],
+    "doc": "https://docs.perplexity.ai"
+  },
+  "perplexity-agent": {
+    "id": "perplexity-agent",
+    "name": "Perplexity Agent",
+    "npm": "@ai-sdk/openai",
+    "api": "https://api.perplexity.ai/v1",
+    "env": [
+      "PERPLEXITY_API_KEY"
+    ],
+    "doc": "https://docs.perplexity.ai/docs/agent-api/models"
+  },
+  "pioneer": {
+    "id": "pioneer",
+    "name": "Pioneer",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.fastino.ai/v1",
+    "env": [
+      "PIONEER_API_KEY"
+    ],
+    "doc": "https://agent.pioneer.ai/llms.txt"
+  },
+  "poe": {
+    "id": "poe",
+    "name": "Poe",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.poe.com/v1",
+    "env": [
+      "POE_API_KEY"
+    ],
+    "doc": "https://creator.poe.com/docs/external-applications/openai-compatible-api"
+  },
+  "poolside": {
+    "id": "poolside",
+    "name": "Poolside",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.poolside.ai/v1",
+    "env": [
+      "POOLSIDE_API_KEY"
+    ],
+    "doc": "https://platform.poolside.ai"
+  },
+  "prime": {
+    "id": "prime",
+    "name": "Prime Inference",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.pinference.ai/api/v1",
+    "env": [
+      "PRIME_API_KEY"
+    ],
+    "doc": "https://docs.primeintellect.ai/inference/overview"
   },
   "privatemode-ai": {
-    id: "privatemode-ai",
-    name: "Privatemode AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "http://localhost:8080/v1",
-    env: ["PRIVATEMODE_API_KEY", "PRIVATEMODE_ENDPOINT"],
-    doc: "https://docs.privatemode.ai/api/overview",
+    "id": "privatemode-ai",
+    "name": "Privatemode AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "http://localhost:8080/v1",
+    "env": [
+      "PRIVATEMODE_API_KEY"
+    ],
+    "doc": "https://docs.privatemode.ai/api/overview"
   },
-  requesty: {
-    id: "requesty",
-    name: "Requesty",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://router.requesty.ai/v1",
-    env: ["REQUESTY_API_KEY"],
-    doc: "https://requesty.ai/solution/llm-routing/models",
+  "qihang-ai": {
+    "id": "qihang-ai",
+    "name": "QiHang",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.qhaigc.net/v1",
+    "env": [
+      "QIHANG_API_KEY"
+    ],
+    "doc": "https://www.qhaigc.net/docs"
+  },
+  "qiniu-ai": {
+    "id": "qiniu-ai",
+    "name": "Qiniu",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.qnaigc.com/v1",
+    "env": [
+      "QINIU_API_KEY"
+    ],
+    "doc": "https://developer.qiniu.com/aitokenapi"
+  },
+  "qvac": {
+    "id": "qvac",
+    "name": "QVAC",
+    "npm": "@qvac/ai-sdk-provider",
+    "env": [
+      "QVAC_API_KEY"
+    ],
+    "doc": "https://www.npmjs.com/package/@qvac/ai-sdk-provider"
+  },
+  "reflection": {
+    "id": "reflection",
+    "name": "Reflection",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.reflection.ai/openai/v1",
+    "env": [
+      "REFLECTION_API_KEY"
+    ],
+    "doc": "https://developers.reflection.ai/models"
+  },
+  "regolo-ai": {
+    "id": "regolo-ai",
+    "name": "Regolo AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.regolo.ai/v1",
+    "env": [
+      "REGOLO_API_KEY"
+    ],
+    "doc": "https://docs.regolo.ai/"
+  },
+  "requesty": {
+    "id": "requesty",
+    "name": "Requesty",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://router.requesty.ai/v1",
+    "env": [
+      "REQUESTY_API_KEY"
+    ],
+    "doc": "https://requesty.ai/solution/llm-routing/models"
+  },
+  "routing-run": {
+    "id": "routing-run",
+    "name": "routing.run",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.routing.run/v1",
+    "env": [
+      "ROUTING_RUN_API_KEY"
+    ],
+    "doc": "https://docs.routing.run/api-reference/models"
+  },
+  "runinfra": {
+    "id": "runinfra",
+    "name": "RunInfra",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.runinfra.ai/v1",
+    "env": [
+      "RUNINFRA_GATEWAY_KEY"
+    ],
+    "doc": "https://runinfra.ai/docs"
+  },
+  "sakana": {
+    "id": "sakana",
+    "name": "Sakana AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.sakana.ai/v1",
+    "env": [
+      "SAKANA_API_KEY"
+    ],
+    "doc": "https://console.sakana.ai/models"
+  },
+  "salad-cloud": {
+    "id": "salad-cloud",
+    "name": "SaladCloud AI Gateway",
+    "npm": "@saladtechnologies-oss/ai-sdk-provider",
+    "env": [
+      "SALAD_CLOUD_API_KEY"
+    ],
+    "doc": "https://docs.salad.com/ai-gateway/explanation/overview"
+  },
+  "sambanova": {
+    "id": "sambanova",
+    "name": "SambaNova",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.sambanova.ai/v1",
+    "env": [
+      "SAMBANOVA_API_KEY"
+    ],
+    "doc": "https://docs.sambanova.ai/cloud/docs/get-started/supported-models"
   },
   "sap-ai-core": {
-    id: "sap-ai-core",
-    name: "SAP AI Core",
-    npm: "@mymediset/sap-ai-provider",
-    env: ["AICORE_SERVICE_KEY"],
-    doc: "https://help.sap.com/docs/sap-ai-core",
+    "id": "sap-ai-core",
+    "name": "SAP AI Core",
+    "npm": "@jerome-benoit/sap-ai-provider-v2",
+    "env": [
+      "AICORE_SERVICE_KEY"
+    ],
+    "doc": "https://help.sap.com/docs/sap-ai-core"
   },
-  scaleway: {
-    id: "scaleway",
-    name: "Scaleway",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.scaleway.ai/v1",
-    env: ["SCALEWAY_API_KEY"],
-    doc: "https://www.scaleway.com/en/docs/generative-apis/",
+  "sarvam": {
+    "id": "sarvam",
+    "name": "Sarvam AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.sarvam.ai/v1",
+    "env": [
+      "SARVAM_API_KEY"
+    ],
+    "doc": "https://docs.sarvam.ai/api-reference-docs/getting-started/models"
   },
-  siliconflow: {
-    id: "siliconflow",
-    name: "SiliconFlow",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.siliconflow.com/v1",
-    env: ["SILICONFLOW_API_KEY"],
-    doc: "https://cloud.siliconflow.com/models",
+  "scaleway": {
+    "id": "scaleway",
+    "name": "Scaleway",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.scaleway.ai/v1",
+    "env": [
+      "SCALEWAY_API_KEY"
+    ],
+    "doc": "https://www.scaleway.com/en/docs/generative-apis/"
+  },
+  "scnet-token-plan": {
+    "id": "scnet-token-plan",
+    "name": "SCNet Token Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.scnet.cn/api/llm/v1",
+    "env": [
+      "SCNET_API_KEY"
+    ],
+    "doc": "https://www.scnet.cn/ac/openapi/doc/2.0/moduleapi/plans/token-plan.html"
+  },
+  "scx-ai": {
+    "id": "scx-ai",
+    "name": "SCX.ai",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.scx.ai/v1",
+    "env": [
+      "SCX_API_KEY"
+    ],
+    "doc": "https://platform.scx.ai/docs"
+  },
+  "sensenova": {
+    "id": "sensenova",
+    "name": "SenseNova (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token.sensenova.cn/v1",
+    "env": [
+      "SENSENOVA_API_KEY"
+    ],
+    "doc": "https://platform.sensenova.cn/docs"
+  },
+  "siliconflow": {
+    "id": "siliconflow",
+    "name": "SiliconFlow",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.siliconflow.com/v1",
+    "env": [
+      "SILICONFLOW_API_KEY"
+    ],
+    "doc": "https://cloud.siliconflow.com/models"
   },
   "siliconflow-cn": {
-    id: "siliconflow-cn",
-    name: "SiliconFlow (China)",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.siliconflow.cn/v1",
-    env: ["SILICONFLOW_CN_API_KEY"],
-    doc: "https://cloud.siliconflow.com/models",
+    "id": "siliconflow-cn",
+    "name": "SiliconFlow (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.siliconflow.cn/v1",
+    "env": [
+      "SILICONFLOW_CN_API_KEY"
+    ],
+    "doc": "https://cloud.siliconflow.com/models"
   },
-  submodel: {
-    id: "submodel",
-    name: "submodel",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://llm.submodel.ai/v1",
-    env: ["SUBMODEL_INSTAGEN_ACCESS_KEY"],
-    doc: "https://submodel.gitbook.io",
+  "snowflake-cortex": {
+    "id": "snowflake-cortex",
+    "name": "Snowflake Cortex",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://${SNOWFLAKE_ACCOUNT}.snowflakecomputing.com/api/v2/cortex/v1",
+    "env": [
+      "SNOWFLAKE_ACCOUNT",
+      "SNOWFLAKE_CORTEX_PAT"
+    ],
+    "doc": "https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-rest-api"
   },
-  synthetic: {
-    id: "synthetic",
-    name: "Synthetic",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.synthetic.new/v1",
-    env: ["SYNTHETIC_API_KEY"],
-    doc: "https://synthetic.new/pricing",
+  "stackit": {
+    "id": "stackit",
+    "name": "STACKIT",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.openai-compat.model-serving.eu01.onstackit.cloud/v1",
+    "env": [
+      "STACKIT_API_KEY"
+    ],
+    "doc": "https://docs.stackit.cloud/products/data-and-ai/ai-model-serving/basics/available-shared-models"
   },
-  togetherai: {
-    id: "togetherai",
-    name: "Together AI",
-    npm: "@ai-sdk/togetherai",
-    env: ["TOGETHER_API_KEY"],
-    doc: "https://docs.together.ai/docs/serverless-models",
+  "standardcompute": {
+    "id": "standardcompute",
+    "name": "Standard Compute",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.stdcmpt.com/v1",
+    "env": [
+      "STANDARDCOMPUTE_API_KEY"
+    ],
+    "doc": "https://docs.standardcompute.com/models"
   },
-  upstage: {
-    id: "upstage",
-    name: "Upstage",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.upstage.ai/v1/solar",
-    env: ["UPSTAGE_API_KEY"],
-    doc: "https://developers.upstage.ai/docs/apis/chat",
+  "stepfun": {
+    "id": "stepfun",
+    "name": "StepFun (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.stepfun.com/v1",
+    "env": [
+      "STEPFUN_API_KEY"
+    ],
+    "doc": "https://platform.stepfun.com/docs/zh/overview/concept"
   },
-  v0: {
-    id: "v0",
-    name: "v0",
-    npm: "@ai-sdk/vercel",
-    env: ["V0_API_KEY"],
-    doc: "https://sdk.vercel.ai/providers/ai-sdk-providers/vercel",
+  "stepfun-ai": {
+    "id": "stepfun-ai",
+    "name": "StepFun (Global)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.stepfun.ai/v1",
+    "env": [
+      "STEPFUN_API_KEY"
+    ],
+    "doc": "https://platform.stepfun.ai/docs/en/overview/concept"
   },
-  venice: {
-    id: "venice",
-    name: "Venice AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.venice.ai/api/v1",
-    env: ["VENICE_API_KEY"],
-    doc: "https://docs.venice.ai",
+  "stepfun-ai-step-plan": {
+    "id": "stepfun-ai-step-plan",
+    "name": "StepFun Step Plan (Global)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.stepfun.ai/step_plan/v1",
+    "env": [
+      "STEPFUN_API_KEY"
+    ],
+    "doc": "https://platform.stepfun.ai/docs/en/step-plan/integrations/reasoning-api"
   },
-  vercel: {
-    id: "vercel",
-    name: "Vercel AI Gateway",
-    npm: "@ai-sdk/gateway",
-    env: ["AI_GATEWAY_API_KEY"],
-    doc: "https://github.com/vercel/ai/tree/5eb85cc45a259553501f535b8ac79a77d0e79223/packages/gateway",
+  "stepfun-step-plan": {
+    "id": "stepfun-step-plan",
+    "name": "StepFun Step Plan (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.stepfun.com/step_plan/v1",
+    "env": [
+      "STEPFUN_API_KEY"
+    ],
+    "doc": "https://platform.stepfun.com/docs/zh/step-plan/integrations/reasoning-api"
   },
-  vivgrid: {
-    id: "vivgrid",
-    name: "Vivgrid",
-    npm: "@ai-sdk/openai",
-    api: "https://api.vivgrid.com/v1",
-    env: ["VIVGRID_API_KEY"],
-    doc: "https://docs.vivgrid.com/models",
+  "subconscious": {
+    "id": "subconscious",
+    "name": "Subconscious",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://api.subconscious.dev/v1",
+    "env": [
+      "SUBCONSCIOUS_API_KEY"
+    ],
+    "doc": "https://docs.subconscious.dev"
   },
-  vultr: {
-    id: "vultr",
-    name: "Vultr",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.vultrinference.com/v1",
-    env: ["VULTR_API_KEY"],
-    doc: "https://api.vultrinference.com/",
+  "submodel": {
+    "id": "submodel",
+    "name": "submodel",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://llm.submodel.ai/v1",
+    "env": [
+      "SUBMODEL_INSTAGEN_ACCESS_KEY"
+    ],
+    "doc": "https://submodel.gitbook.io"
   },
-  wandb: {
-    id: "wandb",
-    name: "Weights & Biases",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.inference.wandb.ai/v1",
-    env: ["WANDB_API_KEY"],
-    doc: "https://weave-docs.wandb.ai/guides/integrations/inference/",
+  "synthetic": {
+    "id": "synthetic",
+    "name": "Synthetic",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.synthetic.new/openai/v1",
+    "env": [
+      "SYNTHETIC_API_KEY"
+    ],
+    "doc": "https://synthetic.new/pricing"
   },
-  xai: {
-    id: "xai",
-    name: "xAI",
-    npm: "@ai-sdk/xai",
-    env: ["XAI_API_KEY"],
-    doc: "https://docs.x.ai/docs/models",
+  "tempr": {
+    "id": "tempr",
+    "name": "Tempr Gateway",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.temprhq.io/v1",
+    "env": [
+      "TEMPR_API_KEY"
+    ],
+    "doc": "https://temprhq.io/docs/gateway-reference.html"
   },
-  xiaomi: {
-    id: "xiaomi",
-    name: "Xiaomi",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.xiaomimimo.com/v1",
-    env: ["XIAOMI_API_KEY"],
-    doc: "https://platform.xiaomimimo.com/#/docs",
+  "tencent-coding-plan": {
+    "id": "tencent-coding-plan",
+    "name": "Tencent Coding Plan (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.lkeap.cloud.tencent.com/coding/v3",
+    "env": [
+      "TENCENT_CODING_PLAN_API_KEY"
+    ],
+    "doc": "https://cloud.tencent.com/document/product/1772/128947"
   },
-  zai: {
-    id: "zai",
-    name: "Z.AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.z.ai/api/paas/v4",
-    env: ["ZHIPU_API_KEY"],
-    doc: "https://docs.z.ai/guides/overview/pricing",
+  "tencent-token-plan": {
+    "id": "tencent-token-plan",
+    "name": "Tencent Token Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.lkeap.cloud.tencent.com/plan/v3",
+    "env": [
+      "TENCENT_TOKEN_PLAN_API_KEY"
+    ],
+    "doc": "https://cloud.tencent.com/document/product/1823/130060"
+  },
+  "tencent-tokenhub": {
+    "id": "tencent-tokenhub",
+    "name": "Tencent TokenHub",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://tokenhub.tencentmaas.com/v1",
+    "env": [
+      "TENCENT_TOKENHUB_API_KEY"
+    ],
+    "doc": "https://cloud.tencent.com/document/product/1823/130050"
+  },
+  "tensorx": {
+    "id": "tensorx",
+    "name": "TensorX",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.tensorx.ai/v1",
+    "env": [
+      "TENSORX_API_KEY"
+    ],
+    "doc": "https://docs.tensorx.ai/"
+  },
+  "the-grid-ai": {
+    "id": "the-grid-ai",
+    "name": "The Grid AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.thegrid.ai/v1",
+    "env": [
+      "THEGRID_API_KEY"
+    ],
+    "doc": "https://thegrid.ai/docs"
+  },
+  "thinkingmachines": {
+    "id": "thinkingmachines",
+    "name": "Thinking Machines",
+    "npm": "@ai-sdk/anthropic",
+    "api": "https://tinker.thinkingmachines.dev/services/tinker-prod/anthropic/api/v1",
+    "env": [
+      "TINKER_API_KEY"
+    ],
+    "doc": "https://tinker-docs.thinkingmachines.ai/tinker/compatible-apis/anthropic/"
+  },
+  "tinfoil": {
+    "id": "tinfoil",
+    "name": "Tinfoil",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.tinfoil.sh/v1",
+    "env": [
+      "TINFOIL_API_KEY"
+    ],
+    "doc": "https://docs.tinfoil.sh"
+  },
+  "togetherai": {
+    "id": "togetherai",
+    "name": "Together AI",
+    "npm": "@ai-sdk/togetherai",
+    "env": [
+      "TOGETHER_API_KEY"
+    ],
+    "doc": "https://docs.together.ai/docs/serverless-models"
+  },
+  "tokengo": {
+    "id": "tokengo",
+    "name": "TokenGo",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.tokengo.com/v1",
+    "env": [
+      "TOKENGO_API_KEY"
+    ],
+    "doc": "https://www.tokengo.com/docs"
+  },
+  "tokenrouter": {
+    "id": "tokenrouter",
+    "name": "TokenRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.tokenrouter.com/v1",
+    "env": [
+      "TOKENROUTER_API_KEY"
+    ],
+    "doc": "https://www.tokenrouter.com/docs/tokenrouter-feature-guide/"
+  },
+  "trustedrouter": {
+    "id": "trustedrouter",
+    "name": "TrustedRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.trustedrouter.com/v1",
+    "env": [
+      "TRUSTEDROUTER_API_KEY"
+    ],
+    "doc": "https://trustedrouter.com/docs"
+  },
+  "umans-ai": {
+    "id": "umans-ai",
+    "name": "Umans AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.code.umans.ai/v1",
+    "env": [
+      "UMANS_AI_API_KEY"
+    ],
+    "doc": "https://app.umans.ai/offers/code/docs/orgs"
+  },
+  "umans-ai-coding-plan": {
+    "id": "umans-ai-coding-plan",
+    "name": "Umans AI Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.code.umans.ai/v1",
+    "env": [
+      "UMANS_AI_CODING_PLAN_API_KEY"
+    ],
+    "doc": "https://app.umans.ai/offers/code/docs"
+  },
+  "unorouter": {
+    "id": "unorouter",
+    "name": "UnoRouter",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.unorouter.com/v1",
+    "env": [
+      "UNOROUTER_API_KEY"
+    ],
+    "doc": "https://unorouter.com/models"
+  },
+  "upstage": {
+    "id": "upstage",
+    "name": "Upstage",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.upstage.ai/v1/solar",
+    "env": [
+      "UPSTAGE_API_KEY"
+    ],
+    "doc": "https://developers.upstage.ai/docs/apis/chat"
+  },
+  "vancine": {
+    "id": "vancine",
+    "name": "Vancine",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://vancine.com/v1",
+    "env": [
+      "VANCINE_API_KEY"
+    ],
+    "doc": "https://vancine.com/docs"
+  },
+  "venice": {
+    "id": "venice",
+    "name": "Venice AI",
+    "npm": "venice-ai-sdk-provider",
+    "env": [
+      "VENICE_API_KEY"
+    ],
+    "doc": "https://docs.venice.ai"
+  },
+  "vercel": {
+    "id": "vercel",
+    "name": "Vercel AI Gateway",
+    "npm": "@ai-sdk/gateway",
+    "env": [
+      "AI_GATEWAY_API_KEY"
+    ],
+    "doc": "https://github.com/vercel/ai/tree/5eb85cc45a259553501f535b8ac79a77d0e79223/packages/gateway"
+  },
+  "vispark": {
+    "id": "vispark",
+    "name": "Vispark",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.lab.vispark.in/v1",
+    "env": [
+      "VISPARK_LAB_API_KEY"
+    ],
+    "doc": "https://lab.vispark.in/#vision"
+  },
+  "vivgrid": {
+    "id": "vivgrid",
+    "name": "Vivgrid",
+    "npm": "@ai-sdk/openai",
+    "api": "https://api.vivgrid.com/v1",
+    "env": [
+      "VIVGRID_API_KEY"
+    ],
+    "doc": "https://docs.vivgrid.com/models"
+  },
+  "volcengine": {
+    "id": "volcengine",
+    "name": "Volcengine Ark",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://ark.cn-beijing.volces.com/api/v3",
+    "env": [
+      "ARK_API_KEY"
+    ],
+    "doc": "https://www.volcengine.com/docs/82379/1330310"
+  },
+  "volcengine-coding-plan": {
+    "id": "volcengine-coding-plan",
+    "name": "Volcengine Ark Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://ark.cn-beijing.volces.com/api/coding/v3",
+    "env": [
+      "ARK_CODING_PLAN_API_KEY"
+    ],
+    "doc": "https://www.volcengine.com/docs/82379/1928261"
+  },
+  "vultr": {
+    "id": "vultr",
+    "name": "Vultr",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.vultrinference.com/v1",
+    "env": [
+      "VULTR_API_KEY"
+    ],
+    "doc": "https://api.vultrinference.com/"
+  },
+  "wafer.ai": {
+    "id": "wafer.ai",
+    "name": "Wafer",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://pass.wafer.ai/v1",
+    "env": [
+      "WAFER_API_KEY"
+    ],
+    "doc": "https://docs.wafer.ai/wafer-pass"
+  },
+  "wallaby": {
+    "id": "wallaby",
+    "name": "Wallaby",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.wallabytoken.com/v1",
+    "env": [
+      "WALLABY_API_KEY"
+    ],
+    "doc": "https://wallabytoken.com/docs"
+  },
+  "wally": {
+    "id": "wally",
+    "name": "Wally",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://inference.runanywhere.ai/v1",
+    "env": [
+      "WALLY_API_KEY"
+    ],
+    "doc": "https://docs.runanywhere.ai/wally-cloud/api"
+  },
+  "wandb": {
+    "id": "wandb",
+    "name": "CoreWeave",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.inference.wandb.ai/v1",
+    "env": [
+      "WANDB_API_KEY"
+    ],
+    "doc": "https://docs.wandb.ai/inference"
+  },
+  "watsonx": {
+    "id": "watsonx",
+    "name": "watsonx.ai",
+    "npm": "watsonx-ai-provider",
+    "env": [
+      "WATSONX_AI_APIKEY",
+      "WATSONX_AI_PROJECT_ID"
+    ],
+    "doc": "https://www.ibm.com/docs/en/watsonx/saas?topic=solutions-supported-foundation-models"
+  },
+  "xai": {
+    "id": "xai",
+    "name": "xAI",
+    "npm": "@ai-sdk/xai",
+    "env": [
+      "XAI_API_KEY"
+    ],
+    "doc": "https://docs.x.ai/docs/models"
+  },
+  "xiaomi": {
+    "id": "xiaomi",
+    "name": "Xiaomi",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.xiaomimimo.com/v1",
+    "env": [
+      "XIAOMI_API_KEY"
+    ],
+    "doc": "https://platform.xiaomimimo.com/#/docs"
+  },
+  "xiaomi-token-plan-ams": {
+    "id": "xiaomi-token-plan-ams",
+    "name": "Xiaomi Token Plan (Europe)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token-plan-ams.xiaomimimo.com/v1",
+    "env": [
+      "XIAOMI_API_KEY"
+    ],
+    "doc": "https://platform.xiaomimimo.com/#/docs"
+  },
+  "xiaomi-token-plan-cn": {
+    "id": "xiaomi-token-plan-cn",
+    "name": "Xiaomi Token Plan (China)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token-plan-cn.xiaomimimo.com/v1",
+    "env": [
+      "XIAOMI_API_KEY"
+    ],
+    "doc": "https://platform.xiaomimimo.com/#/docs"
+  },
+  "xiaomi-token-plan-sgp": {
+    "id": "xiaomi-token-plan-sgp",
+    "name": "Xiaomi Token Plan (Singapore)",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://token-plan-sgp.xiaomimimo.com/v1",
+    "env": [
+      "XIAOMI_API_KEY"
+    ],
+    "doc": "https://platform.xiaomimimo.com/#/docs"
+  },
+  "xpersona": {
+    "id": "xpersona",
+    "name": "Xpersona",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://www.xpersona.co/v1",
+    "env": [
+      "XPERSONA_API_KEY"
+    ],
+    "doc": "https://www.xpersona.co/docs"
+  },
+  "zai": {
+    "id": "zai",
+    "name": "Z.AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.z.ai/api/paas/v4",
+    "env": [
+      "ZHIPU_API_KEY"
+    ],
+    "doc": "https://docs.z.ai/guides/overview/pricing"
   },
   "zai-coding-plan": {
-    id: "zai-coding-plan",
-    name: "Z.AI Coding Plan",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://api.z.ai/api/coding/paas/v4",
-    env: ["ZHIPU_API_KEY"],
-    doc: "https://docs.z.ai/devpack/overview",
+    "id": "zai-coding-plan",
+    "name": "Z.AI Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.z.ai/api/coding/paas/v4",
+    "env": [
+      "ZHIPU_API_KEY"
+    ],
+    "doc": "https://docs.z.ai/devpack/overview"
   },
-  zenmux: {
-    id: "zenmux",
-    name: "ZenMux",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://zenmux.ai/api/v1",
-    env: ["ZENMUX_API_KEY"],
-    doc: "https://docs.zenmux.ai",
+  "zeldoc": {
+    "id": "zeldoc",
+    "name": "Zeldoc",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://api.zeldoc.ai/v1",
+    "env": [
+      "ZELDOC_API_KEY"
+    ],
+    "doc": "https://docs.zeldoc.ai"
   },
-  zhipuai: {
-    id: "zhipuai",
-    name: "Zhipu AI",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://open.bigmodel.cn/api/paas/v4",
-    env: ["ZHIPU_API_KEY"],
-    doc: "https://docs.z.ai/guides/overview/pricing",
+  "zenifra": {
+    "id": "zenifra",
+    "name": "Zenifra",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://ai.zenifra.com/v1",
+    "env": [
+      "ZENIFRA_AI_KEY"
+    ],
+    "doc": "https://docs.zenifra.com"
+  },
+  "zenmux": {
+    "id": "zenmux",
+    "name": "ZenMux",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://zenmux.ai/api/v1",
+    "env": [
+      "ZENMUX_API_KEY"
+    ],
+    "doc": "https://docs.zenmux.ai"
+  },
+  "zhipuai": {
+    "id": "zhipuai",
+    "name": "Zhipu AI",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://open.bigmodel.cn/api/paas/v4",
+    "env": [
+      "ZHIPU_API_KEY"
+    ],
+    "doc": "https://docs.bigmodel.cn/cn/guide/start/pricing"
   },
   "zhipuai-coding-plan": {
-    id: "zhipuai-coding-plan",
-    name: "Zhipu AI Coding Plan",
-    npm: "@ai-sdk/openai-compatible",
-    api: "https://open.bigmodel.cn/api/coding/paas/v4",
-    env: ["ZHIPU_API_KEY"],
-    doc: "https://docs.bigmodel.cn/cn/coding-plan/overview",
-  },
+    "id": "zhipuai-coding-plan",
+    "name": "Zhipu AI Coding Plan",
+    "npm": "@ai-sdk/openai-compatible",
+    "api": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "env": [
+      "ZHIPU_API_KEY"
+    ],
+    "doc": "https://docs.bigmodel.cn/cn/coding-plan/overview"
+  }
 };

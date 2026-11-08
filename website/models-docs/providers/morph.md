@@ -43,9 +43,17 @@ You can override the base URL by setting `MORPH_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (3)</summary>
+  <summary>Show models (11)</summary>
 
 - auto
+- morph-dsv41flash
+- morph-dsv41flash-1017
+- morph-dsv4flash
+- morph-glm52-744b
+- morph-glm53-744b
+- morph-glm53flash
+- morph-kimik3
+- morph-kimik3-fast
 - morph-v3-fast
 - morph-v3-large
 

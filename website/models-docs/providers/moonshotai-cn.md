@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "moonshotai-cn-agent",
   instructions: "You are a helpful assistant",
-  model: "moonshotai-cn/kimi-k2-0711-preview",
+  model: "moonshotai-cn/kimi-k2.6",
 });
 ```
 
@@ -43,12 +43,13 @@ You can override the base URL by setting `MOONSHOTAI_CN_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (5)</summary>
+  <summary>Show models (6)</summary>
 
-- kimi-k2-0711-preview
-- kimi-k2-0905-preview
-- kimi-k2-thinking
-- kimi-k2-thinking-turbo
-- kimi-k2-turbo-preview
+- kimi-k2.6
+- kimi-k2.7-code
+- kimi-k2.7-code-highspeed
+- kimi-k3
+- kimi-k3.1-pro
+- kimi-k3.1-pro-highspeed
 
 </details>

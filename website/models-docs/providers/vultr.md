@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "vultr-agent",
   instructions: "You are a helpful assistant",
-  model: "vultr/deepseek-r1-distill-llama-70b",
+  model: "vultr/deepseek-v4.1-flash",
 });
 ```
 
@@ -43,12 +43,20 @@ You can override the base URL by setting `VULTR_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (5)</summary>
+  <summary>Show models (13)</summary>
 
-- deepseek-r1-distill-llama-70b
-- deepseek-r1-distill-qwen-32b
-- gpt-oss-120b
-- kimi-k2-instruct
-- qwen2.5-coder-32b-instruct
+- deepseek-v4.1-flash
+- glm-5.2
+- glm-5.3
+- glm-5.3-flash
+- glm-5.x-menthol
+- mimo-v2.6-flash-rl
+- mimo-v2.6-pro-rl
+- minimax-m3
+- muse-glimmer-30b
+- nemotron-3-nano-omni-30b-a3b-reasoning
+- nemotron-3.5-content-safety
+- qwen3.8-27b
+- qwen3.8-flash-next
 
 </details>

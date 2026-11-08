@@ -16,7 +16,7 @@ import { Agent } from "@voltagent/core";
 const agent = new Agent({
   name: "abacus-agent",
   instructions: "You are a helpful assistant",
-  model: "abacus/Qwen/QwQ-32B",
+  model: "abacus/MiniMaxAI/MiniMax-M2.7",
 });
 ```
 
@@ -43,62 +43,75 @@ You can override the base URL by setting `ABACUS_BASE_URL`.
 ## Models
 
 <details>
-  <summary>Show models (55)</summary>
+  <summary>Show models (68)</summary>
 
-- Qwen/QwQ-32B
-- Qwen/Qwen2.5-72B-Instruct
-- Qwen/Qwen3-235B-A22B-Instruct-2507
+- MiniMaxAI/MiniMax-M2.7
+- MiniMaxAI/MiniMax-M3
 - Qwen/Qwen3-32B
-- Qwen/qwen3-coder-480b-a35b-instruct
-- claude-3-7-sonnet-20250219
+- Qwen/Qwen3-Coder-480B-A35B-Instruct
+- Qwen/Qwen3.6-27B
+- claude-fable-5
 - claude-haiku-4-5-20251001
-- claude-opus-4-1-20250805
-- claude-opus-4-20250514
 - claude-opus-4-5-20251101
-- claude-sonnet-4-20250514
+- claude-opus-4-6
+- claude-opus-4-7
+- claude-opus-4-8
+- claude-opus-5
 - claude-sonnet-4-5-20250929
-- deepseek-ai/DeepSeek-R1
-- deepseek-ai/DeepSeek-V3.1-Terminus
-- deepseek-ai/DeepSeek-V3.2
-- deepseek/deepseek-v3.1
-- gemini-2.0-flash-001
-- gemini-2.0-pro-exp-02-05
+- claude-sonnet-4-6
+- claude-sonnet-5
 - gemini-2.5-flash
+- gemini-2.5-flash-image
 - gemini-2.5-pro
 - gemini-3-flash-preview
-- gemini-3-pro-preview
+- gemini-3-pro-image
+- gemini-3.1-flash-lite
+- gemini-3.1-pro-preview
+- gemini-3.5-flash
+- gemini-3.5-flash-lite
+- gemini-3.6-flash
+- gemini-3.7-flash
+- google/gemma-4-31b-it
 - gpt-4.1
 - gpt-4.1-mini
 - gpt-4.1-nano
-- gpt-4o-2024-11-20
+- gpt-4o
 - gpt-4o-mini
 - gpt-5
 - gpt-5-mini
 - gpt-5-nano
 - gpt-5.1
-- gpt-5.1-chat-latest
 - gpt-5.2
-- gpt-5.2-chat-latest
-- grok-4-0709
-- grok-4-1-fast-non-reasoning
-- grok-4-fast-non-reasoning
-- grok-code-fast-1
-- kimi-k2-turbo-preview
-- llama-3.3-70b-versatile
-- meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
-- meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-- meta-llama/Meta-Llama-3.1-70B-Instruct
-- meta-llama/Meta-Llama-3.1-8B-Instruct
+- gpt-5.3-codex
+- gpt-5.4
+- gpt-5.4-mini
+- gpt-5.4-nano
+- gpt-5.5
+- gpt-5.6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- grok-4.3
+- grok-4.5
+- grok-4.6
+- mimo-v2-pro
+- moonshotai/Kimi-K2.6
+- moonshotai/Kimi-K2.7-Code
+- moonshotai/Kimi-K3
+- muse-spark-1.1
+- muse-spark-1.2
 - o3
 - o3-mini
 - o3-pro
 - o4-mini
 - openai/gpt-oss-120b
-- qwen-2.5-coder-32b
-- qwen3-max
+- qwen3.7-max
+- qwen3.8-max
 - route-llm
-- zai-org/glm-4.5
-- zai-org/glm-4.6
-- zai-org/glm-4.7
+- thinkingmachines/Inkling
+- zai-org/GLM-4.6
+- zai-org/GLM-4.7
+- zai-org/GLM-5
+- zai-org/GLM-5.1
+- zai-org/GLM-5.2
 
 </details>
