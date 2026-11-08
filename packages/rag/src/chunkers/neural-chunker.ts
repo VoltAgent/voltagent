@@ -64,6 +64,7 @@ export class NeuralChunker implements Chunker<NeuralChunkerOptions> {
       if ((chunk.tokens ?? 0) <= maxTokens) {
         finalChunks.push({
           ...chunk,
+          id: `${label}-${finalChunks.length}`,
           metadata: buildMetadata({
             format: "neural",
             sourceType: "neural",
