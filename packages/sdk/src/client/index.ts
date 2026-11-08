@@ -133,17 +133,19 @@ export class VoltAgentCoreAPI {
 
   private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
     const controller = new AbortController();
+    const signal = init.signal
+      ? AbortSignal.any([init.signal, controller.signal])
+      : controller.signal;
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const response = await fetch(url, { ...init, signal: controller.signal });
-      clearTimeout(timeoutId);
-      return response;
+      return await fetch(url, { ...init, signal });
     } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new VoltAgentAPIError("Request timeout", 408);
+      if (signal.aborted) {
+        if (controller.signal.aborted && signal.reason === controller.signal.reason) {
+          throw new VoltAgentAPIError("Request timeout", 408);
+        }
+        throw error;
       }
 
       if (error instanceof TypeError) {
@@ -151,6 +153,8 @@ export class VoltAgentCoreAPI {
       }
 
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
