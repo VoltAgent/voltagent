@@ -27,6 +27,12 @@ import type {
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_API_BASE_URL = "https://api.voltagent.dev";
 
+const mergeHeaders = (base: HeadersInit, overrides?: HeadersInit): Headers => {
+  const headers = new Headers(base);
+  new Headers(overrides).forEach((value, name) => headers.set(name, value));
+  return headers;
+};
+
 export class VoltAgentAPIError extends Error {
   readonly status: number;
   readonly errors?: Record<string, string[]>;
@@ -94,12 +100,14 @@ export class VoltAgentCoreAPI {
       throw new VoltAgentAPIError("VoltOpsRestClient requires both publicKey and secretKey", 401);
     }
 
-    this.headers = {
-      "Content-Type": "application/json",
-      "x-public-key": options.publicKey,
-      "x-secret-key": options.secretKey,
-      ...options.headers,
-    } satisfies HeadersInit;
+    this.headers = mergeHeaders(
+      {
+        "Content-Type": "application/json",
+        "x-public-key": options.publicKey,
+        "x-secret-key": options.secretKey,
+      },
+      options.headers,
+    );
 
     this.actions = new VoltOpsActionsClient(this);
     this.evals = {
@@ -159,10 +167,7 @@ export class VoltAgentCoreAPI {
     const fetchOptions: RequestInit = {
       method: "GET",
       ...init,
-      headers: {
-        ...this.headers,
-        ...(init?.headers ?? {}),
-      },
+      headers: mergeHeaders(this.headers, init?.headers),
     };
 
     const response = await this.fetchWithTimeout(url, fetchOptions);
@@ -216,10 +221,7 @@ export class VoltAgentCoreAPI {
     const fetchOptions: RequestInit = {
       method: "GET",
       ...init,
-      headers: {
-        ...this.headers,
-        ...(init?.headers ?? {}),
-      },
+      headers: mergeHeaders(this.headers, init?.headers),
     };
 
     return await this.fetchWithTimeout(url, fetchOptions);
