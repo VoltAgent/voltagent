@@ -84,7 +84,7 @@ function areMetadataValuesEqual(left: unknown, right: unknown): boolean {
  * Simple implementation for testing and development
  */
 export class InMemoryStorageAdapter implements StorageAdapter {
-  private storage: Record<string, Record<string, StoredUIMessage[]>> = {};
+  private storage: Record<string, Record<string, StoredUIMessage[]>> = Object.create(null);
   private conversations: Map<string, Conversation> = new Map();
   private users: Map<string, UserInfo> = new Map();
   private workflowStates: Map<string, WorkflowStateEntry> = new Map();
@@ -106,7 +106,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   ): Promise<void> {
     // Create user's messages container if it doesn't exist
     if (!this.storage[userId]) {
-      this.storage[userId] = {};
+      this.storage[userId] = Object.create(null);
     }
 
     // Create conversation's messages array if it doesn't exist
@@ -165,7 +165,8 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     const { limit, before, after, roles } = options || {};
 
     // Get user's messages or return empty array
-    const userMessages = this.storage[userId] || {};
+    const userMessages: Record<string, StoredUIMessage[]> =
+      this.storage[userId] || Object.create(null);
     let messages = userMessages[conversationId] || [];
 
     // Apply role filter if provided
@@ -299,7 +300,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       }
     } else {
       // Clear all messages for the user
-      this.storage[userId] = {};
+      this.storage[userId] = Object.create(null);
       this.conversationSteps.delete(userId);
     }
   }
@@ -724,7 +725,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * Clear all data
    */
   clear(): void {
-    this.storage = {};
+    this.storage = Object.create(null);
     this.conversations.clear();
     this.users.clear();
     this.workflowStates.clear();
