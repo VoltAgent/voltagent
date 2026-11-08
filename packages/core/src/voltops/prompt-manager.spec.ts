@@ -106,6 +106,39 @@ describe("VoltOpsPromptManagerImpl", () => {
         expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(1);
       });
 
+      it("should not reuse a cached prompt for a different label", async () => {
+        mockApiClient.fetchPrompt.mockImplementation((reference: PromptReference) =>
+          Promise.resolve({
+            prompt: {
+              type: "text",
+              text: reference.label === "production" ? "Production prompt" : "Latest prompt",
+            },
+            type: "text",
+            name: "greeting",
+            version: reference.label === "production" ? "prod-1" : "latest-1",
+            labels: reference.label ? [reference.label] : ["latest"],
+            tags: [],
+          }),
+        );
+
+        // First call resolves a labelled version and caches it.
+        const production = await enabledManager.getPrompt({
+          promptName: "greeting",
+          label: "production",
+        });
+        expect(production.text).toBe("Production prompt");
+        expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(1);
+
+        // An unlabelled call resolves the latest version, which is a different prompt.
+        const latest = await enabledManager.getPrompt({ promptName: "greeting" });
+        expect(latest.text).toBe("Latest prompt");
+        expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(2);
+
+        // Each selector keeps its own cached entry.
+        await enabledManager.getPrompt({ promptName: "greeting", label: "production" });
+        expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(2);
+      });
+
       it("should respect custom TTL", async () => {
         const shortTtlOptions: VoltOpsClientOptions = {
           ...mockOptions,
@@ -870,6 +903,82 @@ describe("VoltOpsPromptManagerImpl", () => {
 
       // Should only hit API once due to caching
       expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("cache key construction", () => {
+    it("should not collide for prompt names that contain the selector delimiter", async () => {
+      const collidingManager = new VoltOpsPromptManagerImpl({
+        ...mockOptions,
+        promptCache: { enabled: true, ttl: 300, maxSize: 10 },
+      });
+
+      mockApiClient.fetchPrompt.mockImplementation((reference: PromptReference) =>
+        Promise.resolve({
+          prompt: {
+            type: "text",
+            text: `resolved:${reference.promptName}|${reference.label ?? ""}`,
+          },
+          type: "text",
+          name: reference.promptName,
+          version: "v1",
+        }),
+      );
+
+      // The cache key joins its parts with ":", so a prompt name that contains ":"
+      // must be escaped: without escaping, both of these would be written as
+      // "x:label:y:latest" and the second lookup would reuse the first entry.
+      const colonName = await collidingManager.getPrompt({ promptName: "x:label:y" });
+      const labelled = await collidingManager.getPrompt({ promptName: "x", label: "y:latest" });
+
+      expect(colonName.text).toBe("resolved:x:label:y|");
+      expect(labelled.text).toBe("resolved:x|y:latest");
+      expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(2);
+      expect(collidingManager.getCacheStats().entries).toEqual([
+        "x\\:label\\:y:latest",
+        "x:label:y\\:latest",
+      ]);
+    });
+
+    it("should prefer an explicit version over a label when both are supplied", async () => {
+      const precedenceManager = new VoltOpsPromptManagerImpl({
+        ...mockOptions,
+        promptCache: { enabled: true, ttl: 300, maxSize: 10 },
+      });
+
+      mockApiClient.fetchPrompt.mockResolvedValue({
+        prompt: { type: "text", text: "versioned" },
+        type: "text",
+        name: "x",
+        version: "v1",
+      });
+
+      await precedenceManager.getPrompt({ promptName: "x", version: 1, label: "prod" });
+
+      // `version` takes precedence over `label`, as documented on
+      // `PromptReference.version`; only the version selector is cached.
+      expect(precedenceManager.getCacheStats().entries).toEqual(["x:version:1"]);
+    });
+
+    it("should treat an empty label as the unlabelled lookup", async () => {
+      const emptyLabelManager = new VoltOpsPromptManagerImpl({
+        ...mockOptions,
+        promptCache: { enabled: true, ttl: 300, maxSize: 10 },
+      });
+
+      mockApiClient.fetchPrompt.mockResolvedValue({
+        prompt: { type: "text", text: "latest prompt" },
+        type: "text",
+        name: "x",
+        version: "latest",
+      });
+
+      await emptyLabelManager.getPrompt({ promptName: "x", label: "" });
+      await emptyLabelManager.getPrompt({ promptName: "x" });
+
+      // An empty label is falsy, so both lookups share the `latest` entry.
+      expect(mockApiClient.fetchPrompt).toHaveBeenCalledTimes(1);
+      expect(emptyLabelManager.getCacheStats().entries).toEqual(["x:latest"]);
     });
   });
 
