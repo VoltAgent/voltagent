@@ -2,4 +2,4 @@
 "@voltagent/rag": patch
 ---
 
-fix(rag): slice recursive overlap chunks by whole tokens instead of characters, so `overlapTokens` no longer produces mid-word fragments like "Fir" or " he"
+fix(rag): count recursive overlap in whole tokenizer tokens instead of characters, so `overlapTokens` no longer slices mid-token fragments like "Fir" or " he"; fractional `overlapTokens` values are rounded up instead of duplicating the next chunk
