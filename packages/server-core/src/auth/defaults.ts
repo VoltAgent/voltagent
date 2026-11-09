@@ -123,6 +123,22 @@ export const PROTECTED_ROUTES = [
   "POST /workflows/:id/executions/:executionId/cancel", // Cancel execution
 
   // ========================================
+  // MCP EXECUTION (Tools, Agents, Workflows, Prompts, Resources)
+  // Discovery (server list/details, tool, prompt, resource and resource template lists) stays public
+  // ========================================
+  "/mcp/:serverId/mcp", // Streamable HTTP transport (GET/POST/DELETE)
+  "GET /mcp/:serverId/sse", // SSE transport connection
+  "POST /mcp/:serverId/messages", // SSE transport messages
+  "POST /mcp/servers/:serverId/tools/:toolName", // Invoke MCP tool (Hono)
+  "POST /mcp/:serverId/tools/:toolName/invoke", // Invoke MCP tool (Elysia)
+  "POST /mcp/servers/:serverId/logging/level", // Set MCP logging level (Hono)
+  "POST /mcp/:serverId/logging/level", // Set MCP logging level (Elysia)
+  "GET /mcp/servers/:serverId/prompts/:promptName", // Get MCP prompt (Hono)
+  "GET /mcp/:serverId/prompts/:promptName", // Get MCP prompt (Elysia)
+  "GET /mcp/servers/:serverId/resources/contents", // Read MCP resource (Hono)
+  "GET /mcp/:serverId/resources/read", // Read MCP resource (Elysia)
+
+  // ========================================
   // MEMORY (User Data)
   // ========================================
   "/api/memory/*", // All memory endpoints (GET/POST/PATCH/DELETE)

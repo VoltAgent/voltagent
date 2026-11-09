@@ -426,6 +426,49 @@ describe("Auth Middleware - conversationId & Options Preservation", () => {
       expect(json.error).toBe("Authentication required");
     });
 
+    it("should return 401 for MCP prompt and resource reads when token is missing", async () => {
+      const app = new Elysia()
+        .state("authenticatedUser", null as any)
+        .onBeforeHandle(createAuthMiddleware(mockAuthProvider))
+        .get("/mcp/:serverId/prompts/:promptName", () => ({ success: true }))
+        .get("/mcp/:serverId/resources/read", () => ({ success: true }));
+
+      for (const path of ["/mcp/test-server/prompts/greet", "/mcp/test-server/resources/read"]) {
+        const res = await app.handle(new Request(`http://localhost:3000${path}`));
+
+        expect(res.status).toBe(401);
+        const json = await res.json();
+        expect(json.error).toBe("Authentication required");
+      }
+    });
+
+    it("should return 401 for MCP tool invocation when token is missing", async () => {
+      const app = new Elysia()
+        .state("authenticatedUser", null as any)
+        .onBeforeHandle(createAuthMiddleware(mockAuthProvider))
+        .post("/mcp/:serverId/tools/:toolName/invoke", () => ({ success: true }))
+        .post("/mcp/:serverId/logging/level", () => ({ success: true }));
+
+      for (const path of [
+        "/mcp/test-server/tools/search/invoke",
+        "/mcp/test-server/logging/level",
+      ]) {
+        const res = await app.handle(
+          new Request(`http://localhost:3000${path}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          }),
+        );
+
+        expect(res.status).toBe(401);
+        const json = await res.json();
+        expect(json.error).toBe("Authentication required");
+      }
+    });
+
     it("should return 401 when token is invalid", async () => {
       mockAuthProvider.defaultPrivate = true;
 

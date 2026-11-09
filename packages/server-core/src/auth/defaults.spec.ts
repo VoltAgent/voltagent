@@ -119,6 +119,41 @@ describe("Auth Defaults", () => {
         expect(requiresAuth("POST", "/workflows/test/executions/exec-789/cancel")).toBe(true);
       });
 
+      it("should require auth for MCP transport endpoints", () => {
+        expect(requiresAuth("POST", "/mcp/my-server/mcp")).toBe(true);
+        expect(requiresAuth("GET", "/mcp/my-server/mcp")).toBe(true);
+        expect(requiresAuth("DELETE", "/mcp/my-server/mcp")).toBe(true);
+        expect(requiresAuth("GET", "/mcp/my-server/sse")).toBe(true);
+        expect(requiresAuth("POST", "/mcp/my-server/messages")).toBe(true);
+      });
+
+      it("should require auth for MCP tool invocation and logging control", () => {
+        expect(requiresAuth("POST", "/mcp/servers/my-server/tools/search")).toBe(true);
+        expect(requiresAuth("POST", "/mcp/my-server/tools/search/invoke")).toBe(true);
+        expect(requiresAuth("POST", "/mcp/servers/my-server/logging/level")).toBe(true);
+        expect(requiresAuth("POST", "/mcp/my-server/logging/level")).toBe(true);
+      });
+
+      it("should require auth for reading MCP prompts and resources", () => {
+        expect(requiresAuth("GET", "/mcp/servers/my-server/prompts/greet")).toBe(true);
+        expect(requiresAuth("GET", "/mcp/my-server/prompts/greet")).toBe(true);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/resources/contents")).toBe(true);
+        expect(requiresAuth("GET", "/mcp/my-server/resources/read")).toBe(true);
+      });
+
+      it("should keep MCP prompt and resource listings public", () => {
+        expect(requiresAuth("GET", "/mcp/servers/my-server/prompts")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/resources")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/resource-templates")).toBe(false);
+      });
+
+      it("should keep MCP discovery public while protecting MCP execution", () => {
+        expect(requiresAuth("GET", "/mcp/servers")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/tools")).toBe(false);
+        expect(requiresAuth("POST", "/mcp/my-server/mcp")).toBe(true);
+      });
+
       it("should require auth for all observability endpoints via wildcard", () => {
         expect(requiresAuth("GET", "/observability/traces")).toBe(true);
         expect(requiresAuth("GET", "/observability/spans/abc-123")).toBe(true);
@@ -192,6 +227,13 @@ describe("Auth Defaults", () => {
         const publicRoutes = ["POST /agents/:id/text"];
 
         expect(requiresAuth("POST", "/agents/test/text", publicRoutes)).toBe(false);
+      });
+
+      it("should allow making MCP transport routes public via publicRoutes", () => {
+        const publicRoutes = ["/mcp/:serverId/mcp"];
+
+        expect(requiresAuth("POST", "/mcp/my-server/mcp", publicRoutes)).toBe(false);
+        expect(requiresAuth("POST", "/mcp/my-server/messages", publicRoutes)).toBe(true);
       });
     });
   });

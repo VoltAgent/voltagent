@@ -429,6 +429,38 @@ describe("Auth Middleware - conversationId & Options Preservation", () => {
       expect(json.error).toBe("Authentication required");
     });
 
+    it("should return 401 for MCP execution routes when token is missing", async () => {
+      const middleware = createAuthMiddleware(mockAuthProvider);
+      const routes: Array<[string, string]> = [
+        ["/mcp/test-server/mcp", "POST"],
+        ["/mcp/test-server/sse", "GET"],
+        ["/mcp/test-server/messages", "POST"],
+        ["/mcp/servers/test-server/tools/search", "POST"],
+        ["/mcp/servers/test-server/logging/level", "POST"],
+        ["/mcp/servers/test-server/prompts/greet", "GET"],
+        ["/mcp/servers/test-server/resources/contents", "GET"],
+      ];
+
+      for (const [path, method] of routes) {
+        mockContext = createMockContext(path, method, {});
+        const response = await middleware(mockContext as Context, mockNext);
+
+        expect(response?.status).toBe(401);
+      }
+
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should let authenticated requests reach MCP execution routes", async () => {
+      mockContext = createMockContext("/mcp/test-server/mcp", "POST", {}, "valid-token");
+
+      const middleware = createAuthMiddleware(mockAuthProvider);
+      await middleware(mockContext as Context, mockNext);
+
+      expect(mockAuthProvider.verifyToken).toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalled();
+    });
+
     it("should return 401 when token is invalid", async () => {
       mockContext = createMockContext(
         "/agents/test-agent/text",
