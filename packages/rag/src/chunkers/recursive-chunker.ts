@@ -1,7 +1,7 @@
 import type { Chunk, ChunkMetadataInput, Chunker, Tokenizer } from "../types";
 import { buildMetadata } from "../utils/metadata";
 import { splitIntoParagraphs } from "../utils/text";
-import { defaultTokenizer } from "../utils/tokenizer";
+import { defaultTokenizer, sliceByTokenRange } from "../utils/tokenizer";
 import { SentenceChunker } from "./sentence-chunker";
 import { TokenChunker } from "./token-chunker";
 
@@ -128,7 +128,12 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
         if (i === chunks.length - 1) break;
         const next = chunks[i + 1];
         if (!next) continue;
-        const overlapContent = next.content.slice(0, overlapTokens);
+        // overlapTokens is a token count: slice by whole tokenizer tokens so
+        // the overlap aligns to token boundaries, not arbitrary character
+        // offsets (a character slice produced fragments like "Fir" / " he").
+        const nextTokens = tokenizer.tokenize(next.content);
+        const overlapEnd = Math.max(0, Math.ceil(overlapTokens) - 1);
+        const overlapContent = sliceByTokenRange(next.content, nextTokens, 0, overlapEnd);
         if (overlapContent) {
           smoothed.push({
             id: `${label}-overlap-${i}`,
