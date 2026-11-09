@@ -94,6 +94,26 @@ const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const PHONE_REGEX = /(?<!\w)(?:\+?\d[\d\s\-()]{6,}\d)/g;
 
 /**
+ * Truncate a string to at most `maxCodeUnits` UTF-16 code units without ever cutting a
+ * character in half.
+ *
+ * Characters outside the Basic Multilingual Plane (emoji such as U+1F44D, most CJK
+ * extension ideographs) are stored as surrogate pairs. A plain `slice` can end on the
+ * high surrogate of such a pair, and a lone surrogate is not valid text: encoding it as
+ * UTF-8 replaces it with U+FFFD ("?"), so the truncated output is silently corrupted.
+ */
+function truncateToCharacterLimit(value: string, maxCodeUnits: number): string {
+  if (value.length <= maxCodeUnits) {
+    return value;
+  }
+
+  const lastCode = value.charCodeAt(maxCodeUnits - 1);
+  const endsWithHighSurrogate = lastCode >= 0xd800 && lastCode <= 0xdbff;
+
+  return value.slice(0, endsWithHighSurrogate ? maxCodeUnits - 1 : maxCodeUnits);
+}
+
+/**
  * Creates a guardrail that redacts long numeric sequences such as account or card numbers.
  */
 export function createSensitiveNumberGuardrail(
@@ -445,9 +465,10 @@ export function createMaxLengthGuardrail(
       }
 
       const latestOutput =
-        typeof output === "string" ? output : originalOutput.slice(0, maxCharacters);
-      const sanitizedOutput =
-        latestOutput.length <= maxCharacters ? latestOutput : latestOutput.slice(0, maxCharacters);
+        typeof output === "string"
+          ? output
+          : truncateToCharacterLimit(originalOutput, maxCharacters);
+      const sanitizedOutput = truncateToCharacterLimit(latestOutput, maxCharacters);
 
       return {
         pass: true,
@@ -470,9 +491,11 @@ export function createMaxLengthGuardrail(
         return part;
       }
 
-      let guardState = state.maxLength as { emitted: number; truncated: boolean } | undefined;
+      let guardState = state.maxLength as
+        | { emitted: number; truncated: boolean; pendingHighSurrogate: string }
+        | undefined;
       if (!guardState) {
-        guardState = { emitted: 0, truncated: false };
+        guardState = { emitted: 0, truncated: false, pendingHighSurrogate: "" };
         state.maxLength = guardState;
       }
 
@@ -483,12 +506,42 @@ export function createMaxLengthGuardrail(
         return null;
       }
 
+      // The previous delta may have stopped in the middle of a surrogate pair. Rejoin the
+      // halves when this delta supplies the low surrogate; if it does not, the held half was
+      // never valid text and is dropped instead of streamed.
+      const pending = guardState.pendingHighSurrogate;
+      guardState.pendingHighSurrogate = "";
+      const nextCode = chunk.charCodeAt(0);
+      const candidate =
+        pending.length > 0 && nextCode >= 0xdc00 && nextCode <= 0xdfff ? pending + chunk : chunk;
+      const consumed = pending.length + chunk.length;
       const remaining = maxCharacters - guardState.emitted;
-      const emitText = chunk.length <= remaining ? chunk : chunk.slice(0, remaining);
-      guardState.emitted += emitText.length;
-      guardState.truncated = guardState.truncated || emitText.length !== chunk.length;
+      const truncatedByLimit = candidate.length > remaining;
+      let emitText = truncatedByLimit ? candidate.slice(0, remaining) : candidate;
 
-      if (chunk.length > remaining && mode === "block") {
+      const lastCode = emitText.charCodeAt(emitText.length - 1);
+      if (lastCode >= 0xd800 && lastCode <= 0xdbff) {
+        if (emitText.length === candidate.length) {
+          // The delta ran out mid-character: hold the half so the next one can finish it.
+          guardState.pendingHighSurrogate = emitText.slice(emitText.length - 1);
+        }
+        // Otherwise the limit itself cut through the character, so the pair can never be
+        // completed within the budget and the half is dropped.
+        emitText = emitText.slice(0, emitText.length - 1);
+      }
+
+      guardState.emitted += emitText.length;
+      // Once the limit has cut a delta short with nothing pending, the budget is spent: pin
+      // the counter so a later delta cannot stream the orphaned low surrogate on its own.
+      if (truncatedByLimit && guardState.pendingHighSurrogate.length === 0) {
+        guardState.emitted = maxCharacters;
+      }
+      guardState.truncated =
+        guardState.truncated ||
+        truncatedByLimit ||
+        emitText.length + guardState.pendingHighSurrogate.length !== consumed;
+
+      if (truncatedByLimit && mode === "block") {
         abort(`Output blocked. Maximum length of ${maxCharacters} characters exceeded.`);
       }
 
@@ -711,7 +764,7 @@ export function createInputLengthGuardrail(options: InputLengthGuardrailOptions)
         return {
           pass: true,
           action: "modify",
-          modifiedInput: input.slice(0, maxCharacters),
+          modifiedInput: truncateToCharacterLimit(input, maxCharacters),
           message,
         };
       }

@@ -370,4 +370,158 @@ describe("built-in guardrails", () => {
       ]);
     });
   });
+
+  describe("truncation keeps characters intact", () => {
+    // A surrogate pair is one character stored as two UTF-16 code units. Cutting between
+    // them yields a lone surrogate, which encodes as U+FFFD ("?") once written as UTF-8.
+    const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+    // "Great job " + the high surrogate of U+1F44D sits exactly at index 10.
+    const EMOJI_TEXT = "Great job \u{1F44D} team";
+
+    it("does not split an emoji when the input length guardrail truncates", async () => {
+      const guardrail = createInputLengthGuardrail({ maxCharacters: 11, mode: "truncate" });
+      const result = await guardrail.handler({
+        input: EMOJI_TEXT,
+        inputText: EMOJI_TEXT,
+        agent,
+        context: operationContext,
+        operation: "generateText",
+      } as any);
+
+      expect(result.pass).toBe(true);
+      expect(result.action).toBe("modify");
+      expect(result.modifiedInput).toEqual(expect.any(String));
+      expect(result.modifiedInput).not.toMatch(LONE_SURROGATE);
+      expect(result.modifiedInput).toBe("Great job ");
+    });
+
+    it("does not split an emoji when the max length guardrail truncates", async () => {
+      const guardrail = createMaxLengthGuardrail({ maxCharacters: 11 });
+      const result = await guardrail.handler({
+        output: EMOJI_TEXT,
+        originalOutput: EMOJI_TEXT,
+        agent,
+        context: operationContext,
+        operation: "generateText",
+        metadata: {},
+      } as any);
+
+      expect(result.pass).toBe(true);
+      expect(result.action).toBe("modify");
+      expect(result.modifiedOutput).not.toMatch(LONE_SURROGATE);
+      expect(result.modifiedOutput).toBe("Great job ");
+      expect(result.metadata.truncatedTo).toBe(10);
+    });
+
+    it("does not split an emoji when the max length guardrail truncates a stream", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 11 }));
+      const parts: VoltAgentTextStreamPart[] = [
+        { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "Great job " } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "\u{1F44D} team" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: " and friends" } as VoltAgentTextStreamPart,
+        { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
+      ];
+
+      const streamed: string[] = [];
+      for (const part of parts) {
+        const processed = await runner.processPart(part);
+        const text = extractText(processed);
+        if (text) {
+          streamed.push(text);
+        }
+      }
+
+      await runner.finalize({});
+      const sanitized = runner.getSanitizedText();
+
+      expect(streamed.join("")).not.toMatch(LONE_SURROGATE);
+      expect(streamed.join("")).toBe("Great job ");
+      expect(sanitized).toBe("Great job ");
+    });
+
+    it("completes a surrogate pair split across two deltas when the limit allows it", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 12 }));
+      const parts: VoltAgentTextStreamPart[] = [
+        { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
+        // 11 code units: "Great job " plus the high surrogate of U+1F44D.
+        { type: "text-delta", id: "t-1", text: "Great job \ud83d" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "\udc4d team" } as VoltAgentTextStreamPart,
+        { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
+      ];
+
+      const streamed: string[] = [];
+      for (const part of parts) {
+        const processed = await runner.processPart(part);
+        const text = extractText(processed);
+        if (text) {
+          streamed.push(text);
+        }
+      }
+
+      await runner.finalize({});
+
+      expect(streamed.join("")).not.toMatch(LONE_SURROGATE);
+      expect(streamed.join("")).toBe("Great job \u{1F44D}");
+      expect(runner.getSanitizedText()).toBe("Great job \u{1F44D}");
+    });
+
+    it("drops a split emoji instead of streaming a lone surrogate", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 11 }));
+      const parts: VoltAgentTextStreamPart[] = [
+        { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "Great job \ud83d" } as VoltAgentTextStreamPart,
+        // The pair needs two code units and only one is left, so neither half is streamed.
+        { type: "text-delta", id: "t-1", text: "\udc4d team" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: " and friends" } as VoltAgentTextStreamPart,
+        { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
+      ];
+
+      const streamed: string[] = [];
+      for (const part of parts) {
+        const processed = await runner.processPart(part);
+        const text = extractText(processed);
+        if (text) {
+          streamed.push(text);
+        }
+      }
+
+      await runner.finalize({});
+
+      expect(streamed.join("")).not.toMatch(LONE_SURROGATE);
+      expect(streamed.join("")).toBe("Great job ");
+      expect(runner.getSanitizedText()).toBe("Great job ");
+    });
+
+    it("drops a low surrogate when the previous delta ended at the limit", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 10 }));
+      const parts: VoltAgentTextStreamPart[] = [
+        { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "Great job " } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "\udc4d team" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "and friends" } as VoltAgentTextStreamPart,
+        { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
+      ];
+
+      const streamed: string[] = [];
+      for (const part of parts) {
+        const processed = await runner.processPart(part);
+        const text = extractText(processed);
+        if (text) {
+          streamed.push(text);
+        }
+      }
+
+      await runner.finalize({});
+
+      expect(streamed.join("")).not.toMatch(LONE_SURROGATE);
+      expect(streamed.join("")).toBe("Great job ");
+      expect(runner.getSanitizedText()).toBe("Great job ");
+    });
+  });
 });
