@@ -124,7 +124,8 @@ export const PROTECTED_ROUTES = [
 
   // ========================================
   // MCP EXECUTION (Tools, Agents, Workflows, Prompts, Resources)
-  // Discovery (server list/details, tool, prompt, resource and resource template lists) stays public
+  // Not listed here: discovery. Server list/details and tool lists are in DEFAULT_LEGACY_PUBLIC_ROUTES;
+  // prompt, resource and resource template lists stay public unless defaultPrivate is true
   // ========================================
   "/mcp/:serverId/mcp", // Streamable HTTP transport (GET/POST/DELETE)
   "GET /mcp/:serverId/sse", // SSE transport connection

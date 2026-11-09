@@ -261,6 +261,22 @@ describe("Auth Defaults", () => {
       });
     });
 
+    describe("MCP Routes (Opt-Out Mode)", () => {
+      it("should keep MCP discovery public and protect MCP execution with defaultPrivate", () => {
+        expect(requiresAuth("GET", "/mcp/servers", undefined, true)).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/tools", undefined, true)).toBe(false);
+        expect(requiresAuth("POST", "/mcp/my-server/mcp", undefined, true)).toBe(true);
+      });
+
+      it("should require auth for MCP prompt and resource lists with defaultPrivate", () => {
+        expect(requiresAuth("GET", "/mcp/servers/my-server/prompts", undefined, true)).toBe(true);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/resources", undefined, true)).toBe(true);
+        expect(
+          requiresAuth("GET", "/mcp/servers/my-server/resource-templates", undefined, true),
+        ).toBe(true);
+      });
+    });
+
     describe("Custom Routes (Opt-Out Mode) - Main Feature", () => {
       it("should require auth for custom routes when defaultPrivate is true", () => {
         // This is the NEW behavior - custom routes are protected by default
