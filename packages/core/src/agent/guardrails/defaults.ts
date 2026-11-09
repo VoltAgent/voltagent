@@ -506,40 +506,42 @@ export function createMaxLengthGuardrail(
         return null;
       }
 
-      // A delta can split a surrogate pair across its boundary, so the high surrogate held
-      // back from the previous chunk is re-joined here before the limit is applied.
-      const candidate = guardState.pendingHighSurrogate + chunk;
+      // The previous delta may have stopped in the middle of a surrogate pair. Rejoin the
+      // halves when this delta supplies the low surrogate; if it does not, the held half was
+      // never valid text and is dropped instead of streamed.
+      const pending = guardState.pendingHighSurrogate;
       guardState.pendingHighSurrogate = "";
+      const nextCode = chunk.charCodeAt(0);
+      const candidate =
+        pending.length > 0 && nextCode >= 0xdc00 && nextCode <= 0xdfff ? pending + chunk : chunk;
+      const consumed = pending.length + chunk.length;
       const remaining = maxCharacters - guardState.emitted;
-      let emitText = candidate.length <= remaining ? candidate : candidate.slice(0, remaining);
+      const truncatedByLimit = candidate.length > remaining;
+      let emitText = truncatedByLimit ? candidate.slice(0, remaining) : candidate;
 
-      const lastCode = emitText.length > 0 ? emitText.charCodeAt(emitText.length - 1) : 0;
+      const lastCode = emitText.charCodeAt(emitText.length - 1);
       if (lastCode >= 0xd800 && lastCode <= 0xdbff) {
-        const completesPair =
-          candidate.length > emitText.length &&
-          candidate.charCodeAt(emitText.length) >= 0xdc00 &&
-          candidate.charCodeAt(emitText.length) <= 0xdfff;
-        if (completesPair && emitText.length < remaining) {
-          // Room for the low surrogate too: emit the character whole and cut off here.
-          emitText = candidate.slice(0, emitText.length + 1);
-        } else {
-          // The pair is either cut by the limit or spread over two deltas; hold the high
-          // surrogate so the next chunk can complete it instead of streaming it alone.
+        if (emitText.length === candidate.length) {
+          // The delta ran out mid-character: hold the half so the next one can finish it.
           guardState.pendingHighSurrogate = emitText.slice(emitText.length - 1);
-          emitText = emitText.slice(0, emitText.length - 1);
         }
+        // Otherwise the limit itself cut through the character, so the pair can never be
+        // completed within the budget and the half is dropped.
+        emitText = emitText.slice(0, emitText.length - 1);
       }
 
-      if (emitText.length === candidate.length && candidate.length <= remaining) {
-        guardState.emitted += emitText.length;
-      } else {
-        // Trimmed or held back either way: the limit is reached, so pin the counter to keep
-        // a later delta from emitting the now orphaned low surrogate.
+      guardState.emitted += emitText.length;
+      // Once the limit has cut a delta short with nothing pending, the budget is spent: pin
+      // the counter so a later delta cannot stream the orphaned low surrogate on its own.
+      if (truncatedByLimit && guardState.pendingHighSurrogate.length === 0) {
         guardState.emitted = maxCharacters;
       }
-      guardState.truncated = guardState.truncated || emitText.length !== candidate.length;
+      guardState.truncated =
+        guardState.truncated ||
+        truncatedByLimit ||
+        emitText.length + guardState.pendingHighSurrogate.length !== consumed;
 
-      if (candidate.length > remaining && mode === "block") {
+      if (truncatedByLimit && mode === "block") {
         abort(`Output blocked. Maximum length of ${maxCharacters} characters exceeded.`);
       }
 

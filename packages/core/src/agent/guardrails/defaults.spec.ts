@@ -442,13 +442,41 @@ describe("built-in guardrails", () => {
       expect(sanitized).toBe("Great job ");
     });
 
-    it("holds a high surrogate back when a stream delta ends exactly at the limit", async () => {
-      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 11 }));
+    it("completes a surrogate pair split across two deltas when the limit allows it", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 12 }));
       const parts: VoltAgentTextStreamPart[] = [
         { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
         // 11 code units: "Great job " plus the high surrogate of U+1F44D.
         { type: "text-delta", id: "t-1", text: "Great job \ud83d" } as VoltAgentTextStreamPart,
         { type: "text-delta", id: "t-1", text: "\udc4d team" } as VoltAgentTextStreamPart,
+        { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
+      ];
+
+      const streamed: string[] = [];
+      for (const part of parts) {
+        const processed = await runner.processPart(part);
+        const text = extractText(processed);
+        if (text) {
+          streamed.push(text);
+        }
+      }
+
+      await runner.finalize({});
+
+      expect(streamed.join("")).not.toMatch(LONE_SURROGATE);
+      expect(streamed.join("")).toBe("Great job \u{1F44D}");
+      expect(runner.getSanitizedText()).toBe("Great job \u{1F44D}");
+    });
+
+    it("drops a split emoji instead of streaming a lone surrogate", async () => {
+      const runner = createRunner(createMaxLengthGuardrail({ maxCharacters: 11 }));
+      const parts: VoltAgentTextStreamPart[] = [
+        { type: "text-start", id: "t-1" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: "Great job \ud83d" } as VoltAgentTextStreamPart,
+        // The pair needs two code units and only one is left, so neither half is streamed.
+        { type: "text-delta", id: "t-1", text: "\udc4d team" } as VoltAgentTextStreamPart,
+        { type: "text-delta", id: "t-1", text: " and friends" } as VoltAgentTextStreamPart,
         { type: "text-end", id: "t-1" } as VoltAgentTextStreamPart,
         { type: "finish", finishReason: "stop" } as VoltAgentTextStreamPart,
       ];
