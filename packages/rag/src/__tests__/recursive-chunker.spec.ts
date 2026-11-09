@@ -42,4 +42,24 @@ describe("RecursiveChunker", () => {
       expect(tokenizer.countTokens(chunk.content)).toBe(3);
     }
   });
+
+  it("rounds fractional overlapTokens up instead of duplicating the next chunk", () => {
+    const text = "First part is here. Second part follows soon. Third part concludes.";
+    const chunker = new RecursiveChunker();
+    const chunks = chunker.chunk(text, { maxTokens: 6, overlapTokens: 2.5 });
+    const overlap = chunks.filter((c) => c.label?.includes("overlap"));
+    expect(overlap.length).toBeGreaterThan(0);
+    for (const chunk of overlap) {
+      const next = chunks[chunks.indexOf(chunk) + 1];
+      const nextTokens = tokenizer.countTokens(next?.content ?? "");
+      // ceil(2.5) = 3 whole tokens (or the whole chunk when it is shorter);
+      // a fractional end index used to make sliceByTokenRange fall back to
+      // text.length, duplicating even longer next chunks verbatim
+      expect(tokenizer.countTokens(chunk.content)).toBe(Math.min(3, nextTokens));
+      expect(next?.content.startsWith(chunk.content)).toBe(true);
+      if (nextTokens > 3) {
+        expect(chunk.content).not.toBe(next?.content);
+      }
+    }
+  });
 });
