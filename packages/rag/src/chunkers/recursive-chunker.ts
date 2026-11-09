@@ -128,10 +128,12 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
         if (i === chunks.length - 1) break;
         const next = chunks[i + 1];
         if (!next) continue;
-        // overlapTokens is a token count: slice whole tokens, not characters,
-        // so the overlap chunk never starts or ends mid-word.
+        // overlapTokens is a token count: slice by whole tokenizer tokens so
+        // the overlap aligns to token boundaries, not arbitrary character
+        // offsets (a character slice produced fragments like "Fir" / " he").
         const nextTokens = tokenizer.tokenize(next.content);
-        const overlapContent = sliceByTokenRange(next.content, nextTokens, 0, overlapTokens - 1);
+        const overlapEnd = Math.max(0, Math.ceil(overlapTokens) - 1);
+        const overlapContent = sliceByTokenRange(next.content, nextTokens, 0, overlapEnd);
         if (overlapContent) {
           smoothed.push({
             id: `${label}-overlap-${i}`,
