@@ -55,7 +55,7 @@ export class StructuredDocument {
 
   chunk(params: { strategy: ChunkStrategy; maxTokens?: number }): { chunks: Chunk[] } {
     const chunks: Chunk[] = [];
-    const graph: Record<string, string[]> = {};
+    const graph: Record<string, string[]> = Object.create(null);
     this.nodes.forEach((node) => {
       const cks = chunkByStrategy(params.strategy, node.text, {
         maxTokens: params.maxTokens,
@@ -80,12 +80,12 @@ export class StructuredDocument {
   }
 
   getLinkGraph(): Record<string, string[]> {
-    const graph: Record<string, string[]> = {};
+    const graph: Record<string, string[]> = Object.create(null);
     this.nodes.forEach((node) => {
       node.links?.forEach((link) => {
         graph[node.id] = [...(graph[node.id] ?? []), link.nodeId];
       });
     });
-    return graph;
+    return { ...graph };
   }
 }
