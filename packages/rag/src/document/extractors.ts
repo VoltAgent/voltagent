@@ -26,7 +26,7 @@ export function extractSummary(nodes: DocNode[]): DocNode[] {
 }
 
 export function extractKeywords(nodes: DocNode[], topN = 5): DocNode[] {
-  const freq: Record<string, number> = {};
+  const freq: Record<string, number> = Object.create(null);
   const words = nodes.flatMap((n) => n.text.toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
   words.forEach((w) => {
     freq[w] = (freq[w] ?? 0) + 1;
