@@ -38,6 +38,13 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     return this.directories;
   }
 
+  private getFileSize(fileData: FileData): number {
+    const content = fileDataToString(fileData);
+    return typeof Buffer !== "undefined"
+      ? Buffer.byteLength(content, "utf8")
+      : new TextEncoder().encode(content).byteLength;
+  }
+
   private normalizeDirPath(path: string): string {
     const trimmed = path.trim();
     if (!trimmed) {
@@ -81,7 +88,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
         continue;
       }
 
-      const size = new TextEncoder().encode(fd.content.join("\n")).byteLength;
+      const size = this.getFileSize(fd);
       infos.push({
         path: filePath,
         is_dir: false,
@@ -153,7 +160,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     const fileData = files[filePath];
 
     if (fileData) {
-      const size = new TextEncoder().encode(fileData.content.join("\n")).byteLength;
+      const size = this.getFileSize(fileData);
       return {
         path: filePath,
         is_dir: false,
@@ -285,7 +292,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     const infos: FileInfo[] = [];
     for (const filePath of paths) {
       const fd = files[filePath];
-      const size = fd ? new TextEncoder().encode(fd.content.join("\n")).byteLength : 0;
+      const size = fd ? this.getFileSize(fd) : 0;
       infos.push({
         path: filePath,
         is_dir: false,

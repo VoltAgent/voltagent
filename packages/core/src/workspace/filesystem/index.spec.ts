@@ -1,10 +1,23 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { NodeFilesystemBackend, WorkspaceFilesystem } from "./index";
 
 describe("WorkspaceFilesystem", () => {
+  it("reports byte sizes when Buffer is unavailable", async () => {
+    const filesystem = new WorkspaceFilesystem();
+    await filesystem.write("/content.txt", "你好");
+    vi.stubGlobal("Buffer", undefined);
+    try {
+      expect((await filesystem.stat("/content.txt"))?.size).toBe(6);
+      expect((await filesystem.lsInfo("/"))[0].size).toBe(6);
+      expect((await filesystem.globInfo("*.txt", "/"))[0].size).toBe(6);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   describe.each([
     ["ASCII", "hello", 5],
     ["empty", "", 0],
