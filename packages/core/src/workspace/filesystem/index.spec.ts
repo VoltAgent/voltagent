@@ -1,7 +1,45 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { WorkspaceFilesystem } from "./index";
+import { NodeFilesystemBackend, WorkspaceFilesystem } from "./index";
 
 describe("WorkspaceFilesystem", () => {
+  describe.each([
+    ["ASCII", "hello", 5],
+    ["empty", "", 0],
+    ["Chinese", "你好", 6],
+    ["emoji and newline", "a\n😀", 6],
+    ["combining mark", "e\u0301", 3],
+  ] as const)("UTF-8 byte sizes for %s files", (_label, content, expectedSize) => {
+    it.each(["stat", "lsInfo", "globInfo"] as const)(
+      "reports byte sizes via %s",
+      async (operation) => {
+        const root = await mkdtemp(path.join(tmpdir(), "va-byte-size-"));
+        try {
+          const memory = new WorkspaceFilesystem();
+          const disk = new WorkspaceFilesystem({
+            backend: new NodeFilesystemBackend({ rootDir: root }),
+          });
+          for (const filesystem of [disk, memory]) {
+            const result = await filesystem.write("/content.txt", content);
+            expect(result.error).toBeUndefined();
+            expect((await filesystem.readRaw("/content.txt")).content.join("\n")).toBe(content);
+            const info =
+              operation === "stat"
+                ? await filesystem.stat("/content.txt")
+                : operation === "lsInfo"
+                  ? (await filesystem.lsInfo("/"))[0]
+                  : (await filesystem.globInfo("*.txt", "/"))[0];
+            expect(info?.size).toBe(expectedSize);
+          }
+        } finally {
+          await rm(root, { recursive: true, force: true });
+        }
+      },
+    );
+  });
+
   it("writes, reads, edits, and deletes files", async () => {
     const filesystem = new WorkspaceFilesystem();
 

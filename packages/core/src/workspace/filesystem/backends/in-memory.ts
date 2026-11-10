@@ -81,7 +81,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
         continue;
       }
 
-      const size = fd.content.join("\n").length;
+      const size = new TextEncoder().encode(fd.content.join("\n")).byteLength;
       infos.push({
         path: filePath,
         is_dir: false,
@@ -153,7 +153,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     const fileData = files[filePath];
 
     if (fileData) {
-      const size = fileData.content.join("\n").length;
+      const size = new TextEncoder().encode(fileData.content.join("\n")).byteLength;
       return {
         path: filePath,
         is_dir: false,
@@ -285,7 +285,7 @@ export class InMemoryFilesystemBackend implements FilesystemBackend {
     const infos: FileInfo[] = [];
     for (const filePath of paths) {
       const fd = files[filePath];
-      const size = fd ? fd.content.join("\n").length : 0;
+      const size = fd ? new TextEncoder().encode(fd.content.join("\n")).byteLength : 0;
       infos.push({
         path: filePath,
         is_dir: false,
