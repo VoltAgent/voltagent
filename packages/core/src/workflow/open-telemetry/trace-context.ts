@@ -559,6 +559,8 @@ export class WorkflowTraceContext {
     }
 
     span.end();
+    // A race may finish a losing span before its underlying operation settles.
+    popActiveSpan(span);
   }
 
   /**
