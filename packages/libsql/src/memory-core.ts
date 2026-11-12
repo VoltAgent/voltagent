@@ -912,12 +912,14 @@ export class LibSQLMemoryCore implements StorageAdapter {
     const orderDirection = options.orderDirection || "DESC";
     sql += ` ORDER BY ${orderBy} ${orderDirection}`;
 
-    if (options.limit) {
+    if (options.limit !== undefined) {
       sql += " LIMIT ?";
       args.push(options.limit);
+    } else if (options.offset !== undefined) {
+      sql += " LIMIT -1";
     }
 
-    if (options.offset) {
+    if (options.offset !== undefined) {
       sql += " OFFSET ?";
       args.push(options.offset);
     }
@@ -1228,6 +1230,8 @@ export class LibSQLMemoryCore implements StorageAdapter {
     if (query.limit !== undefined) {
       sql += " LIMIT ?";
       args.push(query.limit);
+    } else if (query.offset !== undefined) {
+      sql += " LIMIT -1";
     }
 
     if (query.offset !== undefined) {

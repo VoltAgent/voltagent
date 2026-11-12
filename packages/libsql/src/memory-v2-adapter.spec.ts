@@ -40,6 +40,49 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     // No explicit close required for mocked client
   });
 
+  it("adds an unlimited LIMIT for conversation queries with only an offset", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+
+    await adapter.queryConversations({ offset: 2 });
+
+    expect(mockExecute).toHaveBeenCalledWith({
+      sql: "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      args: [2],
+    });
+
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    await adapter.queryConversations({ offset: 0 });
+    expect(mockExecute).toHaveBeenLastCalledWith({
+      sql: "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT -1 OFFSET ?",
+      args: [0],
+    });
+
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    await adapter.queryConversations({ limit: 0, offset: 2 });
+    expect(mockExecute).toHaveBeenLastCalledWith({
+      sql: "SELECT * FROM test_conversations WHERE 1=1 ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+      args: [0, 2],
+    });
+  });
+
+  it("adds an unlimited LIMIT for workflow queries with only an offset", async () => {
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+
+    await adapter.queryWorkflowRuns({ offset: 2 });
+
+    expect(mockExecute).toHaveBeenCalledWith({
+      sql: "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      args: [2],
+    });
+
+    mockExecute.mockResolvedValueOnce({ rows: [] });
+    await adapter.queryWorkflowRuns({ offset: 0 });
+    expect(mockExecute).toHaveBeenLastCalledWith({
+      sql: "SELECT * FROM test_workflow_states ORDER BY created_at DESC LIMIT -1 OFFSET ?",
+      args: [0],
+    });
+  });
+
   it("should query workflow runs with filters and pagination", async () => {
     mockExecute.mockResolvedValueOnce({
       rows: [
