@@ -11,6 +11,7 @@ import {
   type VectorItem,
   type VectorSearchOptions,
   cosineSimilarity,
+  decodeCursor,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import type { Logger } from "@voltagent/logger";
@@ -141,13 +142,13 @@ export class LibSQLVectorCore implements VectorAdapter {
         )
       `);
 
-      await this.client.execute(
-        `CREATE INDEX IF NOT EXISTS idx_${tableName}_created ON ${tableName}(created_at)`,
-      );
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${tableName}_created ON ${tableName}(created_at)
+      `);
 
-      await this.client.execute(
-        `CREATE INDEX IF NOT EXISTS idx_${tableName}_dimensions ON ${tableName}(dimensions)`,
-      );
+      await this.client.execute(`
+        CREATE INDEX IF NOT EXISTS idx_${tableName}_dimensions ON ${tableName}(dimensions)
+      `);
 
       this.initialized = true;
       this.logger.debug("Vector adapter initialized");
@@ -269,7 +270,14 @@ export class LibSQLVectorCore implements VectorAdapter {
   async search(queryVector: number[], options?: VectorSearchOptions): Promise<SearchResult[]> {
     await this.initialize();
 
-    const { limit = 10, threshold = 0, filter } = options || {};
+    const {
+      limit = 10,
+      threshold = 0,
+      filter,
+      logicalFilter,
+      comparisonFilter,
+      cursor,
+    } = options || {};
 
     if (this.dimensions !== null && queryVector.length !== this.dimensions) {
       throw new Error(
@@ -279,32 +287,82 @@ export class LibSQLVectorCore implements VectorAdapter {
 
     const tableName = `${this.tablePrefix}_vectors`;
 
-    let query = `SELECT id, vector, dimensions, metadata, content FROM ${tableName}`;
-    const args: any[] = [];
+    // Phase 1: fetch candidate rows (id/metadata only, no vector blobs) so the
+    // metadata predicates can be applied before any vectors are deserialized.
+    const conditions: string[] = [];
+    const candidateArgs: any[] = [];
 
     if (this.dimensions !== null) {
-      query += " WHERE dimensions = ?";
-      args.push(this.dimensions);
+      conditions.push("dimensions = ?");
+      candidateArgs.push(this.dimensions);
     }
 
-    const result = await this.executeWithRetry(
-      async () => await this.client.execute({ sql: query, args }),
-      "search vectors",
+    // Cursor-based pagination: keyset bound on the primary key
+    const cursorId = cursor ? decodeCursor(cursor) : undefined;
+    if (cursorId !== undefined) {
+      conditions.push("id < ?");
+      candidateArgs.push(cursorId);
+    }
+
+    const candidateQuery = `SELECT id, metadata, content FROM ${tableName}`;
+    const candidateSql =
+      conditions.length > 0
+        ? `${candidateQuery} WHERE ${conditions.join(" AND ")}`
+        : candidateQuery;
+
+    const candidateResult = await this.executeWithRetry(
+      async () => await this.client.execute({ sql: candidateSql, args: candidateArgs }),
+      "search vectors (candidate fetch)",
+    );
+
+    const candidateIds: string[] = [];
+
+    for (const row of candidateResult.rows) {
+      const id = row.id as string;
+      const metadataJson = row.metadata as string | null;
+      const metadata = metadataJson ? JSON.parse(metadataJson) : undefined;
+
+      if (filter && !this.matchesFilter(metadata, filter)) {
+        continue;
+      }
+
+      // Apply logical filter in-memory if present
+      if (logicalFilter && !this.passesLogicalFilter(metadata, logicalFilter)) {
+        continue;
+      }
+
+      // Apply comparison filter in-memory if present
+      if (comparisonFilter && !this.passesComparisonFilter(metadata, comparisonFilter)) {
+        continue;
+      }
+
+      candidateIds.push(id);
+    }
+
+    if (candidateIds.length === 0) {
+      return [];
+    }
+
+    // Phase 2: fetch vectors only for the surviving candidates
+    const placeholders = candidateIds.map(() => "?").join(", ");
+    const vectorResult = await this.executeWithRetry(
+      async () =>
+        await this.client.execute({
+          sql: `SELECT id, vector, dimensions, metadata, content FROM ${tableName} WHERE id IN (${placeholders})`,
+          args: candidateIds,
+        }),
+      "search vectors (vector fetch)",
     );
 
     const searchResults: SearchResult[] = [];
 
-    for (const row of result.rows) {
+    for (const row of vectorResult.rows) {
       const id = row.id as string;
       const vectorBlob = row.vector as Uint8Array | ArrayBuffer;
       const metadataJson = row.metadata as string | null;
       const content = (row.content as string | null) ?? undefined;
 
       const metadata = metadataJson ? JSON.parse(metadataJson) : undefined;
-
-      if (filter && !this.matchesFilter(metadata, filter)) {
-        continue;
-      }
 
       const vector = this.deserializeVector(vectorBlob);
       const similarity = cosineSimilarity(queryVector, vector);
@@ -325,6 +383,80 @@ export class LibSQLVectorCore implements VectorAdapter {
     searchResults.sort((a, b) => b.score - a.score);
 
     return searchResults.slice(0, limit);
+  }
+
+  /**
+   * Check if metadata passes logical filter ($and/$or)
+   */
+  private passesLogicalFilter(
+    metadata: Record<string, unknown> | undefined,
+    logicalFilter: NonNullable<VectorSearchOptions["logicalFilter"]>,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    if ("$and" in logicalFilter && Array.isArray(logicalFilter.$and)) {
+      // ALL conditions in the $and group must pass
+      return logicalFilter.$and.every((subFilter) => this.matchesFilter(metadata, subFilter));
+    }
+
+    if ("$or" in logicalFilter && Array.isArray(logicalFilter.$or)) {
+      // AT LEAST ONE condition in the $or group must pass
+      return logicalFilter.$or.some((subFilter) => this.matchesFilter(metadata, subFilter));
+    }
+
+    // Single filter (treated as AND with the outer conditions)
+    return this.matchesFilter(metadata, logicalFilter);
+  }
+
+  /**
+   * Check if metadata passes comparison filter (e.g., { price: { $gt: 100 } })
+   */
+  private passesComparisonFilter(
+    metadata: Record<string, unknown> | undefined,
+    comparisonFilter: Record<string, unknown>,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    for (const [key, value] of Object.entries(comparisonFilter)) {
+      const metadataValue = metadata[key];
+
+      if (value === undefined) {
+        continue;
+      }
+
+      if (this.isComparisonOperator(value)) {
+        if (value.$gt !== undefined && metadataValue !== undefined) {
+          if (!((metadataValue as number) > value.$gt)) {
+            return false;
+          }
+        }
+        if (value.$lt !== undefined && metadataValue !== undefined) {
+          if (!((metadataValue as number) < value.$lt)) {
+            return false;
+          }
+        }
+        continue;
+      }
+
+      // Exact match
+      if (metadataValue !== value) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private isComparisonOperator(value: unknown): value is { $gt?: number; $lt?: number } {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const candidate = value as Record<string, unknown>;
+    return "$gt" in candidate || "$lt" in candidate;
   }
 
   private matchesFilter(

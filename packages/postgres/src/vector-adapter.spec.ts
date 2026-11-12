@@ -1,3 +1,4 @@
+import { encodeCursor } from "@voltagent/core";
 import { Pool } from "pg";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PostgreSQLVectorAdapter } from "./vector-adapter";
@@ -151,5 +152,75 @@ describe.sequential("PostgreSQLVectorAdapter", () => {
     expect(results[0].score).toBeCloseTo(1);
     expect(results[0].metadata).toEqual({ label: "a" });
     expect(results[0].content).toBe("hello");
+  });
+
+  const vectorRow = (overrides: Record<string, unknown> = {}) => {
+    const buffer = Buffer.allocUnsafe(8);
+    buffer.writeFloatLE(1, 0);
+    buffer.writeFloatLE(0, 4);
+    return {
+      id: "vec-1",
+      vector: buffer,
+      dimensions: 2,
+      metadata: {},
+      content: null,
+      ...overrides,
+    };
+  };
+
+  it("pushes metadata equality filters down as a JSONB containment predicate", async () => {
+    enqueue([vectorRow({ id: "vec-1", metadata: { topic: "ai" } })]);
+
+    const results = await adapter.search([1, 0], { filter: { topic: "ai" } });
+
+    const [sql, params] = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
+    expect(String(sql)).toContain("metadata @> $1::jsonb");
+    expect(JSON.parse(String(params[0]))).toEqual({ topic: "ai" });
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe("vec-1");
+  });
+
+  it("uses a bound parameter cursor instead of a database escape call", async () => {
+    enqueue([vectorRow()]);
+
+    const cursor = encodeCursor("vec-1");
+    await adapter.search([1, 0], { cursor });
+
+    const [sql, params] = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
+    expect(String(sql)).toContain("id < $1");
+    expect(params[0]).toBe("vec-1");
+  });
+
+  it("does not push LIMIT into SQL when in-memory predicates are present", async () => {
+    enqueue([
+      vectorRow({ id: "vec-1", metadata: { price: 100 } }),
+      vectorRow({ id: "vec-2", metadata: { price: 200 } }),
+    ]);
+
+    const results = await adapter.search([1, 0], {
+      comparisonFilter: { price: { $gt: 150 } },
+      limit: 5,
+    });
+
+    const [sql] = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
+    expect(String(sql)).not.toMatch(/\bLIMIT\b/i);
+
+    // Only vec-2 (price 200) survives the in-memory comparison filter
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe("vec-2");
+  });
+
+  it("applies logical $and filters in memory after fetching", async () => {
+    enqueue([
+      vectorRow({ id: "vec-1", metadata: { category: "A", status: "active" } }),
+      vectorRow({ id: "vec-2", metadata: { category: "A", status: "inactive" } }),
+    ]);
+
+    const results = await adapter.search([1, 0], {
+      logicalFilter: { $and: [{ category: "A" }, { status: "active" }] },
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe("vec-1");
   });
 });
