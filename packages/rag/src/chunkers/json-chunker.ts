@@ -21,15 +21,16 @@ function walk(value: unknown, path: string[] = [], acc: PathValue[] = []): PathV
     return acc;
   }
 
-  if (Array.isArray(value)) {
-    value.forEach((item, idx) => walk(item, [...path, String(idx)], acc));
-    return acc;
-  }
-
   if (typeof value === "object") {
-    Object.entries(value as Record<string, unknown>).forEach(([key, val]) =>
-      walk(val, [...path, key], acc),
-    );
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length === 0 && path.length > 0) {
+      acc.push({
+        path: path.join("."),
+        value: Array.isArray(value) ? "[]" : "{}",
+        line: acc.length + 1,
+      });
+    }
+    entries.forEach(([key, val]) => walk(val, [...path, key], acc));
     return acc;
   }
 
