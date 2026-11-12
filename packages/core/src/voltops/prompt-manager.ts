@@ -215,8 +215,9 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
     if (!cached) return null;
 
     // Use custom TTL if provided, otherwise use the TTL stored with the cached item
-    const effectiveTtl = customTtl ? customTtl * 1000 : cached.ttl; // Convert seconds to milliseconds if custom TTL provided
-    const isExpired = Date.now() - cached.fetchedAt > effectiveTtl;
+    const effectiveTtl = customTtl !== undefined ? customTtl * 1000 : cached.ttl;
+    // A zero TTL must expire even when the next lookup occurs in the same millisecond.
+    const isExpired = effectiveTtl === 0 || Date.now() - cached.fetchedAt > effectiveTtl;
     if (isExpired) {
       this.cache.delete(cacheKey);
       return null;
