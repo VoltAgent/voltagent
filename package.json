@@ -53,6 +53,11 @@
   },
   "nx": {},
   "packageManager": "pnpm@8.10.5",
+  "pnpm": {
+    "overrides": {
+      "@ai-sdk/provider-utils@3>undici": "^6.29.1"
+    }
+  },
   "private": true,
   "repository": "VoltAgent/voltagent.git",
   "scripts": {
