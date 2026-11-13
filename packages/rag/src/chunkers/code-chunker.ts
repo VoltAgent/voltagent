@@ -209,6 +209,8 @@ export class CodeChunker implements Chunker<CodeChunkerOptions> {
             ...splitCode.map((chunk, idx) => ({
               ...chunk,
               id: `${label}-${chunks.length + idx}`,
+              start: segment.start + chunk.start,
+              end: segment.start + chunk.end,
               metadata: buildMetadata({
                 format: "code",
                 sourceType: "code",
@@ -217,6 +219,7 @@ export class CodeChunker implements Chunker<CodeChunkerOptions> {
                   ...(chunk.metadata ?? {}),
                   type: "code",
                   language: segment.language,
+                  ...positionMeta(segment.start + chunk.start, segment.start + chunk.end),
                   fencePosition: fencePositionMeta(segment).position,
                 },
               }),
