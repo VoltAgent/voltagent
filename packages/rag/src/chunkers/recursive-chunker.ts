@@ -71,7 +71,6 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
           return [
             {
               ...chunk,
-              id: `recursive-${chunks.length}`,
               start: paragraph.start + chunk.start,
               end: paragraph.start + chunk.end,
               metadata: {
@@ -98,9 +97,8 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
             sourceId: options?.sourceId,
             baseMetadata: options?.baseMetadata,
           })
-          .map((tokenChunk, idx) => ({
+          .map((tokenChunk) => ({
             ...tokenChunk,
-            id: `recursive-${chunks.length + idx}`,
             start: paragraph.start + (tokenChunk.start ?? 0),
             end: paragraph.start + (tokenChunk.end ?? 0),
             metadata: {
@@ -115,7 +113,12 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
           }));
       });
 
-      chunks.push(...expanded);
+      chunks.push(
+        ...expanded.map((chunk, idx) => ({
+          ...chunk,
+          id: `recursive-${chunks.length + idx}`,
+        })),
+      );
       paragraphIndex += 1;
     }
 
