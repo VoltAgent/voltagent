@@ -5,6 +5,7 @@ import {
   SERVER_CONFIG,
   type TemplateFile,
 } from "../types";
+import { supportsDockerfile } from "./package-manager";
 
 // Resolve templates for both source execution (src/) and built execution (dist/).
 const resolveTemplatesDir = () => {
@@ -60,7 +61,7 @@ export const getBaseTemplates = (): TemplateFile[] => {
         envConfig +=
           "\n\n# VoltOps Platform (Optional)\n# Get your keys at https://console.voltagent.dev/tracing-setup\n# VOLTAGENT_PUBLIC_KEY=your-public-key\n# VOLTAGENT_SECRET_KEY=your-secret-key";
 
-        return content
+        const result = content
           .replace(/{{projectName}}/g, options.projectName)
           .replace(/{{aiProviderName}}/g, config.name)
           .replace(/{{modelName}}/g, config.modelName)
@@ -72,6 +73,16 @@ export const getBaseTemplates = (): TemplateFile[] => {
           .replace(/{{packageManagerCommand}}/g, pm.command)
           .replace(/{{envConfig}}/g, envConfig)
           .replace(/{{apiKeyUrl}}/g, config.apiKeyUrl || "");
+
+        if (!supportsDockerfile(options.packageManager, options.packageManagerVersion)) {
+          return result
+            .replace(/^├── Dockerfile.*\r?\n/m, "")
+            .replace(
+              /## 🐳 Docker Deployment[\s\S]*?(?=## 🛠️ Development)/,
+              `## 🐳 Docker Deployment\n\nThis project uses Yarn ${options.packageManagerVersion}. The starter Dockerfile supports Yarn Classic (1.x) only, so no Dockerfile was generated. Add a Dockerfile that supports your Yarn version and configuration before building an image.\n\n`,
+            );
+        }
+        return result;
       },
     },
     {
@@ -134,6 +145,58 @@ export const getBaseTemplates = (): TemplateFile[] => {
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/Dockerfile.template"),
       targetPath: "Dockerfile",
+      transform: (content: string, options: ProjectOptions) => {
+        if (!supportsDockerfile(options.packageManager, options.packageManagerVersion)) {
+          throw new Error("Docker generation currently supports Yarn Classic (1.x) only.");
+        }
+        const packageManagers = {
+          npm: {
+            bunStage: "",
+            lockfileCopy: "",
+            toolSetup: "",
+            installCommand: "npm ci",
+            productionInstallCommand: "npm ci --omit=dev",
+          },
+          yarn: {
+            bunStage: "",
+            lockfileCopy: "COPY yarn.lock ./",
+            toolSetup: "",
+            installCommand: "yarn install --frozen-lockfile",
+            productionInstallCommand: "yarn install --frozen-lockfile --production",
+          },
+          pnpm: {
+            bunStage: "",
+            lockfileCopy: "COPY pnpm-lock.yaml ./",
+            toolSetup: `RUN npm install -g pnpm@${options.packageManagerVersion}`,
+            installCommand: "pnpm install --frozen-lockfile",
+            productionInstallCommand: "pnpm install --frozen-lockfile --prod",
+          },
+          bun: {
+            bunStage: `FROM oven/bun:${options.packageManagerVersion}-alpine AS bun-tool\n\n`,
+            lockfileCopy: "COPY bun.lock* ./",
+            toolSetup: "COPY --from=bun-tool /usr/local/bin/bun /usr/local/bin/bun",
+            installCommand: "bun install --frozen-lockfile",
+            productionInstallCommand: "bun install --frozen-lockfile --production",
+          },
+        } satisfies Record<
+          ProjectOptions["packageManager"],
+          {
+            bunStage: string;
+            lockfileCopy: string;
+            toolSetup: string;
+            installCommand: string;
+            productionInstallCommand: string;
+          }
+        >;
+        const selected = packageManagers[options.packageManager];
+
+        return content
+          .replace(/{{bunStage}}/g, selected.bunStage)
+          .replace(/{{lockfileCopy}}/g, selected.lockfileCopy)
+          .replace(/{{toolSetup}}/g, selected.toolSetup)
+          .replace(/{{installCommand}}/g, selected.installCommand)
+          .replace(/{{productionInstallCommand}}/g, selected.productionInstallCommand);
+      },
     },
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/.dockerignore.template"),

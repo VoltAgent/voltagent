@@ -7,6 +7,7 @@ import { AI_PROVIDER_CONFIG } from "./types";
 import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
+import { supportsDockerfile } from "./utils/package-manager";
 import { getAllTemplates } from "./utils/templates";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
@@ -28,7 +29,11 @@ export const createProject = async (options: ProjectOptions, targetDir: string):
 
     // Try processing templates, use default content if error occurs
     spinner.text = "Processing templates...";
-    const templates = getAllTemplates();
+    const templates = getAllTemplates().filter(
+      (template) =>
+        template.targetPath !== "Dockerfile" ||
+        supportsDockerfile(options.packageManager, options.packageManagerVersion),
+    );
 
     let templateCounter = 0;
     const totalTemplates = templates.length;
