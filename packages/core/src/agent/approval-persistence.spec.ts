@@ -157,7 +157,8 @@ it("keeps approval evidence when memory context is omitted", async () => {
   await storage.addMessage(message, "u", "c");
   part.state = "approval-responded";
   part.approval.approved = true;
-  await agent.generateText([message], { memory });
+  // Client submits just the approved part; stored sibling parts must survive.
+  await agent.generateText([{ ...message, parts: [part] }], { memory });
   const parts = await storedToolParts(storage);
   expect(parts[0]).toMatchObject({ state: "output-available", approval: { approved: true } });
   const saved = (await storage.getMessages("u", "c")).find((m) => m.id === message.id);
