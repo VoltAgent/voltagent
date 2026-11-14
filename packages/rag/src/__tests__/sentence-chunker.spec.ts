@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { SentenceChunker } from "../chunkers/sentence-chunker";
 
 describe("SentenceChunker", () => {
+  it("keeps decimals intact with the default sentence tokenizer", () => {
+    const text = "Version 2.5 is out. It costs $3.99 today.";
+    const expected = ["Version 2.5 is out.", " It costs $3.99 today."];
+    const chunks = new SentenceChunker().chunk(text, { maxTokens: 4 });
+    expect(chunks.map((chunk) => chunk.content)).toEqual(expected);
+  });
+
   it("groups sentences under token budget", () => {
     const chunker = new SentenceChunker();
     const text =
