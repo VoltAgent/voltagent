@@ -9,7 +9,7 @@ slug: /workspaces/sandbox
 The Workspace API is experimental. Expect iteration and possible breaking changes as we refine the API.
 :::
 
-A sandbox is an isolated environment where an agent can run shell commands without touching the host. Usually a container, a remote VM, or an OS-level jail. VoltAgent reaches them through the `WorkspaceSandbox` interface. First-party providers exist for [Blaxel](#blaxel), [Daytona](#daytona), and [E2B](#e2b), plus `LocalSandbox` for running things locally.
+A sandbox is an isolated environment where an agent can run shell commands without touching the host. Usually a container, a remote VM, or an OS-level jail. VoltAgent reaches them through the `WorkspaceSandbox` interface. First-party providers exist for [Blaxel](#blaxel), [Daytona](#daytona), [E2B](#e2b), and [smol machines](#smol-machines), plus `LocalSandbox` for running things locally.
 
 Agents interact with the sandbox through a tool called `execute_command`. They pass a command (plus optional env vars, working directory, and timeout), and the workspace runs it in the sandbox and returns the result. Large stdout or stderr gets truncated so the model doesn't drown in logs.
 
@@ -123,11 +123,12 @@ Every provider implements `WorkspaceSandbox`, so the workspace toolkit drives th
 
 ### Available providers
 
-| Provider | Package                      | Upstream docs                                  |
-| -------- | ---------------------------- | ---------------------------------------------- |
-| Blaxel   | `@voltagent/sandbox-blaxel`  | [docs.blaxel.ai](https://docs.blaxel.ai)       |
-| Daytona  | `@voltagent/sandbox-daytona` | [daytona.io/docs](https://www.daytona.io/docs) |
-| E2B      | `@voltagent/sandbox-e2b`     | [e2b.dev/docs](https://e2b.dev/docs)           |
+| Provider      | Package                           | Upstream docs                                          |
+| ------------- | --------------------------------- | ------------------------------------------------------ |
+| Blaxel        | `@voltagent/sandbox-blaxel`       | [docs.blaxel.ai](https://docs.blaxel.ai)               |
+| Daytona       | `@voltagent/sandbox-daytona`      | [daytona.io/docs](https://www.daytona.io/docs)         |
+| E2B           | `@voltagent/sandbox-e2b`          | [e2b.dev/docs](https://e2b.dev/docs)                   |
+| smol machines | `@voltagent/sandbox-smolmachines` | [smolmachines.com/docs](https://smolmachines.com/docs) |
 
 ### Blaxel
 
@@ -425,6 +426,96 @@ class TenantE2BSandboxRouter implements WorkspaceSandbox {
 
 const workspace = new Workspace({
   sandbox: new TenantE2BSandboxRouter(),
+});
+```
+
+### smol machines
+
+Hardware-isolated microVMs on your own machine: macOS on Apple Silicon, or Linux x64 or arm64 with glibc and KVM. It needs no account, Docker or remote service, because the VM engine ships with [`smolmachines`](https://www.npmjs.com/package/smolmachines).
+
+Install:
+
+```bash
+pnpm add @voltagent/sandbox-smolmachines
+```
+
+_Pulls in `smolmachines` and the engine for your platform automatically. No separate install._
+
+Configure it on a workspace. `config` is passed to `Machine.create()`, and outbound network access stays off unless you turn it on. `stdin` is not supported yet, so a call that passes it is rejected:
+
+```ts
+import { Workspace } from "@voltagent/core";
+import { SmolMachinesSandbox } from "@voltagent/sandbox-smolmachines";
+
+const workspace = new Workspace({
+  sandbox: new SmolMachinesSandbox({
+    config: { image: "python:3.12", network: true },
+  }),
+});
+```
+
+The machine is created on the first `execute()` or `getSandbox()` call and deleted when the workspace is destroyed, without waiting for running commands: a command still running then rejects with a `connection closed` error. For files and other machine APIs, grab the underlying `Machine`:
+
+```ts
+const sandbox = new SmolMachinesSandbox();
+const workspace = new Workspace({ sandbox });
+
+const machine = await sandbox.getSandbox();
+await machine.writeFile("/tmp/input.txt", "hello");
+```
+
+Multi-tenant routing: one smol machine per tenant, keyed on `operationContext`.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { SmolMachinesSandbox } from "@voltagent/sandbox-smolmachines";
+
+class TenantSmolMachinesSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-smolmachines-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via destroy) to avoid unbounded per-tenant growth.
+  private readonly sandboxes = new Map<string, SmolMachinesSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-smolmachines-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
+
+  private getSandboxForTenant(tenantId: string): SmolMachinesSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new SmolMachinesSandbox({
+        // Example strategy: label each tenant's machine so it can be found with Machine.list
+        config: { labels: { tenant: tenantId } },
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+
+  async destroy(): Promise<void> {
+    const pending = Array.from(this.sandboxes.values()).map((s) => s.destroy());
+    this.sandboxes.clear();
+    await Promise.allSettled(pending);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantSmolMachinesSandboxRouter(),
 });
 ```
 

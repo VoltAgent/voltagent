@@ -4336,6 +4336,28 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/sandbox-smolmachines:
+    dependencies:
+      smolmachines:
+        specifier: ^1.32.2
+        version: 1.32.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      '@voltagent/core':
+        specifier: ^2.8.1
+        version: link:../core
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.6.2)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+
   packages/scorers:
     dependencies:
       '@voltagent/core':
@@ -38454,6 +38476,42 @@ packages:
 
   /smob@1.5.0:
     resolution: {integrity: sha512-g6T+p7QO8npa+/hNx9ohv1E5pVCmWrVCUzUXJyLdMmftX6ER0oiWY/w9knEonLpnOp6b6FenKnMfR8gqwWdwig==}
+
+  /smolmachines-darwin-arm64@1.32.2:
+    resolution: {integrity: sha512-UQ2+7PqG4zq565aVeIOcSzDyldSspCuuih8YZ5L9nSJnTuIVjzPNhpXSG9q5R6B2+8eQ/X0yVRsobqzdjPZ3bw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /smolmachines-linux-arm64-gnu@1.32.2:
+    resolution: {integrity: sha512-qvmPa31WuIBKUhRGOf/Zz1UOW7uQxUitRatg3Yh9q/RNyBHu2NctzenknDVtyeNgPWmYLNGVPBSYgg7JVFPbGg==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /smolmachines-linux-x64-gnu@1.32.2:
+    resolution: {integrity: sha512-fMhU+PXG4qjMRT+muKkC11vFOZygh1pG4xHymqeOAfuCfMYEP4uCR2o9cPyfubvAOQz1ihhJyfBqEwQeYXyOhA==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /smolmachines@1.32.2:
+    resolution: {integrity: sha512-k6irB+Itai0L6btRIdEer+D6eG1y/ad+AGhHQYeKst6vSltaZENCUIBLJJSkkaAmSl8EVT0ZUVbp4gBxp6uUpw==}
+    engines: {node: '>=18'}
+    optionalDependencies:
+      smolmachines-darwin-arm64: 1.32.2
+      smolmachines-linux-arm64-gnu: 1.32.2
+      smolmachines-linux-x64-gnu: 1.32.2
+    dev: false
 
   /socket.io-client@4.8.3:
     resolution: {integrity: sha512-uP0bpjWrjQmUt5DTHq9RuoCBdFJF10cdX9X+a368j/Ft0wmaVgxlrjvK3kjvgCODOMMOz9lcaRzxmso0bTWZ/g==}
