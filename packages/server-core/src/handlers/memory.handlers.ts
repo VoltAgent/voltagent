@@ -3,6 +3,7 @@ import {
   type Conversation,
   ConversationAlreadyExistsError,
   ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
   EmbeddingAdapterNotConfiguredError,
   type Memory,
   type ServerProviderDeps,
@@ -106,6 +107,25 @@ function buildErrorResponse(error: unknown): ApiResponse {
   };
 }
 
+function buildForbiddenResponse(): ApiResponse {
+  return {
+    success: false,
+    error: "Forbidden",
+    httpStatus: 403,
+  };
+}
+
+function assertConversationOwner(
+  conversation: Conversation,
+  requestingUserId?: string,
+): ApiResponse | null {
+  if (requestingUserId !== undefined && conversation.userId !== requestingUserId) {
+    return buildForbiddenResponse();
+  }
+
+  return null;
+}
+
 export async function handleListMemoryConversations(
   deps: ServerProviderDeps,
   query: {
@@ -116,6 +136,7 @@ export async function handleListMemoryConversations(
     offset?: number;
     orderBy?: "created_at" | "updated_at" | "title";
     orderDirection?: "ASC" | "DESC";
+    requestingUserId?: string;
   },
 ): Promise<
   ApiResponse<{ conversations: Conversation[]; total: number; limit: number; offset: number }>
@@ -130,10 +151,15 @@ export async function handleListMemoryConversations(
       };
     }
 
+    if (query.requestingUserId !== undefined && !query.requestingUserId) {
+      return buildForbiddenResponse();
+    }
+
     const resourceId = query.resourceId ?? resolved.resourceId;
+    const userId = query.requestingUserId ?? query.userId;
     const [conversations, total] = await Promise.all([
       resolved.memory.queryConversations({
-        userId: query.userId,
+        userId,
         resourceId,
         limit: query.limit,
         offset: query.offset,
@@ -141,7 +167,7 @@ export async function handleListMemoryConversations(
         orderDirection: query.orderDirection,
       }),
       resolved.memory.countConversations({
-        userId: query.userId,
+        userId,
         resourceId,
       }),
     ]);
@@ -163,7 +189,7 @@ export async function handleListMemoryConversations(
 export async function handleGetMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string; requestingUserId?: string },
 ): Promise<ApiResponse<{ conversation: Conversation }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -182,6 +208,11 @@ export async function handleGetMemoryConversation(
         error: "Conversation not found",
         httpStatus: 404,
       };
+    }
+
+    const ownershipError = assertConversationOwner(conversation, query.requestingUserId);
+    if (ownershipError) {
+      return ownershipError;
     }
 
     return {
@@ -203,6 +234,7 @@ export async function handleListMemoryConversationMessages(
     after?: Date;
     roles?: string[];
     userId?: string;
+    requestingUserId?: string;
   },
 ): Promise<ApiResponse<{ conversation: Conversation; messages: UIMessage[] }>> {
   try {
@@ -222,6 +254,11 @@ export async function handleListMemoryConversationMessages(
         error: "Conversation not found",
         httpStatus: 404,
       };
+    }
+
+    const ownershipError = assertConversationOwner(conversation, query.requestingUserId);
+    if (ownershipError) {
+      return ownershipError;
     }
 
     const userId = query.userId ?? conversation.userId;
@@ -498,6 +535,7 @@ export async function handleUpdateMemoryConversation(
     agentId?: string;
     resourceId?: string;
     userId?: string;
+    requestingUserId?: string;
     title?: string;
     metadata?: Record<string, unknown>;
   },
@@ -534,7 +572,27 @@ export async function handleUpdateMemoryConversation(
       };
     }
 
-    const conversation = await resolved.memory.updateConversation(conversationId, updates);
+    const existingConversation = await resolved.memory.getConversation(conversationId);
+    if (!existingConversation) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+
+    const ownershipError = assertConversationOwner(existingConversation, body.requestingUserId);
+    if (ownershipError) {
+      return ownershipError;
+    }
+
+    const mutationOptions =
+      body.requestingUserId !== undefined ? { expectedUserId: body.requestingUserId } : undefined;
+    const conversation = await resolved.memory.updateConversation(
+      conversationId,
+      updates,
+      mutationOptions,
+    );
     return {
       success: true,
       data: { conversation },
@@ -547,6 +605,9 @@ export async function handleUpdateMemoryConversation(
         httpStatus: 404,
       };
     }
+    if (error instanceof ConversationOwnershipMismatchError) {
+      return buildForbiddenResponse();
+    }
     return buildErrorResponse(error);
   }
 }
@@ -554,7 +615,7 @@ export async function handleUpdateMemoryConversation(
 export async function handleDeleteMemoryConversation(
   deps: ServerProviderDeps,
   conversationId: string,
-  query: { agentId?: string },
+  query: { agentId?: string; requestingUserId?: string },
 ): Promise<ApiResponse<{ deleted: boolean }>> {
   try {
     const resolved = resolveMemory(deps, query.agentId);
@@ -566,7 +627,23 @@ export async function handleDeleteMemoryConversation(
       };
     }
 
-    await resolved.memory.deleteConversation(conversationId);
+    const conversation = await resolved.memory.getConversation(conversationId);
+    if (!conversation) {
+      return {
+        success: false,
+        error: "Conversation not found",
+        httpStatus: 404,
+      };
+    }
+
+    const ownershipError = assertConversationOwner(conversation, query.requestingUserId);
+    if (ownershipError) {
+      return ownershipError;
+    }
+
+    const mutationOptions =
+      query.requestingUserId !== undefined ? { expectedUserId: query.requestingUserId } : undefined;
+    await resolved.memory.deleteConversation(conversationId, mutationOptions);
     return {
       success: true,
       data: { deleted: true },
@@ -578,6 +655,9 @@ export async function handleDeleteMemoryConversation(
         error: error.message,
         httpStatus: 404,
       };
+    }
+    if (error instanceof ConversationOwnershipMismatchError) {
+      return buildForbiddenResponse();
     }
     return buildErrorResponse(error);
   }

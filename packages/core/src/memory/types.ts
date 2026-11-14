@@ -58,6 +58,10 @@ export type ConversationQueryOptions = {
   orderDirection?: "ASC" | "DESC";
 };
 
+export type ConversationMutationOptions = {
+  expectedUserId?: string;
+};
+
 /**
  * Options for getting messages
  */
@@ -443,8 +447,9 @@ export interface StorageAdapter {
   updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation>;
-  deleteConversation(id: string): Promise<void>;
+  deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void>;
 
   saveConversationSteps?(steps: ConversationStepRecord[]): Promise<void>;
   getConversationSteps?(

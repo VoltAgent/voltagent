@@ -64,6 +64,19 @@ export class ConversationNotFoundError extends MemoryV2Error {
 }
 
 /**
+ * Error thrown when a guarded conversation mutation no longer matches the expected owner
+ */
+export class ConversationOwnershipMismatchError extends MemoryV2Error {
+  constructor(conversationId: string) {
+    super(`Conversation ownership mismatch: ${conversationId}`, "CONVERSATION_OWNERSHIP_MISMATCH", {
+      conversationId,
+    });
+    this.name = "ConversationOwnershipMismatchError";
+    Object.setPrototypeOf(this, ConversationOwnershipMismatchError.prototype);
+  }
+}
+
+/**
  * Error thrown when trying to create a conversation that already exists
  */
 export class ConversationAlreadyExistsError extends MemoryV2Error {

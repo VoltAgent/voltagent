@@ -229,6 +229,41 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       expect(mockClient.from).toHaveBeenCalledWith("voltagent_memory_conversations");
     });
 
+    it("adds expectedUserId to updateConversation mutations", async () => {
+      const existingRow = {
+        id: "conv-1",
+        resource_id: "resource-1",
+        user_id: "user-1",
+        title: "Old Title",
+        metadata: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const updatedRow = { ...existingRow, title: "Updated Title" };
+
+      supabaseMock.queue("voltagent_memory_conversations", ok(existingRow), ok(updatedRow));
+
+      await (adapter as any).updateConversation(
+        "conv-1",
+        { title: "Updated Title" },
+        { expectedUserId: "user-1" },
+      );
+
+      const updateBuilder = supabaseMock.getHistory("voltagent_memory_conversations")[1];
+      expect(updateBuilder.eq).toHaveBeenCalledWith("id", "conv-1");
+      expect(updateBuilder.eq).toHaveBeenCalledWith("user_id", "user-1");
+    });
+
+    it("adds expectedUserId to deleteConversation mutations", async () => {
+      supabaseMock.queue("voltagent_memory_conversations", ok({ id: "conv-1" }));
+
+      await (adapter as any).deleteConversation("conv-1", { expectedUserId: "user-1" });
+
+      const deleteBuilder = supabaseMock.getHistory("voltagent_memory_conversations")[0];
+      expect(deleteBuilder.eq).toHaveBeenCalledWith("id", "conv-1");
+      expect(deleteBuilder.eq).toHaveBeenCalledWith("user_id", "user-1");
+    });
+
     it("should get conversations by resource ID", async () => {
       const dbRows = [
         {

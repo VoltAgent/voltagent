@@ -5,9 +5,14 @@
  */
 
 import type { ConnectionOptions } from "node:tls";
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  ConversationOwnershipMismatchError,
+} from "@voltagent/core";
 import type {
   Conversation,
+  ConversationMutationOptions,
   ConversationQueryOptions,
   ConversationStepRecord,
   CreateConversationInput,
@@ -1048,6 +1053,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
+    options?: ConversationMutationOptions,
   ): Promise<Conversation> {
     await this.initPromise;
 
@@ -1059,6 +1065,10 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       const conversation = await this.getConversation(id);
       if (!conversation) {
         throw new ConversationNotFoundError(id);
+      }
+
+      if (options?.expectedUserId !== undefined && conversation.userId !== options.expectedUserId) {
+        throw new ConversationOwnershipMismatchError(id);
       }
 
       const now = new Date().toISOString();
@@ -1085,14 +1095,27 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       params.push(id); // WHERE clause
+      const idParam = paramCount;
+      paramCount++;
+
+      let ownerClause = "";
+      if (options?.expectedUserId !== undefined) {
+        ownerClause = ` AND user_id = $${paramCount}`;
+        params.push(options.expectedUserId);
+        paramCount++;
+      }
 
       const result = await client.query(
         `UPDATE ${conversationsTable} 
          SET ${fieldsToUpdate.join(", ")} 
-         WHERE id = $${paramCount}
+         WHERE id = $${idParam}${ownerClause}
          RETURNING *`,
         params,
       );
+
+      if (options?.expectedUserId !== undefined && result.rows.length === 0) {
+        throw new ConversationOwnershipMismatchError(id);
+      }
 
       await client.query("COMMIT");
 
@@ -1117,14 +1140,28 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   /**
    * Delete a conversation
    */
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: string, options?: ConversationMutationOptions): Promise<void> {
     await this.initPromise;
 
     const client = await this.pool.connect();
     try {
       const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
-      await client.query(`DELETE FROM ${conversationsTable} WHERE id = $1`, [id]);
+      const params: any[] = [id];
+      let ownerClause = "";
+      if (options?.expectedUserId !== undefined) {
+        ownerClause = " AND user_id = $2";
+        params.push(options.expectedUserId);
+      }
+
+      const result = await client.query(
+        `DELETE FROM ${conversationsTable} WHERE id = $1${ownerClause} RETURNING id`,
+        params,
+      );
+
+      if (options?.expectedUserId !== undefined && result.rows.length === 0) {
+        throw new ConversationOwnershipMismatchError(id);
+      }
 
       this.log(`Deleted conversation ${id}`);
     } finally {
