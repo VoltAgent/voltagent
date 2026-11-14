@@ -5084,8 +5084,13 @@ export class Agent {
       Array.isArray(resolvedInput) &&
       (resolvedInput as any[])[0]?.parts
     ) {
-      resolvedInput = await this.memoryManager.reconcileApprovalInput(
+      const hydratedInput = await this.memoryManager.hydrateApprovalMessages(
         resolvedInput as UIMessage[],
+        resolvedMemory.userId,
+        resolvedMemory.conversationId,
+      );
+      resolvedInput = await this.memoryManager.reconcileApprovalInput(
+        hydratedInput,
         resolvedMemory.userId,
         resolvedMemory.conversationId,
       );

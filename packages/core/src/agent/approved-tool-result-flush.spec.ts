@@ -36,7 +36,6 @@ const makeAgent = (
   storage: InMemoryStorageAdapter,
   counters: { executions: number },
   stepDelayMs = 0,
-  contextLimit?: number,
 ) => {
   const model = new MockLanguageModelV3({
     modelId: "test-model",
@@ -78,7 +77,7 @@ const makeAgent = (
     name: "a",
     instructions: "x",
     model: model as any,
-    memory: new Memory({ storage, options: { contextLimit } }),
+    memory: new Memory({ storage }),
     tools: [
       createTool({
         name: "refund",
@@ -232,7 +231,8 @@ describe("approved tool result flush (issue #1538)", () => {
 it("persists interrupted approved results and retries successfully with contextLimit zero", async () => {
   const storage = new InMemoryStorageAdapter();
   const counters = { executions: 0 };
-  const agent = makeAgent(storage, counters, 200, 0);
+  const agent = makeAgent(storage, counters, 200);
+  const memory = { userId: "u", conversationId: "c", options: { contextLimit: 0 } };
   await agent.generateText("refund 50", { memory });
   const msg = await approveStoredCall(storage);
   const ac = new AbortController();

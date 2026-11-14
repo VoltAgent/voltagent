@@ -238,6 +238,40 @@ export class MemoryManager {
     }
   }
 
+  /** Load complete owners before an omitted-context approval seed can be upserted. */
+  async hydrateApprovalMessages(
+    input: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<UIMessage[]> {
+    if (
+      !this.conversationMemory ||
+      !input.some((message) =>
+        message.parts.some((part: any) => typeof part.approval?.approved === "boolean"),
+      )
+    )
+      return input;
+    const stored = await this.conversationMemory.getMessages(userId, conversationId);
+    const byId = new Map(stored.map((message) => [message.id, message]));
+    return input.map((message) => {
+      const owner = byId.get(message.id);
+      if (!owner) return message;
+      const incoming = new Map(
+        (message.parts as any[])
+          .filter((part) => part.toolCallId)
+          .map((part) => [part.toolCallId, part]),
+      );
+      const seen = new Set<string>();
+      const parts = owner.parts.map((part: any) => {
+        if (!part.toolCallId) return { ...part };
+        seen.add(part.toolCallId);
+        return { ...(incoming.get(part.toolCallId) ?? part) };
+      });
+      for (const [id, part] of incoming) if (!seen.has(id)) parts.push({ ...part });
+      return { ...owner, ...message, parts } as UIMessage;
+    });
+  }
+
   private applyOperationMetadata(message: UIMessage, context: OperationContext): UIMessage {
     const existingMetadata =
       typeof message.metadata === "object" && message.metadata !== null

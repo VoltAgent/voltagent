@@ -32,7 +32,7 @@ const usage = {
   },
 };
 
-const makeAgent = (storage: InMemoryStorageAdapter, contextLimit?: number) => {
+const makeAgent = (storage: InMemoryStorageAdapter) => {
   const model = new MockLanguageModelV3({
     modelId: "test-model",
     doGenerate: async ({ prompt }) => {
@@ -64,7 +64,7 @@ const makeAgent = (storage: InMemoryStorageAdapter, contextLimit?: number) => {
     name: "a",
     instructions: "x",
     model: model as any,
-    memory: new Memory({ storage, options: { contextLimit } }),
+    memory: new Memory({ storage }),
     tools: [
       createTool({
         name: "refund",
@@ -140,14 +140,31 @@ describe("needsApproval persistence (issue #1535)", () => {
 
 it("keeps approval evidence when memory context is omitted", async () => {
   const storage = new InMemoryStorageAdapter();
-  const agent = makeAgent(storage, 0);
+  const agent = makeAgent(storage);
+  const memory = { userId: "u", conversationId: "c", options: { contextLimit: 0 } };
   await agent.generateText("refund 50", { memory });
   const stored = await storage.getMessages("u", "c");
   const message = structuredClone(stored.at(-1)) as any;
   const part = message.parts.find((p: any) => p.type === "tool-refund");
+  message.parts.unshift({ type: "text", text: "preserve this text" });
+  message.parts.push({
+    type: "tool-other",
+    toolCallId: "other",
+    state: "output-available",
+    input: {},
+    output: "done",
+  });
+  await storage.addMessage(message, "u", "c");
   part.state = "approval-responded";
   part.approval.approved = true;
   await agent.generateText([message], { memory });
   const parts = await storedToolParts(storage);
   expect(parts[0]).toMatchObject({ state: "output-available", approval: { approved: true } });
+  const saved = (await storage.getMessages("u", "c")).find((m) => m.id === message.id);
+  expect(saved?.parts).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ type: "text", text: "preserve this text" }),
+      expect.objectContaining({ toolCallId: "other", output: "done" }),
+    ]),
+  );
 });
