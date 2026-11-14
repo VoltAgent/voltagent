@@ -80,16 +80,16 @@ Create a new VoltAgent project in seconds using the `create-voltagent-app` CLI t
 npm create voltagent-app@latest
 ```
 
-This command guides you through setup.
+This command guides you through choosing a model provider and server. Use Node.js 20 or newer.
 
 You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
 ```typescript
-import { VoltAgent, Agent, Memory } from "@voltagent/core";
-import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import "dotenv/config";
+import { VoltAgent, VoltOpsClient, Agent, Memory, VoltAgentObservability } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
 
@@ -99,16 +99,24 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Optional persistent memory (remove to use default in-memory)
+// Persistent memory and local observability
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  storage: new LibSQLMemoryAdapter({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
+});
+const observability = new VoltAgentObservability({
+  storage: new LibSQLObservabilityAdapter({
+    url: "file:./.voltagent/observability.db",
+  }),
 });
 
 // A simple, general-purpose agent for the project.
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory,
 });
@@ -123,10 +131,15 @@ new VoltAgent({
   },
   server: honoServer(),
   logger,
+  observability,
+  voltOpsClient: new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
+    secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
+  }),
 });
 ```
 
-Afterwards, navigate to your project and run:
+The CLI creates a `.env` file. Add your selected provider's API key there if you skipped that prompt. Then navigate to your project and run:
 
 ```bash
 npm run dev
