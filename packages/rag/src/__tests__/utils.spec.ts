@@ -14,6 +14,33 @@ describe("Tokenizer utils", () => {
 });
 
 describe("Text utils", () => {
+  it.each([
+    [
+      "Version 2.5 is out. It costs $3.99 today.",
+      ["Version 2.5 is out.", " It costs $3.99 today."],
+    ],
+    ["2.5", ["2.5"]],
+    ["2.5.", ["2.5."]],
+    ["Version 1.2.3 is ready! Next?", ["Version 1.2.3 is ready!", " Next?"]],
+    ["A -2.5 change. Another 0.25 change.", ["A -2.5 change.", " Another 0.25 change."]],
+    ["  Price $3.99.\nNext 2.50?  ", ["  Price $3.99.", "\nNext 2.50?"]],
+    ["foo.bar baz.qux end.", ["foo.", "bar baz.", "qux end."]],
+    ["One.Two!Three?", ["One.", "Two!", "Three?"]],
+    ["1. 2.", ["1.", " 2."]],
+    ["1...2!", ["1...", "2!"]],
+    ["word.2 ends.", ["word.", "2 ends."]],
+    ["No punctuation", ["No punctuation"]],
+    ["", []],
+    ["   ", []],
+  ])("preserves sentence boundaries in %j", (text, expected) => {
+    const segments = splitIntoSentences(text);
+    expect(segments.map((segment) => segment.text)).toEqual(expected);
+    for (const segment of segments) {
+      expect(text.slice(segment.start, segment.end)).toBe(segment.text);
+      expect(segment.tokens).toBe(segment.text.trim().split(/\s+/).length);
+    }
+  });
+
   it("splits into sentences with fallback for no punctuation", () => {
     const sentences = splitIntoSentences("No punctuation sentence");
     expect(sentences.length).toBe(1);

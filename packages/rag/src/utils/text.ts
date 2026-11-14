@@ -29,10 +29,16 @@ export function splitIntoSentences(
   const segments: Segment[] = [];
   const regex = new RegExp(SENTENCE_REGEX);
   for (let match = regex.exec(text); match !== null; match = regex.exec(text)) {
-    const sentence = match[0]?.trim() ?? "";
-    if (!sentence) continue;
     const start = match.index;
-    const end = match.index + (match[0]?.length ?? 0);
+    let end = match.index + (match[0]?.length ?? 0);
+    // A period between digits belongs to the same sentence (e.g. 2.5 or $3.99).
+    while (text[end - 1] === "." && /\d/.test(text[end - 2] ?? "") && /\d/.test(text[end] ?? "")) {
+      const continuation = regex.exec(text);
+      if (!continuation) break;
+      end = continuation.index + continuation[0].length;
+    }
+    const sentence = text.slice(start, end).trim();
+    if (!sentence) continue;
     segments.push({
       text: text.slice(start, end),
       start,

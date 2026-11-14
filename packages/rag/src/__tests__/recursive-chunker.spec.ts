@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { RecursiveChunker } from "../chunkers/recursive-chunker";
+import { whitespaceTokenizer } from "../utils/tokenizer";
 
 describe("RecursiveChunker", () => {
+  it("keeps decimals intact when recursively splitting a paragraph", () => {
+    const text = "Version 2.5 is out. It costs $3.99 today.";
+    const expected = ["Version 2.5 is out.", " It costs $3.99 today."];
+    const chunks = new RecursiveChunker(whitespaceTokenizer).chunk(text, { maxTokens: 4 });
+    expect(chunks.map((chunk) => chunk.content)).toEqual([
+      expected[0],
+      expected[0],
+      expected[1]?.trim(),
+    ]);
+  });
+
   it("splits long paragraphs then falls back to sentence/token chunking", () => {
     const text = [
       "Paragraph one short.",

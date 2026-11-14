@@ -1,7 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { SemanticChunker } from "../chunkers/semantic-chunker";
+import { whitespaceTokenizer } from "../utils/tokenizer";
 
 describe("SemanticChunker", () => {
+  it("passes complete decimal sentences to the semantic embedder", async () => {
+    const text = "Version 2.5 is out. It costs $3.99 today.";
+    const expected = ["Version 2.5 is out.", " It costs $3.99 today."];
+    const inputs: string[] = [];
+    const chunks = await new SemanticChunker(whitespaceTokenizer).chunk(text, {
+      maxTokens: 4,
+      embedder: {
+        embed: (value) => {
+          inputs.push(value);
+          return inputs.length === 1 ? [1, 0] : [0, 1];
+        },
+      },
+    });
+    expect(inputs).toEqual(expected.map((sentence) => sentence.trim()));
+    expect(chunks.map((chunk) => chunk.content)).toEqual(inputs);
+  });
+
   it("merges adjacent chunks when similarity threshold is met", async () => {
     const text =
       "Cats are great pets. Felines make wonderful companions. Quantum physics is unrelated to cats.";
