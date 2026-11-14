@@ -112,7 +112,7 @@ describe("needsApproval persistence (issue #1535)", () => {
 
     // Turn 3: a plain follow-up must not fail AI SDK UI message validation.
     const result = await agent.generateText("did it go through?", { memory });
-    expect(result.text).toBeDefined();
+    expect(result.text).toBe("Refund done.");
   }, 30000);
 
   it("keeps approval.approved === false when the client denies the tool", async () => {

@@ -150,6 +150,8 @@ export class ConversationBuffer {
           target = this.findToolPartByApprovalId(approval.id);
         }
         if (!target) continue;
+        const terminalStates = ["output-available", "output-error", "output-denied"];
+        if (terminalStates.includes(target.state)) continue;
 
         // Preserve the client's decision verbatim (id, approved, reason).
         target.approval = { ...(target.approval ?? {}), ...approval };
@@ -166,6 +168,10 @@ export class ConversationBuffer {
         ) {
           target.state = "approval-responded";
         }
+        const owner = indexed
+          ? this.messages[indexed.messageIndex]
+          : this.messages.find((candidate) => candidate.parts.includes(target));
+        if (owner) this.pendingMessageIds.add(owner.id);
       }
     }
   }
