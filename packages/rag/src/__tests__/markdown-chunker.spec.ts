@@ -91,7 +91,7 @@ describe("MarkdownChunker source offsets (#1542)", () => {
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks[0]?.start).toBe(md.indexOf("- alpha"));
     for (const chunk of chunks) {
-      expect(md.slice(chunk.start, chunk.end).trim()).toBe(chunk.content.trim());
+      expect(md.slice(chunk.start, chunk.end)).toBe(chunk.content);
     }
   });
 
@@ -107,4 +107,20 @@ describe("MarkdownChunker source offsets (#1542)", () => {
       }
     }
   });
+});
+
+it("keeps indented closing fences from swallowing later sections", () => {
+  const md = "# Code\n  ```ts\n  const x = 1;\n  ```\n\n## After\nVisible paragraph.";
+  const chunks = new MarkdownChunker(whitespaceTokenizer).chunk(md);
+  expect(chunks.at(-1)?.content).toBe("Visible paragraph.");
+  expect(chunks.at(-1)?.start).toBe(md.indexOf("Visible"));
+  expect(chunks.at(-1)?.metadata?.headingPath).toContain("After");
+});
+
+it("maps later token-split sentence groups, not the first group again", () => {
+  const md = "# H\nA. B. C.";
+  const chunks = new MarkdownChunker(whitespaceTokenizer).chunk(md, { maxTokens: 1 });
+  expect(chunks.at(-1)?.content).toBe("C.");
+  expect(chunks.at(-1)?.start).toBe(md.indexOf("C."));
+  for (const chunk of chunks) expect(md.slice(chunk.start, chunk.end)).toBe(chunk.content);
 });

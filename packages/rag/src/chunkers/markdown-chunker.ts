@@ -36,7 +36,12 @@ function parseBlocks(markdown: string): MdBlock[] {
     // One original UTF-16 source offset per extracted content code unit.
     const offsets: number[] = [];
     parts.forEach((part, index) => {
-      if (index > 0) offsets.push(part.start - 1);
+      if (index > 0) {
+        const previous = parts[index - 1];
+        // A joined separator represents the gap after the previous line,
+        // not the final character of the next line's stripped prefix.
+        offsets.push((previous?.start ?? 0) + (previous?.text.length ?? 0));
+      }
       for (let j = 0; j < part.text.length; j++) offsets.push(part.start + j);
     });
     return { content, offsets };
@@ -84,7 +89,7 @@ function parseBlocks(markdown: string): MdBlock[] {
       const language = codeFence[1]?.trim();
       const contentLines: { text: string; start: number }[] = [];
       i += 1;
-      while (i < lines.length && !/^```/.test(lines[i] ?? "")) {
+      while (i < lines.length && !/^```/.test(lines[i]?.trim() ?? "")) {
         const current = lines[i];
         if (current === undefined) break;
         contentLines.push({ text: current, start: lineStarts[i] ?? 0 });
