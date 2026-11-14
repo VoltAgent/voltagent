@@ -810,9 +810,21 @@ export class MemoryManager {
 
         await this.saveMessage(context, userMessage, userId, conversationId);
       } else if (Array.isArray(input)) {
-        // If input is UIMessage[], save all to memory
+        // If input is UIMessage[], save all to memory. Input is saved in the
+        // background, so it can land AFTER a tool result was already
+        // persisted for the same message (e.g. the approved-tool flush from
+        // #1538) - never let a resent input regress an executed tool part.
+        const storedMessages = await this.conversationMemory
+          .getMessages(userId, conversationId)
+          .catch(() => [] as UIMessage[]);
+        const storedById = new Map(storedMessages.map((m) => [m.id, m]));
         for (const message of input) {
-          await this.saveMessage(context, message, userId, conversationId);
+          await this.saveMessage(
+            context,
+            this.preserveExecutedToolParts(message, storedById),
+            userId,
+            conversationId,
+          );
         }
       }
     } catch (error) {
@@ -820,6 +832,47 @@ export class MemoryManager {
         error,
       });
     }
+  }
+
+  /**
+   * Returns the input message with any tool part preserved when the stored
+   * message already holds that part in a terminal output state
+   * (output-available / output-error / output-denied) and the incoming part
+   * does not. A stored terminal part is evidence the tool already executed;
+   * a resent approval response (client retry, queue redelivery) must not
+   * erase it. See https://github.com/VoltAgent/voltagent/issues/1538
+   */
+  private preserveExecutedToolParts(
+    message: UIMessage,
+    storedById: Map<string, UIMessage>,
+  ): UIMessage {
+    const stored = storedById.get(message.id);
+    if (!stored) return message;
+
+    const terminalStates = new Set(["output-available", "output-error", "output-denied"]);
+    const storedPartsByToolCallId = new Map<string, any>();
+    for (const part of (stored.parts ?? []) as any[]) {
+      if (typeof part?.type === "string" && part.type.startsWith("tool-") && part.toolCallId) {
+        storedPartsByToolCallId.set(part.toolCallId, part);
+      }
+    }
+    if (storedPartsByToolCallId.size === 0) return message;
+
+    let changed = false;
+    const parts = ((message.parts ?? []) as any[]).map((part) => {
+      if (typeof part?.type !== "string" || !part.type.startsWith("tool-") || !part.toolCallId) {
+        return part;
+      }
+      const storedPart = storedPartsByToolCallId.get(part.toolCallId);
+      if (!storedPart) return part;
+      if (terminalStates.has(storedPart.state) && !terminalStates.has(part.state)) {
+        changed = true;
+        return JSON.parse(JSON.stringify(storedPart));
+      }
+      return part;
+    });
+
+    return changed ? ({ ...message, parts } as UIMessage) : message;
   }
 
   /**

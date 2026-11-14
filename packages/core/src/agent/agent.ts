@@ -4296,6 +4296,72 @@ export class Agent {
     oc.output = undefined;
   }
 
+  /**
+   * Persists the result of an approved `needsApproval` tool as soon as its
+   * execution completes.
+   *
+   * The AI SDK executes approved tool calls before step 1, but their results
+   * normally reach memory only via step 1's `onStepFinish` - after the next
+   * model call. If the turn is interrupted in between (client disconnect,
+   * crash, provider error), memory keeps `approval-responded` with no output
+   * and a resent approval re-executes the tool without a new approval prompt.
+   * Flushing here narrows that window; it is not exactly-once semantics - a
+   * crash between the tool's own commit and this flush can still require
+   * tool-side idempotency. See https://github.com/VoltAgent/voltagent/issues/1538
+   */
+  private async persistApprovedToolResult(params: {
+    tool: BaseTool;
+    toolCallId: string;
+    output: unknown;
+    oc: OperationContext;
+  }): Promise<void> {
+    const { tool, toolCallId, output, oc } = params;
+    try {
+      // The SDK only invokes `execute` for a `needsApproval` tool after an
+      // explicit client approval, so reaching this point means the call was
+      // approved. Nothing is inferred from outputs or message state.
+      if (!tool.needsApproval) return;
+      if (!this.shouldPersistMemoryForContext(oc)) return;
+
+      const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
+      if (conversationPersistence.mode !== "step" || !conversationPersistence.flushOnToolResult) {
+        return;
+      }
+
+      const persistQueue = this.getMemoryPersistQueue(oc);
+      if (!persistQueue) return;
+
+      // Mirror the AI SDK's model-output wrapping (createToolModelOutput) so
+      // the early flush stores the same shape the step flush would.
+      const modelOutput = tool.toModelOutput
+        ? await tool.toModelOutput({ output: output as never })
+        : typeof output === "string"
+          ? { type: "text" as const, value: output }
+          : { type: "json" as const, value: (output === undefined ? null : output) as any };
+
+      const buffer = this.getConversationBuffer(oc);
+      buffer.addModelMessages(
+        [
+          {
+            role: "tool",
+            content: [
+              { type: "tool-result", toolCallId, toolName: tool.name, output: modelOutput },
+            ],
+          } as ModelMessage,
+        ],
+        "response",
+      );
+      await persistQueue.flush(buffer, oc);
+    } catch (error) {
+      oc.logger.debug("Failed to persist approved tool result", {
+        error,
+        toolCallId,
+        conversationId: oc.conversationId,
+        userId: oc.userId,
+      });
+    }
+  }
+
   private getConversationBuffer(oc: OperationContext): ConversationBuffer {
     let buffer = oc.systemContext.get(BUFFER_CONTEXT_KEY) as ConversationBuffer | undefined;
     if (!buffer) {
@@ -5256,6 +5322,53 @@ export class Agent {
             .map((message) => message.id)
             .filter((id): id is string => typeof id === "string" && id.trim().length > 0),
         );
+
+        // A stored tool part in a terminal output state is evidence the tool
+        // already executed. When the client resends an older version of the
+        // same message (e.g. an approval retry after an interrupted turn),
+        // keep the executed part so the SDK does not re-run the tool without
+        // a new approval prompt. See
+        // https://github.com/VoltAgent/voltagent/issues/1538
+        const terminalToolStates = new Set(["output-available", "output-error", "output-denied"]);
+        const storedTerminalParts = new Map<string, Map<string, any>>();
+        for (const message of messages) {
+          if (!idsToReplace.has(message.id)) continue;
+          for (const part of (message.parts ?? []) as any[]) {
+            if (
+              typeof part?.type === "string" &&
+              part.type.startsWith("tool-") &&
+              part.toolCallId &&
+              terminalToolStates.has(part.state)
+            ) {
+              let byToolCallId = storedTerminalParts.get(message.id);
+              if (!byToolCallId) {
+                byToolCallId = new Map();
+                storedTerminalParts.set(message.id, byToolCallId);
+              }
+              byToolCallId.set(part.toolCallId, part);
+            }
+          }
+        }
+        if (storedTerminalParts.size > 0) {
+          for (const inputMessage of inputMessages) {
+            const storedParts = storedTerminalParts.get(inputMessage.id);
+            if (!storedParts) continue;
+            inputMessage.parts = ((inputMessage.parts ?? []) as any[]).map((part) => {
+              if (
+                typeof part?.type === "string" &&
+                part.type.startsWith("tool-") &&
+                part.toolCallId &&
+                !terminalToolStates.has(part.state)
+              ) {
+                const storedPart = storedParts.get(part.toolCallId);
+                if (storedPart) {
+                  return JSON.parse(JSON.stringify(storedPart));
+                }
+              }
+              return part;
+            });
+          }
+        }
 
         if (idsToReplace.size > 0) {
           for (let index = messages.length - 1; index >= 0; index--) {
@@ -6560,6 +6673,8 @@ export class Agent {
       const handleToolSuccess = async (_result: any, validatedResult: any) => {
         const finalOutput = await resolveToolEndOutput(validatedResult);
         spanOutcome = { status: "completed", output: finalOutput };
+
+        await this.persistApprovedToolResult({ tool, toolCallId, output: finalOutput, oc });
 
         return finalOutput;
       };
