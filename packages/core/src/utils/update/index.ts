@@ -32,6 +32,12 @@ export type PackageUpdateInfo = {
  */
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
 
+const NPM_PACKAGE_NAME_REGEX =
+  /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+
+const isValidPackageName = (packageName: string): boolean =>
+  NPM_PACKAGE_NAME_REGEX.test(packageName);
+
 /**
  * Detects the package manager being used in the project
  */
@@ -334,7 +340,15 @@ export const updateAllPackages = async (
     // 3. Prepare the package list for updating
     const packagesToUpdate = updateCheckResult.updates
       .filter((pkg) => pkg.type !== "latest")
+      .filter((pkg) => isValidPackageName(pkg.name))
       .map((pkg) => `${pkg.name}@latest`);
+
+    if (packagesToUpdate.length === 0) {
+      return {
+        success: false,
+        message: "No valid packages available for updating",
+      };
+    }
 
     const logger = new LoggerProxy({ component: "update-checker" });
     logger.info(`Updating ${packagesToUpdate.length} packages in ${rootDir}`);
@@ -410,10 +424,8 @@ export const updateSinglePackage = async (
     }
 
     // Command injection protection - only allow valid NPM package names
-    const isValidPackageName = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
-      packageName,
-    );
-    if (!isValidPackageName) {
+    const isPackageNameValid = isValidPackageName(packageName);
+    if (!isPackageNameValid) {
       return {
         success: false,
         message: `Invalid package name: ${packageName}`,
