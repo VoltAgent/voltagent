@@ -5075,6 +5075,11 @@ export class Agent {
                 },
               );
               buffer.ingestUIMessages(memMessages, true);
+              // Apply approval decisions carried by the input so buffered
+              // approval-requested parts don't keep a stale `approval`.
+              if (Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts) {
+                buffer.applyApprovalResponses(resolvedInput as UIMessage[]);
+              }
               return memMessages;
             }
             // Regular memory context
@@ -5102,6 +5107,14 @@ export class Agent {
             }
 
             buffer.ingestUIMessages(result.messages, true);
+
+            // Apply approval decisions carried by the input so buffered
+            // approval-requested parts don't keep a stale `approval`
+            // (otherwise a later `output-available` part fails AI SDK
+            // validation and breaks every subsequent turn).
+            if (Array.isArray(inputForMemory)) {
+              buffer.applyApprovalResponses(inputForMemory);
+            }
 
             if (
               shouldPersistMemory &&
