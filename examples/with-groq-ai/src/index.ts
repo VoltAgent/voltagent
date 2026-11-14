@@ -12,7 +12,7 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant that answers questions",
-  model: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  model: "groq/openai/gpt-oss-20b",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",
