@@ -134,8 +134,9 @@ export class ConversationBuffer {
    */
   applyApprovalResponses(messages: ReadonlyArray<UIMessage>): void {
     for (const message of messages) {
-      if (!Array.isArray(message.parts)) continue;
+      if (message.role !== "assistant" || !Array.isArray(message.parts)) continue;
       for (const part of message.parts) {
+        if (!part.type.startsWith("tool-") && part.type !== "dynamic-tool") continue;
         const approval = (part as any)?.approval as
           | { id?: string; approved?: boolean; reason?: string }
           | undefined;
@@ -149,7 +150,20 @@ export class ConversationBuffer {
         } else if (approval.id) {
           target = this.findToolPartByApprovalId(approval.id);
         }
-        if (!target) continue;
+        if (!target) {
+          // Semantic/limited memory may omit the original call. Seed only
+          // the explicit input tool part, preserving its client decision.
+          const owner = this.messages.find((candidate) => candidate.id === message.id);
+          if (owner) {
+            owner.parts.push({ ...part });
+            this.registerToolParts(this.messages.indexOf(owner));
+            this.pendingMessageIds.add(owner.id);
+          } else {
+            this.appendNewMessage({ ...message, parts: [{ ...part }] }, "memory");
+            this.pendingMessageIds.add(message.id);
+          }
+          continue;
+        }
         const terminalStates = ["output-available", "output-error", "output-denied"];
         if (terminalStates.includes(target.state)) continue;
 

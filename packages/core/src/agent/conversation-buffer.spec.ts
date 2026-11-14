@@ -331,3 +331,58 @@ describe("approval response persistence", () => {
     expect(buffer.drainPendingMessages()).toEqual([]);
   });
 });
+
+describe("approval responses with omitted memory context", () => {
+  it("seeds an explicit approval part so a tool-only result can merge", () => {
+    const buffer = new ConversationBuffer();
+    const response = {
+      id: "omitted",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-refund",
+          toolCallId: "call-1",
+          input: {},
+          state: "approval-responded",
+          approval: { id: "a", approved: true },
+        },
+      ],
+    } as unknown as UIMessage;
+    buffer.applyApprovalResponses([response]);
+    buffer.addModelMessages([
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "call-1",
+            toolName: "refund",
+            output: { type: "json", value: "ok" },
+          },
+        ],
+      },
+    ]);
+    expect(buffer.drainPendingMessages()).toMatchObject([
+      { id: "omitted", parts: [{ state: "output-available", approval: { approved: true } }] },
+    ]);
+  });
+  it("does not invent a decision when omitted input has no boolean approval", () => {
+    const buffer = new ConversationBuffer();
+    buffer.applyApprovalResponses([
+      {
+        id: "omitted",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-refund",
+            toolCallId: "c",
+            state: "approval-requested",
+            input: {},
+            approval: { id: "a" },
+          },
+        ],
+      } as unknown as UIMessage,
+    ]);
+    expect(buffer.getAllMessages()).toEqual([]);
+  });
+});
