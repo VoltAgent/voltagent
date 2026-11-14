@@ -129,6 +129,7 @@ export async function runExperiment<
   const concurrency = Math.max(1, Math.trunc(options.concurrency ?? 1) || 1);
   let indexCounter = 0;
   const active = new Set<Promise<void>>();
+  const taskFailure = new AbortController();
 
   try {
     if (voltOpsRun) {
@@ -136,7 +137,10 @@ export async function runExperiment<
       await voltOpsRun.prepare();
     }
 
-    for await (const item of datasetStream.items as AsyncIterable<Item>) {
+    for await (const item of observeTaskFailures(
+      datasetStream.items as AsyncIterable<Item>,
+      taskFailure.signal,
+    )) {
       ensureNotAborted(options.signal);
       const currentIndex = indexCounter++;
 
@@ -172,9 +176,15 @@ export async function runExperiment<
       })();
 
       active.add(task);
-      void task.finally(() => {
-        active.delete(task);
-      });
+      void task.then(
+        () => {
+          active.delete(task);
+        },
+        (error: unknown) => {
+          // Keep failed tasks observable, and interrupt a pending dataset read.
+          taskFailure.abort({ error });
+        },
+      );
 
       if (active.size >= concurrency) {
         await Promise.race(active);
@@ -204,6 +214,62 @@ export async function runExperiment<
   } catch (error) {
     await voltOpsRun?.fail(error);
     throw error;
+  }
+}
+
+async function* observeTaskFailures<Item>(
+  items: AsyncIterable<Item>,
+  failureSignal: AbortSignal,
+): AsyncGenerator<Item> {
+  const iterator = items[Symbol.asyncIterator]();
+  let finished = false;
+  let readFailed = false;
+  const failureReason = () => (failureSignal.reason as { error: unknown }).error;
+  const readNext = async () => {
+    try {
+      return await iterator.next();
+    } catch (error) {
+      readFailed = true;
+      throw error;
+    }
+  };
+
+  try {
+    while (true) {
+      if (failureSignal.aborted) {
+        throw failureReason();
+      }
+      let onFailure = () => {};
+      const failure = new Promise<never>((_, reject) => {
+        onFailure = () => reject(failureReason());
+        failureSignal.addEventListener("abort", onFailure, { once: true });
+      });
+      let next: IteratorResult<Item>;
+      try {
+        next = await Promise.race([readNext(), failure]);
+      } finally {
+        failureSignal.removeEventListener("abort", onFailure);
+      }
+      if (failureSignal.aborted) {
+        throw failureReason();
+      }
+      if (next.done) {
+        finished = true;
+        return;
+      }
+      yield next.value;
+    }
+  } finally {
+    if (!finished && !readFailed && iterator.return) {
+      const closing = Promise.resolve().then(() => iterator.return?.());
+      if (failureSignal.aborted) {
+        // An async generator's return can wait for its pending next call. Request
+        // cleanup, but do not let a stalled source hide the original task error.
+        void closing.catch(() => undefined);
+      } else {
+        await closing;
+      }
+    }
   }
 }
 
