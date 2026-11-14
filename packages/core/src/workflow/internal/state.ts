@@ -32,7 +32,7 @@ export type WorkflowState<INPUT, RESULT> = {
   /** the initial input data to the workflow */
   input: InternalExtractWorkflowInputData<INPUT>;
   /** current data being processed */
-  data: DangerouslyAllowAny;
+  data: unknown;
   /** shared workflow state across steps */
   workflowState: WorkflowStateStore;
   /** the result of workflow execution, null until execution is complete */
