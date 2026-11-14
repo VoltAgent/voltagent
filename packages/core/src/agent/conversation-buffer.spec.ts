@@ -285,3 +285,104 @@ describe("ConversationBuffer", () => {
     expect(pending[0]?.id).toBe("user-1");
   });
 });
+
+describe("approval response persistence", () => {
+  const stored = {
+    id: "approval-message",
+    role: "assistant",
+    parts: [
+      {
+        type: "tool-refund",
+        toolCallId: "call-refund",
+        state: "approval-requested",
+        input: { amount: 50 },
+        approval: { id: "approval-1" },
+      },
+    ],
+  } as unknown as UIMessage;
+
+  it.each([true, false])(
+    "marks an explicit decision %s pending even without a result merge",
+    (approved) => {
+      const buffer = new ConversationBuffer([stored]);
+      const response = structuredClone(stored) as any;
+      response.parts[0].state = "approval-responded";
+      response.parts[0].approval.approved = approved;
+      buffer.applyApprovalResponses([response]);
+      expect(buffer.drainPendingMessages()).toMatchObject([
+        { id: stored.id, parts: [{ state: "approval-responded", approval: { approved } }] },
+      ]);
+    },
+  );
+
+  it("does not replace terminal approval evidence with a conflicting stale decision", () => {
+    const terminal = structuredClone(stored) as any;
+    Object.assign(terminal.parts[0], {
+      state: "output-available",
+      output: { ok: true },
+      approval: { id: "approval-1", approved: true },
+    });
+    const buffer = new ConversationBuffer([terminal]);
+    const stale = structuredClone(stored) as any;
+    stale.parts[0].approval.approved = false;
+    stale.parts[0].state = "approval-responded";
+    buffer.applyApprovalResponses([stale]);
+    expect((buffer.getAllMessages()[0] as any).parts[0].approval.approved).toBe(true);
+    expect(buffer.drainPendingMessages()).toEqual([]);
+  });
+});
+
+describe("approval responses with omitted memory context", () => {
+  it("seeds an explicit approval part so a tool-only result can merge", () => {
+    const buffer = new ConversationBuffer();
+    const response = {
+      id: "omitted",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-refund",
+          toolCallId: "call-1",
+          input: {},
+          state: "approval-responded",
+          approval: { id: "a", approved: true },
+        },
+      ],
+    } as unknown as UIMessage;
+    buffer.applyApprovalResponses([response]);
+    buffer.addModelMessages([
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "call-1",
+            toolName: "refund",
+            output: { type: "json", value: "ok" },
+          },
+        ],
+      },
+    ]);
+    expect(buffer.drainPendingMessages()).toMatchObject([
+      { id: "omitted", parts: [{ state: "output-available", approval: { approved: true } }] },
+    ]);
+  });
+  it("does not invent a decision when omitted input has no boolean approval", () => {
+    const buffer = new ConversationBuffer();
+    buffer.applyApprovalResponses([
+      {
+        id: "omitted",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-refund",
+            toolCallId: "c",
+            state: "approval-requested",
+            input: {},
+            approval: { id: "a" },
+          },
+        ],
+      } as unknown as UIMessage,
+    ]);
+    expect(buffer.getAllMessages()).toEqual([]);
+  });
+});
