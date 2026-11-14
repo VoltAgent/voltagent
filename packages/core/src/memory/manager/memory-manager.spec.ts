@@ -443,9 +443,17 @@ describe("approval input reconciliation ordering", () => {
     });
     const savingInput = (manager as any).saveCurrentInput(context, [input()], "u", "c");
     await started;
-    const savingResult = manager.saveMessage(context, terminal(), "u", "c");
-    release();
-    await Promise.all([savingInput, savingResult]);
+    let resultFinished = false;
+    const savingResult = manager.saveMessage(context, terminal(), "u", "c").then(() => {
+      resultFinished = true;
+    });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(resultFinished).toBe(false);
+    } finally {
+      release();
+      await Promise.all([savingInput, savingResult]);
+    }
     expect((await memory.getMessages("u", "c"))[0]).toMatchObject({
       parts: [{ state: "output-available" }],
     });
