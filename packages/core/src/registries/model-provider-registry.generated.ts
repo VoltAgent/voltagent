@@ -374,6 +374,14 @@ export const MODEL_PROVIDER_REGISTRY: Record<string, ModelProviderRegistryEntry>
     env: ["NANO_GPT_API_KEY"],
     doc: "https://docs.nano-gpt.com",
   },
+  nearai: {
+    id: "nearai",
+    name: "NEAR AI Cloud",
+    npm: "@ai-sdk/openai-compatible",
+    api: "https://cloud-api.near.ai/v1",
+    env: ["NEARAI_API_KEY"],
+    doc: "https://docs.near.ai/",
+  },
   nebius: {
     id: "nebius",
     name: "Nebius Token Factory",
