@@ -87,6 +87,10 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
           ];
         }
 
+        // The sentence chunk's content may omit leading whitespace. Token
+        // offsets are relative to that content, not to the whole paragraph.
+        const groupStart = paragraph.text.indexOf(chunk.content, chunk.start);
+        const contentStart = groupStart >= 0 ? groupStart : chunk.start;
         // Fallback to token chunking for oversized sentence group
         return this.tokenChunker
           .chunk(chunk.content, {
@@ -101,8 +105,8 @@ export class RecursiveChunker implements Chunker<RecursiveChunkerOptions> {
           .map((tokenChunk, idx) => ({
             ...tokenChunk,
             id: `recursive-${chunks.length + idx}`,
-            start: paragraph.start + (tokenChunk.start ?? 0),
-            end: paragraph.start + (tokenChunk.end ?? 0),
+            start: paragraph.start + contentStart + (tokenChunk.start ?? 0),
+            end: paragraph.start + contentStart + (tokenChunk.end ?? 0),
             metadata: {
               ...tokenChunk.metadata,
               ...buildMetadata({
