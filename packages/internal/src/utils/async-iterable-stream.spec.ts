@@ -31,4 +31,26 @@ describe("createAsyncIterableStream()", () => {
 
     expect(await convertReadableStreamToArray(asyncIterableStream)).toEqual(testData);
   });
+
+  it("should cancel the source stream when async iteration stops early", async () => {
+    let cancelled = false;
+    const source = new ReadableStream<number>({
+      start(controller) {
+        controller.enqueue(1);
+        controller.enqueue(2);
+        controller.enqueue(3);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+
+    const asyncIterableStream = createAsyncIterableStream(source);
+
+    for await (const _chunk of asyncIterableStream) {
+      break; // stop after the first chunk
+    }
+
+    expect(cancelled).toBe(true);
+  });
 });
