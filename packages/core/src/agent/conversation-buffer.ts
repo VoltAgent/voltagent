@@ -159,13 +159,14 @@ export class ConversationBuffer {
             this.registerToolParts(this.messages.indexOf(owner));
             this.pendingMessageIds.add(owner.id);
           } else {
-            this.appendNewMessage({ ...message, parts: [{ ...part }] }, "memory");
+            this.appendNewMessage(this.cloneMessage(message), "memory");
             this.pendingMessageIds.add(message.id);
           }
           continue;
         }
         const terminalStates = ["output-available", "output-error", "output-denied"];
-        if (terminalStates.includes(target.state)) continue;
+        if (terminalStates.includes(target.state) && typeof target.approval?.approved === "boolean")
+          continue;
 
         // Preserve the client's decision verbatim (id, approved, reason).
         target.approval = { ...(target.approval ?? {}), ...approval };

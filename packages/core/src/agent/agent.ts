@@ -5005,10 +5005,22 @@ export class Agent {
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
-    const resolvedInput = await this.validateIncomingUIMessages(input, oc);
+    let resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
+    if (
+      resolvedMemory.userId &&
+      resolvedMemory.conversationId &&
+      Array.isArray(resolvedInput) &&
+      (resolvedInput as any[])[0]?.parts
+    ) {
+      resolvedInput = await this.memoryManager.hydrateApprovalMessages(
+        resolvedInput as UIMessage[],
+        resolvedMemory.userId,
+        resolvedMemory.conversationId,
+      );
+    }
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
     const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
     const shouldPersistInputImmediately =

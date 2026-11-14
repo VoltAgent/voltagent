@@ -386,3 +386,28 @@ describe("approval responses with omitted memory context", () => {
     expect(buffer.getAllMessages()).toEqual([]);
   });
 });
+
+it("repairs a terminal part missing its explicit decision without changing the terminal state", () => {
+  const message = {
+    id: "legacy",
+    role: "assistant",
+    parts: [
+      {
+        type: "tool-refund",
+        toolCallId: "c",
+        state: "output-available",
+        input: {},
+        output: "ok",
+        approval: { id: "a" },
+      },
+    ],
+  } as unknown as UIMessage;
+  const buffer = new ConversationBuffer([message]);
+  const input = structuredClone(message) as any;
+  input.parts[0].state = "approval-responded";
+  input.parts[0].approval.approved = true;
+  buffer.applyApprovalResponses([input]);
+  expect(buffer.drainPendingMessages()).toMatchObject([
+    { parts: [{ state: "output-available", approval: { approved: true } }] },
+  ]);
+});
