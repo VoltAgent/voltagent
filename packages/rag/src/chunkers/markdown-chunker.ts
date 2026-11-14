@@ -1,6 +1,6 @@
 import type { Chunk, ChunkMetadataInput, Chunker, Tokenizer } from "../types";
 import { buildMetadata } from "../utils/metadata";
-import { normalizeText } from "../utils/text";
+import { buildLineMap, positionForRange } from "../utils/position";
 import { defaultTokenizer } from "../utils/tokenizer";
 import { CodeChunker } from "./code-chunker";
 import { RecursiveChunker } from "./recursive-chunker";
@@ -13,8 +13,8 @@ export type MarkdownChunkerOptions = {
 
 type MdBlock =
   | { type: "heading"; level: number; text: string }
-  | { type: "code"; language?: string; content: string }
-  | { type: "list" | "blockquote" | "paragraph"; content: string };
+  | { type: "code"; language?: string; content: string; offsets: number[] }
+  | { type: "list" | "blockquote" | "paragraph"; content: string; offsets: number[] };
 
 type Section = {
   headingPath: string[];
@@ -23,13 +23,40 @@ type Section = {
 
 function parseBlocks(markdown: string): MdBlock[] {
   const blocks: MdBlock[] = [];
-  const lines = markdown.split(/\r?\n/);
+  const lines = markdown.split(/\r\n|\r|\n/);
+  const lineStarts: number[] = [];
+  let lineStart = 0;
+  for (const line of lines) {
+    lineStarts.push(lineStart);
+    const newlineLength = markdown.startsWith("\r\n", lineStart + line.length) ? 2 : 1;
+    lineStart += line.length + newlineLength;
+  }
+  const mappedContent = (parts: { text: string; start: number }[], separator: string) => {
+    const content = parts.map((part) => part.text).join(separator);
+    // One original UTF-16 source offset per extracted content code unit.
+    const offsets: number[] = [];
+    parts.forEach((part, index) => {
+      if (index > 0) offsets.push(part.start - 1);
+      for (let j = 0; j < part.text.length; j++) offsets.push(part.start + j);
+    });
+    return { content, offsets };
+  };
+  const trimmedLine = (index: number, prefix?: RegExp) => {
+    const raw = lines[index] ?? "";
+    const withoutPrefix = prefix ? raw.replace(prefix, "") : raw;
+    const text = withoutPrefix.trim();
+    return {
+      text,
+      start:
+        (lineStarts[index] ?? 0) + raw.length - withoutPrefix.length + withoutPrefix.indexOf(text),
+    };
+  };
   let i = 0;
-  let buffer: string[] = [];
+  let buffer: { text: string; start: number }[] = [];
   const flushParagraph = () => {
-    const text = buffer.join(" ").trim();
-    if (text) {
-      blocks.push({ type: "paragraph", content: text });
+    const mapped = mappedContent(buffer, " ");
+    if (mapped.content) {
+      blocks.push({ type: "paragraph", ...mapped });
     }
     buffer = [];
   };
@@ -55,38 +82,38 @@ function parseBlocks(markdown: string): MdBlock[] {
     if (codeFence) {
       flushParagraph();
       const language = codeFence[1]?.trim();
-      const contentLines: string[] = [];
+      const contentLines: { text: string; start: number }[] = [];
       i += 1;
       while (i < lines.length && !/^```/.test(lines[i] ?? "")) {
         const current = lines[i];
         if (current === undefined) break;
-        contentLines.push(current);
+        contentLines.push({ text: current, start: lineStarts[i] ?? 0 });
         i += 1;
       }
-      blocks.push({ type: "code", language, content: contentLines.join("\n") });
+      blocks.push({ type: "code", language, ...mappedContent(contentLines, "\n") });
       i += 1;
       continue;
     }
 
     if (/^>/.test(trimmed)) {
       flushParagraph();
-      const quoteLines: string[] = [];
+      const quoteLines: { text: string; start: number }[] = [];
       while (i < lines.length && /^>/.test(lines[i]?.trim() ?? "")) {
-        quoteLines.push((lines[i] ?? "").replace(/^>\s?/, ""));
+        quoteLines.push(trimmedLine(i, /^\s*>\s?/));
         i += 1;
       }
-      blocks.push({ type: "blockquote", content: quoteLines.join(" ").trim() });
+      blocks.push({ type: "blockquote", ...mappedContent(quoteLines, " ") });
       continue;
     }
 
     if (/^(-|\*|\d+\.)\s+/.test(trimmed)) {
       flushParagraph();
-      const listLines: string[] = [];
+      const listLines: { text: string; start: number }[] = [];
       while (i < lines.length && /^(-|\*|\d+\.)\s+/.test(lines[i]?.trim() ?? "")) {
-        listLines.push((lines[i] ?? "").replace(/^(-|\*|\d+\.)\s+/, ""));
+        listLines.push(trimmedLine(i, /^\s*(-|\*|\d+\.)\s+/));
         i += 1;
       }
-      blocks.push({ type: "list", content: listLines.join(" ").trim() });
+      blocks.push({ type: "list", ...mappedContent(listLines, " ") });
       continue;
     }
 
@@ -96,7 +123,7 @@ function parseBlocks(markdown: string): MdBlock[] {
       continue;
     }
 
-    buffer.push(trimmed);
+    buffer.push(trimmedLine(i));
     i += 1;
   }
   flushParagraph();
@@ -147,8 +174,10 @@ export class MarkdownChunker implements Chunker<MarkdownChunkerOptions> {
     const label = options?.label ?? "markdown";
     const baseMeta = options;
 
-    const normalized = normalizeText(markdown);
-    const sections = toSections(normalized);
+    // Parse the original source: normalizing the whole document first changes
+    // offsets (CRLF, indentation, leading whitespace, Unicode) before we can map them.
+    const sections = toSections(markdown);
+    const lineMap = buildLineMap(markdown);
     const chunks: Chunk[] = [];
     let blockIndex = 0;
 
@@ -179,8 +208,16 @@ export class MarkdownChunker implements Chunker<MarkdownChunkerOptions> {
         }
 
         produced.forEach((chunk, idx) => {
+          // Chunk offsets refer to the extracted block, whose newlines/markers
+          // may have been removed. Map both boundaries back to the source.
+          // A span crossing lines may include source markers/newlines that
+          // are intentionally absent from the extracted chunk content.
+          const start = block.offsets[chunk.start] ?? 0;
+          const end = (block.offsets[chunk.end - 1] ?? start - 1) + 1;
           chunks.push({
             ...chunk,
+            start,
+            end,
             id: `${label}-${index}-${bIdx}-${idx}`,
             metadata: {
               ...chunk.metadata,
@@ -190,6 +227,7 @@ export class MarkdownChunker implements Chunker<MarkdownChunkerOptions> {
                 path: section.headingPath,
                 base: baseMeta,
                 extra: {
+                  ...positionForRange(start, end, lineMap),
                   headingPath: section.headingPath,
                   blockType: block.type,
                   blockIndex,
