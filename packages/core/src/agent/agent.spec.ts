@@ -1542,6 +1542,50 @@ Use pandas and summarize findings.`.split("\n"),
       operationContext.traceContext.end("completed");
     });
 
+    it("calls the tool-level onEnd hook once when a tool throws", async () => {
+      const toolOnEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          throw new Error("Tool failure");
+        },
+        hooks: {
+          onEnd: toolOnEnd,
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      await executeFactory(failingTool)({});
+
+      expect(toolOnEnd).toHaveBeenCalledTimes(1);
+      expect(toolOnEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          args: {},
+          output: undefined,
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
     it("allows onToolError to override serialized error output", async () => {
       const onToolError = vi.fn().mockResolvedValue({
         output: {
