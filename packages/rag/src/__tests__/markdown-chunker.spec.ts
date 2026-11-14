@@ -124,3 +124,15 @@ it("maps later token-split sentence groups, not the first group again", () => {
   expect(chunks.at(-1)?.start).toBe(md.indexOf("C."));
   for (const chunk of chunks) expect(md.slice(chunk.start, chunk.end)).toBe(chunk.content);
 });
+
+it("does not discard a fence-like code line with an info suffix or excessive indentation", () => {
+  const md =
+    "# Code\n```ts\n  ```literal\n# not a heading\n    ```\nconst x = 1;\n```\n\n## After\nVisible.";
+  const chunks = new MarkdownChunker(whitespaceTokenizer).chunk(md, { maxTokens: 50 });
+  expect(chunks.at(-1)?.metadata?.headingPath).toEqual(["Code", "After"]);
+  const code = chunks.filter((chunk) => chunk.metadata?.blockType === "code");
+  expect(code.map((chunk) => chunk.content).join("\n")).toContain("# not a heading");
+  expect(
+    chunks.filter((chunk) => chunk.metadata?.blockType !== "code").map((chunk) => chunk.content),
+  ).toEqual(["Visible."]);
+});

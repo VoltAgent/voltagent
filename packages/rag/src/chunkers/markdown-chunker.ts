@@ -89,7 +89,7 @@ function parseBlocks(markdown: string): MdBlock[] {
       const language = codeFence[1]?.trim();
       const contentLines: { text: string; start: number }[] = [];
       i += 1;
-      while (i < lines.length && !/^```/.test(lines[i]?.trim() ?? "")) {
+      while (i < lines.length && !/^ {0,3}`{3,}[\t ]*$/.test(lines[i] ?? "")) {
         const current = lines[i];
         if (current === undefined) break;
         contentLines.push({ text: current, start: lineStarts[i] ?? 0 });
