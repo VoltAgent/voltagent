@@ -1,9 +1,11 @@
+import { deepClone } from "@voltagent/internal/utils";
 import { cosineSimilarity } from "../../utils/vector-math";
 import type { SearchResult, VectorAdapter, VectorItem } from "./types";
 
 /**
  * Lightweight in-memory vector database adapter
  * Suitable for development, testing, and small datasets (< 10k vectors)
+ * Metadata is copied as data; custom class prototypes and prototype methods are not retained.
  */
 export class InMemoryVectorAdapter implements VectorAdapter {
   private vectors: Map<string, VectorItem>;
@@ -26,7 +28,7 @@ export class InMemoryVectorAdapter implements VectorAdapter {
     this.vectors.set(id, {
       id,
       vector: [...vector], // Clone to prevent external modifications
-      metadata: metadata ? { ...metadata } : undefined,
+      metadata: metadata ? deepClone(metadata) : undefined,
     });
   }
 
@@ -83,7 +85,11 @@ export class InMemoryVectorAdapter implements VectorAdapter {
     // Sort by score (descending) and limit results
     results.sort((a, b) => b.score - a.score);
 
-    return results.slice(0, limit);
+    return results.slice(0, limit).map((item) => ({
+      ...item,
+      vector: [...item.vector],
+      metadata: item.metadata ? deepClone(item.metadata) : undefined,
+    }));
   }
 
   async delete(id: string): Promise<void> {
@@ -115,7 +121,7 @@ export class InMemoryVectorAdapter implements VectorAdapter {
     return {
       ...item,
       vector: [...item.vector],
-      metadata: item.metadata ? { ...item.metadata } : undefined,
+      metadata: item.metadata ? deepClone(item.metadata) : undefined,
     };
   }
 
