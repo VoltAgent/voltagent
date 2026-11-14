@@ -328,6 +328,7 @@ const sidebars: SidebarsConfig = {
         "integrations/nextjs",
         "integrations/chat-sdk",
         "integrations/vercel-ai",
+        "integrations/taskmarket",
       ],
     },
 
