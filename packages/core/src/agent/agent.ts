@@ -5143,8 +5143,11 @@ export class Agent {
               buffer.ingestUIMessages(memMessages, true);
               // Apply approval decisions carried by the input so buffered
               // approval-requested parts don't keep a stale `approval`.
-              if (Array.isArray(resolvedInput) && (resolvedInput as any[])[0]?.parts) {
-                buffer.applyApprovalResponses(resolvedInput as UIMessage[]);
+              if (Array.isArray(resolvedInput)) {
+                const approvalInput = (resolvedInput as any[])[0]?.parts
+                  ? (resolvedInput as UIMessage[])
+                  : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
+                buffer.applyApprovalResponses(approvalInput);
               }
               return memMessages;
             }

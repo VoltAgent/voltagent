@@ -32,7 +32,7 @@ const usage = {
   },
 };
 
-const makeAgent = (storage: InMemoryStorageAdapter) => {
+const makeAgent = (storage: InMemoryStorageAdapter, contextLimit?: number) => {
   const model = new MockLanguageModelV3({
     modelId: "test-model",
     doGenerate: async ({ prompt }) => {
@@ -64,7 +64,7 @@ const makeAgent = (storage: InMemoryStorageAdapter) => {
     name: "a",
     instructions: "x",
     model: model as any,
-    memory: new Memory({ storage }),
+    memory: new Memory({ storage, options: { contextLimit } }),
     tools: [
       createTool({
         name: "refund",
@@ -112,7 +112,7 @@ describe("needsApproval persistence (issue #1535)", () => {
 
     // Turn 3: a plain follow-up must not fail AI SDK UI message validation.
     const result = await agent.generateText("did it go through?", { memory });
-    expect(result.text).toBeDefined();
+    expect(result.text).toBe("Refund done.");
   }, 30000);
 
   it("keeps approval.approved === false when the client denies the tool", async () => {
@@ -136,4 +136,18 @@ describe("needsApproval persistence (issue #1535)", () => {
     // The client's denial decision is preserved, never rewritten to an approval.
     expect(parts2[0].approval?.approved).toBe(false);
   }, 30000);
+});
+
+it("keeps approval evidence when memory context is omitted", async () => {
+  const storage = new InMemoryStorageAdapter();
+  const agent = makeAgent(storage, 0);
+  await agent.generateText("refund 50", { memory });
+  const stored = await storage.getMessages("u", "c");
+  const message = structuredClone(stored.at(-1)) as any;
+  const part = message.parts.find((p: any) => p.type === "tool-refund");
+  part.state = "approval-responded";
+  part.approval.approved = true;
+  await agent.generateText([message], { memory });
+  const parts = await storedToolParts(storage);
+  expect(parts[0]).toMatchObject({ state: "output-available", approval: { approved: true } });
 });
