@@ -6575,14 +6575,6 @@ export class Agent {
           options: executionOptions,
         });
 
-        await tool.hooks?.onEnd?.({
-          tool,
-          args,
-          output: undefined,
-          error: voltAgentError,
-          options: executionOptions,
-        });
-
         const onToolErrorResult = await hooks.onToolError?.({
           agent: this,
           tool,
