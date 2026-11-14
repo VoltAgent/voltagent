@@ -4317,10 +4317,13 @@ export class Agent {
   }): Promise<void> {
     const { tool, toolCallId, output, oc } = params;
     try {
-      // The SDK only invokes `execute` for a `needsApproval` tool after an
-      // explicit client approval, so reaching this point means the call was
-      // approved. Nothing is inferred from outputs or message state.
-      if (!tool.needsApproval) return;
+      // Dynamic needsApproval functions may return false. Require actual
+      // per-call client approval evidence already copied into the buffer.
+      const approvedPart = this.getConversationBuffer(oc)
+        .getAllMessages()
+        .flatMap((message) => message.parts)
+        .find((part: any) => part.toolCallId === toolCallId && part.approval?.approved === true);
+      if (!approvedPart) return;
       if (!this.shouldPersistMemoryForContext(oc)) return;
 
       const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
@@ -5071,10 +5074,22 @@ export class Agent {
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
-    const resolvedInput = await this.validateIncomingUIMessages(input, oc);
+    let resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
+    if (
+      resolvedMemory.userId &&
+      resolvedMemory.conversationId &&
+      Array.isArray(resolvedInput) &&
+      (resolvedInput as any[])[0]?.parts
+    ) {
+      resolvedInput = await this.memoryManager.reconcileApprovalInput(
+        resolvedInput as UIMessage[],
+        resolvedMemory.userId,
+        resolvedMemory.conversationId,
+      );
+    }
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
     const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
     const shouldPersistInputImmediately =
@@ -5325,53 +5340,6 @@ export class Agent {
             .map((message) => message.id)
             .filter((id): id is string => typeof id === "string" && id.trim().length > 0),
         );
-
-        // A stored tool part in a terminal output state is evidence the tool
-        // already executed. When the client resends an older version of the
-        // same message (e.g. an approval retry after an interrupted turn),
-        // keep the executed part so the SDK does not re-run the tool without
-        // a new approval prompt. See
-        // https://github.com/VoltAgent/voltagent/issues/1538
-        const terminalToolStates = new Set(["output-available", "output-error", "output-denied"]);
-        const storedTerminalParts = new Map<string, Map<string, any>>();
-        for (const message of messages) {
-          if (!idsToReplace.has(message.id)) continue;
-          for (const part of (message.parts ?? []) as any[]) {
-            if (
-              typeof part?.type === "string" &&
-              part.type.startsWith("tool-") &&
-              part.toolCallId &&
-              terminalToolStates.has(part.state)
-            ) {
-              let byToolCallId = storedTerminalParts.get(message.id);
-              if (!byToolCallId) {
-                byToolCallId = new Map();
-                storedTerminalParts.set(message.id, byToolCallId);
-              }
-              byToolCallId.set(part.toolCallId, part);
-            }
-          }
-        }
-        if (storedTerminalParts.size > 0) {
-          for (const inputMessage of inputMessages) {
-            const storedParts = storedTerminalParts.get(inputMessage.id);
-            if (!storedParts) continue;
-            inputMessage.parts = ((inputMessage.parts ?? []) as any[]).map((part) => {
-              if (
-                typeof part?.type === "string" &&
-                part.type.startsWith("tool-") &&
-                part.toolCallId &&
-                !terminalToolStates.has(part.state)
-              ) {
-                const storedPart = storedParts.get(part.toolCallId);
-                if (storedPart) {
-                  return JSON.parse(JSON.stringify(storedPart));
-                }
-              }
-              return part;
-            });
-          }
-        }
 
         if (idsToReplace.size > 0) {
           for (let index = messages.length - 1; index >= 0; index--) {

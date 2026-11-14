@@ -8,7 +8,7 @@
  * approval prompt. The result must be flushed as soon as execution completes.
  */
 import { MockLanguageModelV3 } from "ai/test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
@@ -36,6 +36,7 @@ const makeAgent = (
   storage: InMemoryStorageAdapter,
   counters: { executions: number },
   stepDelayMs = 0,
+  contextLimit?: number,
 ) => {
   const model = new MockLanguageModelV3({
     modelId: "test-model",
@@ -77,7 +78,7 @@ const makeAgent = (
     name: "a",
     instructions: "x",
     model: model as any,
-    memory: new Memory({ storage }),
+    memory: new Memory({ storage, options: { contextLimit } }),
     tools: [
       createTool({
         name: "refund",
@@ -128,7 +129,9 @@ describe("approved tool result flush (issue #1538)", () => {
     expect(parts[0].output).toMatchObject({ type: "json", value: { refundId: "re_1" } });
 
     // A client retry resending the same approval must not re-execute the tool.
-    await agent.generateText([structuredClone(msg)], { memory }).catch((e) => e);
+    expect((await agent.generateText([structuredClone(msg)], { memory })).text).toBe(
+      "Refund done.",
+    );
     expect(counters.executions).toBe(1);
   }, 30000);
 
@@ -148,7 +151,9 @@ describe("approved tool result flush (issue #1538)", () => {
     expect(parts[0].output).toMatchObject({ type: "json", value: { refundId: "re_1" } });
 
     // Resending the same approval after success must not re-execute either.
-    await agent.generateText([structuredClone(msg)], { memory }).catch((e) => e);
+    expect((await agent.generateText([structuredClone(msg)], { memory })).text).toBe(
+      "Refund done.",
+    );
     expect(counters.executions).toBe(1);
 
     const result = await agent.generateText("did it go through?", { memory });
@@ -222,4 +227,40 @@ describe("approved tool result flush (issue #1538)", () => {
     expect(parts).toHaveLength(1);
     expect(parts[0].output).toMatchObject({ type: "json", value: { n: 1 } });
   }, 30000);
+});
+
+it("persists interrupted approved results and retries successfully with contextLimit zero", async () => {
+  const storage = new InMemoryStorageAdapter();
+  const counters = { executions: 0 };
+  const agent = makeAgent(storage, counters, 200, 0);
+  await agent.generateText("refund 50", { memory });
+  const msg = await approveStoredCall(storage);
+  const ac = new AbortController();
+  setTimeout(() => ac.abort(new Error("disconnect")), 50);
+  await agent
+    .generateText([structuredClone(msg)], { memory, abortSignal: ac.signal })
+    .catch(() => {});
+  expect((await storedRefundParts(storage))[0]).toMatchObject({ state: "output-available" });
+  expect((await agent.generateText([structuredClone(msg)], { memory })).text).toBe("Refund done.");
+  expect(counters.executions).toBe(1);
+});
+
+it("does not infer approval for a dynamically non-gated tool call", async () => {
+  const agent = makeAgent(new InMemoryStorageAdapter(), { executions: 0 });
+  const context = { systemContext: new Map() };
+  const shouldPersist = vi.spyOn(agent as any, "shouldPersistMemoryForContext");
+  const tool = createTool({
+    name: "lookup",
+    description: "lookup",
+    parameters: z.object({}),
+    needsApproval: async () => false,
+    execute: async () => "ok",
+  });
+  await (agent as any).persistApprovedToolResult({
+    tool,
+    toolCallId: "not-approved",
+    output: "ok",
+    oc: context,
+  });
+  expect(shouldPersist).not.toHaveBeenCalled();
 });
