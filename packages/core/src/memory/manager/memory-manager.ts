@@ -51,6 +51,27 @@ export class MemoryManager {
    */
   private backgroundQueue: BackgroundQueue;
 
+  // Order input reconciliation and result writes within this manager. This
+  // is not a distributed lock or a tool-side idempotency guarantee.
+  private messageWrites = new Map<string, Promise<void>>();
+
+  private async withMessageWrite<T>(key: string, work: () => Promise<T>): Promise<T> {
+    const previous = this.messageWrites.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = previous.catch(() => {}).then(() => gate);
+    this.messageWrites.set(key, tail);
+    await previous.catch(() => {});
+    try {
+      return await work();
+    } finally {
+      release();
+      if (this.messageWrites.get(key) === tail) this.messageWrites.delete(key);
+    }
+  }
+
   /**
    * Optional title generator for new conversations
    */
@@ -103,6 +124,18 @@ export class MemoryManager {
    * PRESERVED FROM ORIGINAL WITH MEMORY V2 INTEGRATION
    */
   async saveMessage(
+    context: OperationContext,
+    message: UIMessage,
+    userId?: string,
+    conversationId?: string,
+  ): Promise<void> {
+    if (!userId || !conversationId) return;
+    await this.withMessageWrite(JSON.stringify([userId, conversationId]), () =>
+      this.persistMessage(context, message, userId, conversationId),
+    );
+  }
+
+  private async persistMessage(
     context: OperationContext,
     message: UIMessage,
     userId?: string,
@@ -810,16 +843,84 @@ export class MemoryManager {
 
         await this.saveMessage(context, userMessage, userId, conversationId);
       } else if (Array.isArray(input)) {
-        // If input is UIMessage[], save all to memory
-        for (const message of input) {
-          await this.saveMessage(context, message, userId, conversationId);
-        }
+        await this.withMessageWrite(JSON.stringify([userId, conversationId]), async () => {
+          // Read and write under the same manager-local lock as result writes.
+          // A failed preservation read must not permit a stale input write.
+          const reconciled = await this.reconcileApprovalInput(input, userId, conversationId);
+          for (const message of reconciled) {
+            await this.persistMessage(context, message, userId, conversationId);
+          }
+        });
       }
     } catch (error) {
       context.logger.error("[Memory] Failed to save current input", {
         error,
       });
     }
+  }
+
+  /**
+   * Returns the input message with any tool part preserved when the stored
+   * message already holds that part in a terminal output state
+   * (output-available / output-error / output-denied) and the incoming part
+   * does not. A stored terminal part is evidence the tool already executed;
+   * a resent approval response (client retry, queue redelivery) must not
+   * erase it. See https://github.com/VoltAgent/voltagent/issues/1538
+   */
+  async reconcileApprovalInput(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<UIMessage[]> {
+    const hasApproval = messages.some((message) =>
+      message.parts.some((part: any) => typeof part.approval?.approved === "boolean"),
+    );
+    if (!hasApproval || !this.conversationMemory) return messages;
+    // Current Memory API offers no ID lookup. Read full history only for
+    // explicit approval input, never for ordinary UI message submissions.
+    const stored = await this.conversationMemory.getMessages(userId, conversationId);
+    const byId = new Map(stored.map((message) => [message.id, message]));
+    return messages.map((message) => this.preserveExecutedToolParts(message, byId));
+  }
+
+  private preserveExecutedToolParts(
+    message: UIMessage,
+    storedById: Map<string, UIMessage>,
+  ): UIMessage {
+    const stored = storedById.get(message.id);
+    if (!stored) return message;
+
+    const terminalStates = new Set(["output-available", "output-error", "output-denied"]);
+    const storedPartsByToolCallId = new Map<string, any>();
+    for (const part of (stored.parts ?? []) as any[]) {
+      if (typeof part?.type === "string" && part.type.startsWith("tool-") && part.toolCallId) {
+        storedPartsByToolCallId.set(part.toolCallId, part);
+      }
+    }
+    if (storedPartsByToolCallId.size === 0) return message;
+
+    let changed = false;
+    const parts = ((message.parts ?? []) as any[]).map((part) => {
+      if (typeof part?.type !== "string" || !part.type.startsWith("tool-") || !part.toolCallId) {
+        return part;
+      }
+      const storedPart = storedPartsByToolCallId.get(part.toolCallId);
+      if (!storedPart) return part;
+      if (terminalStates.has(storedPart.state) && !terminalStates.has(part.state)) {
+        changed = true;
+        return { ...storedPart };
+      }
+      return part;
+    });
+
+    const incomingIds = new Set((message.parts as any[]).map((part) => part.toolCallId));
+    for (const [callId, part] of storedPartsByToolCallId) {
+      if (terminalStates.has(part.state) && !incomingIds.has(callId)) {
+        parts.push({ ...part });
+        changed = true;
+      }
+    }
+    return changed ? ({ ...message, parts } as UIMessage) : message;
   }
 
   /**

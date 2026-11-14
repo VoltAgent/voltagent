@@ -4296,6 +4296,75 @@ export class Agent {
     oc.output = undefined;
   }
 
+  /**
+   * Persists the result of an approved `needsApproval` tool as soon as its
+   * execution completes.
+   *
+   * The AI SDK executes approved tool calls before step 1, but their results
+   * normally reach memory only via step 1's `onStepFinish` - after the next
+   * model call. If the turn is interrupted in between (client disconnect,
+   * crash, provider error), memory keeps `approval-responded` with no output
+   * and a resent approval re-executes the tool without a new approval prompt.
+   * Flushing here narrows that window; it is not exactly-once semantics - a
+   * crash between the tool's own commit and this flush can still require
+   * tool-side idempotency. See https://github.com/VoltAgent/voltagent/issues/1538
+   */
+  private async persistApprovedToolResult(params: {
+    tool: BaseTool;
+    toolCallId: string;
+    output: unknown;
+    oc: OperationContext;
+  }): Promise<void> {
+    const { tool, toolCallId, output, oc } = params;
+    try {
+      // Dynamic needsApproval functions may return false. Require actual
+      // per-call client approval evidence already copied into the buffer.
+      const approvedPart = this.getConversationBuffer(oc)
+        .getAllMessages()
+        .flatMap((message) => message.parts)
+        .find((part: any) => part.toolCallId === toolCallId && part.approval?.approved === true);
+      if (!approvedPart) return;
+      if (!this.shouldPersistMemoryForContext(oc)) return;
+
+      const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
+      if (conversationPersistence.mode !== "step" || !conversationPersistence.flushOnToolResult) {
+        return;
+      }
+
+      const persistQueue = this.getMemoryPersistQueue(oc);
+      if (!persistQueue) return;
+
+      // Mirror the AI SDK's model-output wrapping (createToolModelOutput) so
+      // the early flush stores the same shape the step flush would.
+      const modelOutput = tool.toModelOutput
+        ? await tool.toModelOutput({ output: output as never })
+        : typeof output === "string"
+          ? { type: "text" as const, value: output }
+          : { type: "json" as const, value: (output === undefined ? null : output) as any };
+
+      const buffer = this.getConversationBuffer(oc);
+      buffer.addModelMessages(
+        [
+          {
+            role: "tool",
+            content: [
+              { type: "tool-result", toolCallId, toolName: tool.name, output: modelOutput },
+            ],
+          } as ModelMessage,
+        ],
+        "response",
+      );
+      await persistQueue.flush(buffer, oc);
+    } catch (error) {
+      oc.logger.debug("Failed to persist approved tool result", {
+        error,
+        toolCallId,
+        conversationId: oc.conversationId,
+        userId: oc.userId,
+      });
+    }
+  }
+
   private getConversationBuffer(oc: OperationContext): ConversationBuffer {
     let buffer = oc.systemContext.get(BUFFER_CONTEXT_KEY) as ConversationBuffer | undefined;
     if (!buffer) {
@@ -5005,10 +5074,22 @@ export class Agent {
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
-    const resolvedInput = await this.validateIncomingUIMessages(input, oc);
+    let resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
+    if (
+      resolvedMemory.userId &&
+      resolvedMemory.conversationId &&
+      Array.isArray(resolvedInput) &&
+      (resolvedInput as any[])[0]?.parts
+    ) {
+      resolvedInput = await this.memoryManager.reconcileApprovalInput(
+        resolvedInput as UIMessage[],
+        resolvedMemory.userId,
+        resolvedMemory.conversationId,
+      );
+    }
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
     const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
     const shouldPersistInputImmediately =
@@ -5075,6 +5156,14 @@ export class Agent {
                 },
               );
               buffer.ingestUIMessages(memMessages, true);
+              // Apply approval decisions carried by the input so buffered
+              // approval-requested parts don't keep a stale `approval`.
+              if (Array.isArray(resolvedInput)) {
+                const approvalInput = (resolvedInput as any[])[0]?.parts
+                  ? (resolvedInput as UIMessage[])
+                  : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
+                buffer.applyApprovalResponses(approvalInput);
+              }
               return memMessages;
             }
             // Regular memory context
@@ -5102,6 +5191,14 @@ export class Agent {
             }
 
             buffer.ingestUIMessages(result.messages, true);
+
+            // Apply approval decisions carried by the input so buffered
+            // approval-requested parts don't keep a stale `approval`
+            // (otherwise a later `output-available` part fails AI SDK
+            // validation and breaks every subsequent turn).
+            if (Array.isArray(inputForMemory)) {
+              buffer.applyApprovalResponses(inputForMemory);
+            }
 
             if (
               shouldPersistMemory &&
@@ -6547,6 +6644,8 @@ export class Agent {
       const handleToolSuccess = async (_result: any, validatedResult: any) => {
         const finalOutput = await resolveToolEndOutput(validatedResult);
         spanOutcome = { status: "completed", output: finalOutput };
+
+        await this.persistApprovedToolResult({ tool, toolCallId, output: finalOutput, oc });
 
         return finalOutput;
       };

@@ -117,6 +117,92 @@ export class ConversationBuffer {
     }
   }
 
+  /**
+   * Apply approval responses carried by incoming UI messages to the buffered
+   * conversation.
+   *
+   * The buffer is seeded from stored memory, which still holds the
+   * pre-approval tool part (`approval: { id }`, no `approved`). The client's
+   * approval decision only travels with the input message, so without this
+   * merge the buffered (and later persisted) part keeps the stale approval
+   * once the tool result flips its state to `output-available` — and the AI
+   * SDK's UIMessage schema then rejects it (`output-available` requires
+   * `approval.approved === true`), breaking every later turn.
+   *
+   * Only parts that carry an actual client decision (`approval.approved` is
+   * a boolean) are applied; nothing is inferred from outputs or states.
+   */
+  applyApprovalResponses(messages: ReadonlyArray<UIMessage>): void {
+    for (const message of messages) {
+      if (message.role !== "assistant" || !Array.isArray(message.parts)) continue;
+      for (const part of message.parts) {
+        if (!part.type.startsWith("tool-") && part.type !== "dynamic-tool") continue;
+        const approval = (part as any)?.approval as
+          | { id?: string; approved?: boolean; reason?: string }
+          | undefined;
+        if (!approval || typeof approval.approved !== "boolean") continue;
+
+        const toolCallId = (part as any).toolCallId as string | undefined;
+        const indexed = toolCallId ? this.toolPartIndex.get(toolCallId) : undefined;
+        let target: any;
+        if (indexed && this.messages[indexed.messageIndex]) {
+          target = this.messages[indexed.messageIndex].parts[indexed.partIndex];
+        } else if (approval.id) {
+          target = this.findToolPartByApprovalId(approval.id);
+        }
+        if (!target) {
+          // Semantic/limited memory may omit the original call. Seed only
+          // the explicit input tool part, preserving its client decision.
+          const owner = this.messages.find((candidate) => candidate.id === message.id);
+          if (owner) {
+            owner.parts.push({ ...part });
+            this.registerToolParts(this.messages.indexOf(owner));
+            this.pendingMessageIds.add(owner.id);
+          } else {
+            this.appendNewMessage({ ...message, parts: [{ ...part }] }, "memory");
+            this.pendingMessageIds.add(message.id);
+          }
+          continue;
+        }
+        const terminalStates = ["output-available", "output-error", "output-denied"];
+        if (terminalStates.includes(target.state)) continue;
+
+        // Preserve the client's decision verbatim (id, approved, reason).
+        target.approval = { ...(target.approval ?? {}), ...approval };
+
+        // Reflect the responded state unless the part already reached a
+        // terminal output state.
+        const state = target.state as string | undefined;
+        const respondedState = (part as any).state as string | undefined;
+        if (
+          respondedState === "approval-responded" &&
+          state !== "output-available" &&
+          state !== "output-error" &&
+          state !== "output-denied"
+        ) {
+          target.state = "approval-responded";
+        }
+        const owner = indexed
+          ? this.messages[indexed.messageIndex]
+          : this.messages.find((candidate) => candidate.parts.includes(target));
+        if (owner) this.pendingMessageIds.add(owner.id);
+      }
+    }
+  }
+
+  private findToolPartByApprovalId(approvalId: string): any {
+    for (const message of this.messages) {
+      if (!Array.isArray(message.parts)) continue;
+      for (const part of message.parts) {
+        const approval = (part as any)?.approval as { id?: string } | undefined;
+        if (approval?.id === approvalId) {
+          return part;
+        }
+      }
+    }
+    return undefined;
+  }
+
   createCheckpoint(): ConversationBufferCheckpoint {
     return {
       messages: this.messages.map((message) => this.cloneMessage(message)),
