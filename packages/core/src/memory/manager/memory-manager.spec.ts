@@ -394,3 +394,220 @@ describe("MemoryManager", () => {
     });
   });
 });
+
+describe("approval input reconciliation ordering", () => {
+  const input = () =>
+    ({
+      id: "approval-message",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-refund",
+          toolCallId: "call-1",
+          input: {},
+          state: "approval-responded",
+          approval: { id: "a", approved: true },
+        },
+      ],
+    }) as unknown as UIMessage;
+  const terminal = () => {
+    const message = input() as any;
+    Object.assign(message.parts[0], { state: "output-available", output: { done: true } });
+    return message as UIMessage;
+  };
+  const fixture = () => {
+    const storage = new InMemoryStorageAdapter();
+    const memory = new Memory({ storage });
+    const manager = new MemoryManager("test", memory);
+    return { memory, manager };
+  };
+
+  it("orders result writes after an in-flight background input write", async () => {
+    const { memory, manager } = fixture();
+    const context = createMockOperationContext();
+    let release!: () => void;
+    let entered!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const original = memory.saveMessageWithContext.bind(memory);
+    vi.spyOn(memory, "saveMessageWithContext").mockImplementation(async (...args) => {
+      if ((args[0].parts[0] as any).state === "approval-responded") {
+        entered();
+        await gate;
+      }
+      return original(...args);
+    });
+    const savingInput = (manager as any).saveCurrentInput(context, [input()], "u", "c");
+    await started;
+    let resultFinished = false;
+    const savingResult = manager.saveMessage(context, terminal(), "u", "c").then(() => {
+      resultFinished = true;
+    });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(resultFinished).toBe(false);
+    } finally {
+      release();
+      await Promise.all([savingInput, savingResult]);
+    }
+    expect((await memory.getMessages("u", "c"))[0]).toMatchObject({
+      parts: [{ state: "output-available" }],
+    });
+  });
+
+  it("does not write stale approval input when its preservation read fails", async () => {
+    const { memory, manager } = fixture();
+    await memory.saveMessage(terminal(), "u", "c");
+    const save = vi.spyOn(memory, "saveMessageWithContext");
+    const read = vi
+      .spyOn(memory, "getMessages")
+      .mockRejectedValueOnce(new Error("read unavailable"));
+    await (manager as any).saveCurrentInput(createMockOperationContext(), [input()], "u", "c");
+    expect(save).not.toHaveBeenCalled();
+    read.mockRestore();
+    expect((await memory.getMessages("u", "c"))[0]).toMatchObject({
+      parts: [{ state: "output-available" }],
+    });
+  });
+
+  it("keeps terminal calls omitted by an older input message", async () => {
+    const { memory, manager } = fixture();
+    const stored = terminal() as any;
+    stored.parts.push({ ...stored.parts[0], toolCallId: "call-2" });
+    await memory.saveMessage(stored, "u", "c");
+    const result = await manager.reconcileApprovalInput([input()], "u", "c");
+    expect(result[0].parts).toHaveLength(2);
+    expect((result[0].parts as any[]).every((part) => part.state === "output-available")).toBe(
+      true,
+    );
+  });
+
+  it("does not read complete history for ordinary input", async () => {
+    const { memory, manager } = fixture();
+    const read = vi.spyOn(memory, "getMessages");
+    await manager.reconcileApprovalInput(
+      [{ id: "user", role: "user", parts: [{ type: "text", text: "hi" }] }],
+      "u",
+      "c",
+    );
+    expect(read).not.toHaveBeenCalled();
+  });
+});
+
+it("hydrates only approval owners while retaining new text and terminal evidence", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const stored = {
+    id: "a",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "old" },
+      {
+        type: "tool-refund",
+        toolCallId: "c",
+        state: "output-available",
+        input: {},
+        output: "paid",
+        approval: { id: "approval", approved: true },
+      },
+    ],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  await memory.saveMessage(
+    { id: "u", role: "user", parts: [{ type: "text", text: "old user" }] },
+    "u",
+    "c",
+  );
+  const input = structuredClone(stored) as any;
+  input.parts[0].text = "new";
+  input.parts.push({ type: "text", text: "extra" });
+  Object.assign(input.parts[1], {
+    state: "approval-responded",
+    approval: { id: "approval", approved: false },
+  });
+  input.parts[1].output = undefined;
+  const result = await manager.hydrateApprovalMessages(
+    [input, { id: "u", role: "user", parts: [{ type: "text", text: "new user" }] }],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toMatchObject([
+    { text: "new" },
+    { state: "output-available", output: "paid", approval: { approved: true } },
+    { text: "extra" },
+  ]);
+  expect(result[1].parts).toEqual([{ type: "text", text: "new user" }]);
+});
+
+it("retains omitted attachments and does not add approval to ordinary completed tools", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const file = { type: "file", mediaType: "text/plain", url: "https://example.com/file" };
+  const ordinary = {
+    type: "tool-lookup",
+    toolCallId: "ordinary",
+    state: "output-available",
+    input: {},
+    output: "ok",
+  };
+  const approved = {
+    type: "tool-refund",
+    toolCallId: "approval",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const stored = {
+    id: "owner",
+    role: "assistant",
+    parts: [file, { type: "text", text: "old" }, ordinary, approved],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [
+      {
+        ...stored,
+        parts: [{ type: "text", text: "new" }, ordinary, approved],
+      } as unknown as UIMessage,
+    ],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([file, { type: "text", text: "new" }, ordinary, approved]);
+  expect((result[0].parts[2] as any).approval).toBeUndefined();
+});
+
+it("does not replace an omitted attachment with another file of the same type", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const first = {
+    type: "file",
+    mediaType: "text/plain",
+    url: "https://example.com/a",
+    filename: "a",
+  };
+  const second = { ...first, url: "https://example.com/b", filename: "b" };
+  const approval = {
+    type: "tool-refund",
+    toolCallId: "c",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const owner = {
+    id: "owner",
+    role: "assistant",
+    parts: [first, second, approval],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(owner), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [{ ...owner, parts: [second, approval] } as unknown as UIMessage],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([first, second, approval]);
+});
