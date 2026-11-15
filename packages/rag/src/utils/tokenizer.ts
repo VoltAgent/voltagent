@@ -41,7 +41,7 @@ export function createTikTokenizer(config?: {
     }
   })();
 
-  const encode = (text: string): number[] => Array.from(encoding.encode(text));
+  const encode = (text: string): number[] => Array.from(encoding.encode(text, [], []));
   const decode = (tokens: number[]): string => encoding.decode(tokens);
 
   return {
