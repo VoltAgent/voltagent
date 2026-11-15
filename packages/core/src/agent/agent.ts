@@ -5005,10 +5005,22 @@ export class Agent {
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
-    const resolvedInput = await this.validateIncomingUIMessages(input, oc);
+    let resolvedInput = await this.validateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
     const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
+    if (
+      resolvedMemory.userId &&
+      resolvedMemory.conversationId &&
+      Array.isArray(resolvedInput) &&
+      (resolvedInput as any[])[0]?.parts
+    ) {
+      resolvedInput = await this.memoryManager.hydrateApprovalMessages(
+        resolvedInput as UIMessage[],
+        resolvedMemory.userId,
+        resolvedMemory.conversationId,
+      );
+    }
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
     const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
     const shouldPersistInputImmediately =
@@ -5075,6 +5087,14 @@ export class Agent {
                 },
               );
               buffer.ingestUIMessages(memMessages, true);
+              // Apply approval decisions carried by the input so buffered
+              // approval-requested parts don't keep a stale `approval`.
+              if (Array.isArray(resolvedInput)) {
+                const approvalInput = (resolvedInput as any[])[0]?.parts
+                  ? (resolvedInput as UIMessage[])
+                  : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
+                buffer.applyApprovalResponses(approvalInput);
+              }
               return memMessages;
             }
             // Regular memory context
@@ -5102,6 +5122,14 @@ export class Agent {
             }
 
             buffer.ingestUIMessages(result.messages, true);
+
+            // Apply approval decisions carried by the input so buffered
+            // approval-requested parts don't keep a stale `approval`
+            // (otherwise a later `output-available` part fails AI SDK
+            // validation and breaks every subsequent turn).
+            if (Array.isArray(inputForMemory)) {
+              buffer.applyApprovalResponses(inputForMemory);
+            }
 
             if (
               shouldPersistMemory &&

@@ -394,3 +394,117 @@ describe("MemoryManager", () => {
     });
   });
 });
+
+it("hydrates only approval owners while retaining new text and terminal evidence", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const stored = {
+    id: "a",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "old" },
+      {
+        type: "tool-refund",
+        toolCallId: "c",
+        state: "output-available",
+        input: {},
+        output: "paid",
+        approval: { id: "approval", approved: true },
+      },
+    ],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  await memory.saveMessage(
+    { id: "u", role: "user", parts: [{ type: "text", text: "old user" }] },
+    "u",
+    "c",
+  );
+  const input = structuredClone(stored) as any;
+  input.parts[0].text = "new";
+  input.parts.push({ type: "text", text: "extra" });
+  Object.assign(input.parts[1], {
+    state: "approval-responded",
+    approval: { id: "approval", approved: false },
+  });
+  input.parts[1].output = undefined;
+  const result = await manager.hydrateApprovalMessages(
+    [input, { id: "u", role: "user", parts: [{ type: "text", text: "new user" }] }],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toMatchObject([
+    { text: "new" },
+    { state: "output-available", output: "paid", approval: { approved: true } },
+    { text: "extra" },
+  ]);
+  expect(result[1].parts).toEqual([{ type: "text", text: "new user" }]);
+});
+
+it("retains omitted attachments and does not add approval to ordinary completed tools", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const file = { type: "file", mediaType: "text/plain", url: "https://example.com/file" };
+  const ordinary = {
+    type: "tool-lookup",
+    toolCallId: "ordinary",
+    state: "output-available",
+    input: {},
+    output: "ok",
+  };
+  const approved = {
+    type: "tool-refund",
+    toolCallId: "approval",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const stored = {
+    id: "owner",
+    role: "assistant",
+    parts: [file, { type: "text", text: "old" }, ordinary, approved],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [
+      {
+        ...stored,
+        parts: [{ type: "text", text: "new" }, ordinary, approved],
+      } as unknown as UIMessage,
+    ],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([file, { type: "text", text: "new" }, ordinary, approved]);
+  expect((result[0].parts[2] as any).approval).toBeUndefined();
+});
+
+it("does not replace an omitted attachment with another file of the same type", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const first = {
+    type: "file",
+    mediaType: "text/plain",
+    url: "https://example.com/a",
+    filename: "a",
+  };
+  const second = { ...first, url: "https://example.com/b", filename: "b" };
+  const approval = {
+    type: "tool-refund",
+    toolCallId: "c",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const owner = {
+    id: "owner",
+    role: "assistant",
+    parts: [first, second, approval],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(owner), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [{ ...owner, parts: [second, approval] } as unknown as UIMessage],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([first, second, approval]);
+});

@@ -205,6 +205,67 @@ export class MemoryManager {
     }
   }
 
+  /** Load complete owners before an omitted-context approval seed can be upserted. */
+  async hydrateApprovalMessages(
+    input: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<UIMessage[]> {
+    if (
+      !this.conversationMemory ||
+      !input.some((message) =>
+        message.parts.some((part: any) => typeof part.approval?.approved === "boolean"),
+      )
+    )
+      return input;
+    const stored = await this.conversationMemory.getMessages(userId, conversationId);
+    const byId = new Map(stored.map((message) => [message.id, message]));
+    return input.map((message) => {
+      // Other messages in the submitted history must remain untouched.
+      if (!message.parts.some((part: any) => typeof part.approval?.approved === "boolean"))
+        return message;
+      const owner = byId.get(message.id);
+      if (!owner) return message;
+      const incoming = new Map(
+        (message.parts as any[])
+          .filter((part) => part.toolCallId)
+          .map((part) => [part.toolCallId, part]),
+      );
+      const nonTools = message.parts.filter((part: any) => !part.toolCallId);
+      const remainingNonTools = [...nonTools];
+      const seen = new Set<string>();
+      const terminal = new Set(["output-available", "output-error", "output-denied"]);
+      const parts = owner.parts.map((part: any) => {
+        if (!part.toolCallId) {
+          const index = remainingNonTools.findIndex(
+            (incoming: any) =>
+              incoming.type === part.type &&
+              (part.type !== "file" ||
+                (incoming.url === part.url && incoming.filename === part.filename)),
+          );
+          return { ...(index >= 0 ? remainingNonTools.splice(index, 1)[0] : part) };
+        }
+        seen.add(part.toolCallId);
+        const update = incoming.get(part.toolCallId);
+        if (!update) return { ...part };
+        if (terminal.has(part.state)) {
+          if (typeof update.approval?.approved !== "boolean") return { ...part };
+          // A stale client response must not erase executed output or a
+          // recorded decision. Only fill a missing explicit decision.
+          const approval =
+            typeof part.approval?.approved === "boolean"
+              ? part.approval
+              : { ...part.approval, ...update.approval };
+          return { ...part, ...(approval ? { approval } : {}) };
+        }
+        return { ...part, ...update };
+      });
+      for (const [id, part] of incoming) if (!seen.has(id)) parts.push({ ...part });
+      parts.push(...remainingNonTools.map((part) => ({ ...part })));
+      return { ...owner, ...message, parts } as UIMessage;
+    });
+  }
+
   private applyOperationMetadata(message: UIMessage, context: OperationContext): UIMessage {
     const existingMetadata =
       typeof message.metadata === "object" && message.metadata !== null
