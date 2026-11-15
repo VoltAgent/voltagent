@@ -1347,10 +1347,33 @@ export class Agent {
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
 
+            let hasToolExecution = false;
+            const trackedTools = Object.fromEntries(
+              Object.entries<AITool>(tools).map(([name, tool]) => {
+                const execute = tool.execute;
+                if (!execute) {
+                  return [name, tool];
+                }
+                return [
+                  name,
+                  {
+                    ...tool,
+                    execute: (...args: Parameters<typeof execute>) => {
+                      // Approved tools can run before the SDK starts its first step.
+                      hasToolExecution = true;
+                      return execute.call(tool, ...args);
+                    },
+                  },
+                ];
+              }),
+            );
+            const handleStep = this.createStepHandler(oc, options);
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
               operation: "generateText",
               options,
+              // Restarting generateText from the original messages can replay tool side effects.
+              canReplay: () => !hasToolExecution,
               run: async ({
                 model: resolvedModel,
                 modelName: resolvedModelName,
@@ -1386,7 +1409,7 @@ export class Agent {
                     generateText({
                       model: resolvedModel,
                       messages,
-                      tools,
+                      tools: trackedTools,
                       // Default values
                       temperature: this.temperature,
                       maxOutputTokens: this.maxOutputTokens,
@@ -1400,7 +1423,14 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepFinish: this.createStepHandler(oc, options),
+                      onStepFinish: async (step) => {
+                        hasToolExecution ||= Boolean(
+                          step.content?.some(
+                            (part) => part.type === "tool-result" || part.type === "tool-error",
+                          ),
+                        );
+                        await handleStep(step);
+                      },
                     }),
                   );
 
@@ -5928,11 +5958,13 @@ export class Agent {
     oc,
     operation,
     options,
+    canReplay,
     run,
   }: {
     oc: OperationContext;
     operation: LLMOperation;
     options?: BaseGenerationOptions;
+    canReplay?: () => boolean;
     run: (args: {
       model: LanguageModel;
       modelName: string;
@@ -6063,7 +6095,7 @@ export class Agent {
           return { result, modelName, modelIndex: index, maxRetries };
         } catch (error) {
           lastError = error;
-          if (oc.abortController.signal.aborted) {
+          if (oc.abortController.signal.aborted || canReplay?.() === false) {
             throw error;
           }
           const fallbackEligible = this.shouldFallbackOnError(error);
