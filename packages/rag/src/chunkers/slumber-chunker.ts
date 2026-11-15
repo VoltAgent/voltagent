@@ -119,13 +119,15 @@ export class SlumberChunker implements Chunker<SlumberChunkerOptions> {
         if (i === merged.length - 1) break;
         const next = merged[i + 1];
         if (!next) continue;
-        const overlapContent = next.content.split(/\s+/).slice(0, overlapTokens).join(" ");
-        if (overlapContent) {
+        const tokens = tokenizer.tokenize(next.content);
+        const first = tokens[0];
+        const last = tokens[Math.min(tokens.length, Math.floor(overlapTokens)) - 1];
+        if (first && last && last.end > first.start) {
           withOverlap.push({
             id: `${label}-overlap-${i}`,
-            content: overlapContent,
-            start: next.start,
-            end: next.start + overlapContent.length,
+            content: next.content.slice(first.start, last.end),
+            start: next.start + first.start,
+            end: next.start + last.end,
             label: `${label}-overlap`,
             metadata: buildMetadata({
               format: "slumber",
