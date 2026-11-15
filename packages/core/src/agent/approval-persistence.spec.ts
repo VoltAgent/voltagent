@@ -154,7 +154,7 @@ it("keeps approval evidence when memory context is omitted", async () => {
     input: {},
     output: "done",
   });
-  await storage.addMessage(message, "u", "c");
+  await storage.addMessage(structuredClone(message), "u", "c");
   part.state = "approval-responded";
   part.approval.approved = true;
   // Client submits just the approved part; stored sibling parts must survive.

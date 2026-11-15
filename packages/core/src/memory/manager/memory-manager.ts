@@ -254,6 +254,9 @@ export class MemoryManager {
     const stored = await this.conversationMemory.getMessages(userId, conversationId);
     const byId = new Map(stored.map((message) => [message.id, message]));
     return input.map((message) => {
+      // Other messages in the submitted history must remain untouched.
+      if (!message.parts.some((part: any) => typeof part.approval?.approved === "boolean"))
+        return message;
       const owner = byId.get(message.id);
       if (!owner) return message;
       const incoming = new Map(
@@ -261,13 +264,28 @@ export class MemoryManager {
           .filter((part) => part.toolCallId)
           .map((part) => [part.toolCallId, part]),
       );
+      const nonTools = message.parts.filter((part: any) => !part.toolCallId);
+      let nonToolIndex = 0;
       const seen = new Set<string>();
+      const terminal = new Set(["output-available", "output-error", "output-denied"]);
       const parts = owner.parts.map((part: any) => {
-        if (!part.toolCallId) return { ...part };
+        if (!part.toolCallId) return { ...(nonTools[nonToolIndex++] ?? part) };
         seen.add(part.toolCallId);
-        return { ...(incoming.get(part.toolCallId) ?? part) };
+        const update = incoming.get(part.toolCallId);
+        if (!update) return { ...part };
+        if (terminal.has(part.state)) {
+          // A stale client response must not erase executed output or a
+          // recorded decision. Only fill a missing explicit decision.
+          const approval =
+            typeof part.approval?.approved === "boolean"
+              ? part.approval
+              : { ...part.approval, ...update.approval };
+          return { ...part, ...(approval ? { approval } : {}) };
+        }
+        return { ...part, ...update };
       });
       for (const [id, part] of incoming) if (!seen.has(id)) parts.push({ ...part });
+      parts.push(...nonTools.slice(nonToolIndex).map((part) => ({ ...part })));
       return { ...owner, ...message, parts } as UIMessage;
     });
   }
