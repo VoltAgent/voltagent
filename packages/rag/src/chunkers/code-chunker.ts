@@ -119,10 +119,10 @@ export class CodeChunker implements Chunker<CodeChunkerOptions> {
                 tokenizer,
                 label: `${label}-ast`,
               });
-              tokenChunks.forEach((chunk, idx) => {
+              tokenChunks.forEach((chunk) => {
                 chunks.push({
                   ...chunk,
-                  id: `${label}-${chunks.length + idx}`,
+                  id: `${label}-${chunks.length}`,
                   start: segment.start + block.start + chunk.start,
                   end: segment.start + block.start + chunk.end,
                   metadata: buildMetadata({
