@@ -232,15 +232,19 @@ export class MemoryManager {
           .map((part) => [part.toolCallId, part]),
       );
       const nonTools = message.parts.filter((part: any) => !part.toolCallId);
-      let nonToolIndex = 0;
+      const remainingNonTools = [...nonTools];
       const seen = new Set<string>();
       const terminal = new Set(["output-available", "output-error", "output-denied"]);
       const parts = owner.parts.map((part: any) => {
-        if (!part.toolCallId) return { ...(nonTools[nonToolIndex++] ?? part) };
+        if (!part.toolCallId) {
+          const index = remainingNonTools.findIndex((incoming) => incoming.type === part.type);
+          return { ...(index >= 0 ? remainingNonTools.splice(index, 1)[0] : part) };
+        }
         seen.add(part.toolCallId);
         const update = incoming.get(part.toolCallId);
         if (!update) return { ...part };
         if (terminal.has(part.state)) {
+          if (typeof update.approval?.approved !== "boolean") return { ...part };
           // A stale client response must not erase executed output or a
           // recorded decision. Only fill a missing explicit decision.
           const approval =
@@ -252,7 +256,7 @@ export class MemoryManager {
         return { ...part, ...update };
       });
       for (const [id, part] of incoming) if (!seen.has(id)) parts.push({ ...part });
-      parts.push(...nonTools.slice(nonToolIndex).map((part) => ({ ...part })));
+      parts.push(...remainingNonTools.map((part) => ({ ...part })));
       return { ...owner, ...message, parts } as UIMessage;
     });
   }
