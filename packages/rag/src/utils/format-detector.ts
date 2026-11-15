@@ -47,7 +47,7 @@ export function detectFormat(input: string): DetectedFormat {
   }
 
   // Table pipe syntax
-  if (/\n\|.+\|\n/.test(text) && /\|\s*-{2,}\s*\|/.test(text)) {
+  if (/(?:^|\n)\|[^\r\n]+\|[ \t]*\r?\n/.test(text) && /\|\s*-{2,}\s*\|/.test(text)) {
     return "table";
   }
 
