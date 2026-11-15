@@ -270,7 +270,12 @@ export class MemoryManager {
       const terminal = new Set(["output-available", "output-error", "output-denied"]);
       const parts = owner.parts.map((part: any) => {
         if (!part.toolCallId) {
-          const index = remainingNonTools.findIndex((incoming) => incoming.type === part.type);
+          const index = remainingNonTools.findIndex(
+            (incoming: any) =>
+              incoming.type === part.type &&
+              (part.type !== "file" ||
+                (incoming.url === part.url && incoming.filename === part.filename)),
+          );
           return { ...(index >= 0 ? remainingNonTools.splice(index, 1)[0] : part) };
         }
         seen.add(part.toolCallId);

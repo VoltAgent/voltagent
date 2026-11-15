@@ -580,3 +580,34 @@ it("retains omitted attachments and does not add approval to ordinary completed 
   expect(result[0].parts).toEqual([file, { type: "text", text: "new" }, ordinary, approved]);
   expect((result[0].parts[2] as any).approval).toBeUndefined();
 });
+
+it("does not replace an omitted attachment with another file of the same type", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const first = {
+    type: "file",
+    mediaType: "text/plain",
+    url: "https://example.com/a",
+    filename: "a",
+  };
+  const second = { ...first, url: "https://example.com/b", filename: "b" };
+  const approval = {
+    type: "tool-refund",
+    toolCallId: "c",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const owner = {
+    id: "owner",
+    role: "assistant",
+    parts: [first, second, approval],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(owner), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [{ ...owner, parts: [second, approval] } as unknown as UIMessage],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([first, second, approval]);
+});
