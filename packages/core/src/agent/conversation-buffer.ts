@@ -151,8 +151,8 @@ export class ConversationBuffer {
           target = this.findToolPartByApprovalId(approval.id);
         }
         if (!target) {
-          // Semantic/limited memory may omit the original call. Seed only
-          // the explicit input tool part, preserving its client decision.
+          // Semantic/limited memory may omit the original call. Seed the
+          // complete hydrated owner, preserving all sibling parts.
           const owner = this.messages.find((candidate) => candidate.id === message.id);
           if (owner) {
             owner.parts.push({ ...part });

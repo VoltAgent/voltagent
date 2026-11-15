@@ -394,3 +394,48 @@ describe("MemoryManager", () => {
     });
   });
 });
+
+it("hydrates only approval owners while retaining new text and terminal evidence", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const stored = {
+    id: "a",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "old" },
+      {
+        type: "tool-refund",
+        toolCallId: "c",
+        state: "output-available",
+        input: {},
+        output: "paid",
+        approval: { id: "approval", approved: true },
+      },
+    ],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  await memory.saveMessage(
+    { id: "u", role: "user", parts: [{ type: "text", text: "old user" }] },
+    "u",
+    "c",
+  );
+  const input = structuredClone(stored) as any;
+  input.parts[0].text = "new";
+  input.parts.push({ type: "text", text: "extra" });
+  Object.assign(input.parts[1], {
+    state: "approval-responded",
+    approval: { id: "approval", approved: false },
+  });
+  input.parts[1].output = undefined;
+  const result = await manager.hydrateApprovalMessages(
+    [input, { id: "u", role: "user", parts: [{ type: "text", text: "new user" }] }],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toMatchObject([
+    { text: "new" },
+    { state: "output-available", output: "paid", approval: { approved: true } },
+    { text: "extra" },
+  ]);
+  expect(result[1].parts).toEqual([{ type: "text", text: "new user" }]);
+});
