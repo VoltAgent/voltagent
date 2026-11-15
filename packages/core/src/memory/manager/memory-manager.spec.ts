@@ -542,3 +542,41 @@ it("hydrates only approval owners while retaining new text and terminal evidence
   ]);
   expect(result[1].parts).toEqual([{ type: "text", text: "new user" }]);
 });
+
+it("retains omitted attachments and does not add approval to ordinary completed tools", async () => {
+  const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+  const manager = new MemoryManager("test", memory);
+  const file = { type: "file", mediaType: "text/plain", url: "https://example.com/file" };
+  const ordinary = {
+    type: "tool-lookup",
+    toolCallId: "ordinary",
+    state: "output-available",
+    input: {},
+    output: "ok",
+  };
+  const approved = {
+    type: "tool-refund",
+    toolCallId: "approval",
+    state: "approval-responded",
+    input: {},
+    approval: { id: "a", approved: true },
+  };
+  const stored = {
+    id: "owner",
+    role: "assistant",
+    parts: [file, { type: "text", text: "old" }, ordinary, approved],
+  } as unknown as UIMessage;
+  await memory.saveMessage(structuredClone(stored), "u", "c");
+  const result = await manager.hydrateApprovalMessages(
+    [
+      {
+        ...stored,
+        parts: [{ type: "text", text: "new" }, ordinary, approved],
+      } as unknown as UIMessage,
+    ],
+    "u",
+    "c",
+  );
+  expect(result[0].parts).toEqual([file, { type: "text", text: "new" }, ordinary, approved]);
+  expect((result[0].parts[2] as any).approval).toBeUndefined();
+});
