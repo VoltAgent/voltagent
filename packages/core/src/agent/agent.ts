@@ -1347,10 +1347,14 @@ export class Agent {
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
 
+            let hasToolOutcome = false;
+            const handleStep = this.createStepHandler(oc, options);
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
               operation: "generateText",
               options,
+              // Restarting generateText from the original messages can replay tool side effects.
+              canReplay: () => !hasToolOutcome,
               run: async ({
                 model: resolvedModel,
                 modelName: resolvedModelName,
@@ -1400,7 +1404,14 @@ export class Agent {
                       providerOptions,
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
-                      onStepFinish: this.createStepHandler(oc, options),
+                      onStepFinish: async (step) => {
+                        hasToolOutcome ||= Boolean(
+                          step.content?.some(
+                            (part) => part.type === "tool-result" || part.type === "tool-error",
+                          ),
+                        );
+                        await handleStep(step);
+                      },
                     }),
                   );
 
@@ -5928,11 +5939,13 @@ export class Agent {
     oc,
     operation,
     options,
+    canReplay,
     run,
   }: {
     oc: OperationContext;
     operation: LLMOperation;
     options?: BaseGenerationOptions;
+    canReplay?: () => boolean;
     run: (args: {
       model: LanguageModel;
       modelName: string;
@@ -6063,7 +6076,7 @@ export class Agent {
           return { result, modelName, modelIndex: index, maxRetries };
         } catch (error) {
           lastError = error;
-          if (oc.abortController.signal.aborted) {
+          if (oc.abortController.signal.aborted || canReplay?.() === false) {
             throw error;
           }
           const fallbackEligible = this.shouldFallbackOnError(error);
