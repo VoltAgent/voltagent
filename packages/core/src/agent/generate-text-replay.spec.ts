@@ -1,4 +1,4 @@
-import { APICallError } from "ai";
+import { APICallError, type UIMessage } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -10,7 +10,10 @@ const usage = {
   outputTokens: { total: 5, text: 5, reasoning: 0 },
 };
 
-describe("generateText model retries and fallback after tool execution", () => {
+describe.each([
+  { scenario: "a tool called by the model", resumeApproval: false },
+  { scenario: "a tool resumed from approval", resumeApproval: true },
+])("generateText after $scenario", ({ resumeApproval }) => {
   it.each(["retry", "fallback"] as const)("does not replay a tool on model %s", async (mode) => {
     const providerError = new APICallError({
       message: "Model overloaded",
@@ -59,16 +62,37 @@ describe("generateText model retries and fallback after tool execution", () => {
           name: "record",
           description: "Record an action",
           parameters: z.object({}),
+          needsApproval: resumeApproval,
           execute,
         }),
       ],
     });
 
-    const result = agent.generateText("Record the action");
+    const approvedMessages: UIMessage[] = [
+      {
+        id: "user-message",
+        role: "user",
+        parts: [{ type: "text", text: "Record the action" }],
+      },
+      {
+        id: "assistant-message",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-record",
+            state: "approval-responded",
+            toolCallId: "call-1",
+            input: {},
+            approval: { id: "approval-1", approved: true },
+          },
+        ],
+      },
+    ];
+    const result = agent.generateText(resumeApproval ? approvedMessages : "Record the action");
 
     await expect(result).rejects.toBe(providerError);
     expect(execute).toHaveBeenCalledTimes(1);
-    expect(primary.doGenerateCalls).toHaveLength(2);
+    expect(primary.doGenerateCalls).toHaveLength(resumeApproval ? 1 : 2);
     expect(generateFallback).not.toHaveBeenCalled();
   });
 });

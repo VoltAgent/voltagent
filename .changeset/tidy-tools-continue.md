@@ -2,7 +2,7 @@
 "@voltagent/core": patch
 ---
 
-Prevent model retries and fallback from replaying completed tool calls in `generateText`. Once a
-step records a tool result or error, subsequent failures are surfaced to the caller.
+Prevent model retries and fallback from replaying tool calls in `generateText`, including when
+an approved tool executes before the first model step. Surface the original failure to the caller.
 
 Fixes #1537.

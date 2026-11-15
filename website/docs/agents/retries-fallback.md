@@ -71,8 +71,9 @@ Fallback **does not** trigger for:
 - Guardrail blocks.
 - Tool execution errors.
 
-For `generateText`, once a step records a tool result or error, a subsequent failure is
-returned to the caller. Model retries and fallback would restart generation from the original
+For `generateText`, once a local tool starts or a step records a tool result or error, a
+subsequent failure is returned to the caller. This includes approved tools that run before
+the first model step. Model retries and fallback would restart generation from the original
 messages and could repeat tool side effects.
 
 Streaming behavior:

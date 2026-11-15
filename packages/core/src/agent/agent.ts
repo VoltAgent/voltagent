@@ -1347,14 +1347,33 @@ export class Agent {
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
 
-            let hasToolOutcome = false;
+            let hasToolExecution = false;
+            const trackedTools = Object.fromEntries(
+              Object.entries<AITool>(tools).map(([name, tool]) => {
+                const execute = tool.execute;
+                if (!execute) {
+                  return [name, tool];
+                }
+                return [
+                  name,
+                  {
+                    ...tool,
+                    execute: (...args: Parameters<typeof execute>) => {
+                      // Approved tools can run before the SDK starts its first step.
+                      hasToolExecution = true;
+                      return execute.call(tool, ...args);
+                    },
+                  },
+                ];
+              }),
+            );
             const handleStep = this.createStepHandler(oc, options);
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
               operation: "generateText",
               options,
               // Restarting generateText from the original messages can replay tool side effects.
-              canReplay: () => !hasToolOutcome,
+              canReplay: () => !hasToolExecution,
               run: async ({
                 model: resolvedModel,
                 modelName: resolvedModelName,
@@ -1390,7 +1409,7 @@ export class Agent {
                     generateText({
                       model: resolvedModel,
                       messages,
-                      tools,
+                      tools: trackedTools,
                       // Default values
                       temperature: this.temperature,
                       maxOutputTokens: this.maxOutputTokens,
@@ -1405,7 +1424,7 @@ export class Agent {
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
                       onStepFinish: async (step) => {
-                        hasToolOutcome ||= Boolean(
+                        hasToolExecution ||= Boolean(
                           step.content?.some(
                             (part) => part.type === "tool-result" || part.type === "tool-error",
                           ),
