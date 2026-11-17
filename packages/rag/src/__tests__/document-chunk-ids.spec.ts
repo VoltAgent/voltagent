@@ -60,7 +60,10 @@ describe("StructuredDocument chunk identity", () => {
     expect(chunks.map((chunk) => chunk.content)).toEqual(
       documents.map((document) => document.text),
     );
-    expect(new Set(doc.getLinkGraph().shared)).toEqual(new Set(chunks.map((chunk) => chunk.id)));
+    expect(doc.getLinkGraph().shared).toEqual(chunks.map((chunk) => chunk.id));
+    doc.getNodes().forEach((node, index) => {
+      expect(node.links).toEqual([{ nodeId: chunks[index]?.id, type: "chunk" }]);
+    });
   });
 
   it("keeps empty input empty", () => {
