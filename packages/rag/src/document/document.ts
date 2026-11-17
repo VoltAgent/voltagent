@@ -55,21 +55,24 @@ export class StructuredDocument {
 
   chunk(params: { strategy: ChunkStrategy; maxTokens?: number }): { chunks: Chunk[] } {
     const chunks: Chunk[] = [];
-    const graph: Record<string, string[]> = {};
-    this.nodes.forEach((node) => {
+    this.nodes.forEach((node, documentIndex) => {
       const cks = chunkByStrategy(params.strategy, node.text, {
         maxTokens: params.maxTokens,
-      }).map((chunk) => ({
+      }).map((chunk, index) => ({
         ...chunk,
+        id: `${node.id}-${documentIndex}-chunk-${index}`,
         metadata: {
           ...chunk.metadata,
           docId: node.id,
         },
       }));
-      cks.forEach((ck) => {
-        this.addLink(node.id, ck.id, "chunk");
-        graph[node.id] = [...(graph[node.id] ?? []), ck.id];
-      });
+      this.nodes[documentIndex] = {
+        ...node,
+        links: [
+          ...(node.links ?? []),
+          ...cks.map((ck) => ({ nodeId: ck.id, type: "chunk" as const })),
+        ],
+      };
       chunks.push(...cks);
     });
     return { chunks };
