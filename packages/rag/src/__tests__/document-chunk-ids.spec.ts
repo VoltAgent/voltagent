@@ -50,6 +50,19 @@ describe("StructuredDocument chunk identity", () => {
     expect(first[0]?.metadata?.docId).toBe("policy");
   });
 
+  it("keeps chunks distinct even when callers repeat an explicit document ID", () => {
+    const doc = new StructuredDocument(
+      documents.map((document) => ({ ...document, docId: "shared" })),
+    );
+    const { chunks } = doc.chunk({ strategy: "token", maxTokens: 100 });
+
+    expect(new Set(chunks.map((chunk) => chunk.id)).size).toBe(2);
+    expect(chunks.map((chunk) => chunk.content)).toEqual(
+      documents.map((document) => document.text),
+    );
+    expect(new Set(doc.getLinkGraph().shared)).toEqual(new Set(chunks.map((chunk) => chunk.id)));
+  });
+
   it("keeps empty input empty", () => {
     const doc = new StructuredDocument([]);
     expect(doc.chunk({ strategy: "token" }).chunks).toEqual([]);

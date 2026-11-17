@@ -56,12 +56,12 @@ export class StructuredDocument {
   chunk(params: { strategy: ChunkStrategy; maxTokens?: number }): { chunks: Chunk[] } {
     const chunks: Chunk[] = [];
     const graph: Record<string, string[]> = {};
-    this.nodes.forEach((node) => {
+    this.nodes.forEach((node, documentIndex) => {
       const cks = chunkByStrategy(params.strategy, node.text, {
         maxTokens: params.maxTokens,
       }).map((chunk, index) => ({
         ...chunk,
-        id: `${node.id}-chunk-${index}`,
+        id: `${node.id}-${documentIndex}-chunk-${index}`,
         metadata: {
           ...chunk.metadata,
           docId: node.id,
