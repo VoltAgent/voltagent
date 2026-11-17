@@ -59,8 +59,9 @@ export class StructuredDocument {
     this.nodes.forEach((node) => {
       const cks = chunkByStrategy(params.strategy, node.text, {
         maxTokens: params.maxTokens,
-      }).map((chunk) => ({
+      }).map((chunk, index) => ({
         ...chunk,
+        id: `${node.id}-chunk-${index}`,
         metadata: {
           ...chunk.metadata,
           docId: node.id,
