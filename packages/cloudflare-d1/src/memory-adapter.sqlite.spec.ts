@@ -1,5 +1,5 @@
-import { DatabaseSync } from "node:sqlite";
 import type { D1Database } from "@cloudflare/workers-types";
+import { type InStatement, createClient } from "@libsql/client";
 import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import { D1MemoryAdapter } from "./memory-adapter";
@@ -9,36 +9,38 @@ import { D1MemoryAdapter } from "./memory-adapter";
  * database (D1 is SQLite), so the adapter's SQL is actually run.
  */
 function createSqliteBinding(): D1Database {
-  const db = new DatabaseSync(":memory:");
+  const db = createClient({ url: ":memory:" });
 
-  const statement = (sql: string, params: unknown[] = []) => ({
-    bind: (...args: unknown[]) => statement(sql, args),
-    async run() {
-      db.prepare(sql).run(...(params as never[]));
-      return { success: true, meta: {} };
-    },
-    async all() {
-      return { results: db.prepare(sql).all(...(params as never[])), success: true, meta: {} };
-    },
-    async first() {
-      return db.prepare(sql).get(...(params as never[])) ?? null;
-    },
-    runSync() {
-      db.prepare(sql).run(...(params as never[]));
-    },
-  });
+  const rowsOf = async (stmt: InStatement) => {
+    const { columns, rows } = await db.execute(stmt);
+    return rows.map((row) => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
+  };
+
+  const statement = (sql: string, params: unknown[] = []) => {
+    const stmt = { sql, args: params } as InStatement;
+    return {
+      stmt,
+      bind: (...args: unknown[]) => statement(sql, args),
+      async run() {
+        await db.execute(stmt);
+        return { success: true, meta: {} };
+      },
+      async all() {
+        return { results: await rowsOf(stmt), success: true, meta: {} };
+      },
+      async first() {
+        return (await rowsOf(stmt))[0] ?? null;
+      },
+    };
+  };
 
   return {
     prepare: (sql: string) => statement(sql),
     async batch(statements: Array<ReturnType<typeof statement>>) {
-      db.exec("BEGIN");
-      try {
-        for (const s of statements) s.runSync();
-        db.exec("COMMIT");
-      } catch (error) {
-        db.exec("ROLLBACK");
-        throw error;
-      }
+      await db.batch(
+        statements.map((s) => s.stmt),
+        "write",
+      );
       return [];
     },
   } as unknown as D1Database;
