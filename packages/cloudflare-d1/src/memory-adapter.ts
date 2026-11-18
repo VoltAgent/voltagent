@@ -646,8 +646,11 @@ export class D1MemoryAdapter implements StorageAdapter {
     const messagesTable = `${this.tablePrefix}_messages`;
     const { limit, before, after, roles } = options || {};
 
+    // Messages saved together share one created_at, so rowid (insertion order)
+    // breaks ties: without it, `limit` can keep older messages of the newest
+    // batch and drop the latest ones.
     let sql = `SELECT * FROM (
-             SELECT * FROM ${messagesTable}
+             SELECT *, rowid AS _insert_order FROM ${messagesTable}
              WHERE conversation_id = ? AND user_id = ?`;
     const args: unknown[] = [conversationId, userId];
 
@@ -667,13 +670,13 @@ export class D1MemoryAdapter implements StorageAdapter {
       args.push(after.toISOString());
     }
 
-    sql += " ORDER BY created_at DESC";
+    sql += " ORDER BY created_at DESC, rowid DESC";
     if (limit && limit > 0) {
       sql += " LIMIT ?";
       args.push(limit);
     }
 
-    sql += " ) AS subq ORDER BY created_at ASC";
+    sql += " ) AS subq ORDER BY created_at ASC, _insert_order ASC";
 
     const rows = await this.all<D1Row>(sql, args);
 
