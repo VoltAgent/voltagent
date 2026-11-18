@@ -6,6 +6,8 @@ title: Overview
 
 VoltAgent allows you to extend the capabilities of your AI agents by providing them with **Tools**. Tools enable agents to interact with external APIs, perform calculations, access databases, or execute virtually any custom code. This guide covers how to define and use individual tools and the new `Toolkit` concept for managing related tools.
 
+For a runnable external API example, see [Context.dev web search](./context-search.md), which combines a typed search tool with source citations and cancellation.
+
 ## Defining a Single Tool
 
 The most basic way to define a tool is using the `createTool` helper function (or instantiating the `Tool` class directly).

@@ -1,0 +1,4 @@
+.env
+.voltagent
+dist
+node_modules
