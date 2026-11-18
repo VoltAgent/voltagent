@@ -12,6 +12,14 @@ describe("Markdown table detection", () => {
     expect(detectFormat("| Name | Value |")).toBe("text");
   });
 
+  it.each(["\n", "\r\n"])("accepts a delimiter without a trailing pipe (%j)", (newline) => {
+    const header = "| Name | Value |";
+    const delimiter = "| :--- | ---:";
+
+    expect(detectFormat([header, delimiter].join(newline))).toBe("table");
+    expect(detectFormat([header, delimiter, "| one | two |"].join(newline))).toBe("table");
+  });
+
   it.each(["\n", "\r\n"])("accepts aligned delimiter cells (%j)", (newline) => {
     const table = ["| Name | Value |", "| :--- | ---: |"].join(newline);
 
