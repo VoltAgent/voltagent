@@ -82,6 +82,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 
 ## All Examples
 
+- [Context.dev Search](./with-context-search) — Search public sources with typed tools, relevant passages, cancellation, and cited answers.
 - [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
 - [Workspace](./with-workspace) — Workspace filesystem, sandbox execution, search, and skills.
 - [Summarization](./with-summarization) — Agent summarization with a low trigger window for easy testing.

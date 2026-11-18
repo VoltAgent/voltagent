@@ -230,7 +230,12 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Tools",
       collapsed: true,
-      items: ["tools/overview", "tools/tool-routing", "tools/reasoning-tool"],
+      items: [
+        "tools/overview",
+        "tools/context-search",
+        "tools/tool-routing",
+        "tools/reasoning-tool",
+      ],
     },
     {
       type: "category",
