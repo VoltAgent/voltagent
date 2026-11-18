@@ -3824,6 +3824,9 @@ importers:
         specifier: ^1.0.2
         version: link:../internal
     devDependencies:
+      '@libsql/client':
+        specifier: ^0.15.0
+        version: 0.15.10
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)

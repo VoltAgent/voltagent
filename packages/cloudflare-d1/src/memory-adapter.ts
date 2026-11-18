@@ -855,7 +855,9 @@ export class D1MemoryAdapter implements StorageAdapter {
         ),
       );
     }
-    await this.batch(statements);
+    await this.executeWithRetry(async () => {
+      await this.batch(statements);
+    }, "delete messages");
   }
 
   // ==========================================================================
