@@ -53,7 +53,12 @@ export const contextSearchTool = createTool({
       response = await fetch("https://api.context.dev/v1/web/search", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: safeStringify({ query, numResults, highlightsOptions: { enabled: true } }),
+        body: safeStringify({
+          query,
+          numResults,
+          highlightsOptions: { enabled: true },
+          timeoutOpts: { milliseconds: 55_000, behavior: "return-partial" },
+        }),
         redirect: "error",
         signal,
       });
