@@ -25,6 +25,12 @@ import { safeStringify } from "@voltagent/internal";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
 import type { UIMessage } from "ai";
 
+/**
+ * D1 accepts at most 100 bound parameters per statement
+ * (https://developers.cloudflare.com/d1/platform/limits/).
+ */
+const D1_MAX_BOUND_PARAMETERS = 100;
+
 export interface D1MemoryOptions {
   /**
    * Cloudflare D1 binding from the Worker env
@@ -835,9 +841,23 @@ export class D1MemoryAdapter implements StorageAdapter {
     }
 
     const messagesTable = `${this.tablePrefix}_messages`;
-    const placeholders = messageIds.map(() => "?").join(",");
-    const sql = `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND user_id = ? AND message_id IN (${placeholders})`;
-    await this.run(sql, [conversationId, userId, ...messageIds]);
+    // conversation_id and user_id take two of the parameters, so the ids are
+    // split into statements that stay under D1's limit and run as one batch.
+    const idsPerStatement = D1_MAX_BOUND_PARAMETERS - 2;
+    const statements: D1Statement[] = [];
+    for (let start = 0; start < messageIds.length; start += idsPerStatement) {
+      const ids = messageIds.slice(start, start + idsPerStatement);
+      const placeholders = ids.map(() => "?").join(",");
+      statements.push(
+        this.buildStatement(
+          `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND user_id = ? AND message_id IN (${placeholders})`,
+          [conversationId, userId, ...ids],
+        ),
+      );
+    }
+    await this.executeWithRetry(async () => {
+      await this.batch(statements);
+    }, "delete messages");
   }
 
   // ==========================================================================
