@@ -47,8 +47,23 @@ export function detectFormat(input: string): DetectedFormat {
   }
 
   // Table pipe syntax
-  if (/^\|[^\r\n]+\|[ \t]*\r?\n\|[ \t]*:?-{2,}:?[ \t]*(?:\|[ \t]*:?-{2,}:?[ \t]*)*\|?[ \t]*$/m.test(text)) {
-    return "table";
+  const lines = text.split(/\r?\n/);
+  for (let i = 1; i < lines.length; i++) {
+    const header = lines[i - 1].trim();
+    const delimiter = lines[i].trim();
+    if (!header.startsWith("|") || !header.endsWith("|") || !delimiter.startsWith("|")) {
+      continue;
+    }
+    const headerCells = header.slice(1, -1).split("|");
+    const delimiterCells = delimiter
+      .slice(1, delimiter.endsWith("|") ? -1 : undefined)
+      .split("|");
+    if (
+      headerCells.length === delimiterCells.length &&
+      delimiterCells.every((cell) => /^:?-{2,}:?$/.test(cell.trim()))
+    ) {
+      return "table";
+    }
   }
 
   // Markdown-ish signals

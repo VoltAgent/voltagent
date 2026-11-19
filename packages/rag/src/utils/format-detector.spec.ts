@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { detectFormat } from "./format-detector";
 
 describe("Markdown table detection", () => {
+  it("rejects a delimiter with a different number of cells", () => {
+    expect(detectFormat("| Name | Value |\n| ---")).toBe("text");
+  });
+
+  it("rejects long whitespace followed by an invalid delimiter character", () => {
+    expect(detectFormat("| Name |\n|--" + " ".repeat(100000) + "x")).toBe("text");
+  });
+
   it.each(["\n", "\r\n"])("detects a table with only a header and delimiter (%j)", (newline) => {
     const table = ["| Name | Value |", "| --- | --- |"].join(newline);
 
