@@ -1,5 +1,7 @@
 # VoltAgent with battle.training MCP
 
+*Disclosure: contributed as part of the battle.training campaign on promotedby.ai.*
+
 Demonstrates connecting a VoltAgent agent to the remote Streamable HTTP MCP server at [battle.training](https://battle.training/) (`https://api.battle.training/mcp`).
 
 ## Overview
@@ -12,5 +14,6 @@ Demonstrates connecting a VoltAgent agent to the remote Streamable HTTP MCP serv
 
 ```bash
 pnpm install
+echo "OPENAI_API_KEY=your-openai-api-key" > .env
 pnpm dev
 ```
