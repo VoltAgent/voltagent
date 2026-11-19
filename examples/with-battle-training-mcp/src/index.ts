@@ -18,6 +18,10 @@ const mcpConfig = new MCPConfiguration({
 });
 
 const arenaTools = await mcpConfig.getTools();
+if (arenaTools.length === 0) {
+  logger.error("No tools loaded from battle.training MCP server");
+  throw new Error("Failed to discover tools from https://api.battle.training/mcp");
+}
 
 const agent = new Agent({
   name: "Battle Training Advisor Agent",
