@@ -23,9 +23,21 @@ export const throwIfAborted = (signal?: AbortSignal) => {
   }
 };
 
-export const waitWithSignal = (ms: number, signal?: AbortSignal) => {
-  const durationMs = Number.isFinite(ms) ? Math.max(0, ms) : 0;
+// Node.js runs timers above the signed 32-bit limit after just 1 ms.
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
+export const waitWithSignal = async (ms: number, signal?: AbortSignal) => {
+  let remainingMs = Number.isFinite(ms) ? Math.max(0, ms) : 0;
+
+  while (remainingMs > MAX_TIMEOUT_MS) {
+    await waitForTimer(MAX_TIMEOUT_MS, signal);
+    remainingMs -= MAX_TIMEOUT_MS;
+  }
+
+  await waitForTimer(remainingMs, signal);
+};
+
+const waitForTimer = (durationMs: number, signal?: AbortSignal) => {
   if (!signal) {
     return new Promise<void>((resolve) => {
       setTimeout(resolve, durationMs);
