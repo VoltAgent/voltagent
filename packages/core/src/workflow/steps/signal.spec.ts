@@ -22,16 +22,19 @@ describe("waitWithSignal", () => {
     expect(onComplete).toHaveBeenCalledOnce();
   });
 
-  it("can cancel a long wait after the first timer elapses", async () => {
+  it.each([
+    ["cancel", { type: "cancelled" }, "WORKFLOW_CANCELLED"],
+    ["suspend", undefined, "WORKFLOW_SUSPENDED"],
+  ])("can %s a long wait after the first timer elapses", async (_action, reason, error) => {
     vi.useFakeTimers();
 
     const controller = new AbortController();
     const wait = waitWithSignal(MAX_TIMEOUT_MS + 100, controller.signal);
 
     await vi.advanceTimersByTimeAsync(MAX_TIMEOUT_MS);
-    controller.abort({ type: "cancelled" });
+    controller.abort(reason);
 
-    await expect(wait).rejects.toThrow("WORKFLOW_CANCELLED");
+    await expect(wait).rejects.toThrow(error);
     expect(vi.getTimerCount()).toBe(0);
   });
 });

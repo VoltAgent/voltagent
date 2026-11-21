@@ -2,4 +2,4 @@
 "@voltagent/core": patch
 ---
 
-Keep workflow sleep steps pending for their requested duration when it exceeds the Node.js timer limit.
+Preserve requested durations for workflow sleep steps and retry delays that exceed the Node.js timer limit.
