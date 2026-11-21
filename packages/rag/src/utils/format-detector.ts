@@ -47,7 +47,7 @@ export function detectFormat(input: string): DetectedFormat {
   }
 
   // Table pipe syntax
-  const lines = input.split(/\r?\n/);
+  const lines = input.replace(/^\uFEFF/, "").split(/\r?\n/);
   for (let i = 1; i < lines.length; i++) {
     const header = lines[i - 1].replace(/^ {0,3}/, "").trimEnd();
     const delimiter = lines[i].replace(/^ {0,3}/, "").trimEnd();

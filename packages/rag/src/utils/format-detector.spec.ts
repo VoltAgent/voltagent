@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { detectFormat } from "./format-detector";
 
 describe("Markdown table detection", () => {
+  it("accepts an initial byte order mark", () => {
+    expect(detectFormat("\uFEFF| Name | Value |\n| --- | --- |")).toBe("table");
+  });
+
   it.each(["", "intro\n"])("preserves code indentation after %j", (prefix) => {
     expect(detectFormat(prefix + "    | Name |\n    | --- |")).toBe("text");
   });
