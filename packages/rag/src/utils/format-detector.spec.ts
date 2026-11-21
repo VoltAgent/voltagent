@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { detectFormat } from "./format-detector";
 
 describe("Markdown table detection", () => {
+  it.each(["", "intro\n"])("preserves code indentation after %j", (prefix) => {
+    expect(detectFormat(prefix + "    | Name |\n    | --- |")).toBe("text");
+  });
+
+  it("accepts three-space indentation and escaped header pipes", () => {
+    expect(detectFormat("   | A \\| B | C |\n   | --- | --- |")).toBe("table");
+  });
+
   it("rejects a delimiter with a different number of cells", () => {
     expect(detectFormat("| Name | Value |\n| ---")).toBe("text");
   });

@@ -47,14 +47,14 @@ export function detectFormat(input: string): DetectedFormat {
   }
 
   // Table pipe syntax
-  const lines = text.split(/\r?\n/);
+  const lines = input.split(/\r?\n/);
   for (let i = 1; i < lines.length; i++) {
-    const header = lines[i - 1].trim();
-    const delimiter = lines[i].trim();
+    const header = lines[i - 1].replace(/^ {0,3}/, "").trimEnd();
+    const delimiter = lines[i].replace(/^ {0,3}/, "").trimEnd();
     if (!header.startsWith("|") || !header.endsWith("|") || !delimiter.startsWith("|")) {
       continue;
     }
-    const headerCells = header.slice(1, -1).split("|");
+    const headerCells = header.slice(1, -1).replace(/\\\|/g, "").split("|");
     const delimiterCells = delimiter
       .slice(1, delimiter.endsWith("|") ? -1 : undefined)
       .split("|");
