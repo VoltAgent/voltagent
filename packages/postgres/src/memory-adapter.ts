@@ -608,15 +608,19 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           // New format - use parts directly (PostgreSQL returns JSONB as parsed object)
           if (typeof row.parts === "string") {
             try {
-              parts = JSON.parse(row.parts);
+              const parsedParts = JSON.parse(row.parts);
+              parts = Array.isArray(parsedParts) ? parsedParts : [];
               this.log(`Row ${index}: Parsed parts from string`);
             } catch (e) {
               parts = [];
               this.log(`Row ${index}: Failed to parse parts, using empty array`, e);
             }
-          } else {
+          } else if (Array.isArray(row.parts)) {
             parts = row.parts;
             this.log(`Row ${index}: Parts already parsed as object`);
+          } else {
+            parts = [];
+            this.log(`Row ${index}: Parts is not an array, using empty array`);
           }
         }
         // Check for old format (content column exists and has value)
@@ -625,23 +629,18 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           this.log(`Row ${index}: Using old format (content column)`);
 
           // Old format - convert content to parts
-          let content = row.content;
+          const rawContent = row.content;
+          let content = rawContent;
 
           // PostgreSQL might return JSONB as already parsed
-          if (typeof content === "string") {
+          if (typeof rawContent === "string") {
             try {
-              content = JSON.parse(content);
+              content = JSON.parse(rawContent);
               this.log(`Row ${index}: Parsed content from string`);
             } catch (e) {
               // If parsing fails, treat as plain text
               this.log(`Row ${index}: Failed to parse content, treating as plain text`, e);
-              parts = [{ type: "text", text: content }];
-              return {
-                id: row.message_id,
-                role: row.role as "system" | "user" | "assistant",
-                parts,
-                metadata: row.metadata,
-              };
+              content = rawContent;
             }
           }
 
@@ -649,6 +648,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
             // Simple string content -> text part
             parts = [{ type: "text", text: content }];
             this.log(`Row ${index}: Converted string content to text part`);
+          } else if (typeof content === "number" || typeof content === "boolean") {
+            parts = [{ type: "text", text: String(rawContent) }];
+            this.log(`Row ${index}: Converted primitive content to text part`);
           } else if (Array.isArray(content)) {
             // Already an array of parts (old BaseMessage format with MessageContent array)
             parts = content;
