@@ -549,6 +549,78 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       const messages = await adapter.getMessages("user-1", conversationId);
       expect(messages).toHaveLength(0);
     });
+
+    it("should handle 'null' or non-array JSON values in row.parts without crashing", async () => {
+      mockResultWith([
+        {
+          message_id: "msg-null-parts",
+          role: "user",
+          parts: "null",
+          metadata: {},
+          created_at: new Date("2024-01-01T00:00:00.000Z"),
+        },
+        {
+          message_id: "msg-object-parts",
+          role: "assistant",
+          parts: { invalid: true },
+          metadata: {},
+          created_at: new Date("2024-01-01T00:00:00.000Z"),
+        },
+      ]);
+
+      const messages = await adapter.getMessages("user-1", conversationId);
+      expect(messages).toHaveLength(2);
+      expect(messages[0].parts).toEqual([]);
+      expect(messages[1].parts).toEqual([]);
+    });
+
+    it("should preserve metadata.createdAt when falling back to legacy plain-text row.content", async () => {
+      const createdAt = "2024-01-01T12:00:00.000Z";
+      mockResultWith([
+        {
+          message_id: "msg-legacy-plain",
+          role: "user",
+          parts: null,
+          content: "Legacy plain text message",
+          metadata: { source: "v1" },
+          created_at: createdAt,
+        },
+      ]);
+
+      const messages = await adapter.getMessages("user-1", conversationId);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].parts).toEqual([{ type: "text", text: "Legacy plain text message" }]);
+      expect(messages[0].metadata).toEqual({
+        source: "v1",
+        createdAt: new Date(createdAt),
+      });
+    });
+
+    it("should preserve legacy row.content when it contains JSON primitive strings like numbers or booleans", async () => {
+      mockResultWith([
+        {
+          message_id: "msg-legacy-number",
+          role: "user",
+          parts: null,
+          content: "123",
+          metadata: {},
+          created_at: new Date("2024-01-01T00:00:00.000Z"),
+        },
+        {
+          message_id: "msg-legacy-boolean",
+          role: "user",
+          parts: null,
+          content: "true",
+          metadata: {},
+          created_at: new Date("2024-01-01T00:00:00.000Z"),
+        },
+      ]);
+
+      const messages = await adapter.getMessages("user-1", conversationId);
+      expect(messages).toHaveLength(2);
+      expect(messages[0].parts).toEqual([{ type: "text", text: "123" }]);
+      expect(messages[1].parts).toEqual([{ type: "text", text: "true" }]);
+    });
   });
 
   // ============================================================================
