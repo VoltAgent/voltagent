@@ -3,6 +3,7 @@ import type { AddressInfo } from "node:net";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
@@ -254,5 +255,104 @@ describe("notification registration lifecycle", () => {
       expect(endpoint.activeResponses.size).toBe(0);
       expect(notificationRegistrations(server)).toEqual([1, 1]);
     });
+  });
+
+  it("preserves an active connection when a second connection attempt is rejected", async () => {
+    const server = createMcpServer();
+    const base = server as unknown as {
+      mcpServer: Server;
+      connectTransport: (
+        name: string,
+        context: { transport: "stdio" },
+        transport: Transport,
+      ) => Promise<void>;
+    };
+    const [clientTransport, activeTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "active-client", version: "1.0.0" });
+    clients.push(client);
+    await base.connectTransport("active", { transport: "stdio" }, activeTransport);
+    await client.connect(clientTransport);
+    const [, rejectedTransport] = InMemoryTransport.createLinkedPair();
+
+    await expect(
+      base.connectTransport("rejected", { transport: "stdio" }, rejectedTransport),
+    ).rejects.toThrow(/already connected/i);
+    expect(base.mcpServer.transport).toBe(activeTransport);
+    expect(notificationRegistrations(server)).toEqual([1, 1]);
+    const received = vi.fn();
+    client.setNotificationHandler(PromptListChangedNotificationSchema, received);
+    await server.notifyPromptListChanged();
+    await vi.waitFor(() => expect(received).toHaveBeenCalledTimes(1));
+    await expect(client.listTools()).resolves.toEqual({ tools: [] });
+  });
+
+  it("preserves a starting connection when another connection attempt is rejected", async () => {
+    const server = createMcpServer();
+    const base = server as unknown as {
+      mcpServer: Server;
+      connectTransport: (
+        name: string,
+        context: { transport: "stdio" },
+        transport: Transport,
+      ) => Promise<void>;
+    };
+    const [clientTransport, activeTransport] = InMemoryTransport.createLinkedPair();
+    let release: () => void = () => {};
+    let started = false;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const originalStart = activeTransport.start.bind(activeTransport);
+    vi.spyOn(activeTransport, "start").mockImplementation(async () => {
+      started = true;
+      await gate;
+      await originalStart();
+    });
+    const connecting = base.connectTransport("active", { transport: "stdio" }, activeTransport);
+    try {
+      await vi.waitFor(() => expect(started).toBe(true));
+      const [, rejectedTransport] = InMemoryTransport.createLinkedPair();
+      await expect(
+        base.connectTransport("rejected", { transport: "stdio" }, rejectedTransport),
+      ).rejects.toThrow(/already connected/i);
+      expect(base.mcpServer.transport).toBe(activeTransport);
+      expect(notificationRegistrations(server)).toEqual([1, 1]);
+    } finally {
+      release();
+      await connecting;
+    }
+    const client = new Client({ name: "starting-client", version: "1.0.0" });
+    clients.push(client);
+    await client.connect(clientTransport);
+    await expect(client.listTools()).resolves.toEqual({ tools: [] });
+  });
+
+  it("cleans up an owned connection attempt when transport startup fails", async () => {
+    const server = createMcpServer();
+    const base = server as unknown as {
+      mcpServer: Server;
+      connectTransport: (
+        name: string,
+        context: { transport: "stdio" },
+        transport: Transport,
+      ) => Promise<void>;
+    };
+    const failure = new Error("startup failed");
+    const transport: Transport = {
+      start: vi.fn(async () => {
+        throw failure;
+      }),
+      send: vi.fn(async () => {}),
+      close: vi.fn(async () => {
+        transport.onclose?.();
+      }),
+    };
+
+    await expect(
+      base.connectTransport("failed", { transport: "stdio" }, transport),
+    ).rejects.toThrow("startup failed");
+    expect(transport.close).toHaveBeenCalledTimes(1);
+    expect(base.mcpServer.transport).toBeUndefined();
+    expect(notificationRegistrations(server)).toEqual([0, 0]);
   });
 });

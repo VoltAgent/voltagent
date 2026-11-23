@@ -52,6 +52,8 @@ Prompt and resource notifications target connected sessions. List-change calls s
 
 Closed session servers are removed from notification registries. Stateless HTTP servers are released when their response finishes or closes, so request-scoped streaming notifications remain available until the response ends.
 
+A rejected connection attempt preserves another active connection and its notification registration. Failed startup is cleaned up only when the attempt owns the server connection.
+
 ## License
 
 MIT

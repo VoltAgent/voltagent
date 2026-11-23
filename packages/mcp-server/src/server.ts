@@ -810,13 +810,21 @@ export class MCPServer {
     }
 
     const registry = this.buildToolRegistry(context);
+    if (this.mcpServer.transport) {
+      throw new Error(
+        "Already connected to a transport. Call close() before connecting to a new transport.",
+      );
+    }
     this.registerCapabilityHandlers(this.mcpServer);
     this.registerToolHandlers(this.mcpServer, registry);
     try {
       await this.mcpServer.connect(transport);
     } catch (error) {
-      this.unregisterNotificationServer(this.mcpServer);
-      await this.mcpServer.close().catch(() => {});
+      const activeTransport = this.mcpServer.transport;
+      if (!activeTransport || activeTransport === transport) {
+        this.unregisterNotificationServer(this.mcpServer);
+        await this.mcpServer.close().catch(() => {});
+      }
       throw error;
     }
     this.connectedTransports.set(name, transport);
