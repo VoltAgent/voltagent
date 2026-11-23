@@ -469,6 +469,50 @@ describe("Auth Middleware - conversationId & Options Preservation", () => {
       }
     });
 
+    it("should return 401 for trailing-slash MCP tool invocation when token is missing", async () => {
+      const app = new Elysia()
+        .state("authenticatedUser", null as any)
+        .onBeforeHandle(createAuthMiddleware(mockAuthProvider))
+        .post("/mcp/:serverId/tools/:toolName/invoke", () => ({ success: true }));
+
+      const res = await app.handle(
+        new Request("http://localhost:3000/mcp/test-server/tools/search/invoke/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        }),
+      );
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should let authenticated requests reach MCP tool invocation", async () => {
+      const app = new Elysia()
+        .state("authenticatedUser", null as any)
+        .onBeforeHandle(createAuthMiddleware(mockAuthProvider))
+        .post("/mcp/:serverId/tools/:toolName/invoke", () => ({ success: true }));
+
+      for (const path of [
+        "/mcp/test-server/tools/search/invoke",
+        "/mcp/test-server/tools/search/invoke/",
+      ]) {
+        const res = await app.handle(
+          new Request(`http://localhost:3000${path}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer valid-token",
+            },
+            body: JSON.stringify({}),
+          }),
+        );
+
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.success).toBe(true);
+      }
+    });
+
     it("should return 401 when token is invalid", async () => {
       mockAuthProvider.defaultPrivate = true;
 
