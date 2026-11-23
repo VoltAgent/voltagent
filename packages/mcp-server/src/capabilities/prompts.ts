@@ -92,7 +92,11 @@ export class PromptBridge {
 
   async notifyChanged(): Promise<void> {
     this.dynamicPromptCache = null;
-    await Promise.all(Array.from(this.servers).map((server) => server.sendPromptListChanged()));
+    await Promise.all(
+      Array.from(this.servers)
+        .filter((server) => server.transport)
+        .map((server) => server.sendPromptListChanged()),
+    );
   }
 
   private toPromptDescriptor(config: MCPStaticPromptConfig): Prompt {

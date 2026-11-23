@@ -8,11 +8,13 @@ import { ResourceBridge } from "./resources";
 
 const createPromptServerStub = () =>
   ({
+    transport: {},
     sendPromptListChanged: vi.fn(async () => {}),
   }) as unknown as Server;
 
 const createResourceServerStub = () =>
   ({
+    transport: {},
     sendResourceUpdated: vi.fn(async () => {}),
     sendResourceListChanged: vi.fn(async () => {}),
   }) as unknown as Server;

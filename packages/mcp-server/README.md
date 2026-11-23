@@ -46,6 +46,10 @@ const server = new MCPServer({
 });
 ```
 
+## Capability notifications
+
+Prompt and resource notifications target connected sessions. List-change calls still invalidate cached descriptors when no clients are connected, and errors from connected transports propagate to the caller.
+
 ## License
 
 MIT
