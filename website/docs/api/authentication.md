@@ -611,7 +611,7 @@ if (process.env.NODE_ENV === "production") {
 Legacy auth uses two default lists:
 
 - **DEFAULT_LEGACY_PUBLIC_ROUTES** (alias `DEFAULT_PUBLIC_ROUTES`): management, docs, discovery
-- **PROTECTED_ROUTES**: execution, tool execution, observability, updates
+- **PROTECTED_ROUTES**: execution, tool execution, MCP execution (transports, tool invocation, prompt and resource reads, logging level), observability, updates
 
 When `auth` is enabled:
 
@@ -626,6 +626,7 @@ If you need `/agents`, `/workflows`, `/doc`, or `/ui` protected, use **authNext*
 | Endpoint Type                     | Legacy Auth (Default) | Legacy Auth (defaultPrivate: true) |
 | --------------------------------- | --------------------- | ---------------------------------- |
 | Execution (`POST /agents/*/text`) | Protected             | Protected                          |
+| MCP execution (`POST /mcp/*/mcp`) | Protected             | Protected                          |
 | Management (`GET /agents`)        | Public                | Public                             |
 | Docs (`/doc`, `/ui`)              | Public                | Public                             |
 | Custom routes                     | Public                | Protected                          |
