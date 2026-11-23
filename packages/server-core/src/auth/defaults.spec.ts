@@ -422,6 +422,25 @@ describe("Auth Defaults", () => {
       expect(requiresAuth("POST", "/webhooks/stripe-test", publicRoutes)).toBe(false);
       expect(requiresAuth("GET", "/api/data-export", publicRoutes)).toBe(false);
     });
+
+    it("should match trailing-slash paths like the route without the slash", () => {
+      expect(requiresAuth("POST", "/mcp/my-server/tools/search/invoke/")).toBe(true);
+      expect(requiresAuth("GET", "/mcp/my-server/resources/read/")).toBe(true);
+      expect(requiresAuth("GET", "/mcp/my-server/prompts/greet/")).toBe(true);
+      expect(requiresAuth("POST", "/agents/test/text/")).toBe(true);
+      expect(requiresAuth("GET", "/mcp/servers/")).toBe(false);
+      expect(requiresAuth("GET", "/")).toBe(false);
+      expect(requiresAuth("GET", "/api/custom/", ["GET /api/custom"], true)).toBe(false);
+    });
+
+    it("should treat HEAD like GET", () => {
+      expect(requiresAuth("HEAD", "/mcp/servers/my-server/prompts/greet")).toBe(true);
+      expect(requiresAuth("HEAD", "/mcp/my-server/resources/read")).toBe(true);
+      expect(requiresAuth("HEAD", "/mcp/my-server/sse")).toBe(true);
+      expect(requiresAuth("head", "/mcp/my-server/sse")).toBe(true);
+      expect(requiresAuth("HEAD", "/mcp/servers")).toBe(false);
+      expect(requiresAuth("HEAD", "/api/data", ["GET /api/data"], true)).toBe(false);
+    });
   });
 
   describe("Constants Validation", () => {

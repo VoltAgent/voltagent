@@ -249,17 +249,23 @@ export function requiresAuth(
   publicRoutes?: string[],
   defaultPrivate?: boolean,
 ): boolean {
+  // HEAD is served by GET handlers, and a trailing slash can reach the same handler
+  // (Elysia's default non-strict routing), so match both against the canonical route
+  const upperMethod = method.toUpperCase();
+  const normalizedMethod = upperMethod === "HEAD" ? "GET" : upperMethod;
+  const normalizedPath = path.replace(/\/+$/, "") || "/";
+
   // Check if it's a default public route
   for (const publicRoute of DEFAULT_LEGACY_PUBLIC_ROUTES) {
     if (publicRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = publicRoute.split(" ");
-      if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+      if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
         return false; // Public route, no auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(path, publicRoute)) {
+      if (pathMatches(normalizedPath, publicRoute)) {
         return false; // Public route, no auth required
       }
     }
@@ -271,12 +277,12 @@ export function requiresAuth(
       if (publicRoute.includes(" ")) {
         // Route with method specified
         const [routeMethod, routePath] = publicRoute.split(" ");
-        if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+        if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
           return false; // Public route, no auth required
         }
       } else {
         // Route without method (any method)
-        if (pathMatches(path, publicRoute)) {
+        if (pathMatches(normalizedPath, publicRoute)) {
           return false; // Public route, no auth required
         }
       }
@@ -288,12 +294,12 @@ export function requiresAuth(
     if (protectedRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = protectedRoute.split(" ");
-      if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+      if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
         return true; // Protected route, auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(path, protectedRoute)) {
+      if (pathMatches(normalizedPath, protectedRoute)) {
         return true; // Protected route, auth required
       }
     }

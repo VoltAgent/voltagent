@@ -626,7 +626,7 @@ If you need `/agents`, `/workflows`, `/doc`, or `/ui` protected, use **authNext*
 | Endpoint Type                     | Legacy Auth (Default) | Legacy Auth (defaultPrivate: true) |
 | --------------------------------- | --------------------- | ---------------------------------- |
 | Execution (`POST /agents/*/text`) | Protected             | Protected                          |
-| MCP execution (`POST /mcp/*/mcp`) | Protected             | Protected                          |
+| MCP execution (`/mcp/*/mcp`)      | Protected             | Protected                          |
 | Management (`GET /agents`)        | Public                | Public                             |
 | Docs (`/doc`, `/ui`)              | Public                | Public                             |
 | Custom routes                     | Public                | Protected                          |
