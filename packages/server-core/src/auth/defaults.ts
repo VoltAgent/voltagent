@@ -123,6 +123,23 @@ export const PROTECTED_ROUTES = [
   "POST /workflows/:id/executions/:executionId/cancel", // Cancel execution
 
   // ========================================
+  // MCP EXECUTION (Tools, Agents, Workflows, Prompts, Resources)
+  // Not listed here: discovery. Server list/details and tool lists are in DEFAULT_LEGACY_PUBLIC_ROUTES;
+  // prompt, resource and resource template lists stay public unless defaultPrivate is true
+  // ========================================
+  "/mcp/:serverId/mcp", // Streamable HTTP transport (GET/POST/DELETE)
+  "GET /mcp/:serverId/sse", // SSE transport connection
+  "POST /mcp/:serverId/messages", // SSE transport messages
+  "POST /mcp/servers/:serverId/tools/:toolName", // Invoke MCP tool (Hono)
+  "POST /mcp/:serverId/tools/:toolName/invoke", // Invoke MCP tool (Elysia)
+  "POST /mcp/servers/:serverId/logging/level", // Set MCP logging level (Hono)
+  "POST /mcp/:serverId/logging/level", // Set MCP logging level (Elysia)
+  "GET /mcp/servers/:serverId/prompts/:promptName", // Get MCP prompt (Hono)
+  "GET /mcp/:serverId/prompts/:promptName", // Get MCP prompt (Elysia)
+  "GET /mcp/servers/:serverId/resources/contents", // Read MCP resource (Hono)
+  "GET /mcp/:serverId/resources/read", // Read MCP resource (Elysia)
+
+  // ========================================
   // MEMORY (User Data)
   // ========================================
   "/api/memory/*", // All memory endpoints (GET/POST/PATCH/DELETE)
@@ -232,17 +249,28 @@ export function requiresAuth(
   publicRoutes?: string[],
   defaultPrivate?: boolean,
 ): boolean {
+  // HEAD is served by GET handlers, and a trailing slash can reach the same handler
+  // (Elysia's default non-strict routing), so match both against the canonical route
+  const upperMethod = method.toUpperCase();
+  const normalizedMethod = upperMethod === "HEAD" ? "GET" : upperMethod;
+  const normalizedPath = path.replace(/\/+$/, "") || "/";
+  // Routes written with HEAD or a trailing slash keep matching the request as sent
+  const methodMatches = (routeMethod: string) =>
+    routeMethod === upperMethod || routeMethod === normalizedMethod;
+  const routePathMatches = (routePath: string) =>
+    pathMatches(path, routePath) || pathMatches(normalizedPath, routePath);
+
   // Check if it's a default public route
   for (const publicRoute of DEFAULT_LEGACY_PUBLIC_ROUTES) {
     if (publicRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = publicRoute.split(" ");
-      if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+      if (methodMatches(routeMethod) && routePathMatches(routePath)) {
         return false; // Public route, no auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(path, publicRoute)) {
+      if (routePathMatches(publicRoute)) {
         return false; // Public route, no auth required
       }
     }
@@ -254,12 +282,12 @@ export function requiresAuth(
       if (publicRoute.includes(" ")) {
         // Route with method specified
         const [routeMethod, routePath] = publicRoute.split(" ");
-        if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+        if (methodMatches(routeMethod) && routePathMatches(routePath)) {
           return false; // Public route, no auth required
         }
       } else {
         // Route without method (any method)
-        if (pathMatches(path, publicRoute)) {
+        if (routePathMatches(publicRoute)) {
           return false; // Public route, no auth required
         }
       }
@@ -271,12 +299,12 @@ export function requiresAuth(
     if (protectedRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = protectedRoute.split(" ");
-      if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
+      if (methodMatches(routeMethod) && routePathMatches(routePath)) {
         return true; // Protected route, auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(path, protectedRoute)) {
+      if (routePathMatches(protectedRoute)) {
         return true; // Protected route, auth required
       }
     }
