@@ -44,6 +44,10 @@ export class ResourceBridge {
     this.servers.add(server);
   }
 
+  unregisterServer(server: Server) {
+    this.servers.delete(server);
+  }
+
   get enabled(): boolean {
     return this.staticResources.size > 0 || Boolean(this.adapter);
   }
@@ -117,14 +121,20 @@ export class ResourceBridge {
       return;
     }
     await Promise.all(
-      Array.from(this.servers).map((server) => server.sendResourceUpdated({ uri })),
+      Array.from(this.servers)
+        .filter((server) => server.transport)
+        .map((server) => server.sendResourceUpdated({ uri })),
     );
   }
 
   async notifyListChanged(): Promise<void> {
     this.dynamicResourceCache = null;
     this.dynamicTemplateCache = null;
-    await Promise.all(Array.from(this.servers).map((server) => server.sendResourceListChanged()));
+    await Promise.all(
+      Array.from(this.servers)
+        .filter((server) => server.transport)
+        .map((server) => server.sendResourceListChanged()),
+    );
   }
 
   private toResourceDescriptor(resource: MCPStaticResourceConfig): Resource {

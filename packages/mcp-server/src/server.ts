@@ -149,6 +149,7 @@ export class MCPServer {
     };
     this.promptBridge = new PromptBridge();
     this.resourceBridge = new ResourceBridge();
+    this.mcpServer.onclose = () => this.unregisterNotificationServer(this.mcpServer);
     this.configuredAgents = this.normalizeConfiguredAgents(config.agents ?? {});
     this.configuredAgentMetadata = this.configuredAgents.map((agent) =>
       this.toAgentMetadata(agent),
@@ -306,6 +307,7 @@ export class MCPServer {
     this.httpTransports.clear();
 
     for (const server of this.httpServerInstances.values()) {
+      this.unregisterNotificationServer(server);
       await server.close?.().catch(() => {});
     }
     this.httpServerInstances.clear();
@@ -314,6 +316,7 @@ export class MCPServer {
       await this.cleanupSseSession(sessionId).catch(() => {});
     }
 
+    this.unregisterNotificationServer(this.mcpServer);
     await this.mcpServer.close();
   }
 
@@ -501,12 +504,22 @@ export class MCPServer {
       const context = this.createFilterContext("http", contextOverrides ?? {});
       serverInstance = this.createServerForContext(context);
 
-      await serverInstance.connect(transport);
-      await transport.handleRequest(req, res, body);
+      try {
+        await serverInstance.connect(transport);
+        await transport.handleRequest(req, res, body);
 
-      const establishedId = transport.sessionId;
-      if (establishedId && !this.httpTransports.has(establishedId)) {
-        this.registerHttpSession(establishedId, transport, serverInstance);
+        const establishedId = transport.sessionId;
+        if (establishedId && serverInstance.transport) {
+          if (!this.httpTransports.has(establishedId)) {
+            this.registerHttpSession(establishedId, transport, serverInstance);
+          }
+        } else {
+          this.cleanupServerOnResponseEnd(serverInstance, res);
+        }
+      } catch (error) {
+        this.unregisterNotificationServer(serverInstance);
+        await serverInstance.close().catch(() => {});
+        throw error;
       }
     } catch (error) {
       if (!res.headersSent) {
@@ -535,8 +548,22 @@ export class MCPServer {
     const context = this.createFilterContext("http", contextOverrides ?? {});
     const serverInstance = this.createServerForContext(context);
 
-    await serverInstance.connect(transport);
-    await transport.handleRequest(req, res, body);
+    const cleanup = this.cleanupServerOnResponseEnd(serverInstance, res);
+    try {
+      if (res.writableEnded || res.destroyed) {
+        await cleanup();
+        return;
+      }
+      await serverInstance.connect(transport);
+      if (res.writableEnded || res.destroyed) {
+        await cleanup();
+        return;
+      }
+      await transport.handleRequest(req, res, body);
+    } catch (error) {
+      await cleanup();
+      throw error;
+    }
   }
 
   public async handleSseRequest(options: MCPServerSSERequestOptions): Promise<void> {
@@ -693,6 +720,7 @@ export class MCPServer {
     const serverInstance = this.httpServerInstances.get(sessionId);
     if (serverInstance) {
       this.httpServerInstances.delete(sessionId);
+      this.unregisterNotificationServer(serverInstance);
       serverInstance.close?.().catch(() => {});
     }
   }
@@ -726,6 +754,7 @@ export class MCPServer {
 
     session.closing = true;
     this.sseSessions.delete(sessionId);
+    this.unregisterNotificationServer(session.server);
 
     if (options.closeTransport !== false) {
       await session.transport.close().catch(() => {});
@@ -781,9 +810,23 @@ export class MCPServer {
     }
 
     const registry = this.buildToolRegistry(context);
+    if (this.mcpServer.transport) {
+      throw new Error(
+        "Already connected to a transport. Call close() before connecting to a new transport.",
+      );
+    }
     this.registerCapabilityHandlers(this.mcpServer);
     this.registerToolHandlers(this.mcpServer, registry);
-    await this.mcpServer.connect(transport);
+    try {
+      await this.mcpServer.connect(transport);
+    } catch (error) {
+      const activeTransport = this.mcpServer.transport;
+      if (!activeTransport || activeTransport === transport) {
+        this.unregisterNotificationServer(this.mcpServer);
+        await this.mcpServer.close().catch(() => {});
+      }
+      throw error;
+    }
     this.connectedTransports.set(name, transport);
   }
 
@@ -1039,11 +1082,6 @@ export class MCPServer {
   }
 
   private registerCapabilityHandlers(serverInstance: Server): void {
-    if (this.serversWithCapabilities.has(serverInstance)) {
-      return;
-    }
-    const capabilities: ServerCapabilities = { tools: {} };
-
     if (this.promptBridge.enabled) {
       this.promptBridge.registerServer(serverInstance);
     }
@@ -1051,6 +1089,11 @@ export class MCPServer {
     if (this.resourceBridge.enabled) {
       this.resourceBridge.registerServer(serverInstance);
     }
+
+    if (this.serversWithCapabilities.has(serverInstance)) {
+      return;
+    }
+    const capabilities: ServerCapabilities = { tools: {} };
 
     if (this.capabilityConfig.logging) {
       capabilities.logging = {};
@@ -1145,6 +1188,7 @@ export class MCPServer {
       version: this.config.version,
       description: this.config.description,
     });
+    serverInstance.onclose = () => this.unregisterNotificationServer(serverInstance);
 
     const registry = this.buildToolRegistry(context);
     this.registerCapabilityHandlers(serverInstance);
@@ -1165,6 +1209,34 @@ export class MCPServer {
     }
 
     return serverInstance;
+  }
+
+  private unregisterNotificationServer(serverInstance: Server): void {
+    this.promptBridge.unregisterServer(serverInstance);
+    this.resourceBridge.unregisterServer(serverInstance);
+  }
+
+  private cleanupServerOnResponseEnd(
+    serverInstance: Server,
+    res: http.ServerResponse<http.IncomingMessage>,
+  ): () => Promise<void> {
+    const cleanup = () => {
+      res.off("finish", onResponseEnd);
+      res.off("close", onResponseEnd);
+      this.unregisterNotificationServer(serverInstance);
+      return serverInstance.close().catch(() => {});
+    };
+    const onResponseEnd = () => {
+      void cleanup();
+    };
+
+    // handleRequest may return before a streaming response has finished.
+    res.once("finish", onResponseEnd);
+    res.once("close", onResponseEnd);
+    if (res.writableEnded || res.destroyed) {
+      void cleanup();
+    }
+    return cleanup;
   }
 
   private buildElicitationHandler(serverInstance: Server) {
