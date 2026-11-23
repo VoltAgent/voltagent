@@ -5,6 +5,7 @@ on:
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  ONNXRUNTIME_NODE_INSTALL_CUDA: "skip"
 
 jobs:
   commit-lint:
