@@ -441,6 +441,15 @@ describe("Auth Defaults", () => {
       expect(requiresAuth("HEAD", "/mcp/servers")).toBe(false);
       expect(requiresAuth("HEAD", "/api/data", ["GET /api/data"], true)).toBe(false);
     });
+
+    it("should keep publicRoutes written with HEAD or a trailing slash", () => {
+      expect(requiresAuth("HEAD", "/health", ["HEAD /health"], true)).toBe(false);
+      expect(requiresAuth("GET", "/health", ["HEAD /health"], true)).toBe(true);
+      expect(requiresAuth("POST", "/webhooks/stripe/", ["POST /webhooks/stripe/"], true)).toBe(
+        false,
+      );
+      expect(requiresAuth("POST", "/webhooks/stripe", ["POST /webhooks/stripe/"], true)).toBe(true);
+    });
   });
 
   describe("Constants Validation", () => {

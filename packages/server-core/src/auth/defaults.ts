@@ -254,18 +254,23 @@ export function requiresAuth(
   const upperMethod = method.toUpperCase();
   const normalizedMethod = upperMethod === "HEAD" ? "GET" : upperMethod;
   const normalizedPath = path.replace(/\/+$/, "") || "/";
+  // Routes written with HEAD or a trailing slash keep matching the request as sent
+  const methodMatches = (routeMethod: string) =>
+    routeMethod === upperMethod || routeMethod === normalizedMethod;
+  const routePathMatches = (routePath: string) =>
+    pathMatches(path, routePath) || pathMatches(normalizedPath, routePath);
 
   // Check if it's a default public route
   for (const publicRoute of DEFAULT_LEGACY_PUBLIC_ROUTES) {
     if (publicRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = publicRoute.split(" ");
-      if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
+      if (methodMatches(routeMethod) && routePathMatches(routePath)) {
         return false; // Public route, no auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(normalizedPath, publicRoute)) {
+      if (routePathMatches(publicRoute)) {
         return false; // Public route, no auth required
       }
     }
@@ -277,12 +282,12 @@ export function requiresAuth(
       if (publicRoute.includes(" ")) {
         // Route with method specified
         const [routeMethod, routePath] = publicRoute.split(" ");
-        if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
+        if (methodMatches(routeMethod) && routePathMatches(routePath)) {
           return false; // Public route, no auth required
         }
       } else {
         // Route without method (any method)
-        if (pathMatches(normalizedPath, publicRoute)) {
+        if (routePathMatches(publicRoute)) {
           return false; // Public route, no auth required
         }
       }
@@ -294,12 +299,12 @@ export function requiresAuth(
     if (protectedRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = protectedRoute.split(" ");
-      if (normalizedMethod === routeMethod && pathMatches(normalizedPath, routePath)) {
+      if (methodMatches(routeMethod) && routePathMatches(routePath)) {
         return true; // Protected route, auth required
       }
     } else {
       // Route without method (any method)
-      if (pathMatches(normalizedPath, protectedRoute)) {
+      if (routePathMatches(protectedRoute)) {
         return true; // Protected route, auth required
       }
     }
