@@ -7,6 +7,7 @@ on:
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  ONNXRUNTIME_NODE_INSTALL_CUDA: "skip"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
