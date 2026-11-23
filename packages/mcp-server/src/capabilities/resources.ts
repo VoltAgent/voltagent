@@ -44,6 +44,10 @@ export class ResourceBridge {
     this.servers.add(server);
   }
 
+  unregisterServer(server: Server) {
+    this.servers.delete(server);
+  }
+
   get enabled(): boolean {
     return this.staticResources.size > 0 || Boolean(this.adapter);
   }

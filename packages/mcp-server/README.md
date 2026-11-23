@@ -50,6 +50,8 @@ const server = new MCPServer({
 
 Prompt and resource notifications target connected sessions. List-change calls still invalidate cached descriptors when no clients are connected, and errors from connected transports propagate to the caller.
 
+Closed session servers are removed from notification registries. Stateless HTTP servers are released when their response finishes or closes, so request-scoped streaming notifications remain available until the response ends.
+
 ## License
 
 MIT

@@ -37,6 +37,10 @@ export class PromptBridge {
     this.servers.add(server);
   }
 
+  unregisterServer(server: Server) {
+    this.servers.delete(server);
+  }
+
   get enabled(): boolean {
     return this.staticEntries.size > 0 || Boolean(this.adapter);
   }
