@@ -110,6 +110,45 @@ const response = await agent.generateText("List all files in my Desktop folder",
 await mcpConfig.disconnect();
 ```
 
+### Connect to a self-hosted Loom server
+
+[ClickHouse Loom](https://github.com/ClickHouse/loom) exposes document search and agent memory over MCP. Set `LOOM_MCP_URL` to the full `/mcp` URL of your deployment and `LOOM_TOKEN` to a token scoped to the relevant namespace. For a read-only agent, use a token with the viewer role. Keep the token in the authorization header.
+
+This script lists the tools available from the server without making a model call. Pass the returned tools to an agent as in the examples above when building a workflow.
+
+```ts
+import { MCPConfiguration } from "@voltagent/core";
+
+const url = process.env.LOOM_MCP_URL;
+const token = process.env.LOOM_TOKEN;
+if (!url || !token) {
+  throw new Error("Set LOOM_MCP_URL and LOOM_TOKEN before connecting.");
+}
+
+const loomMcp = new MCPConfiguration({
+  servers: {
+    loom: {
+      type: "streamable-http",
+      url,
+      requestInit: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    },
+  },
+});
+
+try {
+  const tools = await loomMcp.getTools();
+  console.log(tools.map((tool) => tool.name));
+} finally {
+  await loomMcp.disconnect();
+}
+```
+
+VoltAgent prefixes tool names with the server name. For example, if Loom exposes `loom_knowledge_search`, `getTools()` returns it as `loom_loom_knowledge_search`.
+
+See the [Loom MCP reference](https://github.com/ClickHouse/loom/blob/main/docs/reference/mcp.md) for token roles and toolsets.
+
 ## Event Handling
 
 Access individual clients to listen for events:
