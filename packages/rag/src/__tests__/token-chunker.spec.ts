@@ -3,6 +3,26 @@ import { TokenChunker } from "../chunkers/token-chunker";
 import { createTikTokenizer } from "../utils/tokenizer";
 
 describe("TokenChunker", () => {
+  it.each([
+    { maxTokens: 2.9, overlap: 0 },
+    { maxTokens: 3, overlap: 1.9 },
+  ])("floors fractional token options %j", (options) => {
+    const chunker = new TokenChunker();
+    const text = "A😀B😀C";
+    expect(chunker.chunk(text, options)).toEqual(
+      chunker.chunk(text, {
+        maxTokens: Math.floor(options.maxTokens),
+        overlap: Math.floor(options.overlap),
+      }),
+    );
+  });
+
+  it.each(["maxTokens", "overlap"] as const)("rejects non-finite %s", (option) => {
+    for (const value of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(() => new TokenChunker().chunk("A😀B", { [option]: value })).toThrow(RangeError);
+    }
+  });
+
   it.each(["😀", "𠮷"])("keeps %s whole without repeating it at zero overlap", (word) => {
     const tokenizer = createTikTokenizer({ encoding: "cl100k_base" });
     const text = `A${word}B`;
@@ -26,6 +46,11 @@ describe("TokenChunker", () => {
       expect(chunk.tokens).toBe(tokenizer.countTokens(chunk.content));
       expect(chunk.tokens).toBeLessThanOrEqual(3);
       expect(text.slice(chunk.start, chunk.end)).toBe(chunk.content);
+      for (const boundary of [chunk.start, chunk.end]) {
+        expect(text.slice(boundary - 1, boundary + 1)).not.toMatch(
+          /[\uD800-\uDBFF][\uDC00-\uDFFF]/,
+        );
+      }
       if (index === 0) continue;
       const previous = chunks[index - 1];
       expect(chunk.start).toBeGreaterThan(previous.start);

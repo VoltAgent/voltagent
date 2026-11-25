@@ -4,9 +4,9 @@ import { buildLineMap, positionForRange } from "../utils/position";
 import { defaultTokenizer, sliceByTokenRange } from "../utils/tokenizer";
 
 export type TokenChunkerOptions = {
-  /** A source character exceeding this budget is emitted alone. */
+  /** Finite values are floored and clamped to at least one. Oversized characters are emitted alone. */
   maxTokens?: number;
-  /** Rounded down when the requested overlap would split a source character. */
+  /** Finite values are floored; overlap is rounded down to complete source characters. */
   overlap?: number;
   tokenizer?: Tokenizer;
   label?: string;
@@ -21,8 +21,13 @@ export class TokenChunker implements Chunker<TokenChunkerOptions> {
 
   chunk(text: string, options?: TokenChunkerOptions): Chunk[] {
     const tokenizer = options?.tokenizer ?? this.tokenizer;
-    const maxTokens = Math.max(1, options?.maxTokens ?? 200);
-    const overlap = Math.max(0, Math.min(options?.overlap ?? 0, maxTokens - 1));
+    const requestedMaxTokens = options?.maxTokens ?? 200;
+    const requestedOverlap = options?.overlap ?? 0;
+    if (!Number.isFinite(requestedMaxTokens) || !Number.isFinite(requestedOverlap)) {
+      throw new RangeError("maxTokens and overlap must be finite numbers.");
+    }
+    const maxTokens = Math.max(1, Math.floor(requestedMaxTokens));
+    const overlap = Math.max(0, Math.min(Math.floor(requestedOverlap), maxTokens - 1));
     const lineMap = buildLineMap(text);
 
     const tokens = tokenizer.tokenize(text);
