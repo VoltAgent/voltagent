@@ -4,7 +4,9 @@ import { buildLineMap, positionForRange } from "../utils/position";
 import { defaultTokenizer, sliceByTokenRange } from "../utils/tokenizer";
 
 export type TokenChunkerOptions = {
+  /** A source character exceeding this budget is emitted alone. */
   maxTokens?: number;
+  /** Rounded down when the requested overlap would split a source character. */
   overlap?: number;
   tokenizer?: Tokenizer;
   label?: string;
@@ -31,11 +33,28 @@ export class TokenChunker implements Chunker<TokenChunkerOptions> {
     const chunks: Chunk[] = [];
     let startIndex = 0;
     let chunkIndex = 0;
-    const step = Math.max(1, maxTokens - overlap);
+    const isBoundary = (index: number) =>
+      index === tokens.length || tokens[index - 1].end <= tokens[index].start;
 
     while (startIndex < tokens.length) {
-      const endIndex = Math.min(tokens.length - 1, startIndex + maxTokens - 1);
-      const content = sliceByTokenRange(text, tokens, startIndex, endIndex);
+      let end = Math.min(tokens.length, startIndex + maxTokens);
+      while (end > startIndex && !isBoundary(end)) end -= 1;
+      if (end === startIndex) {
+        // Keep an oversized character whole and always advance.
+        end = startIndex + 1;
+        while (!isBoundary(end)) end += 1;
+      }
+      let content = sliceByTokenRange(text, tokens, startIndex, end - 1);
+      let tokenCount = tokenizer.countTokens(content);
+      while (tokenCount > maxTokens) {
+        let previous = end - 1;
+        while (previous > startIndex && !isBoundary(previous)) previous -= 1;
+        if (previous === startIndex) break;
+        end = previous;
+        content = sliceByTokenRange(text, tokens, startIndex, end - 1);
+        tokenCount = tokenizer.countTokens(content);
+      }
+      const endIndex = end - 1;
 
       chunks.push({
         id: `token-${chunkIndex}`,
@@ -56,12 +75,20 @@ export class TokenChunker implements Chunker<TokenChunkerOptions> {
             ),
           },
         }),
-        tokens: endIndex - startIndex + 1,
+        tokens: tokenCount,
         label: options?.label ?? "token",
       });
 
       if (endIndex === tokens.length - 1) break;
-      startIndex += step;
+      let nextStart = Math.max(startIndex + 1, end - overlap);
+      while (
+        nextStart < end &&
+        (!isBoundary(nextStart) ||
+          tokenizer.countTokens(sliceByTokenRange(text, tokens, nextStart, endIndex)) > overlap)
+      ) {
+        nextStart += 1;
+      }
+      startIndex = nextStart;
       chunkIndex += 1;
     }
 
