@@ -1,7 +1,67 @@
 import { describe, expect, it } from "vitest";
 import { TokenChunker } from "../chunkers/token-chunker";
+import { createTikTokenizer } from "../utils/tokenizer";
 
 describe("TokenChunker", () => {
+  it.each([
+    { maxTokens: 2.9, overlap: 0 },
+    { maxTokens: 3, overlap: 1.9 },
+  ])("floors fractional token options %j", (options) => {
+    const chunker = new TokenChunker();
+    const text = "A😀B😀C";
+    expect(chunker.chunk(text, options)).toEqual(
+      chunker.chunk(text, {
+        maxTokens: Math.floor(options.maxTokens),
+        overlap: Math.floor(options.overlap),
+      }),
+    );
+  });
+
+  it.each(["maxTokens", "overlap"] as const)("rejects non-finite %s", (option) => {
+    for (const value of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(() => new TokenChunker().chunk("A😀B", { [option]: value })).toThrow(RangeError);
+    }
+  });
+
+  it.each(["😀", "𠮷"])("keeps %s whole without repeating it at zero overlap", (word) => {
+    const tokenizer = createTikTokenizer({ encoding: "cl100k_base" });
+    const text = `A${word}B`;
+    const chunks = new TokenChunker(tokenizer).chunk(text, { maxTokens: 2, overlap: 0 });
+    expect(chunks.map(({ content }) => content)).toEqual(["A", word, "B"]);
+    expect(chunks.map(({ content }) => content).join("")).toBe(text);
+    for (const chunk of chunks) {
+      expect(chunk.tokens).toBe(tokenizer.countTokens(chunk.content));
+      expect(text.slice(chunk.start, chunk.end)).toBe(chunk.content);
+    }
+    // A character larger than the budget is emitted alone, without dropping bytes.
+    expect(chunks[1]?.tokens).toBe(tokenizer.countTokens(word));
+  });
+
+  it.each([1, 2])("rounds overlap %i down to complete source spans", (overlap) => {
+    const tokenizer = createTikTokenizer({ encoding: "cl100k_base" });
+    const text = "A😀B😀C";
+    const chunks = new TokenChunker(tokenizer).chunk(text, { maxTokens: 3, overlap });
+    expect(chunks.at(-1)?.end).toBe(text.length);
+    for (const [index, chunk] of chunks.entries()) {
+      expect(chunk.tokens).toBe(tokenizer.countTokens(chunk.content));
+      expect(chunk.tokens).toBeLessThanOrEqual(3);
+      expect(text.slice(chunk.start, chunk.end)).toBe(chunk.content);
+      for (const boundary of [chunk.start, chunk.end]) {
+        expect(text.slice(boundary - 1, boundary + 1)).not.toMatch(
+          /[\uD800-\uDBFF][\uDC00-\uDFFF]/,
+        );
+      }
+      if (index === 0) continue;
+      const previous = chunks[index - 1];
+      expect(chunk.start).toBeGreaterThan(previous.start);
+      expect(chunk.start).toBeLessThanOrEqual(previous.end);
+      expect(tokenizer.countTokens(text.slice(chunk.start, previous.end))).toBeLessThanOrEqual(
+        overlap,
+      );
+      expect(chunk.content).not.toContain("\uFFFD");
+    }
+  });
+
   it("splits text by token count with overlap", () => {
     const chunker = new TokenChunker();
     const text = "one two three four five six seven eight nine ten";
