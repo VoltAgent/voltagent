@@ -58,7 +58,8 @@ export function splitIntoParagraphs(
   tokenizer: Tokenizer = whitespaceTokenizer,
 ): Segment[] {
   const parts = text
-    .split(/\n{2,}/)
+    // Treat a CRLF pair as one line break while preserving source offsets.
+    .split(/(?:\r?\n|\r(?!\n)){2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
 
