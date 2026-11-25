@@ -11,14 +11,19 @@ const tokenize: Tokenizer["tokenize"] = (text) =>
 
 describe("SlumberChunker overlap", () => {
   it.each(["𠮷", "👩‍💻"])("keeps Unicode overlap in the source for %j", (word) => {
-    const text = `First. ${word} works.`;
+    const text = `First.${word} works.`;
     const chunks = new SlumberChunker().chunk(text, {
-      maxTokens: 8,
+      maxTokens: 6,
       minTokens: 1,
       overlapTokens: 1,
     });
     const overlaps = chunks.filter((chunk) => chunk.label === "slumber-overlap");
     expect(overlaps.length).toBeGreaterThan(0);
+    const wordStart = text.indexOf(word);
+    expect(
+      overlaps.some((chunk) => chunk.start < wordStart + word.length && chunk.end > wordStart),
+    ).toBe(true);
+    expect(overlaps[0]?.content).toBe(Array.from(word)[0]);
     for (const overlap of overlaps) {
       expect(overlap.end).toBeLessThanOrEqual(text.length);
       expect(text.slice(overlap.start, overlap.end)).toBe(overlap.content);

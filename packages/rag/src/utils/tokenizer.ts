@@ -17,6 +17,23 @@ const encodingRanks = {
   cl100k_base: cl100k,
   o200k_base: o200k,
 };
+const tokenByteLengthsByEncoding = new Map<TiktokenEncoding, Map<number, number>>();
+
+function getTokenByteLengths(encodingName: TiktokenEncoding): Map<number, number> {
+  const cached = tokenByteLengthsByEncoding.get(encodingName);
+  if (cached) return cached;
+  const lengths = new Map<number, number>();
+  for (const line of encodingRanks[encodingName].bpe_ranks.split("\n")) {
+    if (!line) continue;
+    const [, offset, ...pieces] = line.split(" ");
+    pieces.forEach((piece, index) => {
+      const padding = piece.endsWith("==") ? 2 : piece.endsWith("=") ? 1 : 0;
+      lengths.set(Number(offset) + index, (piece.length * 3) / 4 - padding);
+    });
+  }
+  tokenByteLengthsByEncoding.set(encodingName, lengths);
+  return lengths;
+}
 
 export function tokenizeWithPositions(text: string): Token[] {
   const tokens: Token[] = [];
@@ -57,32 +74,23 @@ export function createTikTokenizer(config?: {
   })();
 
   const encode = (text: string): number[] => Array.from(encoding.encode(text));
-  let tokenByteLengths: Map<number, number> | undefined;
 
   return {
     tokenize: (text: string) => {
       const ids = encode(text);
       // Token ranks store base64-encoded bytes. Their lengths remain exact even
       // when an individual token ends partway through a UTF-8 character.
-      if (!tokenByteLengths) {
-        tokenByteLengths = new Map();
-        for (const line of encodingRanks[encodingName].bpe_ranks.split("\n")) {
-          if (!line) continue;
-          const [, offset, ...pieces] = line.split(" ");
-          pieces.forEach((piece, index) => {
-            const padding = piece.endsWith("==") ? 2 : piece.endsWith("=") ? 1 : 0;
-            tokenByteLengths?.set(Number(offset) + index, (piece.length * 3) / 4 - padding);
-          });
-        }
-      }
+      const tokenByteLengths = getTokenByteLengths(encodingName);
 
       const byteStarts: number[] = [];
       const byteEnds: number[] = [];
-      const encoder = new TextEncoder();
       let cursor = 0;
       for (const character of text) {
         const end = cursor + character.length;
-        for (const _byte of encoder.encode(character)) {
+        const codePoint = character.codePointAt(0) ?? 0;
+        const byteLength =
+          codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
+        for (let byte = 0; byte < byteLength; byte++) {
           byteStarts.push(cursor);
           byteEnds.push(end);
         }
@@ -91,7 +99,7 @@ export function createTikTokenizer(config?: {
 
       let byteCursor = 0;
       return ids.map((id) => {
-        const byteLength = tokenByteLengths?.get(id);
+        const byteLength = tokenByteLengths.get(id);
         if (byteLength === undefined) {
           throw new Error("Could not determine the source span for a tiktoken token.");
         }

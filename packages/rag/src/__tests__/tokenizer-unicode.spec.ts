@@ -2,6 +2,32 @@ import { describe, expect, it } from "vitest";
 import { createTikTokenizer } from "../utils/tokenizer";
 
 describe("tiktoken source spans", () => {
+  it.each([
+    [
+      "a𠮷z",
+      [
+        [0, 1],
+        [1, 3],
+        [1, 3],
+        [1, 3],
+        [1, 3],
+        [3, 4],
+      ],
+    ],
+    [
+      "A😀B",
+      [
+        [0, 1],
+        [1, 3],
+        [1, 3],
+        [3, 4],
+      ],
+    ],
+  ] as const)("maps split UTF-8 tokens in %j to complete source characters", (text, ranges) => {
+    const tokenizer = createTikTokenizer({ encoding: "cl100k_base" });
+    expect(tokenizer.tokenize(text).map(({ start, end }) => [start, end])).toEqual(ranges);
+  });
+
   it.each(["gpt2", "r50k_base", "p50k_base", "p50k_edit", "cl100k_base", "o200k_base"] as const)(
     "preserves source positions with %s",
     (encoding) => {
