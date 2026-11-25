@@ -10,6 +10,26 @@ const tokenize: Tokenizer["tokenize"] = (text) =>
   }));
 
 describe("SlumberChunker overlap", () => {
+  it.each(["𠮷", "👩‍💻"])("keeps Unicode overlap in the source for %j", (word) => {
+    const text = `First. ${word} works.`;
+    const chunks = new SlumberChunker().chunk(text, {
+      maxTokens: 8,
+      minTokens: 1,
+      overlapTokens: 1,
+    });
+    const overlaps = chunks.filter((chunk) => chunk.label === "slumber-overlap");
+    expect(overlaps.length).toBeGreaterThan(0);
+    for (const overlap of overlaps) {
+      expect(overlap.end).toBeLessThanOrEqual(text.length);
+      expect(text.slice(overlap.start, overlap.end)).toBe(overlap.content);
+      expect(overlap.content).not.toContain("\uFFFD");
+      const first = overlap.content.charCodeAt(0);
+      const last = overlap.content.charCodeAt(overlap.content.length - 1);
+      expect(first >= 0xdc00 && first <= 0xdfff).toBe(false);
+      expect(last >= 0xd800 && last <= 0xdbff).toBe(false);
+    }
+  });
+
   it.each([" ", "  ", "\n", "\r\n"])("preserves the overlap source range after %j", (separator) => {
     const text = `First.${separator}red-blue.`;
     const chunks = new SlumberChunker().chunk(text, {
