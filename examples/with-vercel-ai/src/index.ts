@@ -10,7 +10,7 @@ const logger = createPinoLogger({
 });
 
 const agent = new Agent({
-  name: "Asistant",
+  name: "Assistant",
   instructions: "A helpful assistant that answers questions without using tools",
   model: "openai/gpt-4o-mini",
   memory: new Memory({
