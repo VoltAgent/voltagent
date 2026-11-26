@@ -49,4 +49,23 @@ describe("Markdown table detection", () => {
   it("does not match an unrelated delimiter in prose", () => {
     expect(detectFormat("| note |\nprose containing | -- | marker")).toBe("text");
   });
+
+  it("accepts headers without a trailing pipe and delimiters without a leading pipe", () => {
+    expect(detectFormat("| A | B\n| --- | --- |")).toBe("table");
+    expect(detectFormat("| A | B |\n--- | ---")).toBe("table");
+    expect(detectFormat("A | B\n--- | ---")).toBe("table");
+  });
+
+  it("accepts single-hyphen delimiter cells", () => {
+    expect(detectFormat("| A | B |\n| - | - |")).toBe("table");
+    expect(detectFormat("| A | B |\n| :- | -: |")).toBe("table");
+  });
+
+  it("does not treat a setext heading without pipes as a table", () => {
+    expect(detectFormat("Title\n---")).toBe("text");
+  });
+
+  it("preserves code indentation for pipe-less outer edge rows", () => {
+    expect(detectFormat("    A | B\n    - | -")).toBe("text");
+  });
 });
